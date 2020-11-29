@@ -1,7 +1,26 @@
 
 -- announce messages. TODO: put these in their own file
-local LOOT_TARGET_CHANGED = "{rt4} GogoLoot : Master Looter Active! %s Items > %s"
+GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s"
 
+GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : Softres.it List Imported! %s Reserves across %s Items included."
+GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per Softres.it List, %s goes to %s!"
+GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per Softres.it List, %s will be rolled on by %s!"
+
+GogoLoot.AUTO_ROLL_ENABLED = "{rt4} GogoLoot : Auto %s on BoEs Enabled!"
+GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
+
+GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
+
+StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
+    text = "GogoLoot is unable to change loot threshold during combat.",
+    button1 = "Ok",
+    OnAccept = function()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3
+  }
 
 local AceGUI = LibStub("AceGUI-3.0")
 
@@ -11,25 +30,101 @@ end
 
 function GogoLoot:BuildUI()
 
+    if GogoLoot._frame and GogoLoot._frame:IsShown() then -- already showing
+        return
+    end
+
     local render;
 
     if not GogoLoot_Config.ignoredItemsSolo then
         GogoLoot_Config.ignoredItemsSolo = {
             [4500] = true,
-            [12811] = true
+            [12811] = true,
+            [12662] = true
         }
         GogoLoot_Config.ignoredItemsMaster = {
             [21321] = true,
             [21218] = true,
             [21323] = true,
-            [21324] = true
+            [21324] = true,
+            [17966] = true,
+            [19914] = true,
+            [19902] = true, 
+            [19872] = true,
         }
     end
     local frame = AceGUI:Create("Frame")
+    frame.frame:SetFrameStrata("DIALOG")
+    GogoLoot._frame = frame.frame
     frame:SetTitle("GogoLoot")
     frame:SetLayout("Fill")
-    frame:SetWidth(500)
+    frame:SetWidth(520)
     frame:SetHeight(650)
+
+    local wasAutoRollEnabled = GogoLoot_Config.autoRoll -- bit of a hack
+
+    frame:SetCallback("OnClose", function()
+        -- temporary hack
+        SetCVar("autoLootDefault", "1")
+        if GogoLoot:areWeMasterLooter() then
+            GogoLoot:SetSoftresProfile(GogoLoot_Config.softres.lastInput)
+
+            local playerLoots = {}
+
+            for _, rarity in pairs(GogoLoot.rarityToText) do
+                local name = strlower(GogoLoot_Config.players[rarity] or UnitName("Player"))
+
+                --print(rarity)
+                if GogoLoot.textToLink[rarity] then
+                    if not playerLoots[name] then
+                        playerLoots[name] = {}
+                    end
+                    tinsert(playerLoots[name], rarity)
+                end
+            end
+
+            for player, targets in pairs(playerLoots) do
+                local targetList = ""
+                local lastIndex = #targets - 2
+                if lastIndex == 0 then -- hack
+                    lastIndex = 1
+                end
+                
+                for index, target in pairs(targets) do
+                    if target ~= "orange" then
+                        if index == lastIndex then
+                            targetList = targetList .. capitalize(target) .. ", and "
+                        else
+                            targetList = targetList .. capitalize(target) .. ", "
+                        end
+                    end
+                end
+                targetList = string.sub(targetList, 1, -3)
+
+                SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+            end
+
+            if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
+                SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
+            end
+
+        elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) then
+            SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+        elseif GetLootMethod() == "group" and (not GogoLoot_Config.autoRoll) and wasAutoRollEnabled then
+            SendChatMessage(string.format(GogoLoot.AUTO_ROLL_DISABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+        end
+        -- /run c=CharacterWristSlot;op = {c:GetPoint()};op[4] = op[4] + 230;op[5]=op[5]-50;c:SetPoint(unpack(op))c:Show()
+
+        -- un f=function(a) return a:GetScript("OnClick") end StaticPopup1Button1:HookScript("OnClick",function() c=CraftCreateButton;w=CharacterWristSlot; f(c)(c) f(w)(w) print("enchanting") end)
+        --[[for _, rarity in pairs(GogoLoot.rarityToText) do
+            local name = GogoLoot_Config.players[rarity] or UnitName("Player")
+            --print(rarity)
+            if GogoLoot.textToLink[rarity] then
+                print(string.format(LOOT_TARGET_MESSAGE, GogoLoot.textToLink[rarity], capitalize(name)))
+                SendChatMessage(string.format(LOOT_TARGET_MESSAGE, GogoLoot.textToLink[rarity], capitalize(name)), "PARTY")
+            end
+        end]]
+    end)
 
     local function checkbox(widget, text, callback, width)
         local box = AceGUI:Create("CheckBox")
@@ -55,6 +150,30 @@ function GogoLoot:BuildUI()
         widget:AddChild(label)
     end
 
+    local function labelNormal(widget, text, width)
+        local label = AceGUI:Create("Label")
+        label:SetFontObject(GameFontNormal)
+        label:SetText(text)
+        if width then
+            label:SetWidth(width)
+        else
+            label:SetFullWidth(true)
+        end
+        widget:AddChild(label)
+    end
+
+    local function labelLarge(widget, text, width)
+        local label = AceGUI:Create("Label")
+        label:SetFontObject(GameFontHighlightLarge)
+        label:SetText(text)
+        if width then
+            label:SetWidth(width)
+        else
+            label:SetFullWidth(true)
+        end
+        widget:AddChild(label)
+    end
+
     local function spacer(widget, width) -- todo make this not bad
         local label = AceGUI:Create("Label")
         label:SetFullWidth(true)
@@ -70,10 +189,14 @@ function GogoLoot:BuildUI()
         widget:AddChild(label)
     end
 
-    local function scrollFrame(widget)
+    local function scrollFrame(widget, height)
         local scrollcontainer = AceGUI:Create("SimpleGroup") -- "InlineGroup" is also good
         scrollcontainer:SetFullWidth(true)
-        scrollcontainer:SetFullHeight(true)
+        if height then
+            scrollcontainer:SetHeight(height)
+        else
+            scrollcontainer:SetFullHeight(true)
+        end
         scrollcontainer:SetLayout("Fill")
 
         widget:AddChild(scrollcontainer)
@@ -85,22 +208,32 @@ function GogoLoot:BuildUI()
         return scroll
     end
 
-    local function buildItemLink(widget, itemID)
-        local container = AceGUI:Create("SimpleGroup")
-        container:SetWidth(300)
+    local function buildItemLink(widget, itemID, disableIcon, width)
         local label = AceGUI:Create("InteractiveLabel")
         local itemInfo = {GetItemInfo(itemID)}
-        label:SetImage(itemInfo[10])
-        label:SetWidth(300)
-        label:SetImageSize(32,32)
+
+        if not disableIcon then
+            label:SetImage(itemInfo[10])
+            label:SetImageSize(32,32)
+        end
+
+        label:SetWidth(width or 300)
+
         label:SetText(itemInfo[2])
         label:SetFontObject(GameFontHighlight)
-        container:AddChild(label)
-        widget:AddChild(container)
+
+        if disableIcon then
+            widget:AddChild(label)
+        else
+            local container = AceGUI:Create("SimpleGroup")
+            container:SetWidth(width or 300)
+            container:AddChild(label)
+            widget:AddChild(container)
+        end
         
     end
 
-    local function buildIgnoredFrame(widget, text, itemTable, group)
+    local function buildIgnoredFrame(widget, text, itemTable, group, height)
         spacer(widget)
         label(widget, text, nil)
 
@@ -141,7 +274,7 @@ function GogoLoot:BuildUI()
         widget:AddChild(button)
         spacer(widget)
 
-        local list = scrollFrame(widget)
+        local list = scrollFrame(widget, height)
         
         --[[for e=1,50 do
             --checkbox(list, "Test checkbox " .. tostring(e))
@@ -153,7 +286,22 @@ function GogoLoot:BuildUI()
             spacer(list)
         end]]
 
+        local sortedList = {}
+        local sortLookup = {}
+
         for id in pairs(itemTable) do
+            local n = GetItemInfo(tonumber(id))
+            tinsert(sortedList, n)
+            sortLookup[n] = id
+        end
+        
+        table.sort(sortedList)
+        __slu = sortLookup
+
+        --for id in pairs(itemTable) do
+        for _,name in pairs(sortedList) do
+            local id = sortLookup[name]
+
             buildItemLink(list, id)
             local button = AceGUI:Create("Button")
             button:SetWidth(85)
@@ -169,11 +317,12 @@ function GogoLoot:BuildUI()
 
     end
 
-    local function buildTypeDropdown(widget, filter, players, playerOrder)
+    local function buildTypeDropdown(widget, filter, players, playerOrder, disabled)
         label(widget, "    "..GogoLoot.textToName[filter], 280)
         local dropdown = AceGUI:Create("Dropdown")
         dropdown:SetWidth(150) -- todo: align right
         dropdown:SetList(players, playerOrder)
+        dropdown:SetDisabled(disabled)
 
         if GogoLoot_Config.players[filter] then
             dropdown:SetValue(GogoLoot_Config.players[filter])
@@ -191,10 +340,10 @@ function GogoLoot:BuildUI()
 
     render = {
         ["ignoredBase"] = function(widget, group)
-            buildIgnoredFrame(widget, "Items in this list will always show up for manual need or greed rolls.", GogoLoot_Config.ignoredItemsSolo, group)
+            buildIgnoredFrame(widget, "Items in this list will always show up for manual need or greed rolls.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsSolo, group)
         end,
         ["ignoredMaster"] = function(widget, group)
-            buildIgnoredFrame(widget, "Note that non-tradable Quest Items are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.", GogoLoot_Config.ignoredItemsMaster, group)
+            buildIgnoredFrame(widget, "Note that non-tradable Quest Items are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
         end,
         ["general"] = function(widget, group)
             local speedyLoot = checkbox(widget, "Speedy Loot (No Loot Window)")
@@ -209,25 +358,32 @@ function GogoLoot:BuildUI()
             end)
 
 
-            local autoAccept = checkbox(widget, "Suppress BoP Confirmation Popups (Auto Accept)")
-            autoAccept:SetDisabled(true)
+            --local autoAccept = checkbox(widget, "Speedy Confirm (Auto Confirm BoP Loot)")
+            --autoAccept:SetDisabled(true)
             local autoRoll = checkbox(widget, "Automatic Rolls on BoEs", nil, 280)
             autoRoll:SetCallback("OnValueChanged", function()
-                GogoLoot_Config.autoRoll = speedyLoot:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
+                GogoLoot_Config.autoRoll = autoRoll:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
             end)
             autoRoll:SetDisabled(false)
+            autoRoll:SetValue(true == GogoLoot_Config.autoRoll)
 
             local dropdown = AceGUI:Create("Dropdown")
             dropdown:SetWidth(150) -- todo: align right
             dropdown:SetList({
                 ["greed"]="Greed", ["need"]="Need"
             })
-            dropdown:SetValue("greed")
+            dropdown:SetValue(1 == GogoLoot_Config.autoRollThreshold and "need" or "greed")
             dropdown:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.autoRollThreshold = (dropdown:GetValue() == "greed") and 2 or 1
             end)
             dropdown:SetDisabled(false)
             widget:AddChild(dropdown)
+
+            local autoGray = checkbox(widget, "Automatic Destroy Gray Items on Loot", nil, nil)
+            autoGray:SetCallback("OnValueChanged", function()
+                GogoLoot_Config.enableAutoGray = autoGray:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
+            end)
+            autoGray:SetValue(true == GogoLoot_Config.enableAutoGray)
 
             local tabs = AceGUI:Create("TabGroup")
             tabs:SetLayout("Flow")
@@ -244,15 +400,18 @@ function GogoLoot:BuildUI()
             widget:AddChild(tabs)
         end,
         ["ml"] = function(widget, group)
-
-            spacer(widget)
-            local enabled = checkbox(widget, "Enable GogoLoot")
+            local sf = widget
+            if true then -- do scroll frame inside master loot
+                sf = scrollFrame(widget)
+            end
+            spacer(sf)
+            local enabled = checkbox(sf, "Enable GogoLoot")
             enabled:SetValue(GogoLoot_Config.enabled)
             enabled:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.enabled = enabled:GetValue()
             end)
-            spacer(widget)
-            label(widget, "Loot Threshold", 280)
+            spacer(sf)
+            label(sf, "Loot Threshold", 280)
             local dropdown = AceGUI:Create("Dropdown")
             dropdown:SetWidth(150) -- todo: align right
             dropdown:SetList({
@@ -265,18 +424,28 @@ function GogoLoot:BuildUI()
             dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])
             dropdown:SetCallback("OnValueChanged", function()
                 SetLootMethod("master", UnitName("Player"), GogoLoot.textToRarity[dropdown:GetValue()])
+                -- validate 
+                if GetLootThreshold() ~= GogoLoot.textToRarity[dropdown:GetValue()] then
+                    --dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])
+                    --StaticPopup_Show ("GOGOLOOT_THRESHOLD_ERROR")
+                    widget:ReleaseChildren() -- redraw
+                    render[group](widget, group)
+                else
+                    widget:ReleaseChildren() -- redraw
+                    render[group](widget, group)
+                end
             end)
-            widget:AddChild(dropdown)
-            spacer(widget)
-            local includeBOP = checkbox(widget, "Include BoP Items; note that some of these may not be tradable.")
+            sf:AddChild(dropdown)
+            spacer(sf)
+            local includeBOP = checkbox(sf, "Include BoP Items; note that some of these may not be tradable.")
             includeBOP:SetValue(not GogoLoot_Config.disableBOP)
             includeBOP:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.disableBOP = not includeBOP:GetValue()
             end)
             --includeBOP:SetDisabled(true)
-            spacer2(widget)
-            label(widget, "Loot Destinations")
-            spacer(widget)
+            spacer2(sf)
+            label(sf, "Loot Destinations")
+            spacer(sf)
 
             local playerList = GogoLoot:GetGroupMemberNames()
             local playerOrder = {}
@@ -285,13 +454,50 @@ function GogoLoot:BuildUI()
             end
             table.sort(playerOrder)
 
-            buildTypeDropdown(widget, "gray", playerList, playerOrder)
-            buildTypeDropdown(widget, "white", playerList, playerOrder)
-            buildTypeDropdown(widget, "green", playerList, playerOrder)
-            buildTypeDropdown(widget, "blue", playerList, playerOrder)
-            buildTypeDropdown(widget, "purple", playerList, playerOrder)
+            local threshold = GetLootThreshold()
+
+            buildTypeDropdown(sf, "gray", playerList, playerOrder, threshold > 0)
+            buildTypeDropdown(sf, "white", playerList, playerOrder, threshold > 1)
+            buildTypeDropdown(sf, "green", playerList, playerOrder, threshold > 2)
+            buildTypeDropdown(sf, "blue", playerList, playerOrder, threshold > 3)
+            buildTypeDropdown(sf, "purple", playerList, playerOrder, threshold > 4)
 
             --spacer2(widget)
+
+            spacer(sf)
+
+            --[[local fallbackLabel = AceGUI:Create("Label")
+            fallbackLabel:SetFullWidth(true)
+            fallbackLabel:SetFontObject(GameFontHighlight)
+            fallbackLabel:SetText("Fallback Option")
+
+            sf:AddChild(fallbackLabel)
+            spacer(sf)]]
+
+            if false then -- do softres in ML tab
+                spacer2(sf)
+
+                local importMessage = AceGUI:Create("Label")
+                importMessage:SetFullWidth(true)
+                importMessage:SetFontObject(GameFontNormal)
+                importMessage:SetText("GogoLoot supports Softres.it; paste CSV code from website here to enable automatic distribution for this raid.")
+
+                sf:AddChild(importMessage)
+
+                local importEditBox = AceGUI:Create("MultiLineEditBox")
+                importEditBox:SetFullWidth(true)
+                importEditBox:SetHeight(64)
+                importEditBox:DisableButton(true)
+                importEditBox:SetLabel("")--("Status: Inactive")
+                if GogoLoot_Config.softres.lastInput then
+                    importEditBox:SetText(GogoLoot_Config.softres.lastInput)
+                end
+                importEditBox:SetCallback("OnTextChanged", function()
+                    GogoLoot_Config.softres.lastInput = importEditBox:GetText()
+                end)
+
+                sf:AddChild(importEditBox)
+            end
 
             local tabs = AceGUI:Create("TabGroup")
             tabs:SetLayout("Flow") 
@@ -305,26 +511,162 @@ function GogoLoot:BuildUI()
             tabs:SetFullHeight(true)
             tabs:SetCallback("OnGroupSelected", function(widget, event, group) widget:ReleaseChildren() render[group](widget, group) end)
             tabs:SelectTab("ignoredMaster")
-            widget:AddChild(tabs)
+            sf:AddChild(tabs)
+        end,
+        ["softres"] = function(widget, group)
+
+            spacer2(widget)
+            labelLarge(widget, "Softres.it Import")
+            spacer2(widget)
+
+            local importMessage = AceGUI:Create("Label")
+            importMessage:SetFullWidth(true)
+            importMessage:SetFontObject(GameFontNormal)
+            importMessage:SetText("GogoLoot supports Softres.it; paste CSV code from website here to enable automatic distribution for this raid.")
+
+            
+            local softres = checkbox(widget, "Enable Softres.it List for Master Looter")
+            softres:SetDisabled(not GogoLoot:areWeMasterLooter())
+            softres:SetValue(GogoLoot_Config.enableSoftres and GogoLoot:areWeMasterLooter())
+            softres:SetCallback("OnValueChanged", function()
+                GogoLoot_Config.enableSoftres = softres:GetValue()
+            end)
+            spacer2(widget)
+            widget:AddChild(importMessage)
+
+            spacer(widget)
+
+            local importEditBox = AceGUI:Create("MultiLineEditBox")
+            importEditBox:SetFullWidth(true)
+            importEditBox:SetFullHeight(true)
+            importEditBox:DisableButton(true)
+            importEditBox:SetLabel("")--("Status: Inactive")
+            if GogoLoot_Config.softres.lastInput then
+                importEditBox:SetText(GogoLoot_Config.softres.lastInput)
+            end
+            importEditBox:SetCallback("OnTextChanged", function()
+                GogoLoot_Config.softres.lastInput = importEditBox:GetText()
+            end)
+
+            widget:AddChild(importEditBox)
+
+            spacer2(widget)
+
+            --[[
+            local list = scrollFrame(widget)
+
+            for _,id in pairs({}) do
+                buildItemLink(list, id, true, 250)
+                label(list, "Someplayer" .. tostring(_), 100)
+            end
+            ]]
+
+
+        end,
+        ["about"] = function(widget, group)
+            spacer(widget)
+            label(widget, "GogoLoot was designed to help speed up the looting process.")
+            spacer2(widget)
+            spacer2(widget)
+            labelLarge(widget, "Tips & Tricks")
+            spacer(widget)
+            labelNormal(widget, "    • Hold Shift while looting to disable GogoLoot for that corpse.")
+            labelNormal(widget, "    • To keep momentum during a raid, have your Master Looter come with empty bags so they can scoop up all the gear and hand it out at the end.")
+            labelNormal(widget, "    • For faster raid clears, set the threshold to gray (poor). This will allow your raiders to focus on moving in one direction towards the next boss, not having to run back randomly when they see sparkles. (Most instances don't have more than 5-10g worth of grays total; makes a good donation to your flask fund.)")
+            labelNormal(widget, "    • When getting boosted, or power-leveled, turn \"destroy grays\" to avoid clutter.")
+
+            spacer2(widget)
+            spacer2(widget)
+            labelLarge(widget, "Creators")
+            labelNormal(widget, "    • Gogo (Earthfury-US).")
+            labelNormal(widget, "    • Aero (Earthfury-US). Aero was also the creator of Questie.")
+            labelNormal(widget, "    • Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of Softres.it.")
+            spacer2(widget)
+            spacer2(widget)
+
+            labelNormal(widget, "If you have any suggestions, or find any bugs, please add them to GitHub.")
+            --labelNormal(widget, "https://github.com/Gogo1951/GogoLoot/issues/")
+            local box = AceGUI:Create("EditBox")
+            box:DisableButton(true)
+            box:SetFullWidth(true)
+            box:SetText("https://github.com/Gogo1951/GogoLoot/issues/")
+            widget:AddChild(box)
         end
     }
 
     local tabs = AceGUI:Create("TabGroup")
     tabs:SetLayout("Flow")
-    tabs:SetTabs({
-        {
-            text = "General Settings",
-            value="general"
-        },
-        {
-            text = "Master Looter Settings",
-            value="ml"
-        }
-    })
+    if GogoLoot:areWeMasterLooter() then
+        tabs:SetTabs({
+            {
+                text = "General Settings",
+                value = "general"
+            },
+            {
+                text = "Master Looter Settings",
+                value = "ml"
+            },
+            {
+                text = "Softres.it",
+                value = "softres"
+            },
+            {
+                text = "About",
+                value = "about"
+            }
+        })
+    else
+        tabs:SetTabs({
+            {
+                text = "General Settings",
+                value = "general"
+            },
+            {
+                text = "Master Looter Settings",
+                value = "ml",
+                disabled = true,
+            },
+            {
+                text = "Softres.it",
+                value = "softres",
+                --disabled = true,
+            },
+            {
+                text = "About",
+                value = "about"
+            }
+        })
+    end
     tabs:SetCallback("OnGroupSelected", function(widget, event, group) widget:ReleaseChildren() render[group](widget, group) end)
     tabs:SelectTab("general")
     frame:AddChild(tabs)
-
-
     frame:Show()
+end
+
+
+function unpackCSV(data)
+    local ret = {}
+    local errorCount = 0
+
+    for line in string.gmatch(data .. "\n", "(.-)\n") do
+        if line and string.len(line) > 4 then
+            local itemId, name, class, note, plus = string.match(line, "(.-),(.-),(.-),(.-),(.-)$")
+
+            local validId = tonumber(itemId)
+
+            if not validId and itemId ~= "ItemId" then
+                errorCount = errorCount + 1
+            end
+
+            if validId then
+                ret[validId] = {name, class, note, plus}
+            end
+        end
+    end
+
+    return ret, errorCount
+end
+
+function testUnpack()
+    return unpackCSV("21503,Testname,Hunter,,2\n21499,Testname,Hunter,,2\n21494,Test,Druid,,1\n")
 end

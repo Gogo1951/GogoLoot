@@ -1,5 +1,5 @@
 local function debug(str)
-    print(str)
+    --print(str)
 end
 
 local itemBindings = nil -- populated later
@@ -7,6 +7,8 @@ local itemBindings = nil -- populated later
 if not GogoLoot_Config then GogoLoot_Config = {
     ["speedyLoot"] = true,
     ["enabled"] = true,
+    ["autoRoll"] = true,
+    ["autoRollThreshold"] = 2,
     ["players"] = {},
 } end
 GogoLoot = {}
@@ -35,6 +37,11 @@ local colorToRarity = {
     ["ff8000"] = 5
 }
 
+local badErrors = {
+    ["You can't loot that item now."] = true,
+    ["You don't have permission to loot that corpse."] = true
+}
+
 GogoLoot.rarityToText = {
     [0] = "gray",
     [1] = "white",
@@ -52,6 +59,15 @@ GogoLoot.textToName = {
     ["blue"] = "|cff0070ddRare|r",
     ["purple"] = "|cffa335eeEpic|r",
     ["orange"] = "|cffff8000Legendary|r",
+}
+
+GogoLoot.textToLink = {
+    ["gray"] = "Poor Items",
+    ["white"] = "Common Items",
+    ["green"] = "Uncommon Items",
+    ["blue"] = "Rare Items",
+    ["purple"] = "Epic Items",
+    ["orange"] = "Legendary Items",
 }
 
 GogoLoot.textToRarity = {}
@@ -97,15 +113,36 @@ function GogoLoot:GetGroupMemberNames()
     return filtered
 end
 
-function GogoLoot:VacuumSlotSolo(index)
-    LootSlot(index)
-end
-function GogoLoot:VacuumSlot(index, playerIndex)
+function GogoLoot:areWeMasterLooter()
     local masterLooter = select(2, GetLootMethod()) -- todo: cache this
-    if index and playerIndex and masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter))) then
+    return masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter)))
+end
+
+GogoLoot.canOpenWindow = false
+
+function GogoLoot:showLootFrame(reason, force)
+    if GogoLoot_Config.speedyLoot and GogoLoot.canOpenWindow then
+        debug("Showing loot frame because ".. reason)
+        GogoLoot.canOpenWindow = false
+        LootFrame:GetScript("OnEvent")(LootFrame, "LOOT_OPENED")
+    else
+        --print("Didnt open window because")
+        --print(GogoLoot.canOpenWindow)
+        --print(GogoLoot_Config.speedyLoot)
+    end
+end
+
+function GogoLoot:VacuumSlotSolo(index)
+    debug("Vacuum slot solo " .. tostring(index))
+    pcall(LootSlot, index)
+end
+
+function GogoLoot:VacuumSlot(index, playerIndex)
+    debug("Vacuum slot " .. tostring(index))
+    if index and playerIndex and GogoLoot:areWeMasterLooter() then
         local lootLink = GetLootSlotLink(index)
         if not lootLink then
-            return false -- likely gold
+            return false -- likely gold TODO: CHECK THIS
         end
         if lootLink and not ItemInfoCache[lootLink] then
             ItemIDCache[lootLink] = {string.find(lootLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")}
@@ -113,7 +150,7 @@ function GogoLoot:VacuumSlot(index, playerIndex)
         end
         local color = ItemIDCache[lootLink][3]
         local rarity = colorToRarity[color] or 6
-        local doLoot = false
+        local doLoot = rarity < 5
 
         if rarity >= GetLootThreshold() then
             if rarity == 1 then
@@ -125,28 +162,35 @@ function GogoLoot:VacuumSlot(index, playerIndex)
 
         local id = tonumber(ItemIDCache[lootLink][5])
 
-        if doLoot and GogoLoot_Config.disableBOP and id then -- check binding
-            doLoot = not itemBindings[id]
-        end
-
-        if doLoot and not GogoLoot_Config.ignoredItemsMaster[ItemIDCache[lootLink][5]] then
+        if id and doLoot and not GogoLoot_Config.ignoredItemsMaster[id] and ((not GogoLoot_Config.disableBOP) or not itemBindings[id] or itemBindings[id] ~= 1) then
             debug("ShouldLoot " .. tostring(index))
+
+            local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
+
             local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
 
-            -- this redirects loot to the "all" player if the specific players are not available
-            --local playerID = playerIndex[GogoLoot_Config.players[rarityToText[rarity]]] or playerIndex[GogoLoot_Config.players["all"]]
-
-            if targetPlayerName then
-                debug("Looting to " .. targetPlayerName)
-                local playerID = playerIndex[targetPlayerName]
-                if playerID then
-                    GiveMasterLoot(index, playerID)
-                    return false
-                else
-                    debug("Player " .. targetPlayerName .. " has no ID!")
-                end
+            if softresResult == true then
+                -- softres roll taking place
             else
-                debug("No player to loot! " .. GogoLoot.rarityToText[rarity])
+                if softresResult then
+                    targetPlayerName = strlower(softresResult) -- loot to this player
+                end
+
+                -- this redirects loot to the "all" player if the specific players are not available
+                --local playerID = playerIndex[GogoLoot_Config.players[rarityToText[rarity]]] or playerIndex[GogoLoot_Config.players["all"]]
+
+                if targetPlayerName then
+                    debug("Looting to " .. targetPlayerName)
+                    local playerID = playerIndex[targetPlayerName]
+                    if playerID then
+                        GiveMasterLoot(index, playerID)
+                        return false
+                    else
+                        debug("Player " .. targetPlayerName .. " has no ID!")
+                    end
+                else
+                    debug("No player to loot! " .. GogoLoot.rarityToText[rarity])
+                end
             end
         end
     end
@@ -161,7 +205,7 @@ function hookAutoNeed()
     for i=1,16 do
         local frame = _G["GroupLootFrame" .. tostring(i)]
         if frame then
-            print("Hooking " .. tostring(i))
+            debug("Hooking " .. tostring(i))
             frame:HookScript("OnShow", function()
                 --frame.GreedButton:GetScript("OnClick")(frame.GreedButton)
                 --StaticPopup1Button1:GetScript("OnClick")(StaticPopup1Button1)
@@ -219,7 +263,6 @@ events:SetScript("OnEvent", function()
 
     local events = CreateFrame("Frame")
     local canLoot = true
-    local canOpenWindow = false
 
     events:RegisterEvent("LOOT_BIND_CONFIRM")
     events:RegisterEvent("LOOT_READY")
@@ -228,23 +271,23 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("MODIFIER_STATE_CHANGED")
     events:RegisterEvent("UI_ERROR_MESSAGE")
     events:RegisterEvent("BAG_UPDATE")
+    events:RegisterEvent("PLAYER_ENTERING_WORLD")
+    events:RegisterEvent("PARTY_LOOT_METHOD_CHANGED")
+    events:RegisterEvent("GROUP_ROSTER_UPDATE")
 
     events:RegisterEvent("START_LOOT_ROLL")
 
-    local function showLootFrame(reason)
-        if GogoLoot_Config.speedyLoot and canOpenWindow then
-            debug("Showing loot frame because ".. reason)
-            LootFrame:GetScript("OnEvent")(LootFrame, "LOOT_OPENED")
-        end
-    end
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
-        if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and canLoot then
-            canOpenWindow = true
+        --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
+        --    canOpenWindow = true
+        if ("LOOT_OPENED" == evt) and canLoot then
+            debug("LootReady! " .. evt)
+            GogoLoot.canOpenWindow = true
             if GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE") then
                 if not GogoLoot_Config.enabled then
-                    showLootFrame("GogoLoot disabled")
+                    GogoLoot:showLootFrame("GogoLoot disabled")
                 else
-                    if not UnitInRaid("Player") then
+                    if not GogoLoot:areWeMasterLooter() then
                         local index = GetNumLootItems()
                         local hasNormalLoot = false
                         for i=1,index do
@@ -252,7 +295,7 @@ events:SetScript("OnEvent", function()
                             hasNormalLoot = hasNormalLoot or couldntLoot
                         end
                         if hasNormalLoot then
-                            showLootFrame("has normal loot solo")
+                            GogoLoot:showLootFrame("has normal loot solo")
                         end
                     else
                         canLoot = false
@@ -284,7 +327,7 @@ events:SetScript("OnEvent", function()
                             end
 
                             if hasNormalLoot then
-                                showLootFrame("has normal loot")
+                                GogoLoot:showLootFrame("has normal loot")
                             else
                                 debug("No normal loot")
                             end
@@ -292,26 +335,25 @@ events:SetScript("OnEvent", function()
                     end
                 end
             else
-                showLootFrame("autoloot disabled")
+                GogoLoot:showLootFrame("autoloot disabled")
             end
         elseif "LOOT_CLOSED" == evt then
             canLoot = true
-            canOpenWindow = false
-
+            GogoLoot.canOpenWindow = false
         elseif "START_LOOT_ROLL" == evt then
             local rollid = tonumber(arg)
             if rollid and GogoLoot_Config.autoRoll then
                 local itemLink = GetLootRollItemLink(rollid)
                 if itemLink then
-                    print(itemLink)
+                    debug(itemLink)
                     local data = {string.find(itemLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")}
-                    print(data[5])
+                    debug(data[5])
                     local itemID = tonumber(data[5])
                     if itemID then
                         if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
                             if not GogoLoot_Config.ignoredItemsSolo[itemID] then
                                 -- we should auto need or greed this
-                                print("Rolling on loot: " .. tostring(rollid) .. " thresh: " .. tostring(GogoLoot_Config.autoRollThreshold or 2))
+                                debug("Rolling on loot: " .. tostring(rollid) .. " thresh: " .. tostring(GogoLoot_Config.autoRollThreshold or 2))
                                 RollOnLoot(rollid, GogoLoot_Config.autoRollThreshold or 2)
                             end
                         end
@@ -321,13 +363,14 @@ events:SetScript("OnEvent", function()
             --print(arg)
             --print(message)
         elseif "LOOT_BIND_CONFIRM" == evt then
-            showLootFrame("bind confirm")
-        elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and message ~= "You can't loot that item now." then
-            showLootFrame("inventory error " .. message)
-        elseif "BAG_UPDATE" == evt then
+            GogoLoot:showLootFrame("bind confirm")
+        elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and not badErrors[message] then
+            debug(message)
+            GogoLoot:showLootFrame("inventory error " .. message)
+        elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray then
 
             -- auto gray
-            --[[print("BagUpdate!")
+            debug("BagUpdate!")
             if arg and tonumber(arg) then
                 local slt = GetContainerNumSlots(arg)
                 for i=1,slt do
@@ -337,7 +380,7 @@ events:SetScript("OnEvent", function()
                         DeleteCursorItem()
                     end
                 end
-            end]]
+            end
 
 
 
@@ -346,9 +389,46 @@ events:SetScript("OnEvent", function()
             --print(b)
             --print(c)
             --print(arg)
+        elseif "GROUP_ROSTER_UPDATE" == evt then
+            local inGroup = IsInGroup()
+            if inGroup ~= GogoLoot.isInGroup then
+                GogoLoot.isInGroup = inGroup
+                if inGroup then -- we have just joined a group
+                    if GetLootMethod() == "group" and GogoLoot_Config.autoRoll then
+                        SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+                    end
+                end
+            end
+        elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GogoLoot:areWeMasterLooter() and GetLootMethod() == "master" then
+            GogoLoot:BuildUI()
+        elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" and GogoLoot_Config.autoRoll then
+            SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif "MODIFIER_STATE_CHANGED" == evt and not canLoot then
             if GetCVarBool("autoLootDefault") == IsModifiedClick("AUTOLOOTTOGGLE") then
-                showLootFrame("modifier state changed")
+                GogoLoot:showLootFrame("modifier state changed")
+            end
+        elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
+            if not GogoLoot_Config._version or GogoLoot_Config._version < 1 then
+                if not GogoLoot_Config.softres then
+                    GogoLoot_Config.softres = {}
+                    GogoLoot_Config.softres.profiles = {}
+                end
+                GogoLoot_Config._version = 1
+            end
+            GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
+            if select(5, GetInstanceInfo()) == 0 then
+                GogoLoot._inInstance = false
+            elseif GogoLoot._inInstance == false then
+                GogoLoot._inInstance = true
+                if GogoLoot_Config.autoRoll and GetLootMethod() == "group" then
+                    SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+                end
+            end
+            for id in pairs(GogoLoot_Config.ignoredItemsSolo) do
+                GetItemInfo(id)
+            end
+            for id in pairs(GogoLoot_Config.ignoredItemsMaster) do
+                GetItemInfo(id)
             end
         end
     end)
