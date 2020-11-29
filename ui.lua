@@ -413,7 +413,7 @@ function GogoLoot:BuildUI()
                 sf = scrollFrame(widget)
             end
             spacer(sf)
-            local enabled = checkbox(sf, "Enable GogoLoot")
+            local enabled = checkbox(sf, "Enable Automatic Looting for Master Looters")
             enabled:SetValue(GogoLoot_Config.enabled)
             enabled:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.enabled = enabled:GetValue()
@@ -458,7 +458,7 @@ function GogoLoot:BuildUI()
             
             sf:AddChild(dropdown)
             spacer(sf)
-            local includeBOP = checkbox(sf, "Include BoP Items; note that some of these may not be tradable.")
+            local includeBOP = checkbox(sf, "Include BoP Items; note that some of these may not be tradable. Not advisiable for 5-man content.")
             includeBOP:SetValue(not GogoLoot_Config.disableBOP)
             includeBOP:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.disableBOP = not includeBOP:GetValue()
@@ -501,7 +501,7 @@ function GogoLoot:BuildUI()
                 local importMessage = AceGUI:Create("Label")
                 importMessage:SetFullWidth(true)
                 importMessage:SetFontObject(GameFontNormal)
-                importMessage:SetText("GogoLoot supports Softres.it; paste CSV code from website here to enable automatic distribution for this raid.")
+                importMessage:SetText("GogoLoot supports SoftRes.It! Just paste the CSV export from SoftRes.It website here to enable automatic distribution for this raid.")
 
                 sf:AddChild(importMessage)
 
@@ -536,17 +536,13 @@ function GogoLoot:BuildUI()
         end,
         ["softres"] = function(widget, group)
 
-            spacer2(widget)
-            labelLarge(widget, "Softres.it Import")
-            spacer2(widget)
-
             local importMessage = AceGUI:Create("Label")
             importMessage:SetFullWidth(true)
             importMessage:SetFontObject(GameFontNormal)
-            importMessage:SetText("GogoLoot supports Softres.it; paste CSV code from website here to enable automatic distribution for this raid.")
+            importMessage:SetText("GogoLoot supports SoftRes.It; paste CSV code from website here to enable automatic distribution for this raid.")
 
             
-            local softres = checkbox(widget, "Enable Softres.it List for Master Looter")
+            local softres = checkbox(widget, "Enable SoftRes.It List Automation for Master Looter")
             softres:SetDisabled(not GogoLoot:areWeMasterLooter())
             softres:SetValue(GogoLoot_Config.enableSoftres and GogoLoot:areWeMasterLooter())
             softres:SetCallback("OnValueChanged", function()
@@ -586,7 +582,7 @@ function GogoLoot:BuildUI()
         end,
         ["about"] = function(widget, group)
             spacer(widget)
-            label(widget, "GogoLoot was designed to help speed up the looting process.")
+            label(widget, "GogoLoot was designed to help speed up the looting process by automating some of the Master Looter and Group Loot settings.")
             spacer2(widget)
             spacer2(widget)
             labelLarge(widget, "Tips & Tricks")
@@ -601,7 +597,7 @@ function GogoLoot:BuildUI()
             labelLarge(widget, "Creators")
             labelNormal(widget, "    • Gogo (Earthfury-US).")
             labelNormal(widget, "    • Aero (Earthfury-US). Aero was also the creator of Questie.")
-            labelNormal(widget, "    • Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of Softres.it.")
+            labelNormal(widget, "    • Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of SoftRes.It.")
             spacer2(widget)
             spacer2(widget)
 
@@ -628,7 +624,7 @@ function GogoLoot:BuildUI()
                 value = "ml"
             },
             {
-                text = "Softres.it",
+                text = "SoftRes.It",
                 value = "softres"
             },
             {
@@ -648,7 +644,7 @@ function GogoLoot:BuildUI()
                 disabled = true,
             },
             {
-                text = "Softres.it",
+                text = "SoftRes.It",
                 value = "softres",
                 --disabled = true,
             },
