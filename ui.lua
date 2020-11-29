@@ -458,7 +458,7 @@ function GogoLoot:BuildUI()
             
             sf:AddChild(dropdown)
             spacer(sf)
-            local includeBOP = checkbox(sf, "Include BoP Items; note that some of these may not be tradable. Not advisiable for 5-man content.")
+            local includeBOP = checkbox(sf, "Include BoP Items (Not Advised for 5-man Content")
             includeBOP:SetValue(not GogoLoot_Config.disableBOP)
             includeBOP:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.disableBOP = not includeBOP:GetValue()
