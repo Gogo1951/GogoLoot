@@ -4,7 +4,7 @@
 
 A Classic WoW addon to help speed up runs by automating the Master Looter and Group Loot settings.
 
-GogoLoot settings will appear when you are promoted to Master Looter, or you can type /gl to bring up the window.
+GogoLoot settings will appear when you are promoted to Master Looter, or you can type ```/gl``` to bring up the window.
 
 By default "Auto Loot", "Auto Greed on BoEs", and "Speedy Loot (No Loot Window)" settings are enabled.
 
