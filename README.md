@@ -1,5 +1,7 @@
 # GogoLoot
 
+### Don't Let Loot Slow Down Your Zug
+
 A Classic WoW addon to help speed up runs by automating the Master Looter and Group Loot settings.
 
 GogoLoot settings will appear when you are promoted to Master Looter, or you can type /gl to bring up the window.
