@@ -2,9 +2,9 @@
 -- announce messages. TODO: put these in their own file
 GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s!"
 
-GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : Softres.it List Imported! %s Reserves across %s Items included."
-GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per Softres.it List, %s goes to %s!"
-GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per Softres.it List, %s will be rolled on by %s!"
+GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : SoftRes.It List Imported! %s Reserves across %s Items included."
+GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per SoftRes.It List, %s goes to %s!"
+GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per SoftRes.It List, %s will be rolled on by %s!"
 
 GogoLoot.AUTO_ROLL_ENABLED = "{rt4} GogoLoot : Auto %s on BoEs Enabled!"
 GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
