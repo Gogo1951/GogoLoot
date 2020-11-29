@@ -4,14 +4,40 @@ end
 
 local itemBindings = nil -- populated later
 
-if not GogoLoot_Config then GogoLoot_Config = {
-    ["speedyLoot"] = true,
-    ["enabled"] = true,
-    ["autoRoll"] = true,
-    ["autoRollThreshold"] = 2,
-    ["players"] = {},
-} end
 GogoLoot = {}
+
+function GogoLoot:BuildConfig()
+    GogoLoot_Config = {
+        ["speedyLoot"] = true,
+        ["enabled"] = true,
+        ["autoRoll"] = true,
+        ["autoRollThreshold"] = 2,
+        ["players"] = {},
+    }
+    GogoLoot_Config.ignoredItemsSolo = {
+        [4500] = true,
+        [12811] = true,
+        [12662] = true
+    }
+    GogoLoot_Config.ignoredItemsMaster = {
+        [21321] = true,
+        [21218] = true,
+        [21323] = true,
+        [21324] = true,
+        [17966] = true,
+        [19914] = true,
+        [19902] = true, 
+        [19872] = true,
+    }
+
+    GogoLoot_Config.softres = {}
+    GogoLoot_Config.softres.profiles = {}
+
+    GogoLoot_Config._version = 1
+    GogoLoot_Config._version = 2
+end
+
+
 
 
 
@@ -115,7 +141,7 @@ end
 
 function GogoLoot:areWeMasterLooter()
     local masterLooter = select(2, GetLootMethod()) -- todo: cache this
-    return masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter)))
+    return 0 == masterLooter--masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter)))
 end
 
 GogoLoot.canOpenWindow = false
@@ -408,12 +434,8 @@ events:SetScript("OnEvent", function()
                 GogoLoot:showLootFrame("modifier state changed")
             end
         elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
-            if not GogoLoot_Config._version or GogoLoot_Config._version < 1 then
-                if not GogoLoot_Config.softres then
-                    GogoLoot_Config.softres = {}
-                    GogoLoot_Config.softres.profiles = {}
-                end
-                GogoLoot_Config._version = 1
+            if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < 2 then
+                GogoLoot:BuildConfig()
             end
             GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
             if select(5, GetInstanceInfo()) == 0 then
@@ -430,14 +452,14 @@ events:SetScript("OnEvent", function()
             for id in pairs(GogoLoot_Config.ignoredItemsMaster) do
                 GetItemInfo(id)
             end
+
+            if GogoLoot_Config.speedyLoot then
+                LootFrame:UnregisterEvent('LOOT_OPENED')
+            end
         end
     end)
 
     LootFrame.selectedQuality = GetLootThreshold()
-
-    if GogoLoot_Config.speedyLoot then
-        LootFrame:UnregisterEvent('LOOT_OPENED')
-    end
 
 end)
 events:RegisterEvent('PLAYER_LOGIN')

@@ -1,6 +1,6 @@
 
 -- announce messages. TODO: put these in their own file
-GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s"
+GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s!"
 
 GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : Softres.it List Imported! %s Reserves across %s Items included."
 GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per Softres.it List, %s goes to %s!"
@@ -35,24 +35,7 @@ function GogoLoot:BuildUI()
     end
 
     local render;
-
-    if not GogoLoot_Config.ignoredItemsSolo then
-        GogoLoot_Config.ignoredItemsSolo = {
-            [4500] = true,
-            [12811] = true,
-            [12662] = true
-        }
-        GogoLoot_Config.ignoredItemsMaster = {
-            [21321] = true,
-            [21218] = true,
-            [21323] = true,
-            [21324] = true,
-            [17966] = true,
-            [19914] = true,
-            [19902] = true, 
-            [19872] = true,
-        }
-    end
+    
     local frame = AceGUI:Create("Frame")
     frame.frame:SetFrameStrata("DIALOG")
     GogoLoot._frame = frame.frame
@@ -71,15 +54,17 @@ function GogoLoot:BuildUI()
 
             local playerLoots = {}
 
-            for _, rarity in pairs(GogoLoot.rarityToText) do
-                local name = strlower(GogoLoot_Config.players[rarity] or UnitName("Player"))
+            for r, rarity in pairs(GogoLoot.rarityToText) do
+                if r >= GetLootThreshold() then
+                    local name = strlower(GogoLoot_Config.players[rarity] or UnitName("Player"))
 
-                --print(rarity)
-                if GogoLoot.textToLink[rarity] then
-                    if not playerLoots[name] then
-                        playerLoots[name] = {}
+                    --print(rarity)
+                    if GogoLoot.textToLink[rarity] then
+                        if not playerLoots[name] then
+                            playerLoots[name] = {}
+                        end
+                        tinsert(playerLoots[name], rarity)
                     end
-                    tinsert(playerLoots[name], rarity)
                 end
             end
 
@@ -289,8 +274,14 @@ function GogoLoot:BuildUI()
         local sortedList = {}
         local sortLookup = {}
 
+        local badInfo = false
+
         for id in pairs(itemTable) do
             local n = GetItemInfo(tonumber(id))
+            if not n then 
+                badInfo = true
+                break
+            end
             tinsert(sortedList, n)
             sortLookup[n] = id
         end
@@ -298,22 +289,39 @@ function GogoLoot:BuildUI()
         table.sort(sortedList)
         __slu = sortLookup
 
-        --for id in pairs(itemTable) do
-        for _,name in pairs(sortedList) do
-            local id = sortLookup[name]
-
-            buildItemLink(list, id)
-            local button = AceGUI:Create("Button")
-            button:SetWidth(85)
-            button:SetText("Remove")
-            button:SetCallback("OnClick", function()
-                itemTable[id] = nil
-                widget:ReleaseChildren()
-                render[group](widget, group)
-            end)
-            list:AddChild(button)
-            spacer(list)
+        if badInfo then
+            for id in pairs(itemTable) do
+                buildItemLink(list, id)
+                local button = AceGUI:Create("Button")
+                button:SetWidth(85)
+                button:SetText("Remove")
+                button:SetCallback("OnClick", function()
+                    itemTable[id] = nil
+                    widget:ReleaseChildren()
+                    render[group](widget, group)
+                end)
+                list:AddChild(button)
+                spacer(list)
+            end
+        else
+            for _,name in pairs(sortedList) do
+                local id = sortLookup[name]
+    
+                buildItemLink(list, id)
+                local button = AceGUI:Create("Button")
+                button:SetWidth(85)
+                button:SetText("Remove")
+                button:SetCallback("OnClick", function()
+                    itemTable[id] = nil
+                    widget:ReleaseChildren()
+                    render[group](widget, group)
+                end)
+                list:AddChild(button)
+                spacer(list)
+            end
         end
+        --for id in pairs(itemTable) do
+        
 
     end
 
@@ -414,13 +422,25 @@ function GogoLoot:BuildUI()
             label(sf, "Loot Threshold", 280)
             local dropdown = AceGUI:Create("Dropdown")
             dropdown:SetWidth(150) -- todo: align right
-            dropdown:SetList({
-                ["gray"] = "|cff9d9d9dPoor|r",
-                ["white"] = "|cffffffffCommon|r",
-                ["green"] = "|cff1eff00Uncommon|r",
-                ["blue"] = "|cff0070ddRare|r",
-                ["purple"] = "|cffa335eeEpic|r",
-            }, {"gray", "white", "green", "blue", "purple"})
+            if not UnitIsGroupLeader("Player") then
+                dropdown:SetDisabled(true)
+                dropdown:SetList({
+                    ["gray"] = "Poor",
+                    ["white"] = "Common",
+                    ["green"] = "Uncommon",
+                    ["blue"] = "Rare",
+                    ["purple"] = "Epic",
+                }, {"gray", "white", "green", "blue", "purple"})
+            else
+                dropdown:SetList({
+                    ["gray"] = "|cff9d9d9dPoor|r",
+                    ["white"] = "|cffffffffCommon|r",
+                    ["green"] = "|cff1eff00Uncommon|r",
+                    ["blue"] = "|cff0070ddRare|r",
+                    ["purple"] = "|cffa335eeEpic|r",
+                }, {"gray", "white", "green", "blue", "purple"})
+            end
+            
             dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])
             dropdown:SetCallback("OnValueChanged", function()
                 SetLootMethod("master", UnitName("Player"), GogoLoot.textToRarity[dropdown:GetValue()])
@@ -435,6 +455,7 @@ function GogoLoot:BuildUI()
                     render[group](widget, group)
                 end
             end)
+            
             sf:AddChild(dropdown)
             spacer(sf)
             local includeBOP = checkbox(sf, "Include BoP Items; note that some of these may not be tradable.")
