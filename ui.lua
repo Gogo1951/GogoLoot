@@ -624,7 +624,7 @@ function GogoLoot:BuildUI()
                 value = "ml"
             },
             {
-                text = "SoftRes.It",
+                text = "SoftRes.It Settings",
                 value = "softres"
             },
             {
@@ -644,7 +644,7 @@ function GogoLoot:BuildUI()
                 disabled = true,
             },
             {
-                text = "SoftRes.It",
+                text = "SoftRes.It Settings",
                 value = "softres",
                 --disabled = true,
             },
