@@ -190,7 +190,7 @@ function GogoLoot:VacuumSlot(index, playerIndex)
 
         local id = tonumber(ItemIDCache[lootLink][5])
 
-        if id and doLoot and not GogoLoot_Config.ignoredItemsMaster[id] and ((not GogoLoot_Config.disableBOP) or not itemBindings[id] or itemBindings[id] ~= 1) then
+        if id and doLoot and not GogoLoot_Config.ignoredItemsMaster[id] and ((not GogoLoot_Config.disableBOP) or not itemBindings[id] or itemBindings[id] ~= 1) and (not itemBindings[id] or itemBindings[id] ~= 4) then
             debug("ShouldLoot " .. tostring(index))
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
