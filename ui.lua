@@ -355,6 +355,10 @@ function GogoLoot:BuildUI()
         dropdown:SetList(players, playerOrder)
         dropdown:SetDisabled(disabled)
 
+        if GogoLoot_Config.players[filter] and not players[strlower(GogoLoot_Config.players[filter])] then -- the player is no longer in the party
+            GogoLoot_Config.players[filter] = strlower(UnitName("Player")) -- set filter to the master looter
+        end
+
         if GogoLoot_Config.players[filter] then
             dropdown:SetValue(GogoLoot_Config.players[filter])
         else
