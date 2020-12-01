@@ -6,6 +6,8 @@ local itemBindings = nil -- populated later
 
 GogoLoot = {}
 
+CONFIG_VERSION = 3
+
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
         ["speedyLoot"] = true,
@@ -28,13 +30,13 @@ function GogoLoot:BuildConfig()
         [19914] = true,
         [19902] = true, 
         [19872] = true,
+        [12662] = true
     }
 
     GogoLoot_Config.softres = {}
     GogoLoot_Config.softres.profiles = {}
 
-    GogoLoot_Config._version = 1
-    GogoLoot_Config._version = 2
+    GogoLoot_Config._version = CONFIG_VERSION
 end
 
 
@@ -434,7 +436,7 @@ events:SetScript("OnEvent", function()
                 GogoLoot:showLootFrame("modifier state changed")
             end
         elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
-            if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < 2 then
+            if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < CONFIG_VERSION then
                 GogoLoot:BuildConfig()
             end
             GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
