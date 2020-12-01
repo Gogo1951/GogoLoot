@@ -55,7 +55,7 @@ function GogoLoot:BuildUI()
             local playerLoots = {}
 
             for r, rarity in pairs(GogoLoot.rarityToText) do
-                if r >= GetLootThreshold() then
+                if r >= GetLootThreshold() and r < 5 then -- less than orange
                     local name = strlower(GogoLoot_Config.players[rarity] or UnitName("Player"))
 
                     --print(rarity)
@@ -63,12 +63,32 @@ function GogoLoot:BuildUI()
                         if not playerLoots[name] then
                             playerLoots[name] = {}
                         end
-                        tinsert(playerLoots[name], rarity)
+                        tinsert(playerLoots[name], capitalize(rarity))
                     end
                 end
             end
 
             for player, targets in pairs(playerLoots) do
+                local targetCount = #targets
+                table.sort(targets)
+                
+                if targetCount > 0 then
+                    local targetList = ""
+                    for index, target in pairs(targets) do
+                        if index == 1 then
+                            targetList = target
+                        elseif index == targetCount then
+                            targetList = targetList .. ", and " .. target
+                        else
+                            targetList = targetList .. ", " .. target
+                        end
+                    end
+                    SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+                end
+                
+            end
+
+            --[[for player, targets in pairs(playerLoots) do
                 local targetList = ""
                 local lastIndex = #targets - 2
                 if lastIndex == 0 then -- hack
@@ -87,7 +107,7 @@ function GogoLoot:BuildUI()
                 targetList = string.sub(targetList, 1, -3)
 
                 SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
-            end
+            end]]
 
             if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
                 SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
@@ -326,6 +346,9 @@ function GogoLoot:BuildUI()
     end
 
     local function buildTypeDropdown(widget, filter, players, playerOrder, disabled)
+        -- dont draw at all
+        if disabled then return end
+
         label(widget, "    "..GogoLoot.textToName[filter], 280)
         local dropdown = AceGUI:Create("Dropdown")
         dropdown:SetWidth(150) -- todo: align right
