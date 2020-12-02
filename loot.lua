@@ -291,6 +291,8 @@ events:SetScript("OnEvent", function()
 
     local events = CreateFrame("Frame")
     local canLoot = true
+    local lootTicker = nil
+    local lootAPIOpen = false
 
     events:RegisterEvent("LOOT_BIND_CONFIRM")
     events:RegisterEvent("LOOT_READY")
@@ -308,7 +310,9 @@ events:SetScript("OnEvent", function()
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
         --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
         --    canOpenWindow = true
-        if ("LOOT_OPENED" == evt) and canLoot then
+        if "LOOT_READY" == evt then
+            lootAPIOpen = true
+        elseif ("LOOT_OPENED" == evt) and canLoot then
             debug("LootReady! " .. evt)
             GogoLoot.canOpenWindow = true
             if GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE") then
@@ -327,10 +331,10 @@ events:SetScript("OnEvent", function()
                         end
                     else
                         canLoot = false
-                        local index = GetNumLootItems()
-                        local targetPlayer = strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
-                        if targetPlayer then
+                        local function doLootLoop()
+                            local index = GetNumLootItems()
                             local playerIndex = {}
+
                             while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
                                 for i = 1, GetNumGroupMembers() do
                                     local playerAtIndex = GetMasterLootCandidate(index, i)
@@ -348,26 +352,35 @@ events:SetScript("OnEvent", function()
 
                             local hasNormalLoot = false
 
-                            while index > 0 do
-                                local couldntLoot = GogoLoot:VacuumSlot(index, playerIndex[index])
+                            for i=1,index do
+                                index = GetNumLootItems()
+                                local couldntLoot = GogoLoot:VacuumSlot(i, playerIndex[i])
                                 hasNormalLoot = hasNormalLoot or couldntLoot
-                                index = index - 1
                             end
 
                             if hasNormalLoot then
+                                lootTicker:Cancel()
+                                lootTicker = nil
                                 GogoLoot:showLootFrame("has normal loot")
                             else
                                 debug("No normal loot")
                             end
                         end
+                        doLootLoop()
+                        lootTicker = C_Timer.NewTicker(0.3, doLootLoop)
                     end
                 end
             else
                 GogoLoot:showLootFrame("autoloot disabled")
             end
         elseif "LOOT_CLOSED" == evt then
+            lootAPIOpen = false
             canLoot = true
             GogoLoot.canOpenWindow = false
+            if lootTicker then
+                lootTicker:Cancel()
+                lootTicker = nil
+            end
         elseif "START_LOOT_ROLL" == evt then
             local rollid = tonumber(arg)
             if rollid and GogoLoot_Config.autoRoll then
@@ -394,6 +407,10 @@ events:SetScript("OnEvent", function()
             GogoLoot:showLootFrame("bind confirm")
         elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and not badErrors[message] then
             debug(message)
+            if lootTicker then
+                lootTicker:Cancel()
+                lootTicker = nil
+            end
             GogoLoot:showLootFrame("inventory error " .. message)
         elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray then
 
