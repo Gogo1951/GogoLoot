@@ -6,7 +6,7 @@ local itemBindings = nil -- populated later
 
 GogoLoot = {}
 
-CONFIG_VERSION = 4
+CONFIG_VERSION = 5
 
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
@@ -37,7 +37,7 @@ function GogoLoot:BuildConfig()
         [12800] = true,
         [18335] = true,
         [20520] = true,
-        --[18401] = true
+        [18401] = true
 
     }
     GogoLoot_Config.ignoredItemsMaster = {
@@ -50,8 +50,8 @@ function GogoLoot:BuildConfig()
         [19902] = true, 
         [19872] = true,
         [12662] = true,
-        [18401] = true,
-        [20520] = true
+        --[18401] = true,
+        --[20520] = true
     }
 
     GogoLoot_Config.softres = {}
