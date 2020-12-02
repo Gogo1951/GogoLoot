@@ -30,7 +30,11 @@ end
 
 function GogoLoot:BuildUI()
 
-    if GogoLoot._frame and GogoLoot._frame:IsShown() then -- already showing
+    if GogoLoot._frame and GogoLoot._frame.frame:IsShown() then -- already showing
+        -- redraw currently shown frame
+        if GogoLoot._frame._redraw then
+            GogoLoot._frame._redraw()
+        end
         return
     end
 
@@ -38,7 +42,7 @@ function GogoLoot:BuildUI()
     
     local frame = AceGUI:Create("Frame")
     frame.frame:SetFrameStrata("DIALOG")
-    GogoLoot._frame = frame.frame
+    GogoLoot._frame = frame
     frame:SetTitle("GogoLoot")
     frame:SetLayout("Fill")
     frame:SetWidth(520)
@@ -430,7 +434,9 @@ function GogoLoot:BuildUI()
             })
             tabs:SetFullWidth(true)
             tabs:SetFullHeight(true)
-            tabs:SetCallback("OnGroupSelected", function(widget, event, group) widget:ReleaseChildren() render[group](widget, group) end)
+            tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
+                widget:ReleaseChildren() render[group](widget, group)
+            end)
             tabs:SelectTab("ignoredBase")
             widget:AddChild(tabs)
         end,
@@ -681,7 +687,12 @@ function GogoLoot:BuildUI()
             }
         })
     end
-    tabs:SetCallback("OnGroupSelected", function(widget, event, group) widget:ReleaseChildren() render[group](widget, group) end)
+    tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
+        frame._redraw = function()
+            widget:ReleaseChildren() render[group](widget, group)      
+        end
+        frame._redraw()
+        end)
     tabs:SelectTab("general")
     frame:AddChild(tabs)
     frame:Show()

@@ -6,7 +6,7 @@ local itemBindings = nil -- populated later
 
 GogoLoot = {}
 
-CONFIG_VERSION = 3
+CONFIG_VERSION = 4
 
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
@@ -19,7 +19,26 @@ function GogoLoot:BuildConfig()
     GogoLoot_Config.ignoredItemsSolo = {
         [4500] = true,
         [12811] = true,
-        [12662] = true
+        [12662] = true,
+
+        -- librams
+        --[21288] = true,
+        --[21290] = true,
+        --[21289] = true,
+        [11737] = true,
+        [11736] = true,
+        [11734] = true,
+        [11733] = true,
+        [11732] = true,
+        [18332] = true,
+        [18333] = true,
+        [18334] = true,
+
+        [12800] = true,
+        [18335] = true,
+        [20520] = true,
+        --[18401] = true
+
     }
     GogoLoot_Config.ignoredItemsMaster = {
         [21321] = true,
@@ -30,7 +49,9 @@ function GogoLoot:BuildConfig()
         [19914] = true,
         [19902] = true, 
         [19872] = true,
-        [12662] = true
+        [12662] = true,
+        [18401] = true,
+        [20520] = true
     }
 
     GogoLoot_Config.softres = {}
@@ -165,7 +186,7 @@ function GogoLoot:VacuumSlotSolo(index)
     pcall(LootSlot, index)
 end
 
-function GogoLoot:VacuumSlot(index, playerIndex)
+function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
     debug("Vacuum slot " .. tostring(index))
     if index and playerIndex and GogoLoot:areWeMasterLooter() then
         local lootLink = GetLootSlotLink(index)
@@ -211,10 +232,14 @@ function GogoLoot:VacuumSlot(index, playerIndex)
                     debug("Looting to " .. targetPlayerName)
                     local playerID = playerIndex[targetPlayerName]
                     if playerID then
+                        validPreviouslyHack[targetPlayerName] = true
                         GiveMasterLoot(index, playerID)
                         return false
                     else
                         debug("Player " .. targetPlayerName .. " has no ID!")
+                        if validPreviouslyHack[targetPlayerName] then -- we already looted it (hack to fix loot window, refactor this later)
+                            return false
+                        end
                     end
                 else
                     debug("No player to loot! " .. GogoLoot.rarityToText[rarity])
@@ -291,7 +316,6 @@ events:SetScript("OnEvent", function()
 
     local events = CreateFrame("Frame")
     local canLoot = true
-    local lootTicker = nil
     local lootAPIOpen = false
 
     events:RegisterEvent("LOOT_BIND_CONFIRM")
@@ -331,6 +355,8 @@ events:SetScript("OnEvent", function()
                         end
                     else
                         canLoot = false
+                        local lootTicker = nil
+                        local validPreviouslyHack = {}
                         local function doLootLoop()
                             local index = GetNumLootItems()
                             local playerIndex = {}
@@ -354,11 +380,11 @@ events:SetScript("OnEvent", function()
 
                             for i=1,index do
                                 index = GetNumLootItems()
-                                local couldntLoot = GogoLoot:VacuumSlot(i, playerIndex[i])
+                                local couldntLoot = GogoLoot:VacuumSlot(i, playerIndex[i], validPreviouslyHack)
                                 hasNormalLoot = hasNormalLoot or couldntLoot
                             end
 
-                            if hasNormalLoot then
+                            if hasNormalLoot and lootTicker then
                                 lootTicker:Cancel()
                                 lootTicker = nil
                                 GogoLoot:showLootFrame("has normal loot")
