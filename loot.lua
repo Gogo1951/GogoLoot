@@ -356,11 +356,12 @@ events:SetScript("OnEvent", function()
                     else
                         canLoot = false
                         local lootTicker = nil
+                        local lootStep = 1
                         local validPreviouslyHack = {}
-                        local function doLootLoop()
+
+                        local function doLootStep()
                             local index = GetNumLootItems()
                             local playerIndex = {}
-
                             while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
                                 for i = 1, GetNumGroupMembers() do
                                     local playerAtIndex = GetMasterLootCandidate(index, i)
@@ -374,26 +375,23 @@ events:SetScript("OnEvent", function()
                                 index = index - 1
                             end
 
-                            index = GetNumLootItems()
-
-                            local hasNormalLoot = false
-
-                            for i=1,index do
-                                index = GetNumLootItems()
-                                local couldntLoot = GogoLoot:VacuumSlot(i, playerIndex[i], validPreviouslyHack)
-                                hasNormalLoot = hasNormalLoot or couldntLoot
+                            if GogoLoot:VacuumSlot(i, playerIndex[i], validPreviouslyHack) then -- normal loot, stop ticking
+                                if lootTicker then
+                                    lootTicker:Cancel()
+                                    lootTicker = nil
+                                end
+                                GogoLoot:showLootFrame("has normal loot")
+                                return true
                             end
 
-                            if hasNormalLoot and lootTicker then
-                                lootTicker:Cancel()
-                                lootTicker = nil
-                                GogoLoot:showLootFrame("has normal loot")
-                            else
-                                debug("No normal loot")
+                            lootStep = lootStep + 1
+                            if lootStep > GetNumLootItems() then
+                                lootStep = 1
                             end
                         end
-                        doLootLoop()
-                        lootTicker = C_Timer.NewTicker(0.3, doLootLoop)
+                        if not doLootStep() then
+                            lootTicker = C_Timer.NewTicker(0.1, doLootStep)
+                        end
                     end
                 end
             else
