@@ -362,6 +362,13 @@ events:SetScript("OnEvent", function()
                         local lootStep = 1
                         local validPreviouslyHack = {}
 
+                        local function incrementLootStep()
+                            lootStep = lootStep + 1
+                            if lootStep > GetNumLootItems() then
+                                lootStep = 1
+                            end
+                        end
+
                         local function doLootStep()
                             local index = GetNumLootItems()
                             local playerIndex = {}
@@ -384,13 +391,11 @@ events:SetScript("OnEvent", function()
                                     lootTicker = nil
                                 end
                                 GogoLoot:showLootFrame("has normal loot")
+                                incrementLootStep()
                                 return true
                             end
 
-                            lootStep = lootStep + 1
-                            if lootStep > GetNumLootItems() then
-                                lootStep = 1
-                            end
+                            incrementLootStep()
                         end
                         if lootTicker then
                             lootTicker:Cancel()
