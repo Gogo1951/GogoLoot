@@ -2,7 +2,8 @@ local function debug(str)
     --print(str)
 end
 
-local itemBindings = nil, internalIgnoreList = nil -- populated later
+local itemBindings = nil -- populated later
+local internalIgnoreList = nil -- populated later
 
 GogoLoot = {}
 
@@ -66,6 +67,7 @@ end
 
 local ItemInfoCache = {}
 local ItemIDCache = {}
+
 GogoLoot.validFilters = {
     ["artifact"] = true,
     ["orange"] = true,
@@ -187,10 +189,12 @@ function GogoLoot:VacuumSlotSolo(index)
 end
 
 function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
-    debug("Vacuum slot " .. tostring(index))
+    debug("Vacuum slot " .. tostring(index) .. " " .. tostring(playerIndex) .. " " .. tostring(GogoLoot:areWeMasterLooter()))
     if index and playerIndex and GogoLoot:areWeMasterLooter() then
+        debug("We are master looter")
         local lootLink = GetLootSlotLink(index)
         if not lootLink or strlen(lootLink) < 8 then
+            debug("Invalid item link")
             return false -- likely gold TODO: CHECK THIS
         end
         if lootLink and not ItemInfoCache[lootLink] then
@@ -208,9 +212,9 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
         end
 
         local id = tonumber(ItemIDCache[lootLink][5])
-
+        debug("ShouldLoot " .. tostring(index) .. " = " .. tostring(doLoot) .. " " .. tostring(rarity) .. " " .. tostring(color) .. " " .. lootLink)
         if id and doLoot and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) and ((not itemBindings[id]) or itemBindings[id] ~= 4) then
-            debug("ShouldLoot " .. tostring(index))
+            
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
 
@@ -315,6 +319,7 @@ events:SetScript("OnEvent", function()
     local events = CreateFrame("Frame")
     local canLoot = true
     local lootAPIOpen = false
+    local lootTicker = nil
 
     events:RegisterEvent("LOOT_BIND_CONFIRM")
     events:RegisterEvent("LOOT_READY")
@@ -354,7 +359,6 @@ events:SetScript("OnEvent", function()
                         end
                     else
                         canLoot = false
-                        local lootTicker = nil
                         local lootStep = 1
                         local validPreviouslyHack = {}
 
@@ -374,7 +378,7 @@ events:SetScript("OnEvent", function()
                                 index = index - 1
                             end
 
-                            if GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
+                            if playerIndex[lootStep] and GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
                                 if lootTicker then
                                     lootTicker:Cancel()
                                     lootTicker = nil
@@ -389,6 +393,10 @@ events:SetScript("OnEvent", function()
                             end
                         end
                         if not doLootStep() then
+                            if lootTicker then
+                                lootTicker:Cancel()
+                                lootTicker = nil
+                            end
                             lootTicker = C_Timer.NewTicker(0.1, doLootStep)
                         end
                     end
@@ -415,7 +423,7 @@ events:SetScript("OnEvent", function()
                     local itemID = tonumber(data[5])
                     if itemID then
                         if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
-                            if not GogoLoot_Config.ignoredItemsSolo[itemID] then
+                            if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) then
                                 -- we should auto need or greed this
                                 debug("Rolling on loot: " .. tostring(rollid) .. " thresh: " .. tostring(GogoLoot_Config.autoRollThreshold or 2))
                                 RollOnLoot(rollid, GogoLoot_Config.autoRollThreshold or 2)
