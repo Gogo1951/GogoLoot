@@ -2,7 +2,7 @@ local function debug(str)
     --print(str)
 end
 
-local itemBindings = nil -- populated later
+local itemBindings = nil, internalIgnoreList = nil -- populated later
 
 GogoLoot = {}
 
@@ -190,7 +190,7 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
     debug("Vacuum slot " .. tostring(index))
     if index and playerIndex and GogoLoot:areWeMasterLooter() then
         local lootLink = GetLootSlotLink(index)
-        if not lootLink then
+        if not lootLink or strlen(lootLink) < 8 then
             return false -- likely gold TODO: CHECK THIS
         end
         if lootLink and not ItemInfoCache[lootLink] then
@@ -201,17 +201,15 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
         local rarity = colorToRarity[color] or 6
         local doLoot = rarity < 5
 
-        if rarity >= GetLootThreshold() then
+        if doLoot and rarity >= GetLootThreshold() then
             if rarity == 1 then
                 doLoot = "quest" ~= strlower(ItemInfoCache[lootLink][6] or "")
-            else
-                doLoot = true
             end
         end
 
         local id = tonumber(ItemIDCache[lootLink][5])
 
-        if id and doLoot and (not GogoLoot_Config.ignoredItemsMaster[id]) and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) and ((not itemBindings[id]) or itemBindings[id] ~= 4) then
+        if id and doLoot and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) and ((not itemBindings[id]) or itemBindings[id] ~= 4) then
             debug("ShouldLoot " .. tostring(index))
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
@@ -507,6 +505,35 @@ events:SetScript("OnEvent", function()
 
 end)
 events:RegisterEvent('PLAYER_LOGIN')
+
+internalIgnoreList = { -- most likely no longer needed
+    12947, --Alex's Ring of Audacity
+    13262, --Ashbringer
+    17182, --Sulfuras, Hand of Ragnaros
+    17204, --Eye of Sulfuras
+    17771, --Elementium Bar
+    17782, --Talisman of Binding Shard
+    18563, --Bindings of the Windseeker
+    18564, --Bindings of the Windseeker
+    18565, --Vessel of Rebirth
+    18566, --Essence of the Firelord
+    18582, --The Twin Blades of Azzinoth
+    18583, --Warglaive of Azzinoth (Right)
+    18584, --Warglaive of Azzinoth (Left)
+    19016, --Vessel of Rebirth
+    19018, --Dormant Wind Kissed Blade
+    19019, --Thunderfury, Blessed Blade of the Windseeker
+    21176, --Black Qiraji Resonating Crystal
+    22589, --Atiesh, Greatstaff of the Guardian
+    22630, --Atiesh, Greatstaff of the Guardian
+    22631, --Atiesh, Greatstaff of the Guardian
+    22632, --Atiesh, Greatstaff of the Guardian
+    22726, --Splinter of Atiesh
+    22727, --Frame of Atiesh
+    22736, --Andonisus, Reaper of Souls
+    22737, --Atiesh, Greatstaff of the Guardian
+    23051, --Glaive of the Defender
+}
 
 itemBindings = {
     [60]=1,
@@ -7551,5 +7578,4 @@ itemBindings = {
     [23667]=1,
     [23668]=1,
     [13325]=1,
-    [3669] = 4
 }
