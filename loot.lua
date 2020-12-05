@@ -392,11 +392,15 @@ events:SetScript("OnEvent", function()
                                 lootStep = 1
                             end
                         end
-                        if not doLootStep() then
-                            if lootTicker then
-                                lootTicker:Cancel()
-                                lootTicker = nil
-                            end
+                        if lootTicker then
+                            lootTicker:Cancel()
+                            lootTicker = nil
+                        end
+                        local hadNormalLoot = false
+                        for i=1,min(5, GetNumLootItems()) do -- do 1 full iteration right away, up to 5 items
+                            hadNormalLoot = doLootStep() or hadNormalLoot
+                        end
+                        if not hadNormalLoot then
                             lootTicker = C_Timer.NewTicker(0.1, doLootStep)
                         end
                     end
