@@ -211,7 +211,7 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
 
         local id = tonumber(ItemIDCache[lootLink][5])
 
-        if id and doLoot and not GogoLoot_Config.ignoredItemsMaster[id] and ((not GogoLoot_Config.disableBOP) or not itemBindings[id] or itemBindings[id] ~= 1) and (not itemBindings[id] or itemBindings[id] ~= 4) then
+        if id and doLoot and (not GogoLoot_Config.ignoredItemsMaster[id]) and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) and ((not itemBindings[id]) or itemBindings[id] ~= 4) then
             debug("ShouldLoot " .. tostring(index))
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
@@ -332,6 +332,7 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("START_LOOT_ROLL")
 
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
+        debug(evt)
         --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
         --    canOpenWindow = true
         if "LOOT_READY" == evt then
@@ -375,7 +376,7 @@ events:SetScript("OnEvent", function()
                                 index = index - 1
                             end
 
-                            if GogoLoot:VacuumSlot(i, playerIndex[i], validPreviouslyHack) then -- normal loot, stop ticking
+                            if GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
                                 if lootTicker then
                                     lootTicker:Cancel()
                                     lootTicker = nil
@@ -7549,5 +7550,6 @@ itemBindings = {
     [23666]=1,
     [23667]=1,
     [23668]=1,
-    [13325]=1
+    [13325]=1,
+    [3669] = 4
 }
