@@ -1,6 +1,7 @@
 
 -- announce messages. TODO: put these in their own file
 GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s!"
+GogoLoot.LOOT_TARGET_DISABLED_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will use Standard Master Looter Window!"
 
 GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : SoftRes.It List Imported! %s Reserves across %s Items included."
 GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per SoftRes.It List, %s goes to %s!"
@@ -87,7 +88,7 @@ function GogoLoot:BuildUI()
                             targetList = targetList .. ", " .. target
                         end
                     end
-                    SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+                    SendChatMessage(string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
                 end
                 
             end
@@ -311,7 +312,6 @@ function GogoLoot:BuildUI()
         end
         
         table.sort(sortedList)
-        __slu = sortLookup
 
         if badInfo then
             for id in pairs(itemTable) do
@@ -353,13 +353,14 @@ function GogoLoot:BuildUI()
         -- dont draw at all
         if disabled then return end
 
-        label(widget, "    "..GogoLoot.textToName[filter], 280)
+        label(widget, "    "..GogoLoot.textToName[filter], 200)
         local dropdown = AceGUI:Create("Dropdown")
         dropdown:SetWidth(150) -- todo: align right
         dropdown:SetList(players, playerOrder)
         dropdown:SetDisabled(disabled)
+        dropdown:SetWidth(230)
 
-        if GogoLoot_Config.players[filter] and not players[strlower(GogoLoot_Config.players[filter])] then -- the player is no longer in the party
+        if GogoLoot_Config.players[filter] and GogoLoot_Config.players[filter] ~= "standardLootWindow" and not players[strlower(GogoLoot_Config.players[filter])] then -- the player is no longer in the party
             GogoLoot_Config.players[filter] = strlower(UnitName("Player")) -- set filter to the master looter
         end
 
@@ -507,6 +508,8 @@ function GogoLoot:BuildUI()
                 tinsert(playerOrder, k)
             end
             table.sort(playerOrder)
+            playerList["standardLootWindow"] = "Use Standard Master Looter Window"
+            tinsert(playerOrder, "standardLootWindow")
 
             local threshold = GetLootThreshold()
 

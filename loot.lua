@@ -220,6 +220,10 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
 
             local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
 
+            if targetPlayerName == "standardLootWindow" then
+                return true -- open loot window
+            end
+
             if softresResult == true then
                 -- softres roll taking place
             else
