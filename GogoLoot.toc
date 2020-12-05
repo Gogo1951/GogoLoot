@@ -1,8 +1,8 @@
 ## Interface: 11306
-## Title: |cFFFFFFFFGogoLoot|r|cFF00FF00 v1.1|r
+## Title: |cFFFFFFFFGogoLoot|r|cFF00FF00 v1.2|r
 ## Author: Aero, Gogo
 ## Notes: Filters for master loot autolooting items to specific players
-## Version: 1.1
+## Version: 1.2
 ## RequiredDeps:
 ## SavedVariables: 
 ## SavedVariablesPerCharacter: GogoLoot_Config
