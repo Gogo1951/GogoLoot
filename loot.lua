@@ -368,7 +368,7 @@ events:SetScript("OnEvent", function()
                             while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
                                 for i = 1, GetNumGroupMembers() do
                                     local playerAtIndex = GetMasterLootCandidate(index, i)
-                                    if not playerIndex[index] then
+                                    if playerAtIndex and not playerIndex[index] then
                                         playerIndex[index] = {}
                                     end
                                     if playerAtIndex then
