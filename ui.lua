@@ -371,9 +371,15 @@ function GogoLoot:BuildUI()
         end
 
         dropdown:SetCallback("OnValueChanged", function()
-            GogoLoot_Config.players[filter] = dropdown:GetValue()
+            if dropdown:GetValue() == "---" then
+                dropdown:SetValue(GogoLoot_Config.players[filter] or strlower(UnitName("Player")))
+            else
+                GogoLoot_Config.players[filter] = dropdown:GetValue()
+            end
             --SendChatMessage(string.format(LOOT_TARGET_CHANGED, capitalize(filter), capitalize(dropdown:GetValue())), UnitInRaid("Player") and "RAID" or "PARTY")
         end)
+
+        dropdown:SetItemDisabled("---", true)
 
         widget:AddChild(dropdown)
     end
@@ -503,13 +509,22 @@ function GogoLoot:BuildUI()
             spacer(sf)
 
             local playerList = GogoLoot:GetGroupMemberNames()
-            local playerOrder = {}
+            local playerOrder2 = {}
             for k in pairs(playerList) do
-                tinsert(playerOrder, k)
+                tinsert(playerOrder2, k)
             end
-            table.sort(playerOrder)
-            playerList["standardLootWindow"] = "Use Standard Master Looter Window"
+            table.sort(playerOrder2)
+            local playerOrder = {}
             tinsert(playerOrder, "standardLootWindow")
+            tinsert(playerOrder, "---")
+            for _, v in pairs(playerOrder2) do
+                tinsert(playerOrder, v)
+            end
+
+
+            playerList["standardLootWindow"] = "Use Standard Master Looter Window"
+            playerList["---"] = ""
+            --tinsert(playerOrder, "standardLootWindow")
 
             local threshold = GetLootThreshold()
 
