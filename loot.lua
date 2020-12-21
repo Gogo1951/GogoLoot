@@ -164,6 +164,19 @@ function GogoLoot:GetGroupMemberNames()
     return filtered
 end
 
+function GogoLoot:HookManualMasterLoot()
+    MasterLooterFrame:HookScript("OnShow", function()
+        for i=1,41 do
+            local btn = MasterLooterFrame["player" .. tostring(i)]
+            if btn then
+                btn:HookScript("OnClick", function()
+                    print("Clicked " .. tostring(i))
+                end)
+            end
+        end
+    end)
+end
+
 function GogoLoot:areWeMasterLooter()
     local masterLooter = select(2, GetLootMethod()) -- todo: cache this
     return 0 == masterLooter--masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter)))

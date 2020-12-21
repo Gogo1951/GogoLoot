@@ -10,6 +10,7 @@
 Libs\LibCompiledDB\stream.lua
 Libs\LibCompiledDB\serial.lua
 Libs\LibCompiledDB\compiler.lua
+Libs\LibDeflate\lib.xml
 
 embeds.xml
 

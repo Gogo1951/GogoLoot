@@ -1,41 +1,42 @@
+local HARD_RESERVE_OFFSET = 16777215
 
-local function unpackCSV(data)
-    local ret = {}
-    local errorCount = 0
-    GogoLoot_Config.softres.reserveCount = 0
-    GogoLoot_Config.softres.itemCount = 0
-    local itemCounter = {}
+local function sortWeightedMap(a, b)
+    if not a or not b then return false end
+    return a[2] > b[2]
+end
 
-    for line in string.gmatch(data .. "\n", "(.-)\n") do
-        if line and string.len(line) > 4 then
-            local itemId, name, class, note, plus = string.match(line, "(.-),(.-),(.-),(.-),(.-)$")
+function GogoLoot:BuildWeightedPlayerMap(jsonData) -- build a weighted player map for quicker lookups
+    local map = {}
 
-            local validId = tonumber(itemId)
+    local function insertReserve(table, reserve, modifier)
+        if not reserve or not reserve.item or not reserve.name then -- should never happen
+            print("Bad data softres in profile!")
+            return
+        end
+        if not table[reserve.item] then
+            table[reserve.item] = {}
+        end
+        tinsert(table[reserve.item], {reserve.name, modifier + (reserve.rollBonus or 0)})
+    end
 
-            if not validId and itemId ~= "ItemId" then
-                errorCount = errorCount + 1
-            end
-
-            if validId then
-                if not itemCounter[validId] then
-                    itemCounter[validId] = true
-                    GogoLoot_Config.softres.itemCount = GogoLoot_Config.softres.itemCount + 1
-                end
-                GetItemInfo(validId) -- pre-cache the data (important!)
-                if not ret[validId] then
-                    ret[validId] = {}
-                end
-                tinsert(ret[validId], {["name"]=name, ["class"]=class, ["note"]=note, ["plus"]=plus})
-                GogoLoot_Config.softres.reserveCount = GogoLoot_Config.softres.reserveCount + 1
-            end
+    if jsonData.hardreserves then
+        for _, reserve in pairs(jsonData.hardreserves) do -- ensure hardreserves are above regular reserves
+            insertReserve(map, reserve, HARD_RESERVE_OFFSET)
         end
     end
 
-    return ret, errorCount
-end
+    if jsonData.softreserves then
+        for _, reserve in pairs(jsonData.softreserves) do
+            insertReserve(map, reserve, 0)
+        end
+    end
 
-local function testUnpack()
-    return unpackCSV("21503,Testname,Hunter,,2\n21499,Testname,Hunter,,2\n21494,Test,Druid,,1\n")
+    for _, weightMap in pairs(map) do
+        -- sort players by their weight
+        table.sort(weightMap, sortWeightedMap)
+    end
+
+    return map
 end
 
 function GogoLoot:SetSoftresProfile(data)
@@ -46,64 +47,71 @@ function GogoLoot:SetSoftresProfile(data)
     if not data or string.len(data) < 4 then
         return -- invalid profile
     end
-    local db, result = unpackCSV(data)
-    if result == 0 then
-        GogoLoot_Config.softres.profiles.current = db
+    local decoded = GogoLoot.json.decode(data)
+    if decoded then
+        GogoLoot_Config.softres.profiles.current = decoded
+        GogoLoot_Config.softres.profiles.weightedPlayerMap = GogoLoot:BuildWeightedPlayerMap(decoded)
         GogoLoot_Config.softres.profiles._current_data = data
-        -- notify the party that softres.it profile is active
-        --print("softres profile active")
-
     else
-        -- notify user there were <result> errors parsing the data, and to try again
-        --print("Error parsing softres profile")
-
         GogoLoot_Config.softres.profiles.current = nil
+        GogoLoot_Config.softres.profiles.weightedPlayerMap = nil
+        GogoLoot_Config.softres.profiles._current_data = nil
     end
 end
 
 function GogoLoot:HandleSoftresLoot(lootItemId, playerList)
-    if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current and GogoLoot_Config.softres.profiles.current[lootItemId] then
-
-        local playerName = ""
-        local playerCount = 0
-        local lastIndex = 0
-
-        for _, data in pairs(GogoLoot_Config.softres.profiles.current[lootItemId]) do
-            -- todo: check that player is in the raid
-            if playerList[strlower(data.name)] then
-                lastIndex = lastIndex + 1
-                playerName = data.name
-            end
-        end
-
-        if lastIndex == 1 then
-            GogoLoot_Config.softres.profiles.current[lootItemId] = nil -- remove reserve
-            SendChatMessage(string.format(GogoLoot.SOFTRES_LOOT, select(2, GetItemInfo(lootItemId)), playerName), UnitInRaid("Player") and "RAID" or "PARTY")
-            return playerName -- loot to this player
-        else
-            lastIndex = lastIndex - 2
-            if lastIndex == 0 then -- hack
-                lastIndex = 1
-            end
-
-            local targetList = ""
-            for index, data in pairs(GogoLoot_Config.softres.profiles.current[lootItemId]) do
-                -- todo: check that player is in the raid
-                if index == lastIndex then
-                    targetList = targetList .. data.name .. ", and "
-                else
-                    targetList = targetList .. data.name .. ", "
-                end
-                
-            end
-            targetList = string.sub(targetList, 1, -3)
-
-            -- todo: watch for manual masterloot and remove player?
-            GogoLoot:showLootFrame("Softres loot conflict")
-            SendChatMessage(string.format(GogoLoot.SOFTRES_ROLL, select(2, GetItemInfo(lootItemId)), targetList), UnitInRaid("Player") and "RAID" or "PARTY")
-            return true -- handled by softres (roll)
-        end
-        return false -- handled by softres but no valid players
+    if not GogoLoot_Config.enableSoftres or not GogoLoot_Config.softres.profiles.weightedPlayerMap then
+        return false -- no softres profile
     end
-    return false -- no softres handling, fall back to normal distribution
+
+    local weightMap = GogoLoot_Config.softres.profiles.weightedPlayerMap[lootItemId]
+
+    if not weightMap then
+        return false -- no reserve for this item
+    end
+
+    if #weightMap == 1 then
+        if weightMap[1][2] < 0 then
+            return false -- already received item
+        end
+        SendChatMessage(string.format(GogoLoot.SOFTRES_LOOT, select(2, GetItemInfo(lootItemId)), weightMap[1][1]), UnitInRaid("Player") and "RAID" or "PARTY")
+        weightMap[1][2] = -1
+        return weightMap[1][1] -- only 1 player reserved
+    end
+
+    if weightMap[1][2] >= HARD_RESERVE_OFFSET then -- item is hard reserved
+        SendChatMessage(string.format(GogoLoot.SOFTRES_LOOT_HARD, select(2, GetItemInfo(lootItemId)), weightMap[1][1]), UnitInRaid("Player") and "RAID" or "PARTY")
+        
+        weightMap[1][2] = -1 -- remove hard reserve if it drops again
+        table.sort(weightMap, sortWeightedMap) -- re-sort players
+
+        return weightMap[1][1] -- only 1 player can hard reserve? Otherwise we should combine like below
+    end
+    
+    local weightMapClean = {} -- remove players that already got the item
+    for _,reserve in pairs(weightMap) do
+        if reserve[2] >= 0 then
+            tinsert(weightMapClean, reserve)
+        end
+    end
+
+    local targetList = ""
+    for index, target in pairs(weightMapClean) do
+        local targetBonus = ""
+        if target[2] > 0 then
+            targetBonus = "[+" .. tostring(target[2]) .. "]" -- add roll bonus behind name
+        end
+        if index == 1 then
+            targetList = target[1] .. targetBonus
+        elseif index == #weightMapClean then
+            targetList = targetList .. ", and " .. target[1] .. targetBonus
+        else
+            targetList = targetList .. ", " .. target[1] .. targetBonus
+        end
+    end
+
+    GogoLoot:showLootFrame("Softres loot conflict")
+    SendChatMessage(string.format(GogoLoot.SOFTRES_ROLL, select(2, GetItemInfo(lootItemId)), targetList), UnitInRaid("Player") and "RAID" or "PARTY")
+
+    return true -- players must roll
 end
