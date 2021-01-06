@@ -1,4 +1,10 @@
+
+if not GogoLoot_Logs then
+    GogoLoot_Logs = {}
+end
+
 local function debug(str)
+    --tinsert(GogoLoot_Logs, str)
     --print(str)
 end
 
@@ -234,11 +240,13 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
             local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
 
             if targetPlayerName == "standardLootWindow" then
+                debug("Standard loot window target")
                 return true -- open loot window
             end
 
             if softresResult == true then
-                -- softres roll taking place
+                debug("Softres roll taking place")
+                return true -- softres roll taking place
             else
                 if softresResult then
                     targetPlayerName = strlower(softresResult) -- loot to this player
@@ -330,8 +338,22 @@ events:SetScript("OnEvent", function()
         end
 
     end
+
+    SlashCmdList["PAYOUT"] = function(args)
+        local payout = tonumber(args)
+        if payout then
+            print("Payout set to " .. args .. " gold")
+            _PAYOUT = payout * 10000 -- gold to copper
+            -- change the copper value in your macro to (_PAYOUT or 0)
+        else
+            print("Please specify payout value")
+        end
+    end
+
     SLASH_LV1 = "/gl"
     SLASH_LV2 = "/gogoloot"
+
+    SLASH_PAYOUT1 = "/payout"
 
     local events = CreateFrame("Frame")
     local canLoot = true
@@ -352,7 +374,7 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("START_LOOT_ROLL")
 
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
-        debug(evt)
+        --debug(evt)
         --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
         --    canOpenWindow = true
         if "LOOT_READY" == evt then
@@ -387,6 +409,7 @@ events:SetScript("OnEvent", function()
                         end
 
                         local function doLootStep()
+                            debug("DoLootStep " .. tostring(lootStep))
                             local index = GetNumLootItems()
                             local playerIndex = {}
                             while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
@@ -404,6 +427,7 @@ events:SetScript("OnEvent", function()
 
                             if playerIndex[lootStep] and GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
                                 if lootTicker then
+                                    debug("Cancelled loot ticker [1]")
                                     lootTicker:Cancel()
                                     lootTicker = nil
                                 end
@@ -415,6 +439,7 @@ events:SetScript("OnEvent", function()
                             incrementLootStep()
                         end
                         if lootTicker then
+                            debug("Cancelled loot ticker [2]")
                             lootTicker:Cancel()
                             lootTicker = nil
                         end
@@ -423,6 +448,7 @@ events:SetScript("OnEvent", function()
                             hadNormalLoot = doLootStep() or hadNormalLoot
                         end
                         if not hadNormalLoot then
+                            debug("There is loot, continuing timer...")
                             lootTicker = C_Timer.NewTicker(0.1, doLootStep)
                         end
                     end
@@ -435,6 +461,7 @@ events:SetScript("OnEvent", function()
             canLoot = true
             GogoLoot.canOpenWindow = false
             if lootTicker then
+                debug("Cancelled loot ticker [3]")
                 lootTicker:Cancel()
                 lootTicker = nil
             end
@@ -465,6 +492,7 @@ events:SetScript("OnEvent", function()
         elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and not badErrors[message] then
             debug(message)
             if lootTicker then
+                debug("Cancelled loot ticker [4]")
                 lootTicker:Cancel()
                 lootTicker = nil
             end
@@ -472,7 +500,7 @@ events:SetScript("OnEvent", function()
         elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray then
 
             -- auto gray
-            debug("BagUpdate!")
+            --debug("BagUpdate!")
             if arg and tonumber(arg) then
                 local slt = GetContainerNumSlots(arg)
                 for i=1,slt do
@@ -496,14 +524,18 @@ events:SetScript("OnEvent", function()
             if inGroup ~= GogoLoot.isInGroup then
                 GogoLoot.isInGroup = inGroup
                 if inGroup then -- we have just joined a group
-                    if GetLootMethod() == "group" and GogoLoot_Config.autoRoll then
+                    if GetLootMethod() == "group" and GogoLoot_Config.autoRoll and 1 == GogoLoot_Config.autoRollThreshold then
                         SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
                     end
+                else -- we left, clear group-specific settings
+                    GogoLoot_Config.players = {}
+                    GogoLoot_Config.softres.profiles.current = nil
+                    GogoLoot_Config.softres.profiles._current_data = nil
                 end
             end
         elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GogoLoot:areWeMasterLooter() and GetLootMethod() == "master" then
             GogoLoot:BuildUI()
-        elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" and GogoLoot_Config.autoRoll then
+        elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
             SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif "MODIFIER_STATE_CHANGED" == evt and not canLoot then
             if GetCVarBool("autoLootDefault") == IsModifiedClick("AUTOLOOTTOGGLE") then
@@ -518,7 +550,7 @@ events:SetScript("OnEvent", function()
                 GogoLoot._inInstance = false
             elseif GogoLoot._inInstance == false then
                 GogoLoot._inInstance = true
-                if GogoLoot_Config.autoRoll and GetLootMethod() == "group" then
+                if GogoLoot_Config.autoRoll and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
                     SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
                 end
             end
@@ -536,6 +568,44 @@ events:SetScript("OnEvent", function()
     end)
 
     LootFrame.selectedQuality = GetLootThreshold()
+
+    -- hook loot menu to add common/poor
+    UnitPopupMenus["LOOT_THRESHOLD"] = { "ITEM_QUALITY0_DESC", "ITEM_QUALITY1_DESC", "ITEM_QUALITY2_DESC_GL", "ITEM_QUALITY3_DESC_GL", "ITEM_QUALITY4_DESC_GL", "CANCEL" }
+    
+    UnitPopupButtons["ITEM_QUALITY4_DESC_GL"] = { text = ITEM_QUALITY4_DESC, color = ITEM_QUALITY_COLORS[4], checkable = 1 } -- implement custom options for existing thresholds, the logic is set up to convert the index in the list to the loot threshold, so it doesn't work with additional entries
+    UnitPopupButtons["ITEM_QUALITY3_DESC_GL"] = { text = ITEM_QUALITY3_DESC, color = ITEM_QUALITY_COLORS[3], checkable = 1 }
+    UnitPopupButtons["ITEM_QUALITY2_DESC_GL"] = { text = ITEM_QUALITY2_DESC, color = ITEM_QUALITY_COLORS[2], checkable = 1 }
+
+    UnitPopupButtons["ITEM_QUALITY1_DESC"] = { text = ITEM_QUALITY1_DESC, color = ITEM_QUALITY_COLORS[1], checkable = 1 }
+    UnitPopupButtons["ITEM_QUALITY0_DESC"] = { text = ITEM_QUALITY0_DESC, color = ITEM_QUALITY_COLORS[0], checkable = 1 }
+
+    local lookup = {
+        ["ITEM_QUALITY4_DESC_GL"] = 4,
+        ["ITEM_QUALITY3_DESC_GL"] = 3,
+        ["ITEM_QUALITY2_DESC_GL"] = 2,
+        ["ITEM_QUALITY1_DESC"] = 1,
+        ["ITEM_QUALITY0_DESC"] = 0
+    }
+
+    hooksecurefunc("UnitPopup_OnClick", function(self)
+        local qual = lookup[self.value]
+        
+        if qual then
+            UIDropDownMenu_SetButtonText(self:GetParent().parentLevel, self:GetParent().parentID, UnitPopupButtons[self.value].text, ITEM_QUALITY_COLORS[qual].hex)
+            local method, index, index2 = GetLootMethod()
+
+            if 0 == index then -- the player
+                index = UnitName("Player")
+            elseif index2 then
+                index = UnitName("raid"..tostring(index2))
+            elseif index then
+                index = UnitName("party"..tostring(index))
+            end
+
+            SetLootMethod(method, method == "master" and index or qual, method == "master" and qual or nil)
+        end
+
+    end)
 
 end)
 events:RegisterEvent('PLAYER_LOGIN')

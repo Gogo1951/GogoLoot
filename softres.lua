@@ -7,6 +7,8 @@ end
 
 function GogoLoot:BuildWeightedPlayerMap(jsonData) -- build a weighted player map for quicker lookups
     local map = {}
+    local reserveCountItems = 0
+    local reserveCountTotal = 0
 
     local function insertReserve(table, reserve, modifier)
         if not reserve or not reserve.item or not reserve.name then -- should never happen
@@ -15,8 +17,10 @@ function GogoLoot:BuildWeightedPlayerMap(jsonData) -- build a weighted player ma
         end
         if not table[reserve.item] then
             table[reserve.item] = {}
+            reserveCountItems = reserveCountItems + 1
         end
         tinsert(table[reserve.item], {reserve.name, modifier + (reserve.rollBonus or 0)})
+        reserveCountTotal = reserveCountTotal + 1
     end
 
     if jsonData.hardreserves then
@@ -36,6 +40,8 @@ function GogoLoot:BuildWeightedPlayerMap(jsonData) -- build a weighted player ma
         table.sort(weightMap, sortWeightedMap)
     end
 
+    print("Loaded Softres.it profile, " .. tostring(reserveCountItems) .. " items, " .. tostring(reserveCountTotal) .. " reserves.")
+
     return map
 end
 
@@ -47,6 +53,27 @@ function GogoLoot:SetSoftresProfile(data)
     if not data or string.len(data) < 4 then
         return -- invalid profile
     end
+
+    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    local function decodeBase64(data)
+        data = string.gsub(data, '[^'..b..'=]', '')
+        return (data:gsub('.', function(x)
+            if (x == '=') then return '' end
+            local r,f='',(b:find(x)-1)
+            for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+            return r;
+        end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+            if (#x ~= 8) then return '' end
+            local c=0
+            for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+                return string.char(c)
+        end))
+    end
+
+    data = decodeBase64(data)
+    data = LibStub:GetLibrary("LibDeflate"):DecompressZlib(data)
+    --print("json data: " .. data)
+
     local decoded = GogoLoot.json.decode(data)
     if decoded then
         GogoLoot_Config.softres.profiles.current = decoded
