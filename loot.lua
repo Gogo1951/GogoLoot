@@ -339,12 +339,23 @@ events:SetScript("OnEvent", function()
 
     end
 
-    SlashCmdList["PAYOUT"] = function(args)
+    SlashCmdList["TG"] = function(args)
         local payout = tonumber(args)
-        if payout then
-            print("Payout set to " .. args .. " gold")
-            _PAYOUT = payout * 10000 -- gold to copper
-            -- change the copper value in your macro to (_PAYOUT or 0)
+        if payout and UnitName("target") then
+            --print("Payout set to " .. args .. " gold")
+            _PAYOUT = math.floor(payout * 10000) -- gold to copper
+            InitiateTrade("target")
+            if _TradeTimer then 
+                _TradeTimer:Cancel() 
+            end 
+            _TradeTimer=nil 
+            _TradeTimer=C_Timer.NewTicker(0.1, function() 
+                if TradeFrame:IsShown() then
+                    MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame,_PAYOUT) 
+                    _TradeTimer:Cancel() 
+                    _TradeTimer=nil 
+                end 
+            end)
         else
             print("Please specify payout value")
         end
@@ -353,7 +364,7 @@ events:SetScript("OnEvent", function()
     SLASH_LV1 = "/gl"
     SLASH_LV2 = "/gogoloot"
 
-    SLASH_PAYOUT1 = "/payout"
+    SLASH_TG1 = "/tg"
 
     local events = CreateFrame("Frame")
     local canLoot = true
