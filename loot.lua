@@ -22,43 +22,68 @@ function GogoLoot:BuildConfig()
         ["autoRoll"] = true,
         ["autoRollThreshold"] = 2,
         ["players"] = {},
-    }
+        }
     GogoLoot_Config.ignoredItemsSolo = {
         [4500] = true,
-        [12811] = true,
-        [12662] = true,
-
-        -- librams
-        --[21288] = true,
-        --[21290] = true,
-        --[21289] = true,
-        [11737] = true,
-        [11736] = true,
-        [11734] = true,
-        [11733] = true,
         [11732] = true,
+        [11733] = true,
+        [11734] = true,
+        [11736] = true,
+        [11737] = true,
+        [12662] = true,
+        [12800] = true,
+        [12811] = true,
         [18332] = true,
         [18333] = true,
         [18334] = true,
-
-        [12800] = true,
         [18335] = true,
+        [18401] = true,
         [20520] = true,
-        [18401] = true
-
-    }
+        }
     GogoLoot_Config.ignoredItemsMaster = {
-        [21321] = true,
+        [12662] = true,
+        [17966] = true,
+        [19872] = true,
+        [19902] = true,
+        [19914] = true,
+        [20577] = true,
+        [20578] = true,
+        [20579] = true,
+        [20580] = true,
+        [20581] = true,
+        [20582] = true,
+        [20599] = true,
+        [20615] = true,
+        [20616] = true,
+        [20617] = true,
+        [20618] = true,
+        [20619] = true,
+        [20621] = true,
+        [20622] = true,
+        [20623] = true,
+        [20624] = true,
+        [20625] = true,
+        [20626] = true,
+        [20627] = true,
+        [20628] = true,
+        [20630] = true,
+        [20631] = true,
+        [20632] = true,
+        [20633] = true,
+        [20634] = true,
+        [20635] = true,
+        [20636] = true,
+        [20637] = true,
+        [20638] = true,
+        [20639] = true,
+        [20644] = true,
         [21218] = true,
+        [21321] = true,
         [21323] = true,
         [21324] = true,
-        [17966] = true,
-        [19914] = true,
-        [19902] = true, 
-        [19872] = true,
-        [12662] = true,
-        --[18401] = true,
-        --[20520] = true
+        [22389] = true,
+        [22390] = true,
+        [22890] = true,
     }
 
     GogoLoot_Config.softres = {}
@@ -66,10 +91,6 @@ function GogoLoot:BuildConfig()
 
     GogoLoot_Config._version = CONFIG_VERSION
 end
-
-
-
-
 
 local ItemInfoCache = {}
 local ItemIDCache = {}
@@ -522,8 +543,6 @@ events:SetScript("OnEvent", function()
                     end
                 end
             end
-
-
 
             --print(message)
             --print(a)
