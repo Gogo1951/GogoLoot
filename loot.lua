@@ -13,7 +13,7 @@ local internalIgnoreList = nil -- populated later
 
 GogoLoot = {}
 
-CONFIG_VERSION = 5
+CONFIG_VERSION = 6
 
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
