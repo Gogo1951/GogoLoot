@@ -81,9 +81,6 @@ function GogoLoot:BuildConfig()
         [21321] = true,
         [21323] = true,
         [21324] = true,
-        [22389] = true,
-        [22390] = true,
-        [22890] = true,
     }
 
     GogoLoot_Config.softres = {}
