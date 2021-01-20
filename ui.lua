@@ -39,6 +39,7 @@ function GogoLoot:BuildUI()
         -- redraw currently shown frame
         if GogoLoot._frame._redraw then
             GogoLoot._frame._redraw()
+            GogoLoot._frame._update_tabs()
         end
         return
     end
@@ -668,53 +669,55 @@ function GogoLoot:BuildUI()
 
     local tabs = AceGUI:Create("TabGroup")
     tabs:SetLayout("Flow")
-    if GogoLoot:areWeMasterLooter() then
-        tabs:SetTabs({
-            {
-                text = "General Settings",
-                value = "general"
-            },
-            {
-                text = "Master Looter Settings",
-                value = "ml"
-            },
-            {
-                text = "SoftRes.It Settings",
-                value = "softres"
-            },
-            {
-                text = "About",
-                value = "about"
-            }
-        })
-    else
-        tabs:SetTabs({
-            {
-                text = "General Settings",
-                value = "general"
-            },
-            {
-                text = "Master Looter Settings",
-                value = "ml",
-                disabled = true,
-            },
-            {
-                text = "SoftRes.It Settings",
-                value = "softres",
-                --disabled = true,
-            },
-            {
-                text = "About",
-                value = "about"
-            }
-        })
+    frame._update_tabs = function()
+        if GogoLoot:areWeMasterLooter() then
+            tabs:SetTabs({
+                {
+                    text = "General Settings",
+                    value = "general"
+                },
+                {
+                    text = "Master Looter Settings",
+                    value = "ml"
+                },
+                {
+                    text = "SoftRes.It Settings",
+                    value = "softres"
+                },
+                {
+                    text = "About",
+                    value = "about"
+                }
+            })
+        else
+            tabs:SetTabs({
+                {
+                    text = "General Settings",
+                    value = "general"
+                },
+                {
+                    text = "Master Looter Settings",
+                    value = "ml",
+                    disabled = true,
+                },
+                {
+                    text = "SoftRes.It Settings",
+                    value = "softres",
+                    --disabled = true,
+                },
+                {
+                    text = "About",
+                    value = "about"
+                }
+            })
+        end
     end
     tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
         frame._redraw = function()
             widget:ReleaseChildren() render[group](widget, group)      
         end
         frame._redraw()
-        end)
+    end)
     tabs:SelectTab("general")
     frame:AddChild(tabs)
     frame:Show()
