@@ -553,7 +553,7 @@ function GogoLoot:BuildUI()
                 local importMessage = AceGUI:Create("Label")
                 importMessage:SetFullWidth(true)
                 importMessage:SetFontObject(GameFontNormal)
-                importMessage:SetText("GogoLoot supports SoftRes.It! Just paste the CSV export from SoftRes.It website here to enable automatic distribution for this raid.")
+                importMessage:SetText("GogoLoot supports SoftRes.It! Just copy and paste the code from SoftRes.It website here to enable automatic distribution for this raid.")
 
                 sf:AddChild(importMessage)
 
@@ -591,7 +591,7 @@ function GogoLoot:BuildUI()
             local importMessage = AceGUI:Create("Label")
             importMessage:SetFullWidth(true)
             importMessage:SetFontObject(GameFontNormal)
-            importMessage:SetText("GogoLoot supports SoftRes.It; paste CSV code from website here to enable automatic distribution for this raid.")
+            importMessage:SetText("GogoLoot supports SoftRes.It; just copy and paste the code from SoftRes.It website here to enable automatic distribution for this raid.")
 
             
             local softres = checkbox(widget, "Enable SoftRes.It List Automation for Master Looter")
