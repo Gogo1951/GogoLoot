@@ -390,7 +390,7 @@ function GogoLoot:BuildUI()
             buildIgnoredFrame(widget, "Items in this list will always show up for manual need or greed rolls.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsSolo, group)
         end,
         ["ignoredMaster"] = function(widget, group)
-            buildIgnoredFrame(widget, "Note that non-tradable Quest Items are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
+            buildIgnoredFrame(widget, "NOTE: All Legendary Quality items, as well as non-tradable Quest Items, are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
         end,
         ["general"] = function(widget, group)
             local speedyLoot = checkbox(widget, "Speedy Loot (No Loot Window)")
