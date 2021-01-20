@@ -40,7 +40,9 @@ function GogoLoot:BuildWeightedPlayerMap(jsonData) -- build a weighted player ma
         table.sort(weightMap, sortWeightedMap)
     end
 
-    print("Loaded Softres.it profile, " .. tostring(reserveCountItems) .. " items, " .. tostring(reserveCountTotal) .. " reserves.")
+    --print("Loaded Softres.it profile, " .. tostring(reserveCountItems) .. " items, " .. tostring(reserveCountTotal) .. " reserves.")
+    GogoLoot_Config.softres.itemCount = reserveCountItems
+    GogoLoot_Config.softres.reserveCount = reserveCountTotal
 
     return map
 end

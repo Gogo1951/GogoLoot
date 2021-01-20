@@ -113,6 +113,17 @@ end
 local ItemInfoCache = {}
 local ItemIDCache = {}
 
+GogoLoot.validBOPInstances = {
+    [249] = true, -- onyxia
+    [309] = true, -- ZG
+    [409] = true, -- molten core
+    [469] = true, -- BWL
+    [509] = true, -- AQ20
+    [531] = true, -- AQ40
+    [533] = true, -- naxx
+}
+
+
 GogoLoot.validFilters = {
     ["artifact"] = true,
     ["orange"] = true,
@@ -271,7 +282,12 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
 
         local id = tonumber(ItemIDCache[lootLink][5])
         debug("ShouldLoot " .. tostring(index) .. " = " .. tostring(doLoot) .. " " .. tostring(rarity) .. " " .. tostring(color) .. " " .. lootLink)
-        if id and doLoot and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) and ((not itemBindings[id]) or itemBindings[id] ~= 4) then
+        if id and doLoot 
+            and (not internalIgnoreList[id]) 
+            and (not GogoLoot_Config.ignoredItemsMaster[id]) -- items from config UI
+            and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) -- check if item is BOP, and check disable BOP config option
+            and ((not itemBindings[id]) or itemBindings[id] ~= 4) -- check if the item is a quest item
+            and (itemBindings[id] ~= 1 or GogoLoot.validBOPInstances[select(8, GetInstanceInfo())]) then  -- make sure we are inside an instance that allows loot trading
             
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list

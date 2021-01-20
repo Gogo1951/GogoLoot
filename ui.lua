@@ -11,6 +11,9 @@ GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per SoftRes.It List, %s will be rolled
 GogoLoot.AUTO_ROLL_ENABLED = "{rt4} GogoLoot : Auto %s on BoEs Enabled!"
 GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
 
+--{rt4} GogoLoot : Softres.it List Imported! {#} Reserves across {#} Items included.
+--{rt4} GogoLoot : Softres.it URL https://softres.it/raid/{ID}
+
 GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
 
 StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
@@ -390,7 +393,7 @@ function GogoLoot:BuildUI()
             buildIgnoredFrame(widget, "Items in this list will always show up for manual need or greed rolls.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsSolo, group)
         end,
         ["ignoredMaster"] = function(widget, group)
-            buildIgnoredFrame(widget, "NOTE: All Legendary Quality items, as well as non-tradable Quest Items, are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
+            buildIgnoredFrame(widget, "NOTE: All |cFFFF8000Legendary Quality|r items, as well as non-tradable Quest Items, are always ignored and will appear in a Standard Loot Window.\nGogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game.\nGogoLoot will not attempt to automate looting for World Bosses, 10-man, or 5-man content.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
         end,
         ["general"] = function(widget, group)
             local speedyLoot = checkbox(widget, "Speedy Loot (No Loot Window)")
