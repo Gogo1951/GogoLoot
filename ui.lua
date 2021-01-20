@@ -715,6 +715,7 @@ function GogoLoot:BuildUI()
             })
         end
     end
+    frame._update_tabs()
     tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
         frame._redraw = function()
             widget:ReleaseChildren() render[group](widget, group)      
