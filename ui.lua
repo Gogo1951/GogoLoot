@@ -4,15 +4,13 @@ GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items 
 GogoLoot.LOOT_TARGET_DISABLED_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will use Standard Master Looter Window!"
 
 GogoLoot.SOFTRES_ACTIVE = "{rt4} GogoLoot : SoftRes.It List Imported! %s Reserves across %s Items included."
+GogoLoot.SOFTRES_URL = "{rt4} GogoLoot : Softres.it URL https://softres.it/raid/%s"
 GogoLoot.SOFTRES_LOOT = "{rt4} GogoLoot : Per SoftRes.It List, %s goes to %s!"
 GogoLoot.SOFTRES_LOOT_HARD = "{rt4} GogoLoot : Per SoftRes.It Hard Reserve, %s goes to %s!"
 GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per SoftRes.It List, %s will be rolled on by %s!"
 
 GogoLoot.AUTO_ROLL_ENABLED = "{rt4} GogoLoot : Auto %s on BoEs Enabled!"
 GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
-
---{rt4} GogoLoot : Softres.it List Imported! {#} Reserves across {#} Items included.
---{rt4} GogoLoot : Softres.it URL https://softres.it/raid/{ID}
 
 GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
 
@@ -121,6 +119,11 @@ function GogoLoot:BuildUI()
 
             if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
                 SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
+                local urlString = string.format(GogoLoot.SOFTRES_URL, tostring(GogoLoot_Config.softres.profiles.current.id))
+                if GogoLoot_Config.softres.profiles.current.discord then
+                    urlString = urlString .. ", Discord: " .. GogoLoot_Config.softres.profiles.current.discord
+                end
+                SendChatMessage(urlString, UnitInRaid("Player") and "RAID" or "PARTY")
             end
 
         elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) and 1 == GogoLoot_Config.autoRollThreshold then
