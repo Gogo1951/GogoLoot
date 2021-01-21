@@ -49,7 +49,7 @@ function GogoLoot:BuildUI()
     GogoLoot._frame = frame
     frame:SetTitle("GogoLoot")
     frame:SetLayout("Fill")
-    frame:SetWidth(520)
+    frame:SetWidth(555)
     frame:SetHeight(650)
 
     local wasAutoRollEnabled = GogoLoot_Config.autoRoll -- bit of a hack
