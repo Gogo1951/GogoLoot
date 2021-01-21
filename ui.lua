@@ -49,7 +49,7 @@ function GogoLoot:BuildUI()
     GogoLoot._frame = frame
     frame:SetTitle("GogoLoot")
     frame:SetLayout("Fill")
-    frame:SetWidth(555)
+    frame:SetWidth(565)
     frame:SetHeight(650)
 
     local wasAutoRollEnabled = GogoLoot_Config.autoRoll -- bit of a hack
@@ -461,7 +461,7 @@ function GogoLoot:BuildUI()
                 sf = scrollFrame(widget)
             end
 
-            label(sf, "GogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game.\nGogoLoot will not attempt to automate looting for World Bosses, 10-man, or 5-man content.", nil)
+            label(sf, "GogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game.\n\nGogoLoot will not attempt to automate looting for World Bosses, 10-man,\nor 5-man content.", nil)
 
             spacer(sf)
             local enabled = checkbox(sf, "Enable Automatic Looting for Master Looters")
