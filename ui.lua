@@ -461,7 +461,7 @@ function GogoLoot:BuildUI()
                 sf = scrollFrame(widget)
             end
 
-            label(sf, "GogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game. GogoLoot will not attempt to automate looting for World Bosses, 10-man,nor 5-man content.", nil)
+            label(sf, "GogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game. GogoLoot will not attempt to automate looting for World Bosses, 10-man, or 5-man content.", nil)
 
             spacer(sf)
             local enabled = checkbox(sf, "Enable Automatic Looting for Master Looters")
