@@ -120,16 +120,17 @@ function GogoLoot:BuildUI()
             if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
                 SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
                 local urlString = string.format(GogoLoot.SOFTRES_URL, tostring(GogoLoot_Config.softres.profiles.current.id))
-                if GogoLoot_Config.softres.profiles.current.discord then
-                    urlString = urlString .. ", Discord: " .. GogoLoot_Config.softres.profiles.current.discord
-                end
                 SendChatMessage(urlString, UnitInRaid("Player") and "RAID" or "PARTY")
+                if GogoLoot_Config.softres.profiles.current.discord and string.len(GogoLoot_Config.softres.profiles.current.discord) > 0 then
+                    SendChatMessage("{rt4} GogoLoot : Discord " .. GogoLoot_Config.softres.profiles.current.discord, UnitInRaid("Player") and "RAID" or "PARTY")
+                end
+                
             end
 
-        elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) and 1 == GogoLoot_Config.autoRollThreshold then
+        --[[elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) and 1 == GogoLoot_Config.autoRollThreshold then
             SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif GetLootMethod() == "group" and (not GogoLoot_Config.autoRoll) and wasAutoRollEnabled and 1 == GogoLoot_Config.autoRollThreshold then
-            SendChatMessage(string.format(GogoLoot.AUTO_ROLL_DISABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+            SendChatMessage(string.format(GogoLoot.AUTO_ROLL_DISABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")]]
         end
         -- /run c=CharacterWristSlot;op = {c:GetPoint()};op[4] = op[4] + 230;op[5]=op[5]-50;c:SetPoint(unpack(op))c:Show()
 

@@ -168,19 +168,6 @@ function GogoLoot:GetGroupMemberNames()
     return filtered
 end
 
-function GogoLoot:HookManualMasterLoot()
-    MasterLooterFrame:HookScript("OnShow", function()
-        for i=1,41 do
-            local btn = MasterLooterFrame["player" .. tostring(i)]
-            if btn then
-                btn:HookScript("OnClick", function()
-                    print("Clicked " .. tostring(i))
-                end)
-            end
-        end
-    end)
-end
-
 function GogoLoot:areWeMasterLooter()
     local masterLooter = select(2, GetLootMethod()) -- todo: cache this
     return 0 == masterLooter--masterLooter and (masterLooter == 0 or (UnitName("player") == GetRaidRosterInfo(masterLooter)))
@@ -238,21 +225,29 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
             and (itemBindings[id] ~= 1 or GogoLoot.validBOPInstances[select(8, GetInstanceInfo())]) then  -- make sure we are inside an instance that allows loot trading
             
 
-            local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex) -- todo: player list
+            local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex, index) -- todo: player list
 
             local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
 
-            if targetPlayerName == "standardLootWindow" then
-                debug("Standard loot window target")
-                return true -- open loot window
-            end
-
-            if softresResult == true then
+            if softresResult and type(softresResult) == "table" then
                 debug("Softres roll taking place")
+                if not GogoLoot.softresRemoveRoll[index] then
+                    GogoLoot.softresRemoveRoll[index] = {}
+                end
+                for _, player in pairs(softresResult) do
+                    local lower = strlower(player)
+                    GogoLoot.softresRemoveRoll[index][playerIndex[lower]] = {lower, id}
+                end
                 return true -- softres roll taking place
             else
                 if softresResult then
                     targetPlayerName = strlower(softresResult) -- loot to this player
+                    debug("Softres loot going to " .. targetPlayerName)
+                end
+
+                if targetPlayerName == "standardLootWindow" then
+                    debug("Standard loot window target")
+                    return true -- open loot window
                 end
 
                 -- this redirects loot to the "all" player if the specific players are not available
@@ -263,7 +258,7 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
                     local playerID = playerIndex[targetPlayerName]
                     if playerID then
                         validPreviouslyHack[targetPlayerName] = true
-                        GiveMasterLoot(index, playerID)
+                        GiveMasterLoot(index, playerID, true)
                         return false
                     else
                         debug("Player " .. targetPlayerName .. " has no ID!")
@@ -374,10 +369,23 @@ events:SetScript("OnEvent", function()
     local lootAPIOpen = false
     local lootTicker = nil
 
+    hooksecurefunc("GiveMasterLoot", function(index, player, isGogoLoot)
+        if not isGogoLoot then
+            --print("Manual masterloot: " .. tostring(index) .. " " .. tostring(player))
+            if GogoLoot.softresRemoveRoll[index] and GogoLoot.softresRemoveRoll[index][player] then
+                local winningPlayer, item = unpack(GogoLoot.softresRemoveRoll[index][player])
+                
+                debug("Player " .. winningPlayer .. " won softres roll")
+                GogoLoot:HandleSoftresRollWin(winningPlayer, item)
+            end
+        end
+    end)
+
     events:RegisterEvent("LOOT_BIND_CONFIRM")
     events:RegisterEvent("LOOT_READY")
     events:RegisterEvent("LOOT_OPENED")
     events:RegisterEvent("LOOT_CLOSED")
+    events:RegisterEvent("LOOT_SLOT_CLEARED")
     events:RegisterEvent("MODIFIER_STATE_CHANGED")
     events:RegisterEvent("UI_ERROR_MESSAGE")
     events:RegisterEvent("BAG_UPDATE")
@@ -547,6 +555,9 @@ events:SetScript("OnEvent", function()
             end
         elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GogoLoot:areWeMasterLooter() and GetLootMethod() == "master" then
             GogoLoot:BuildUI()
+        elseif "LOOT_SLOT_CLEARED" == evt then
+            --print("LSC: " .. tostring(GetLootSlotInfo(tonumber(arg))))
+            GogoLoot:HandleSoftresLooted(arg)
         elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
             SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif "MODIFIER_STATE_CHANGED" == evt and not canLoot then
