@@ -14,6 +14,22 @@ GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
 
 GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
 
+GogoLoot.ADDON_CONFLICT = "GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
+
+GogoLoot.conflicts = { -- name must match the .TOC filename
+    "BetterAutoLoot",
+    "SpeedyAutoLoot",
+    "RCLootCouncil_Classic",
+    "AutoDestroy",
+    "AutoLootAssist",
+    "AutoLooter", 
+    "CEPGP",
+    "CommunityDKP",
+    "LootFast2"
+}
+
+local AceGUI = LibStub("AceGUI-3.0")
+
 StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
     text = "GogoLoot is unable to change loot threshold during combat.",
     button1 = "Ok",
@@ -23,9 +39,49 @@ StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
     whileDead = true,
     hideOnEscape = true,
     preferredIndex = 3
-  }
+}
 
-local AceGUI = LibStub("AceGUI-3.0")
+
+GogoLoot.creators = {
+    [1] = { -- NA
+        ["Horde"] = {
+            ["Earthfury"] = {
+                Bugzug = true,
+                Gogobank = true,
+                Gogodruid = true,
+                Gogohunter = true,
+                Gogomage = true,
+                Gogopaladin = true,
+                Gogopriest = true,
+                Gogorogue = true,
+                Gogoshaman = true,
+                Gogowarlock = true,
+                Gogowarrior = true,
+                Wew = true
+            }
+        }
+    },
+    -- 2: korea
+    [3] = { -- EU
+
+    }
+    -- 4: tiwan
+    -- 5: china
+}
+
+local function _get(t, ...)
+    for _, v in pairs({...}) do
+        if type(t) ~= "table" then
+            return nil
+        end
+        t = t[v]
+    end
+    return t
+end
+
+function GogoLoot:IsCreator(name, faction)
+    return _get(GogoLoot.creators, GetCurrentRegion(), faction, GetRealmName(), name)
+end
 
 local function capitalize(str)
     return (str:gsub("^%l", string.upper))
@@ -54,9 +110,55 @@ function GogoLoot:BuildUI()
 
     local wasAutoRollEnabled = GogoLoot_Config.autoRoll -- bit of a hack
 
+    local function StringHash(text)
+        local counter = 1
+        local len = string.len(text)
+        for i = 1, len, 3 do 
+          counter = math.fmod(counter*8161, 4294967279) +  -- 2^32 - 17: Prime!
+              (string.byte(text,i)*16776193) +
+              ((string.byte(text,i+1) or (len-i+256))*8372226) +
+              ((string.byte(text,i+2) or (len-i+256))*3932164)
+        end
+        return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
+    end
+
+    local TableHash = nil
+
+    local function ObjectHash(data, seed)
+        if type(data) == "table" then
+            return TableHash(data, seed)
+        elseif type(data) == "number" then
+            return (seed or 0) + data
+        elseif type(data) == "string" then
+            return (seed or 0) + StringHash(data)
+        end
+        return seed
+    end
+
+    TableHash = function(data, seed)
+        for k,v in pairs(data) do
+            if k ~= "configHash" and k ~= "softres" then
+                seed = ObjectHash(k, seed)
+                seed = ObjectHash(v, seed)
+            end
+        end
+        return seed
+    end
+
     frame:SetCallback("OnClose", function()
         -- temporary hack
-        SetCVar("autoLootDefault", "1")
+        --print("Config Hash: " .. tostring(TableHash(GogoLoot_Config, 0)))
+        if (GogoLoot_Config.enabled and GogoLoot:areWeMasterLooter()) or GogoLoot_Config.speedyLoot then
+            if not GogoLoot_Config.oldAutoLootSetting then
+                GogoLoot_Config.oldAutoLootSetting = GetCVar("autoLootDefault")
+            end
+            SetCVar("autoLootDefault", "1")
+        else
+            if GogoLoot_Config.oldAutoLootSetting then
+                SetCVar("autoLootDefault", GogoLoot_Config.oldAutoLootSetting)
+                GogoLoot_Config.oldAutoLootSetting = nil
+            end
+        end
         if GogoLoot:areWeMasterLooter() then
             GogoLoot:SetSoftresProfile(GogoLoot_Config.softres.lastInput)
 
@@ -76,57 +178,61 @@ function GogoLoot:BuildUI()
                 end
             end
 
-            for player, targets in pairs(playerLoots) do
-                local targetCount = #targets
-                table.sort(targets)
-                
-                if targetCount > 0 then
+            local configHashNow = TableHash(GogoLoot_Config, 0)
+            if configHashNow ~= GogoLoot_Config.configHash then
+                GogoLoot_Config.configHash = configHashNow
+
+                for player, targets in pairs(playerLoots) do
+                    local targetCount = #targets
+                    table.sort(targets)
+                    
+                    if targetCount > 0 then
+                        local targetList = ""
+                        for index, target in pairs(targets) do
+                            if index == 1 then
+                                targetList = target
+                            elseif index == targetCount then
+                                targetList = targetList .. ", and " .. target
+                            else
+                                targetList = targetList .. ", " .. target
+                            end
+                        end
+                        SendChatMessage(string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+                    end
+                    
+                end
+
+                --[[for player, targets in pairs(playerLoots) do
                     local targetList = ""
+                    local lastIndex = #targets - 2
+                    if lastIndex == 0 then -- hack
+                        lastIndex = 1
+                    end
+                    
                     for index, target in pairs(targets) do
-                        if index == 1 then
-                            targetList = target
-                        elseif index == targetCount then
-                            targetList = targetList .. ", and " .. target
-                        else
-                            targetList = targetList .. ", " .. target
+                        if target ~= "orange" then
+                            if index == lastIndex then
+                                targetList = targetList .. capitalize(target) .. ", and "
+                            else
+                                targetList = targetList .. capitalize(target) .. ", "
+                            end
                         end
                     end
-                    SendChatMessage(string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
-                end
-                
-            end
+                    targetList = string.sub(targetList, 1, -3)
 
-            --[[for player, targets in pairs(playerLoots) do
-                local targetList = ""
-                local lastIndex = #targets - 2
-                if lastIndex == 0 then -- hack
-                    lastIndex = 1
-                end
-                
-                for index, target in pairs(targets) do
-                    if target ~= "orange" then
-                        if index == lastIndex then
-                            targetList = targetList .. capitalize(target) .. ", and "
-                        else
-                            targetList = targetList .. capitalize(target) .. ", "
-                        end
+                    SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+                end]]
+
+                if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
+                    SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
+                    local urlString = string.format(GogoLoot.SOFTRES_URL, tostring(GogoLoot_Config.softres.profiles.current.id))
+                    SendChatMessage(urlString, UnitInRaid("Player") and "RAID" or "PARTY")
+                    if GogoLoot_Config.softres.profiles.current.discord and string.len(GogoLoot_Config.softres.profiles.current.discord) > 0 then
+                        SendChatMessage("{rt4} GogoLoot : Discord " .. GogoLoot_Config.softres.profiles.current.discord, UnitInRaid("Player") and "RAID" or "PARTY")
                     end
+                    
                 end
-                targetList = string.sub(targetList, 1, -3)
-
-                SendChatMessage(string.format(GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
-            end]]
-
-            if GogoLoot_Config.enableSoftres and GogoLoot_Config.softres.profiles.current then
-                SendChatMessage(string.format(GogoLoot.SOFTRES_ACTIVE, tostring(GogoLoot_Config.softres.reserveCount), tostring(GogoLoot_Config.softres.itemCount)), UnitInRaid("Player") and "RAID" or "PARTY")
-                local urlString = string.format(GogoLoot.SOFTRES_URL, tostring(GogoLoot_Config.softres.profiles.current.id))
-                SendChatMessage(urlString, UnitInRaid("Player") and "RAID" or "PARTY")
-                if GogoLoot_Config.softres.profiles.current.discord and string.len(GogoLoot_Config.softres.profiles.current.discord) > 0 then
-                    SendChatMessage("{rt4} GogoLoot : Discord " .. GogoLoot_Config.softres.profiles.current.discord, UnitInRaid("Player") and "RAID" or "PARTY")
-                end
-                
             end
-
         --[[elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) and 1 == GogoLoot_Config.autoRollThreshold then
             SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif GetLootMethod() == "group" and (not GogoLoot_Config.autoRoll) and wasAutoRollEnabled and 1 == GogoLoot_Config.autoRollThreshold then

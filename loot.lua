@@ -587,6 +587,23 @@ events:SetScript("OnEvent", function()
             if GogoLoot_Config.speedyLoot then
                 LootFrame:UnregisterEvent('LOOT_OPENED')
             end
+
+            for _, addon in pairs(GogoLoot.conflicts) do
+                if IsAddOnLoaded(addon) then
+                    C_Timer.After(4, function()
+                        print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
+                    end)
+                    break
+                end
+            end
+
+            GameTooltip:HookScript("OnTooltipSetUnit", function(self)
+                local name, unit = self:GetUnit()
+                if GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
+                    GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
+                end
+            end)
+
         end
     end)
 
