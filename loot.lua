@@ -20,6 +20,7 @@ function GogoLoot:BuildConfig()
         ["speedyLoot"] = true,
         ["enabled"] = true,
         ["autoRoll"] = true,
+        ["autoConfirm"] = false,
         ["autoRollThreshold"] = 2,
         ["players"] = {},
         }
@@ -129,6 +130,45 @@ GogoLoot.textToRarity = {}
 
 for k,v in pairs(GogoLoot.rarityToText) do
     GogoLoot.textToRarity[v] = k
+end
+
+function GogoLoot:ShowNotification(text)
+    local f = CreateFrame("Frame")
+    f:SetParent(UIParent)
+    f:SetWidth(400)
+    f:SetHeight(54)
+    f:SetPoint("CENTER", UIParent, "CENTER", -200,0)
+    f:Show()
+    
+    local l = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    l:SetAllPoints(f)
+    --l:SetJustifyH("LEFT")
+    l:SetText("|cFF00FF80"..text.."|r")
+    l:Show()
+
+
+    local f2 = CreateFrame("Frame")
+    f2:SetParent(UIParent)
+    f2:SetWidth(400)
+    f2:SetHeight(54)
+    f2:SetPoint("CENTER", UIParent, "CENTER", -200,-20)
+    f2:Show()
+    
+    local l2 = f2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    l2:SetAllPoints(f2)
+    --l2:SetJustifyH("LEFT")
+    l2:SetText("|cFF00FF80<Creator of GogoLoot>|r")
+    l2:Show()
+
+    if GogoLoot_Config.hideNotification then
+        GogoLoot.hideNotification()
+    end
+
+    GogoLoot.hideNotification = function()
+        f:Hide()
+        f2:Hide()
+        GogoLoot.hideNotification = nil
+    end
 end
 
 function GogoLoot:GetGroupMemberNames()
@@ -381,7 +421,9 @@ events:SetScript("OnEvent", function()
         end
     end)
 
+    UIParent:UnregisterEvent("LOOT_BIND_CONFIRM") -- ensure our event hook runs before UIParent
     events:RegisterEvent("LOOT_BIND_CONFIRM")
+    UIParent:RegisterEvent("LOOT_BIND_CONFIRM")
     events:RegisterEvent("LOOT_READY")
     events:RegisterEvent("LOOT_OPENED")
     events:RegisterEvent("LOOT_CLOSED")
@@ -392,14 +434,31 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
     events:RegisterEvent("PARTY_LOOT_METHOD_CHANGED")
     events:RegisterEvent("GROUP_ROSTER_UPDATE")
-
     events:RegisterEvent("START_LOOT_ROLL")
+
+    local lastItemHidden = false
+
+    -- hook confirmation popup
+    local _StaticPopup_Show = StaticPopup_Show
+    StaticPopup_Show = function(popup, ...)
+        if (popup ~= "CONFIRM_LOOT_ROLL" and popup ~= "LOOT_BIND") or (not lastItemHidden) or (not GogoLoot_Config.autoConfirm) then--or (not GogoLoot_Config.autoConfirm)
+            _StaticPopup_Show(popup, ...)
+        end
+    end
 
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
         --debug(evt)
         --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
         --    canOpenWindow = true
-        if "LOOT_READY" == evt then
+        if "LOOT_BIND_CONFIRM" == evt and GogoLoot_Config.autoConfirm then
+            local id = select(1, GetLootSlotInfo(arg))
+            if id and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and (not GogoLoot_Config.ignoredItemsSolo[id]) then -- items from config UI
+                lastItemHidden = true
+                ConfirmLootSlot(arg)
+            else
+                lastItemHidden = false
+            end
+        elseif "LOOT_READY" == evt then
             lootAPIOpen = true
         elseif ("LOOT_OPENED" == evt) and canLoot then
             debug("LootReady! " .. evt)
@@ -599,8 +658,17 @@ events:SetScript("OnEvent", function()
 
             GameTooltip:HookScript("OnTooltipSetUnit", function(self)
                 local name, unit = self:GetUnit()
-                if GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
-                    GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
+                if name and unit and GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
+                    GogoLoot:ShowNotification(name)
+                    ---GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
+                elseif GogoLoot.hideNotification then
+                    GogoLoot.hideNotification()
+                end
+            end)
+            
+            GameTooltip:HookScript("OnHide", function()
+                if GogoLoot.hideNotification then
+                    GogoLoot.hideNotification()
                 end
             end)
 
