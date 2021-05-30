@@ -118,10 +118,23 @@ function GogoLoot:HandleSoftresRollWin(player, id)
     end
 end
 
+function GogoLoot:MirrorServerNames(playerList)
+    local newList = {}
+    for player, id in pairs(playerList) do
+        if string.find(player, "-") then -- player is cross-realm
+            newList[string.sub(player, 1, string.find(player, "-")-1)] = id
+        end
+        newList[player] = id
+    end
+    return newList
+end
+
 function GogoLoot:HandleSoftresLoot(lootItemId, playerList, slot)
     if not GogoLoot_Config.enableSoftres or not GogoLoot_Config.softres.profiles.weightedPlayerMap then
         return false -- no softres profile
     end
+
+    playerList = GogoLoot:MirrorServerNames(playerList)
 
     local weightMap = GogoLoot_Config.softres.profiles.weightedPlayerMap[lootItemId]
 
