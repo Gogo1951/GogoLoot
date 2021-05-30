@@ -132,6 +132,16 @@ for k,v in pairs(GogoLoot.rarityToText) do
     GogoLoot.textToRarity[v] = k
 end
 
+function GogoLoot:UnitName(key)
+    -- if we are on classic era, add realm name
+    -- this is safe to run on TBC too as the normal function returns no realm
+    local name, realm = UnitName(key)
+    if name and realm then
+        name = name .. "-" .. realm
+    end
+    return name
+end
+
 function GogoLoot:ShowNotification(text)
     local f = CreateFrame("Frame")
     f:SetParent(UIParent)
@@ -179,7 +189,7 @@ function GogoLoot:GetGroupMemberNames()
 
     local fullRaid = {}
     local playerSubgroup = nil
-    local playerName = UnitName("Player")
+    local playerName = GogoLoot:UnitName("Player")
 
     for i=1,40 do
         local name, rank, subGroup = GetRaidRosterInfo(i)
@@ -267,7 +277,7 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
 
             local softresResult = GogoLoot:HandleSoftresLoot(id, playerIndex, index) -- todo: player list
 
-            local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(UnitName("Player"))--GogoLoot_Config.players["all"]
+            local targetPlayerName = GogoLoot_Config.players[GogoLoot.rarityToText[rarity]] or strlower(GogoLoot:UnitName("Player"))--GogoLoot_Config.players["all"]
 
             if softresResult and type(softresResult) == "table" then
                 debug("Softres roll taking place")
@@ -379,7 +389,7 @@ events:SetScript("OnEvent", function()
 
     SlashCmdList["TG"] = function(args)
         local payout = tonumber(args)
-        if payout and UnitName("target") then
+        if payout and GogoLoot:UnitName("target") then
             --print("Payout set to " .. args .. " gold")
             _PAYOUT = math.floor(payout * 10000) -- gold to copper
             InitiateTrade("target")
@@ -703,11 +713,11 @@ events:SetScript("OnEvent", function()
             local method, index, index2 = GetLootMethod()
 
             if 0 == index then -- the player
-                index = UnitName("Player")
+                index = GogoLoot:UnitName("Player")
             elseif index2 then
-                index = UnitName("raid"..tostring(index2))
+                index = GogoLoot:UnitName("raid"..tostring(index2))
             elseif index then
-                index = UnitName("party"..tostring(index))
+                index = GogoLoot:UnitName("party"..tostring(index))
             end
 
             SetLootMethod(method, method == "master" and index or qual, method == "master" and qual or nil)

@@ -166,7 +166,7 @@ function GogoLoot:BuildUI()
 
             for r, rarity in pairs(GogoLoot.rarityToText) do
                 if r >= GetLootThreshold() and r < 5 then -- less than orange
-                    local name = strlower(GogoLoot_Config.players[rarity] or UnitName("Player"))
+                    local name = strlower(GogoLoot_Config.players[rarity] or GogoLoot:UnitName("Player"))
 
                     --print(rarity)
                     if GogoLoot.textToLink[rarity] then
@@ -476,18 +476,18 @@ function GogoLoot:BuildUI()
         dropdown:SetWidth(230)
 
         if GogoLoot_Config.players[filter] and GogoLoot_Config.players[filter] ~= "standardLootWindow" and not players[strlower(GogoLoot_Config.players[filter])] then -- the player is no longer in the party
-            GogoLoot_Config.players[filter] = strlower(UnitName("Player")) -- set filter to the master looter
+            GogoLoot_Config.players[filter] = strlower(GogoLoot:UnitName("Player")) -- set filter to the master looter
         end
 
         if GogoLoot_Config.players[filter] then
             dropdown:SetValue(GogoLoot_Config.players[filter])
         else
-            dropdown:SetValue(strlower(UnitName("Player")))
+            dropdown:SetValue(strlower(GogoLoot:UnitName("Player")))
         end
 
         dropdown:SetCallback("OnValueChanged", function()
             if dropdown:GetValue() == "---" then
-                dropdown:SetValue(GogoLoot_Config.players[filter] or strlower(UnitName("Player")))
+                dropdown:SetValue(GogoLoot_Config.players[filter] or strlower(GogoLoot:UnitName("Player")))
             else
                 GogoLoot_Config.players[filter] = dropdown:GetValue()
             end
@@ -605,7 +605,7 @@ function GogoLoot:BuildUI()
             
             dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])
             dropdown:SetCallback("OnValueChanged", function()
-                SetLootMethod("master", UnitName("Player"), GogoLoot.textToRarity[dropdown:GetValue()])
+                SetLootMethod("master", GogoLoot:UnitName("Player"), GogoLoot.textToRarity[dropdown:GetValue()])
                 -- validate 
                 if GetLootThreshold() ~= GogoLoot.textToRarity[dropdown:GetValue()] then
                     --dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])
