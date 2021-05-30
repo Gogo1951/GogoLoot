@@ -142,7 +142,15 @@ function GogoLoot:UnitName(key)
     return name
 end
 
-function GogoLoot:ShowNotification(text)
+function GogoLoot:HideNotification()
+    if GogoLoot.notificationFrames then
+        for _, frame in pairs(GogoLoot.notificationFrames) do
+            frame:Hide()
+        end
+    end
+end
+
+function GogoLoot:CreateNotification()
     local f = CreateFrame("Frame")
     f:SetParent(UIParent)
     f:SetWidth(400)
@@ -153,7 +161,6 @@ function GogoLoot:ShowNotification(text)
     local l = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     l:SetAllPoints(f)
     --l:SetJustifyH("LEFT")
-    l:SetText("|cFF00FF80"..text.."|r")
     l:Show()
 
 
@@ -170,15 +177,23 @@ function GogoLoot:ShowNotification(text)
     l2:SetText("|cFF00FF80<Creator of GogoLoot>|r")
     l2:Show()
 
-    if GogoLoot_Config.hideNotification then
-        GogoLoot.hideNotification()
+    GogoLoot.notificationFrames = {
+        l, l2, f, f2
+    }
+end
+
+function GogoLoot:ShowNotification(text)
+
+    if not GogoLoot.notificationFrames then
+        GogoLoot:CreateNotification()
     end
 
-    GogoLoot.hideNotification = function()
-        f:Hide()
-        f2:Hide()
-        GogoLoot.hideNotification = nil
+    GogoLoot.notificationFrames[1]:SetText("|cFF00FF80"..text.."|r")
+
+    for _, frame in pairs(GogoLoot.notificationFrames) do
+        frame:Show()
     end
+
 end
 
 function GogoLoot:GetGroupMemberNames()
@@ -671,15 +686,13 @@ events:SetScript("OnEvent", function()
                 if name and unit and GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
                     GogoLoot:ShowNotification(name)
                     ---GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
-                elseif GogoLoot.hideNotification then
-                    GogoLoot.hideNotification()
+                else
+                    GogoLoot:HideNotification()
                 end
             end)
             
             GameTooltip:HookScript("OnHide", function()
-                if GogoLoot.hideNotification then
-                    GogoLoot.hideNotification()
-                end
+                GogoLoot:HideNotification()
             end)
 
         end
