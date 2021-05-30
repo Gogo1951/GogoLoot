@@ -41,7 +41,6 @@ StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
     preferredIndex = 3
 }
 
-
 GogoLoot.creators = {
     [1] = { -- NA
         ["Horde"] = {
@@ -544,11 +543,13 @@ function GogoLoot:BuildUI()
             dropdown:SetDisabled(false)
             widget:AddChild(dropdown)
 
-            local autoGray = checkbox(widget, "Automatic Destroy Gray Items on Loot", nil, nil)
-            autoGray:SetCallback("OnValueChanged", function()
-                GogoLoot_Config.enableAutoGray = autoGray:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
-            end)
-            autoGray:SetValue(true == GogoLoot_Config.enableAutoGray)
+            if WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then -- the function requires a hardware event in TBC
+                local autoGray = checkbox(widget, "Automatic Destroy Gray Items on Loot", nil, nil)
+                autoGray:SetCallback("OnValueChanged", function()
+                    GogoLoot_Config.enableAutoGray = autoGray:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
+                end)
+                autoGray:SetValue(true == GogoLoot_Config.enableAutoGray)
+            end
 
             local tabs = AceGUI:Create("TabGroup")
             tabs:SetLayout("Flow")

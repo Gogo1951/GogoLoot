@@ -603,7 +603,7 @@ events:SetScript("OnEvent", function()
                 lootTicker = nil
             end
             GogoLoot:showLootFrame("inventory error " .. message)
-        elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray then
+        elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray and WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
 
             -- auto gray
             --debug("BagUpdate!")
@@ -684,7 +684,9 @@ events:SetScript("OnEvent", function()
             GameTooltip:HookScript("OnTooltipSetUnit", function(self)
                 local name, unit = self:GetUnit()
                 if name and unit and GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
-                    GogoLoot:ShowNotification(name)
+                    if (not UnitInRaid(unit)) and (not UnitInParty(unit)) then
+                        GogoLoot:ShowNotification(name)
+                    end
                     ---GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
                 else
                     GogoLoot:HideNotification()
