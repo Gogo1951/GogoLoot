@@ -462,14 +462,14 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("START_LOOT_ROLL")
 
     local lastItemHidden = false
-
-    -- hook confirmation popup
-    local _StaticPopup_Show = StaticPopup_Show
-    StaticPopup_Show = function(popup, ...)
-        if (popup ~= "CONFIRM_LOOT_ROLL" and popup ~= "LOOT_BIND") or (not lastItemHidden) or (not GogoLoot_Config.autoConfirm) then--or (not GogoLoot_Config.autoConfirm)
-            _StaticPopup_Show(popup, ...)
+    hooksecurefunc("StaticPopup_Show", function(popup)
+        if not ((popup ~= "CONFIRM_LOOT_ROLL" and popup ~= "LOOT_BIND") or (not lastItemHidden) or (not GogoLoot_Config.autoConfirm)) then
+            StaticPopup1:Hide()
+            StaticPopup2:Hide()
+            StaticPopup3:Hide()
+            StaticPopup4:Hide()
         end
-    end
+    end)
 
     events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
         --debug(evt)
