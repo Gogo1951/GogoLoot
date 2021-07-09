@@ -517,12 +517,13 @@ function GogoLoot:BuildUI()
                 end
             end)
 
+            --[[
             local autoAccept = checkbox(widget, "Speedy Confirm (Auto Confirm BoP Loot)")
             autoAccept:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.autoConfirm = autoAccept:GetValue()
             end)
             autoAccept:SetDisabled(false)
-            autoAccept:SetValue(true == GogoLoot_Config.autoConfirm)
+            autoAccept:SetValue(true == GogoLoot_Config.autoConfirm)]]
 
             local autoRoll = checkbox(widget, "Automatic Rolls on BoEs", nil, 280)
             autoRoll:SetCallback("OnValueChanged", function()
