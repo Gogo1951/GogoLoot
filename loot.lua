@@ -683,7 +683,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                 -- ensure its not already added (blizzard bug)
                 local alreaydAdded = false
                 for i = 1, GameTooltip:NumLines() do
-                    if _G["GameTooltipTextRight" .. tostring(i)]:GetText() == creatorText then
+                    if _G["GameTooltipTextLeft" .. tostring(i)]:GetText() == creatorText then
                         alreaydAdded = true
                         break
                     end
