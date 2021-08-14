@@ -12,6 +12,8 @@ GogoLoot.SOFTRES_ROLL = "{rt4} GogoLoot : Per SoftRes.It List, %s will be rolled
 GogoLoot.AUTO_ROLL_ENABLED = "{rt4} GogoLoot : Auto %s on BoEs Enabled!"
 GogoLoot.AUTO_ROLL_DISABLED = "{rt4} GogoLoot : Auto %s on BoEs Disabled!"
 
+GogoLoot.AUTO_NEED_WARNING = "{rt4} GogoLoot : WARNING! I'm Auto-Needing on %s!"
+
 GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
 
 GogoLoot.ADDON_CONFLICT = "GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
@@ -44,8 +46,7 @@ StaticPopupDialogs["GOGOLOOT_THRESHOLD_ERROR"] = {
 GogoLoot.creators = {
     [1] = { -- NA
         ["Horde"] = {
-            ["Earthfury"] = {
-                Bugzug = true,
+            ["Mankrik"] = {
                 Gogobank = true,
                 Gogodruid = true,
                 Gogohunter = true,
@@ -56,9 +57,8 @@ GogoLoot.creators = {
                 Gogoshaman = true,
                 Gogowarlock = true,
                 Gogowarrior = true,
-                Wew = true
             }
-        }
+        },
     },
     -- 2: korea
     [3] = { -- EU
@@ -178,7 +178,7 @@ function GogoLoot:BuildUI()
             end
 
             local configHashNow = TableHash(GogoLoot_Config, 0)
-            if configHashNow ~= GogoLoot_Config.configHash then
+            if configHashNow ~= GogoLoot_Config.configHash or true then
                 GogoLoot_Config.configHash = configHashNow
 
                 for player, targets in pairs(playerLoots) do
@@ -232,6 +232,10 @@ function GogoLoot:BuildUI()
                     
                 end
             end
+        elseif GetLootMethod() == "group" then
+            -- find all types that we are need-rolling on (if any)
+            GogoLoot:AnnounceNeeds()
+
         --[[elseif GetLootMethod() == "group" and GogoLoot_Config.autoRoll and (not wasAutoRollEnabled) and 1 == GogoLoot_Config.autoRollThreshold then
             SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
         elseif GetLootMethod() == "group" and (not GogoLoot_Config.autoRoll) and wasAutoRollEnabled and 1 == GogoLoot_Config.autoRollThreshold then
@@ -525,24 +529,49 @@ function GogoLoot:BuildUI()
             autoAccept:SetDisabled(false)
             autoAccept:SetValue(true == GogoLoot_Config.autoConfirm)]]
 
+
+
+
+
+            local professionRoll = checkbox(widget, "Manual Roll on All Profession Items (Such as Patterns and Recipes)")
+            professionRoll:SetCallback("OnValueChanged", function()
+                GogoLoot_Config.professionRollDisable = not professionRoll:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
+            end)
+            professionRoll:SetDisabled(false)
+            professionRoll:SetValue(not GogoLoot_Config.professionRoll)
+
+            --[[
             local autoRoll = checkbox(widget, "Automatic Rolls on BoEs", nil, 280)
             autoRoll:SetCallback("OnValueChanged", function()
                 GogoLoot_Config.autoRoll = autoRoll:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
             end)
             autoRoll:SetDisabled(false)
             autoRoll:SetValue(true == GogoLoot_Config.autoRoll)
+            ]]
 
-            local dropdown = AceGUI:Create("Dropdown")
-            dropdown:SetWidth(150) -- todo: align right
-            dropdown:SetList({
-                ["greed"]="Greed", ["need"]="Need"
-            })
-            dropdown:SetValue(1 == GogoLoot_Config.autoRollThreshold and "need" or "greed")
-            dropdown:SetCallback("OnValueChanged", function()
-                GogoLoot_Config.autoRollThreshold = (dropdown:GetValue() == "greed") and 2 or 1
-            end)
-            dropdown:SetDisabled(false)
-            widget:AddChild(dropdown)
+            local function buildDropdown(varName)
+                local dropdown = AceGUI:Create("Dropdown")
+                dropdown:SetWidth(200) -- todo: align right
+                dropdown:SetList({
+                    ["!manual"]="Manual Rolls", ["greed"]="Automatic Rolls - Greed", ["need"]="Automatic Rolls - Need"
+                })
+                dropdown:SetValue(GogoLoot_Config[varName] or "!manual")
+                dropdown:SetCallback("OnValueChanged", function()
+                    GogoLoot_Config[varName] = dropdown:GetValue() -- (dropdown:GetValue() == "greed") and 2 or 1
+                end)
+                dropdown:SetDisabled(false)
+                widget:AddChild(dropdown)
+            end
+
+            label(widget, "Automatic Rolls on Green BoE Items", 280)
+            buildDropdown("autoGreenRolls")
+
+            label(widget, "Automatic Rolls on Blue BoE Items", 280)
+            buildDropdown("autoBlueRolls")
+
+            label(widget, "Automatic Rolls on Purple BoE Items", 280)
+            buildDropdown("autoPurpleRolls")
+            
 
             if WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then -- the function requires a hardware event in TBC
                 local autoGray = checkbox(widget, "Automatic Destroy Gray Items on Loot", nil, nil)
@@ -756,33 +785,54 @@ function GogoLoot:BuildUI()
 
         end,
         ["about"] = function(widget, group)
+            labelLarge(widget, "Don't Let Loot Slow Down Your Zug!")
+    
             spacer(widget)
+
             label(widget, "GogoLoot was designed to help speed up the looting process by automating some of the Master Looter and Group Loot settings.")
+            
             spacer2(widget)
-            spacer2(widget)
+            
             labelLarge(widget, "Tips & Tricks")
+            
             spacer(widget)
-            labelNormal(widget, "    • Hold Shift while looting to disable GogoLoot for that corpse.")
-            labelNormal(widget, "    • To keep momentum during a raid, have your Master Looter come with empty bags so they can scoop up all the gear and hand it out at the end.")
-            labelNormal(widget, "    • For faster raid clears, set the threshold to gray (poor). This will allow your raiders to focus on moving in one direction towards the next boss, not having to run back randomly when they see sparkles. (Most instances don't have more than 5-10g worth of grays total; makes a good donation to your flask fund.)")
-            labelNormal(widget, "    • When getting boosted, or power-leveled, turn \"destroy grays\" to avoid clutter.")
+            
+            labelNormal(widget, "• Hold Shift while looting to disable GogoLoot for that corpse.")
+            labelNormal(widget, "• To keep momentum during a raid, have your Master Looter come with empty bags so they can scoop up all the gear and hand it out at the end.")
+            labelNormal(widget, "• For faster raid clears, set the threshold to gray (poor). This will allow your raiders to focus on moving in one direction towards the next boss, not having to run back randomly when they see sparkles.")
 
             spacer2(widget)
-            spacer2(widget)
-            labelLarge(widget, "Creators")
-            labelNormal(widget, "    • Gogo (Earthfury-US).")
-            labelNormal(widget, "    • Aero (Earthfury-US). Aero was also the creator of Questie.")
-            labelNormal(widget, "    • Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of SoftRes.It.")
-            spacer2(widget)
+            
+            labelLarge(widget, "Feedback")
+
+            spacer(widget)
+ 
+            labelNormal(widget, "If you have feedback, feel free to share it on Discord.")
+            --labelNormal(widget, "https://github.com/Gogo1951/GogoLoot/issues/")
+            local box = AceGUI:Create("EditBox")
+            box:DisableButton(true)
+            box:SetFullWidth(true)
+            box:SetText("https://discord.gg/GegY9JMuKQ")
+            widget:AddChild(box)
             spacer2(widget)
 
-            labelNormal(widget, "If you have any suggestions, or find any bugs, please add them to GitHub.")
+            labelNormal(widget, "If you find any bugs, please report them on GitHub.")
             --labelNormal(widget, "https://github.com/Gogo1951/GogoLoot/issues/")
             local box = AceGUI:Create("EditBox")
             box:DisableButton(true)
             box:SetFullWidth(true)
             box:SetText("https://github.com/Gogo1951/GogoLoot/issues/")
             widget:AddChild(box)
+
+            spacer2(widget)
+            
+            labelLarge(widget, "Creators")
+
+            spacer(widget)
+
+            labelNormal(widget, "• Gogo (Mankrik-US).")
+            labelNormal(widget, "• Aero (Earthfury-US). Aero was also the creator of Questie.")
+            labelNormal(widget, "• Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of SoftRes.It.")
         end
     }
 

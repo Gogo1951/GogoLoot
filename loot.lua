@@ -1,15 +1,11 @@
-
-if not GogoLoot_Logs then
-    GogoLoot_Logs = {}
-end
-
 local function debug(str)
-    --tinsert(GogoLoot_Logs, str)
+    tinsert(GogoLoot_Config.logs, str)
     --print(str)
 end
 
 local itemBindings = nil -- populated later
 local internalIgnoreList = nil -- populated later
+local internalIgnoreListRecipes = nil -- populated later
 
 -- used clean up the above tables
 local function valToKey(...)
@@ -24,7 +20,7 @@ end
 
 GogoLoot = {}
 
-CONFIG_VERSION = 7
+CONFIG_VERSION = 8
 
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
@@ -34,7 +30,7 @@ function GogoLoot:BuildConfig()
         ["autoConfirm"] = false,
         ["autoRollThreshold"] = 2,
         ["players"] = {},
-        }
+    }
     GogoLoot_Config.ignoredItemsSolo = {
         [4500] = true,
         [11732] = true,
@@ -64,6 +60,21 @@ function GogoLoot:BuildConfig()
         [21324] = true,
     }
 
+    if string.byte(GetBuildInfo(), 1) == 50 then -- tbc
+        GogoLoot_Config.ignoredItemsSolo = {}
+        for _, v in pairs({
+            29739,
+            20520,
+            12662,
+            29740,
+            30183,
+            23572
+        }) do
+            GogoLoot_Config.ignoredItemsSolo[v] = true
+            GogoLoot_Config.ignoredItemsMaster[v] = true
+        end
+    end
+
     GogoLoot_Config.softres = {}
     GogoLoot_Config.softres.profiles = {}
 
@@ -81,6 +92,16 @@ GogoLoot.validBOPInstances = {
     [509] = true, -- AQ20
     [531] = true, -- AQ40
     [533] = true, -- naxx
+
+    [532] = true, -- kara
+    [565] = true, -- gruuls
+    [544] = true, -- magt
+    [548] = true, -- serpentshrine
+    [550] = true, -- the eye
+    [534] = true, -- hyjal
+    [564] = true, -- black temple
+    [568] = true, -- za
+    [580] = true, -- sunwell
 }
 
 
@@ -252,7 +273,7 @@ end
 GogoLoot.canOpenWindow = false
 
 function GogoLoot:showLootFrame(reason, force)
-    if GogoLoot_Config.speedyLoot and GogoLoot.canOpenWindow then
+    if GogoLoot_Config.speedyLoot and (force or GogoLoot.canOpenWindow) then
         debug("Showing loot frame because ".. reason)
         GogoLoot.canOpenWindow = false
         LootFrame:GetScript("OnEvent")(LootFrame, "LOOT_OPENED")
@@ -294,7 +315,8 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
         local id = tonumber(ItemIDCache[lootLink][5])
         debug("ShouldLoot " .. tostring(index) .. " = " .. tostring(doLoot) .. " " .. tostring(rarity) .. " " .. tostring(color) .. " " .. lootLink)
         if id and doLoot 
-            and (not internalIgnoreList[id]) 
+            and (not internalIgnoreList[id])
+            and ((not internalIgnoreListRecipes[id]) or (GogoLoot_Config.professionRollDisable and itemBindings[id] ~= 1))
             and (not GogoLoot_Config.ignoredItemsMaster[id]) -- items from config UI
             and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) -- check if item is BOP, and check disable BOP config option
             and ((not itemBindings[id]) or itemBindings[id] ~= 4) -- check if the item is a quest item
@@ -368,6 +390,330 @@ function hookAutoNeed()
     end
     --/run GroupLootFrame2.NeedButton:GetScript("OnClick")(GroopLootFrame2.NeedButton)
     --/run StaticPopup1Button1:GetScript("OnClick")(StaticPopup1Button1)
+end
+
+function GogoLoot:AnnounceNeeds()
+    local types = nil
+
+    if GogoLoot_Config.autoGreenRolls == "need" and GogoLoot_Config.autoBlueRolls == "need" and GogoLoot_Config.autoPurpleRolls == "need" then
+        types = "Greens, Blues and Purples"
+    else
+        if GogoLoot_Config.autoGreenRolls == "need" then
+            if not types then
+                types = "Greens"
+            else
+                types = types .. " and Greens"
+            end
+        end
+
+        if GogoLoot_Config.autoBlueRolls == "need" then
+            if not types then
+                types = "Blues"
+            else
+                types = types .. " and Blues"
+            end
+        end
+
+        if GogoLoot_Config.autoPurpleRolls == "need" then
+            if not types then
+                types = "Purples"
+            else
+                types = types .. " and Purples"
+            end
+        end
+    end
+
+    if types then
+        SendChatMessage(string.format(GogoLoot.AUTO_NEED_WARNING, types), UnitInRaid("Player") and "RAID" or "PARTY")
+    end
+end
+
+function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
+    --debug(evt)
+    --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
+    --    canOpenWindow = true
+    --[[if "LOOT_BIND_CONFIRM" == evt and GogoLoot_Config.autoConfirm then
+        local id = select(1, GetLootSlotInfo(arg))
+        if id and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and (not GogoLoot_Config.ignoredItemsSolo[id]) then -- items from config UI
+            lastItemHidden = true
+            ConfirmLootSlot(arg)
+        else
+            lastItemHidden = false
+        end
+    else]]
+
+    if "LOOT_READY" == evt then
+        lootAPIOpen = true
+    elseif ("LOOT_OPENED" == evt) and canLoot then
+        debug("LootReady! " .. evt)
+        GogoLoot.canOpenWindow = true
+        if GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE") then
+            if not GogoLoot_Config.enabled then
+                GogoLoot:showLootFrame("GogoLoot disabled")
+            else
+                if not GogoLoot:areWeMasterLooter() then
+                    local index = GetNumLootItems()
+                    local hasNormalLoot = false
+                    for i=1,index do
+                        local result = GogoLoot:VacuumSlotSolo(index)
+                        hasNormalLoot = hasNormalLoot or couldntLoot
+                    end
+                    if hasNormalLoot then
+                        GogoLoot:showLootFrame("has normal loot solo")
+                    end
+                else
+                    canLoot = false
+                    local lootStep = 1
+                    local validPreviouslyHack = {}
+
+                    local function incrementLootStep()
+                        lootStep = lootStep + 1
+                        if lootStep > GetNumLootItems() then
+                            lootStep = 1
+                        end
+                    end
+
+                    local function doLootStep()
+                        debug("DoLootStep " .. tostring(lootStep))
+                        local index = GetNumLootItems()
+                        local playerIndex = {}
+                        while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
+                            for i = 1, GetNumGroupMembers() do
+                                local playerAtIndex = GetMasterLootCandidate(index, i)
+                                if playerAtIndex and not playerIndex[index] then
+                                    playerIndex[index] = {}
+                                end
+                                if playerAtIndex then
+                                    playerIndex[index][strlower(playerAtIndex)] = i
+                                end
+                            end
+                            index = index - 1
+                        end
+
+                        if playerIndex[lootStep] and GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
+                            --if lootTicker then
+                            --    debug("Cancelled loot ticker [1]")
+                            --    lootTicker:Cancel()
+                            --    lootTicker = nil
+                            --end
+                            GogoLoot:showLootFrame("has normal loot")
+                            incrementLootStep()
+                            return true
+                        end
+
+                        if lootStep > GetNumLootItems() and lootTicker then
+                            debug("Cancelled loot ticker [1]")
+                            lootTicker:Cancel()
+                            lootTicker = nil
+                            return true
+                        end
+
+                        incrementLootStep()
+                    end
+                    if lootTicker then
+                        debug("Cancelled loot ticker [2]")
+                        lootTicker:Cancel()
+                        lootTicker = nil
+                    end
+                    local hadNormalLoot = false
+                    --for i=1,min(5, GetNumLootItems()) do -- do 1 full iteration right away, up to 5 items
+                    --    hadNormalLoot = doLootStep() or hadNormalLoot
+                    --end
+                    if not hadNormalLoot then
+                        debug("There is loot, continuing timer...")
+                        lootTicker = C_Timer.NewTicker(0.05, doLootStep)
+                    end
+                end
+            end
+        else
+            GogoLoot:showLootFrame("autoloot disabled")
+        end
+    elseif "LOOT_CLOSED" == evt then
+        lootAPIOpen = false
+        canLoot = true
+        GogoLoot.canOpenWindow = false
+        if lootTicker then
+            debug("Cancelled loot ticker [3]")
+            lootTicker:Cancel()
+            lootTicker = nil
+        end
+    elseif "START_LOOT_ROLL" == evt then
+        local rollid = tonumber(arg)
+        if rollid and GogoLoot_Config.autoRoll then
+            local itemLink = GetLootRollItemLink(rollid)
+            if itemLink then
+                debug(itemLink)
+                local data = {string.find(itemLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")}
+                debug(data[5])
+                local itemID = tonumber(data[5])
+                if itemID then
+                    if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
+                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID] and ((not internalIgnoreListRecipes[itemID]) or (GogoLoot_Config.professionRollDisable and itemBindings[itemID] ~= 1))) then
+                            -- we should auto need or greed this
+                            
+                            -- find desired roll behavior for item type
+                            local rarity = colorToRarity[data[3]]
+                            local action = nil
+
+                            if rarity == 2 then -- green
+                                if GogoLoot_Config.autoGreenRolls then
+                                    if GogoLoot_Config.autoGreenRolls == "need" then
+                                        action = 1
+                                    elseif GogoLoot_Config.autoGreenRolls == "greed" then
+                                        action = 2
+                                    end
+                                end
+                            elseif rarity == 3 then -- blue
+                                if GogoLoot_Config.autoBlueRolls then
+                                    if GogoLoot_Config.autoBlueRolls == "need" then
+                                        action = 1
+                                    elseif GogoLoot_Config.autoBlueRolls == "greed" then
+                                        action = 2
+                                    end
+                                end
+                            elseif rarity == 4 then -- epic
+                                if GogoLoot_Config.autoPurpleRolls then
+                                    if GogoLoot_Config.autoPurpleRolls == "need" then
+                                        action = 1
+                                    elseif GogoLoot_Config.autoPurpleRolls == "greed" then
+                                        action = 2
+                                    end
+                                end
+                            end
+
+                            if action then
+                                debug("Rolling on loot: " .. tostring(rollid) .. " thresh: " .. tostring(action))
+                                RollOnLoot(rollid, action)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        --print(arg)
+        --print(message)
+    elseif "LOOT_BIND_CONFIRM" == evt then
+        GogoLoot:showLootFrame("bind confirm")
+    elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and not badErrors[message] then
+        debug(message)
+        if lootTicker then
+            debug("Cancelled loot ticker [4]")
+            lootTicker:Cancel()
+            lootTicker = nil
+        end
+        GogoLoot:showLootFrame("inventory error " .. message)
+    elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray and WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
+
+        -- auto gray
+        --debug("BagUpdate!")
+        if arg and tonumber(arg) then
+            local slt = GetContainerNumSlots(arg)
+            for i=1,slt do
+                local dat = {GetContainerItemInfo(arg, i)}
+                if dat[4] == 0 then
+                    PickupContainerItem(arg, i)
+                    DeleteCursorItem()
+                end
+            end
+        end
+
+        --print(message)
+        --print(a)
+        --print(b)
+        --print(c)
+        --print(arg)
+    elseif "GROUP_ROSTER_UPDATE" == evt then
+        local inGroup = IsInGroup()
+        if inGroup ~= GogoLoot.isInGroup then
+            GogoLoot.isInGroup = inGroup
+            if inGroup then -- we have just joined a group
+                if GetLootMethod() == "group" and GogoLoot_Config.autoRoll and 1 == GogoLoot_Config.autoRollThreshold then
+                    GogoLoot:AnnounceNeeds()--SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+                end
+            else -- we left, clear group-specific settings
+                GogoLoot_Config.players = {}
+                GogoLoot_Config.softres.profiles.current = nil
+                GogoLoot_Config.softres.profiles._current_data = nil
+            end
+        end
+    elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GogoLoot:areWeMasterLooter() and GetLootMethod() == "master" then
+        GogoLoot:BuildUI()
+    elseif "LOOT_SLOT_CLEARED" == evt then
+        --print("LSC: " .. tostring(GetLootSlotInfo(tonumber(arg))))
+        GogoLoot:HandleSoftresLooted(arg)
+    elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" then
+        GogoLoot:AnnounceNeeds()
+    --    SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+    elseif "MODIFIER_STATE_CHANGED" == evt and not canLoot then
+        if GetCVarBool("autoLootDefault") == IsModifiedClick("AUTOLOOTTOGGLE") then
+            GogoLoot:showLootFrame("modifier state changed")
+        end
+    elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
+        if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < CONFIG_VERSION then
+            GogoLoot:BuildConfig()
+        end
+        GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
+        if select(5, GetInstanceInfo()) == 0 then
+            GogoLoot._inInstance = false
+        elseif GogoLoot._inInstance == false then
+            GogoLoot._inInstance = true
+            if GogoLoot_Config.autoRoll and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
+                GogoLoot:AnnounceNeeds() --SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+            end
+        end
+        for id in pairs(GogoLoot_Config.ignoredItemsSolo) do
+            GetItemInfo(id)
+        end
+        for id in pairs(GogoLoot_Config.ignoredItemsMaster) do
+            GetItemInfo(id)
+        end
+
+        if GogoLoot_Config.speedyLoot then
+            LootFrame:UnregisterEvent('LOOT_OPENED')
+        end
+        local creatorText = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t "
+        GameTooltip:HookScript("OnTooltipSetUnit", function(self)
+
+            local name, unit = self:GetUnit()
+            if name and unit and GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
+                --if (not UnitInRaid(unit)) and (not UnitInParty(unit)) then
+                --    GogoLoot:ShowNotification(name)
+                --end
+
+                -- ensure its not already added (blizzard bug)
+                local alreaydAdded = false
+                for i = 1, GameTooltip:NumLines() do
+                    if _G["GameTooltipTextRight" .. tostring(i)]:GetText() == creatorText then
+                        alreaydAdded = true
+                        break
+                    end
+                end
+                if not alreaydAdded then
+                    GameTooltip:AddLine(creatorText)
+                end
+            else
+                --GogoLoot:HideNotification()
+            end
+        end)
+
+        if not GogoLoot_Config.logs then
+            GogoLoot_Config.logs = {}
+        end
+        debug("Started up!")
+        
+        GameTooltip:HookScript("OnHide", function()
+            GogoLoot:HideNotification()
+        end)
+    elseif "PLAYER_LOGIN" == evt then
+        for _, addon in pairs(GogoLoot.conflicts) do
+            if IsAddOnLoaded(addon) then
+                C_Timer.After(4, function()
+                    print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
+                end)
+                break
+            end
+        end
+    end
 end
 
 local events = CreateFrame('Frame')
@@ -485,235 +831,7 @@ events:SetScript("OnEvent", function()
         end
     end)]]
 
-    events:SetScript("OnEvent", function(self, evt, arg, message, a, b, c, ...)
-        --debug(evt)
-        --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
-        --    canOpenWindow = true
-        --[[if "LOOT_BIND_CONFIRM" == evt and GogoLoot_Config.autoConfirm then
-            local id = select(1, GetLootSlotInfo(arg))
-            if id and (not internalIgnoreList[id]) and (not GogoLoot_Config.ignoredItemsMaster[id]) and (not GogoLoot_Config.ignoredItemsSolo[id]) then -- items from config UI
-                lastItemHidden = true
-                ConfirmLootSlot(arg)
-            else
-                lastItemHidden = false
-            end
-        else]]
-
-        if "LOOT_READY" == evt then
-            lootAPIOpen = true
-        elseif ("LOOT_OPENED" == evt) and canLoot then
-            debug("LootReady! " .. evt)
-            GogoLoot.canOpenWindow = true
-            if GetCVarBool("autoLootDefault") ~= IsModifiedClick("AUTOLOOTTOGGLE") then
-                if not GogoLoot_Config.enabled then
-                    GogoLoot:showLootFrame("GogoLoot disabled")
-                else
-                    if not GogoLoot:areWeMasterLooter() then
-                        local index = GetNumLootItems()
-                        local hasNormalLoot = false
-                        for i=1,index do
-                            local result = GogoLoot:VacuumSlotSolo(index)
-                            hasNormalLoot = hasNormalLoot or couldntLoot
-                        end
-                        if hasNormalLoot then
-                            GogoLoot:showLootFrame("has normal loot solo")
-                        end
-                    else
-                        canLoot = false
-                        local lootStep = 1
-                        local validPreviouslyHack = {}
-
-                        local function incrementLootStep()
-                            lootStep = lootStep + 1
-                            if lootStep > GetNumLootItems() then
-                                lootStep = 1
-                            end
-                        end
-
-                        local function doLootStep()
-                            debug("DoLootStep " .. tostring(lootStep))
-                            local index = GetNumLootItems()
-                            local playerIndex = {}
-                            while index > 0 do -- we run this in its own loop to ensure the player name is available for all slots. Triggering a master loot event can mess with it
-                                for i = 1, GetNumGroupMembers() do
-                                    local playerAtIndex = GetMasterLootCandidate(index, i)
-                                    if playerAtIndex and not playerIndex[index] then
-                                        playerIndex[index] = {}
-                                    end
-                                    if playerAtIndex then
-                                        playerIndex[index][strlower(playerAtIndex)] = i
-                                    end
-                                end
-                                index = index - 1
-                            end
-
-                            if playerIndex[lootStep] and GogoLoot:VacuumSlot(lootStep, playerIndex[lootStep], validPreviouslyHack) then -- normal loot, stop ticking
-                                if lootTicker then
-                                    debug("Cancelled loot ticker [1]")
-                                    lootTicker:Cancel()
-                                    lootTicker = nil
-                                end
-                                GogoLoot:showLootFrame("has normal loot")
-                                incrementLootStep()
-                                return true
-                            end
-
-                            incrementLootStep()
-                        end
-                        if lootTicker then
-                            debug("Cancelled loot ticker [2]")
-                            lootTicker:Cancel()
-                            lootTicker = nil
-                        end
-                        local hadNormalLoot = false
-                        for i=1,min(5, GetNumLootItems()) do -- do 1 full iteration right away, up to 5 items
-                            hadNormalLoot = doLootStep() or hadNormalLoot
-                        end
-                        if not hadNormalLoot then
-                            debug("There is loot, continuing timer...")
-                            lootTicker = C_Timer.NewTicker(0.1, doLootStep)
-                        end
-                    end
-                end
-            else
-                GogoLoot:showLootFrame("autoloot disabled")
-            end
-        elseif "LOOT_CLOSED" == evt then
-            lootAPIOpen = false
-            canLoot = true
-            GogoLoot.canOpenWindow = false
-            if lootTicker then
-                debug("Cancelled loot ticker [3]")
-                lootTicker:Cancel()
-                lootTicker = nil
-            end
-        elseif "START_LOOT_ROLL" == evt then
-            local rollid = tonumber(arg)
-            if rollid and GogoLoot_Config.autoRoll then
-                local itemLink = GetLootRollItemLink(rollid)
-                if itemLink then
-                    debug(itemLink)
-                    local data = {string.find(itemLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")}
-                    debug(data[5])
-                    local itemID = tonumber(data[5])
-                    if itemID then
-                        if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
-                            if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) then
-                                -- we should auto need or greed this
-                                debug("Rolling on loot: " .. tostring(rollid) .. " thresh: " .. tostring(GogoLoot_Config.autoRollThreshold or 2))
-                                RollOnLoot(rollid, GogoLoot_Config.autoRollThreshold or 2)
-                            end
-                        end
-                    end
-                end
-            end
-            --print(arg)
-            --print(message)
-        elseif "LOOT_BIND_CONFIRM" == evt then
-            GogoLoot:showLootFrame("bind confirm")
-        elseif "UI_ERROR_MESSAGE" == evt and message and (message == ERR_ITEM_MAX_COUNT or message == ERR_INV_FULL or string.match(strlower(message), "inventory") or string.match(strlower(message), "loot")) and not badErrors[message] then
-            debug(message)
-            if lootTicker then
-                debug("Cancelled loot ticker [4]")
-                lootTicker:Cancel()
-                lootTicker = nil
-            end
-            GogoLoot:showLootFrame("inventory error " .. message)
-        elseif "BAG_UPDATE" == evt and GogoLoot_Config.enableAutoGray and WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
-
-            -- auto gray
-            --debug("BagUpdate!")
-            if arg and tonumber(arg) then
-                local slt = GetContainerNumSlots(arg)
-                for i=1,slt do
-                    local dat = {GetContainerItemInfo(arg, i)}
-                    if dat[4] == 0 then
-                        PickupContainerItem(arg, i)
-                        DeleteCursorItem()
-                    end
-                end
-            end
-
-            --print(message)
-            --print(a)
-            --print(b)
-            --print(c)
-            --print(arg)
-        elseif "GROUP_ROSTER_UPDATE" == evt then
-            local inGroup = IsInGroup()
-            if inGroup ~= GogoLoot.isInGroup then
-                GogoLoot.isInGroup = inGroup
-                if inGroup then -- we have just joined a group
-                    if GetLootMethod() == "group" and GogoLoot_Config.autoRoll and 1 == GogoLoot_Config.autoRollThreshold then
-                        SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
-                    end
-                else -- we left, clear group-specific settings
-                    GogoLoot_Config.players = {}
-                    GogoLoot_Config.softres.profiles.current = nil
-                    GogoLoot_Config.softres.profiles._current_data = nil
-                end
-            end
-        elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GogoLoot:areWeMasterLooter() and GetLootMethod() == "master" then
-            GogoLoot:BuildUI()
-        elseif "LOOT_SLOT_CLEARED" == evt then
-            --print("LSC: " .. tostring(GetLootSlotInfo(tonumber(arg))))
-            GogoLoot:HandleSoftresLooted(arg)
-        --elseif "PARTY_LOOT_METHOD_CHANGED" == evt and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
-        --    SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
-        elseif "MODIFIER_STATE_CHANGED" == evt and not canLoot then
-            if GetCVarBool("autoLootDefault") == IsModifiedClick("AUTOLOOTTOGGLE") then
-                GogoLoot:showLootFrame("modifier state changed")
-            end
-        elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
-            if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < CONFIG_VERSION then
-                GogoLoot:BuildConfig()
-            end
-            GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
-            if select(5, GetInstanceInfo()) == 0 then
-                GogoLoot._inInstance = false
-            elseif GogoLoot._inInstance == false then
-                GogoLoot._inInstance = true
-                if GogoLoot_Config.autoRoll and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
-                    SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
-                end
-            end
-            for id in pairs(GogoLoot_Config.ignoredItemsSolo) do
-                GetItemInfo(id)
-            end
-            for id in pairs(GogoLoot_Config.ignoredItemsMaster) do
-                GetItemInfo(id)
-            end
-
-            if GogoLoot_Config.speedyLoot then
-                LootFrame:UnregisterEvent('LOOT_OPENED')
-            end
-
-            GameTooltip:HookScript("OnTooltipSetUnit", function(self)
-                local name, unit = self:GetUnit()
-                if name and unit and GogoLoot:IsCreator(name, UnitFactionGroup(unit)) then
-                    if (not UnitInRaid(unit)) and (not UnitInParty(unit)) then
-                        GogoLoot:ShowNotification(name)
-                    end
-                    ---GameTooltip:AddLine("\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1.png:0\124t ")
-                else
-                    GogoLoot:HideNotification()
-                end
-            end)
-            
-            GameTooltip:HookScript("OnHide", function()
-                GogoLoot:HideNotification()
-            end)
-        elseif "PLAYER_LOGIN" == evt then
-            for _, addon in pairs(GogoLoot.conflicts) do
-                if IsAddOnLoaded(addon) then
-                    C_Timer.After(4, function()
-                        print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
-                    end)
-                    break
-                end
-            end
-        end
-    end)
+    events:SetScript("OnEvent", GogoLoot.EventHandler)
 
     LootFrame.selectedQuality = GetLootThreshold()
 
@@ -786,131 +904,133 @@ internalIgnoreList = valToKey(
     22736, --Andonisus, Reaper of Souls
     22737, --Atiesh, Greatstaff of the Guardian
     23051, --Glaive of the Defender
-}, {-- recipes
-    728, 966, 967, 968, 973, 974, 975, 976, 980, 985, 986, 989, 992, 994, 1004, 1029, 1030, 1031, 1032, 1033, 
-    1034, 1035, 1036, 1037, 1038, 1048, 1049, 1052, 1053, 1057, 1058, 1061, 1063, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 
-    1091, 1092, 1093, 1095, 1096, 1099, 1100, 1101, 1102, 1105, 1108, 1109, 1111, 1112, 1136, 1138, 1139, 1141, 1144, 1146, 
-    1149, 1150, 1151, 1164, 1224, 1228, 1229, 1231, 1232, 1238, 1239, 1243, 1244, 1245, 1246, 1250, 1323, 1328, 1332, 1334, 
-    1339, 1341, 1492, 1534, 1536, 1554, 1559, 1567, 1568, 1571, 1574, 1588, 1589, 1591, 1597, 1599, 1603, 1619, 1641, 1648, 
-    1651, 1655, 1657, 1658, 1676, 1681, 1877, 1882, 1886, 2404, 2405, 2406, 2407, 2408, 2409, 2553, 2554, 2555, 2556, 2598, 
-    2599, 2600, 2601, 2602, 2697, 2698, 2699, 2700, 2701, 2881, 2882, 2883, 2889, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 
-    3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3113, 3114, 3115, 3116, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 
-    3126, 3127, 3129, 3130, 3132, 3133, 3134, 3138, 3139, 3140, 3141, 3142, 3143, 3144, 3146, 3393, 3394, 3395, 3396, 3608, 
-    3609, 3610, 3611, 3612, 3678, 3679, 3680, 3681, 3682, 3683, 3734, 3735, 3736, 3737, 3830, 3831, 3832, 3866, 3867, 3868, 
-    3869, 3870, 3871, 3872, 3873, 3874, 3875, 4141, 4143, 4145, 4146, 4147, 4148, 4149, 4150, 4151, 4152, 4153, 4154, 4155, 
-    4156, 4157, 4158, 4159, 4161, 4162, 4163, 4164, 4165, 4166, 4167, 4168, 4169, 4170, 4171, 4172, 4173, 4174, 4175, 4176, 
-    4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185, 4186, 4187, 4188, 4189, 4198, 4199, 4200, 4201, 4202, 4203, 4204, 
-    4205, 4206, 4207, 4208, 4209, 4210, 4211, 4212, 4213, 4214, 4215, 4216, 4217, 4218, 4219, 4220, 4221, 4223, 4225, 4226, 
-    4228, 4230, 4266, 4267, 4268, 4269, 4270, 4271, 4272, 4273, 4274, 4275, 4276, 4277, 4279, 4280, 4281, 4282, 4283, 4284, 
-    4285, 4286, 4287, 4288, 4292, 4293, 4294, 4295, 4296, 4297, 4298, 4299, 4300, 4301, 4345, 4346, 4347, 4348, 4349, 4350, 
-    4351, 4352, 4353, 4354, 4355, 4356, 4408, 4409, 4410, 4411, 4412, 4413, 4414, 4415, 4416, 4417, 4597, 4609, 4624, 4997, 
-    5083, 5126, 5127, 5129, 5130, 5131, 5132, 5139, 5141, 5142, 5145, 5147, 5148, 5149, 5150, 5151, 5152, 5153, 5154, 5155, 
-    5156, 5158, 5160, 5163, 5482, 5483, 5484, 5485, 5486, 5487, 5488, 5489, 5528, 5543, 5577, 5578, 5640, 5641, 5642, 5643, 
-    5644, 5647, 5648, 5649, 5650, 5657, 5658, 5660, 5661, 5662, 5666, 5667, 5670, 5671, 5672, 5673, 5674, 5676, 5677, 5679, 
-    5680, 5682, 5683, 5684, 5685, 5688, 5696, 5697, 5698, 5699, 5700, 5701, 5702, 5703, 5704, 5705, 5706, 5707, 5708, 5709, 
-    5710, 5711, 5712, 5713, 5714, 5715, 5716, 5719, 5720, 5721, 5722, 5723, 5724, 5725, 5726, 5727, 5728, 5729, 5730, 5771, 
-    5772, 5773, 5774, 5775, 5786, 5787, 5788, 5789, 5972, 5973, 5974, 6039, 6044, 6045, 6046, 6047, 6053, 6054, 6055, 6056, 
-    6057, 6068, 6132, 6133, 6211, 6222, 6270, 6271, 6272, 6273, 6274, 6275, 6325, 6326, 6328, 6329, 6330, 6342, 6343, 6344, 
-    6345, 6346, 6347, 6348, 6349, 6368, 6369, 6375, 6376, 6377, 6390, 6391, 6401, 6454, 6474, 6475, 6476, 6619, 6621, 6661, 
-    6663, 6672, 6710, 6716, 6734, 6735, 6736, 6891, 6892, 6897, 7084, 7085, 7086, 7087, 7088, 7089, 7090, 7091, 7092, 7093, 
-    7114, 7192, 7288, 7289, 7290, 7360, 7361, 7362, 7363, 7364, 7449, 7450, 7451, 7452, 7453, 7560, 7561, 7613, 7678, 7742, 
-    7975, 7976, 7977, 7978, 7979, 7980, 7981, 7982, 7983, 7984, 7985, 7986, 7987, 7988, 7989, 7990, 7991, 7992, 7993, 7994, 
-    7995, 8028, 8029, 8030, 8046, 8384, 8385, 8386, 8387, 8388, 8389, 8390, 8395, 8397, 8398, 8399, 8400, 8401, 8402, 8403, 
-    8404, 8405, 8406, 8407, 8408, 8409, 8547, 8743, 8744, 8756, 8757, 8758, 8759, 8760, 8761, 8762, 8763, 8764, 8765, 8768, 
-    8769, 8770, 8771, 8772, 8773, 8774, 8775, 8776, 8777, 8778, 8779, 8780, 8781, 8782, 8783, 8784, 8785, 8786, 8787, 8788, 
-    8789, 8790, 8791, 8792, 8793, 8794, 8795, 8796, 8797, 8798, 8799, 8800, 8801, 8802, 8804, 8805, 8806, 8807, 8808, 8809, 
-    8810, 8811, 8812, 8813, 8814, 8815, 8816, 8818, 8819, 8820, 8821, 8822, 8823, 8824, 8825, 8826, 8828, 8829, 8830, 8832, 
-    8833, 8834, 8835, 8837, 8840, 8841, 8842, 8843, 8844, 8847, 8848, 8849, 8850, 8851, 8852, 8853, 8854, 8855, 8856, 8857, 
-    8858, 8859, 8860, 8861, 8862, 8863, 8864, 8865, 8866, 8867, 8868, 8869, 8871, 8872, 8873, 8874, 8875, 8876, 8877, 8878, 
-    8879, 8880, 8881, 8882, 8883, 8884, 8885, 8886, 8887, 8888, 8889, 8890, 8891, 8892, 8893, 8894, 8895, 8896, 8897, 8898, 
-    8899, 8900, 8901, 8902, 8903, 8904, 8905, 8906, 8907, 8909, 8910, 8911, 8912, 8913, 8914, 8915, 8916, 8917, 8918, 8919, 
-    8920, 8921, 8922, 8929, 8930, 8931, 8933, 8934, 8935, 8936, 8937, 8938, 8939, 8940, 8941, 8942, 8943, 8944, 8945, 8947, 
-    8954, 8955, 8958, 8960, 8961, 8962, 8963, 8964, 8965, 8966, 8967, 8968, 8969, 8971, 8972, 8974, 8975, 8976, 8977, 8978, 
-    8980, 8981, 8983, 8986, 8987, 8988, 8989, 8990, 8991, 8992, 8993, 8994, 8995, 8996, 8997, 8998, 8999, 9000, 9001, 9002, 
-    9003, 9004, 9005, 9006, 9007, 9008, 9009, 9010, 9011, 9012, 9013, 9014, 9015, 9016, 9017, 9018, 9019, 9020, 9021, 9022, 
-    9023, 9024, 9025, 9026, 9027, 9028, 9029, 9031, 9032, 9033, 9034, 9035, 9037, 9039, 9040, 9041, 9043, 9044, 9046, 9047, 
-    9048, 9049, 9050, 9051, 9052, 9053, 9054, 9055, 9056, 9057, 9058, 9059, 9062, 9063, 9064, 9065, 9066, 9067, 9068, 9069, 
-    9070, 9071, 9072, 9073, 9074, 9075, 9076, 9077, 9078, 9079, 9080, 9081, 9082, 9083, 9084, 9085, 9086, 9087, 9089, 9090, 
-    9091, 9093, 9094, 9095, 9096, 9097, 9098, 9099, 9100, 9101, 9102, 9103, 9104, 9105, 9123, 9124, 9125, 9126, 9127, 9128, 
-    9129, 9130, 9131, 9132, 9133, 9134, 9135, 9136, 9137, 9138, 9139, 9140, 9141, 9142, 9143, 9145, 9146, 9147, 9148, 9150, 
-    9151, 9152, 9156, 9157, 9158, 9159, 9160, 9161, 9162, 9164, 9165, 9166, 9167, 9168, 9169, 9170, 9171, 9174, 9175, 9176, 
-    9177, 9178, 9180, 9181, 9182, 9183, 9184, 9185, 9188, 9190, 9191, 9192, 9193, 9194, 9195, 9198, 9199, 9200, 9201, 9202, 
-    9203, 9204, 9205, 9207, 9208, 9209, 9211, 9212, 9214, 9215, 9216, 9217, 9218, 9219, 9221, 9222, 9223, 9225, 9226, 9227, 
-    9228, 9229, 9230, 9231, 9293, 9294, 9295, 9296, 9297, 9298, 9300, 9301, 9302, 9303, 9304, 9305, 9367, 10300, 10301, 10302, 
-    10303, 10304, 10311, 10312, 10313, 10314, 10315, 10316, 10317, 10318, 10319, 10320, 10321, 10322, 10323, 10324, 10325, 10326, 10424, 10463, 
-    10601, 10602, 10603, 10604, 10605, 10606, 10607, 10608, 10609, 10644, 10713, 10728, 10858, 11038, 11039, 11081, 11098, 11101, 11150, 11151, 
-    11152, 11163, 11164, 11165, 11166, 11167, 11168, 11202, 11203, 11204, 11205, 11206, 11207, 11208, 11223, 11224, 11225, 11226, 11610, 11611, 
-    11612, 11614, 11615, 11732, 11733, 11734, 11736, 11737, 11813, 11827, 11828, 12162, 12163, 12164, 12226, 12227, 12228, 12229, 12231, 12232, 
-    12233, 12239, 12240, 12261, 12682, 12683, 12684, 12685, 12687, 12688, 12689, 12690, 12691, 12692, 12693, 12694, 12695, 12696, 12697, 12698, 
-    12699, 12700, 12701, 12702, 12703, 12704, 12705, 12706, 12707, 12711, 12713, 12714, 12715, 12716, 12717, 12718, 12719, 12720, 12725, 12726, 
-    12727, 12728, 12816, 12817, 12818, 12819, 12821, 12823, 12824, 12825, 12826, 12827, 12828, 12830, 12831, 12832, 12833, 12834, 12835, 12836, 
-    12837, 12838, 12839, 12958, 13287, 13288, 13308, 13309, 13310, 13311, 13476, 13477, 13478, 13479, 13480, 13481, 13482, 13483, 13484, 13485, 
-    13486, 13487, 13488, 13489, 13490, 13491, 13492, 13493, 13494, 13495, 13496, 13497, 13499, 13500, 13501, 13517, 13518, 13519, 13520, 13521, 
-    13522, 13939, 13940, 13941, 13942, 13943, 13945, 13946, 13947, 13948, 13949, 14466, 14467, 14468, 14469, 14470, 14471, 14472, 14473, 14474, 
-    14476, 14477, 14478, 14479, 14480, 14481, 14482, 14483, 14484, 14485, 14486, 14488, 14489, 14490, 14491, 14492, 14493, 14494, 14495, 14496, 
-    14497, 14498, 14499, 14500, 14501, 14504, 14505, 14506, 14507, 14508, 14509, 14510, 14511, 14512, 14513, 14514, 14526, 14627, 14630, 14634, 
-    14635, 14639, 15724, 15725, 15726, 15727, 15728, 15729, 15730, 15731, 15732, 15733, 15734, 15735, 15737, 15738, 15739, 15740, 15741, 15742, 
-    15743, 15744, 15745, 15746, 15747, 15748, 15749, 15751, 15752, 15753, 15754, 15755, 15756, 15757, 15758, 15759, 15760, 15761, 15762, 15763, 
-    15764, 15765, 15768, 15769, 15770, 15771, 15772, 15773, 15774, 15775, 15776, 15777, 15779, 15780, 15781, 16041, 16042, 16043, 16044, 16045, 
-    16046, 16047, 16048, 16049, 16050, 16051, 16052, 16053, 16054, 16055, 16056, 16072, 16073, 16082, 16083, 16084, 16085, 16110, 16111, 16112, 
-    16113, 16214, 16215, 16216, 16217, 16218, 16219, 16220, 16221, 16222, 16223, 16224, 16242, 16243, 16244, 16245, 16246, 16247, 16248, 16249, 
-    16250, 16251, 16252, 16253, 16254, 16255, 16302, 16316, 16317, 16318, 16319, 16320, 16321, 16322, 16323, 16324, 16325, 16326, 16327, 16328, 
-    16329, 16330, 16331, 16346, 16347, 16348, 16349, 16350, 16351, 16352, 16353, 16354, 16355, 16356, 16357, 16358, 16359, 16360, 16361, 16362, 
-    16363, 16364, 16365, 16366, 16368, 16371, 16372, 16373, 16374, 16375, 16376, 16377, 16378, 16379, 16380, 16381, 16382, 16383, 16384, 16385, 
-    16386, 16387, 16388, 16389, 16390, 16665, 16767, 17017, 17018, 17022, 17023, 17025, 17049, 17051, 17052, 17053, 17059, 17060, 17062, 17200, 
-    17201, 17412, 17413, 17414, 17682, 17683, 17706, 17709, 17720, 17722, 17724, 17725, 18046, 18160, 18235, 18239, 18252, 18257, 18259, 18260, 
-    18264, 18265, 18267, 18290, 18291, 18292, 18332, 18333, 18334, 18414, 18415, 18416, 18417, 18418, 18487, 18514, 18515, 18516, 18517, 18518, 
-    18519, 18592, 18600, 18647, 18648, 18649, 18650, 18651, 18652, 18653, 18654, 18655, 18656, 18657, 18658, 18661, 18731, 18949, 19027, 19202, 
-    19203, 19204, 19205, 19206, 19207, 19208, 19209, 19210, 19211, 19212, 19215, 19216, 19217, 19218, 19219, 19220, 19326, 19327, 19328, 19329, 
-    19330, 19331, 19332, 19333, 19442, 19444, 19445, 19446, 19447, 19448, 19449, 19764, 19765, 19766, 19769, 19770, 19771, 19772, 19773, 19776, 
-    19777, 19778, 19779, 19780, 19781, 20000, 20001, 20011, 20012, 20013, 20014, 20040, 20075, 20253, 20254, 20382, 20506, 20507, 20508, 20509, 
-    20510, 20511, 20546, 20547, 20548, 20553, 20554, 20555, 20576, 20726, 20727, 20728, 20729, 20730, 20731, 20732, 20733, 20734, 20735, 20736, 
-    20752, 20753, 20754, 20755, 20756, 20757, 20758, 20761, 20854, 20855, 20856, 20970, 20971, 20972, 20973, 20974, 20975, 20976, 21025, 21099, 
-    21214, 21219, 21279, 21280, 21281, 21282, 21283, 21284, 21285, 21287, 21288, 21289, 21290, 21291, 21292, 21293, 21294, 21295, 21296, 21297, 
-    21298, 21299, 21300, 21302, 21303, 21304, 21306, 21307, 21358, 21369, 21371, 21547, 21548, 21722, 21723, 21724, 21725, 21726, 21727, 21728, 
-    21729, 21730, 21731, 21732, 21733, 21734, 21735, 21737, 21738, 21892, 21893, 21894, 21895, 21896, 21897, 21898, 21899, 21900, 21901, 21902, 
-    21903, 21904, 21905, 21906, 21907, 21908, 21909, 21910, 21911, 21912, 21913, 21914, 21915, 21916, 21917, 21918, 21919, 21924, 21940, 21941, 
-    21942, 21943, 21944, 21945, 21947, 21948, 21949, 21950, 21951, 21952, 21953, 21954, 21955, 21956, 21957, 21958, 21959, 21992, 21993, 22012, 
-    22146, 22153, 22179, 22180, 22181, 22182, 22183, 22184, 22185, 22186, 22187, 22188, 22189, 22190, 22209, 22214, 22219, 22220, 22221, 22222, 
-    22307, 22308, 22309, 22310, 22312, 22388, 22389, 22390, 22392, 22393, 22530, 22531, 22532, 22533, 22534, 22535, 22536, 22537, 22538, 22539, 
-    22540, 22541, 22542, 22543, 22544, 22545, 22546, 22547, 22548, 22551, 22552, 22553, 22554, 22555, 22556, 22557, 22558, 22559, 22560, 22561, 
-    22562, 22563, 22564, 22565, 22647, 22683, 22684, 22685, 22686, 22687, 22692, 22694, 22695, 22696, 22697, 22698, 22703, 22704, 22705, 22729, 
-    22739, 22766, 22767, 22768, 22769, 22770, 22771, 22772, 22773, 22774, 22890, 22891, 22897, 22900, 22901, 22902, 22903, 22904, 22905, 22906, 
-    22907, 22908, 22909, 22910, 22911, 22912, 22913, 22914, 22915, 22916, 22917, 22918, 22919, 22920, 22921, 22922, 22923, 22924, 22925, 22926, 
-    22927, 23130, 23131, 23133, 23134, 23135, 23136, 23137, 23138, 23140, 23141, 23142, 23143, 23144, 23145, 23146, 23147, 23148, 23149, 23150, 
-    23151, 23152, 23153, 23154, 23155, 23320, 23574, 23590, 23591, 23592, 23593, 23594, 23595, 23596, 23597, 23598, 23599, 23600, 23601, 23602, 
-    23603, 23604, 23605, 23606, 23607, 23608, 23609, 23610, 23611, 23612, 23613, 23615, 23617, 23618, 23619, 23620, 23621, 23622, 23623, 23624, 
-    23625, 23626, 23627, 23628, 23629, 23630, 23631, 23632, 23633, 23634, 23635, 23636, 23637, 23638, 23639, 23689, 23711, 23730, 23731, 23734, 
-    23745, 23755, 23799, 23800, 23802, 23803, 23804, 23805, 23806, 23807, 23808, 23809, 23810, 23811, 23812, 23813, 23814, 23815, 23816, 23817, 
-    23874, 23882, 23883, 23884, 23885, 23887, 23888, 24000, 24001, 24002, 24003, 24101, 24102, 24158, 24159, 24160, 24161, 24162, 24163, 24164, 
-    24165, 24166, 24167, 24168, 24169, 24170, 24171, 24172, 24173, 24174, 24175, 24176, 24177, 24178, 24179, 24180, 24181, 24182, 24183, 24192, 
-    24193, 24194, 24195, 24196, 24197, 24198, 24199, 24200, 24201, 24202, 24203, 24204, 24205, 24206, 24207, 24208, 24209, 24210, 24211, 24212, 
-    24213, 24214, 24215, 24216, 24217, 24218, 24219, 24220, 24292, 24293, 24294, 24295, 24296, 24297, 24298, 24299, 24300, 24301, 24302, 24303, 
-    24304, 24305, 24306, 24307, 24308, 24309, 24310, 24311, 24312, 24313, 24314, 24315, 24316, 24345, 25469, 25526, 25720, 25721, 25722, 25725, 
-    25726, 25728, 25729, 25730, 25731, 25732, 25733, 25734, 25735, 25736, 25737, 25738, 25739, 25740, 25741, 25742, 25743, 25846, 25847, 25848, 
-    25849, 25869, 25870, 25887, 25888, 25900, 25902, 25903, 25904, 25905, 25906, 25907, 25908, 25909, 25910, 27532, 27684, 27685, 27686, 27687, 
-    27688, 27689, 27690, 27691, 27692, 27693, 27694, 27695, 27696, 27697, 27698, 27699, 27700, 27736, 28068, 28071, 28072, 28073, 28270, 28271, 
-    28272, 28273, 28274, 28276, 28277, 28279, 28280, 28281, 28282, 28291, 28596, 28632, 29120, 29213, 29214, 29215, 29217, 29218, 29219, 29232, 
-    29549, 29550, 29664, 29669, 29672, 29673, 29674, 29675, 29677, 29682, 29684, 29689, 29691, 29693, 29698, 29700, 29701, 29702, 29703, 29704, 
-    29713, 29714, 29717, 29718, 29719, 29720, 29721, 29722, 29723, 29724, 29725, 29726, 29727, 29728, 29729, 29730, 29731, 29732, 29733, 29734, 
-    30156, 30280, 30281, 30282, 30283, 30301, 30302, 30303, 30304, 30305, 30306, 30307, 30308, 30321, 30322, 30323, 30324, 30443, 30444, 30469, 
-    30470, 30471, 30472, 30473, 30474, 30483, 30826, 30833, 30842, 30843, 30844, 31354, 31355, 31356, 31357, 31358, 31359, 31361, 31362, 31390, 
-    31391, 31392, 31393, 31394, 31395, 31401, 31402, 31496, 31498, 31500, 31501, 31502, 31503, 31505, 31506, 31507, 31674, 31675, 31680, 31681, 
-    31682, 31837, 31870, 31871, 31872, 31873, 31874, 31875, 31876, 31877, 31878, 31879, 32070, 32071, 32274, 32277, 32281, 32282, 32283, 32284, 
-    32285, 32286, 32287, 32288, 32289, 32290, 32291, 32292, 32293, 32294, 32295, 32296, 32297, 32298, 32299, 32300, 32301, 32302, 32303, 32304, 
-    32305, 32306, 32307, 32308, 32309, 32310, 32311, 32312, 32381, 32411, 32412, 32429, 32430, 32431, 32432, 32433, 32434, 32435, 32436, 32437, 
-    32438, 32439, 32440, 32441, 32442, 32443, 32444, 32447, 32736, 32737, 32738, 32739, 32744, 32745, 32746, 32747, 32748, 32749, 32750, 32751, 
-    32752, 32753, 32754, 32755, 33124, 33148, 33149, 33150, 33151, 33152, 33153, 33155, 33156, 33157, 33158, 33159, 33160, 33165, 33174, 33186, 
-    33205, 33209, 33305, 33307, 33622, 33783, 33792, 33804, 33869, 33870, 33871, 33873, 33875, 33925, 33954, 34109, 34114, 34172, 34173, 34174, 
-    34175, 34200, 34201, 34218, 34221, 34261, 34262, 34319, 34413, 34481, 34491, 34689, 34834, 34872, 35186, 35187, 35189, 35190, 35191, 35192, 
-    35193, 35194, 35195, 35196, 35197, 35198, 35199, 35200, 35201, 35202, 35203, 35204, 35205, 35206, 35207, 35208, 35209, 35210, 35211, 35212, 
-    35213, 35214, 35215, 35216, 35217, 35218, 35219, 35238, 35239, 35240, 35241, 35242, 35243, 35244, 35245, 35246, 35247, 35248, 35249, 35250, 
-    35251, 35252, 35253, 35254, 35255, 35256, 35257, 35258, 35259, 35260, 35261, 35262, 35263, 35264, 35265, 35266, 35267, 35268, 35269, 35270, 
-    35271, 35273, 35294, 35295, 35296, 35297, 35298, 35299, 35300, 35301, 35302, 35303, 35304, 35305, 35306, 35307, 35308, 35309, 35310, 35311, 
-    35322, 35323, 35325, 35498, 35500, 35502, 35505, 35517, 35518, 35519, 35520, 35521, 35522, 35523, 35524, 35525, 35526, 35527, 35528, 35529, 
-    35530, 35531, 35532, 35533, 35534, 35535, 35536, 35537, 35538, 35539, 35540, 35541, 35542, 35544, 35545, 35546, 35548, 35549, 35550, 35551, 
-    35552, 35553, 35554, 35555, 35556, 35564, 35566, 35582, 35695, 35696, 35697, 35698, 35699, 35708, 35752, 35753, 35754, 35755, 35756, 35762, 
-    35763, 35764, 35765, 35766, 35767, 35768, 35769, 37504, 37915, 38229, 38327, 38328, 185922, 185923, 185924, 185925, 185926, 186683, 187048, 187049
+})
+
+internalIgnoreListRecipes = valToKey({
+728, 966, 967, 968, 973, 974, 975, 976, 980, 985, 986, 989, 992, 994, 1004, 1029, 1030, 1031, 1032, 1033, 
+1034, 1035, 1036, 1037, 1038, 1048, 1049, 1052, 1053, 1057, 1058, 1061, 1063, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 
+1091, 1092, 1093, 1095, 1096, 1099, 1100, 1101, 1102, 1105, 1108, 1109, 1111, 1112, 1136, 1138, 1139, 1141, 1144, 1146, 
+1149, 1150, 1151, 1164, 1224, 1228, 1229, 1231, 1232, 1238, 1239, 1243, 1244, 1245, 1246, 1250, 1323, 1328, 1332, 1334, 
+1339, 1341, 1492, 1534, 1536, 1554, 1559, 1567, 1568, 1571, 1574, 1588, 1589, 1591, 1597, 1599, 1603, 1619, 1641, 1648, 
+1651, 1655, 1657, 1658, 1676, 1681, 1877, 1882, 1886, 2404, 2405, 2406, 2407, 2408, 2409, 2553, 2554, 2555, 2556, 2598, 
+2599, 2600, 2601, 2602, 2697, 2698, 2699, 2700, 2701, 2881, 2882, 2883, 2889, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 
+3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3113, 3114, 3115, 3116, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 
+3126, 3127, 3129, 3130, 3132, 3133, 3134, 3138, 3139, 3140, 3141, 3142, 3143, 3144, 3146, 3393, 3394, 3395, 3396, 3608, 
+3609, 3610, 3611, 3612, 3678, 3679, 3680, 3681, 3682, 3683, 3734, 3735, 3736, 3737, 3830, 3831, 3832, 3866, 3867, 3868, 
+3869, 3870, 3871, 3872, 3873, 3874, 3875, 4141, 4143, 4145, 4146, 4147, 4148, 4149, 4150, 4151, 4152, 4153, 4154, 4155, 
+4156, 4157, 4158, 4159, 4161, 4162, 4163, 4164, 4165, 4166, 4167, 4168, 4169, 4170, 4171, 4172, 4173, 4174, 4175, 4176, 
+4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185, 4186, 4187, 4188, 4189, 4198, 4199, 4200, 4201, 4202, 4203, 4204, 
+4205, 4206, 4207, 4208, 4209, 4210, 4211, 4212, 4213, 4214, 4215, 4216, 4217, 4218, 4219, 4220, 4221, 4223, 4225, 4226, 
+4228, 4230, 4266, 4267, 4268, 4269, 4270, 4271, 4272, 4273, 4274, 4275, 4276, 4277, 4279, 4280, 4281, 4282, 4283, 4284, 
+4285, 4286, 4287, 4288, 4292, 4293, 4294, 4295, 4296, 4297, 4298, 4299, 4300, 4301, 4345, 4346, 4347, 4348, 4349, 4350, 
+4351, 4352, 4353, 4354, 4355, 4356, 4408, 4409, 4410, 4411, 4412, 4413, 4414, 4415, 4416, 4417, 4597, 4609, 4624, 4997, 
+5083, 5126, 5127, 5129, 5130, 5131, 5132, 5139, 5141, 5142, 5145, 5147, 5148, 5149, 5150, 5151, 5152, 5153, 5154, 5155, 
+5156, 5158, 5160, 5163, 5482, 5483, 5484, 5485, 5486, 5487, 5488, 5489, 5528, 5543, 5577, 5578, 5640, 5641, 5642, 5643, 
+5644, 5647, 5648, 5649, 5650, 5657, 5658, 5660, 5661, 5662, 5666, 5667, 5670, 5671, 5672, 5673, 5674, 5676, 5677, 5679, 
+5680, 5682, 5683, 5684, 5685, 5688, 5696, 5697, 5698, 5699, 5700, 5701, 5702, 5703, 5704, 5705, 5706, 5707, 5708, 5709, 
+5710, 5711, 5712, 5713, 5714, 5715, 5716, 5719, 5720, 5721, 5722, 5723, 5724, 5725, 5726, 5727, 5728, 5729, 5730, 5771, 
+5772, 5773, 5774, 5775, 5786, 5787, 5788, 5789, 5972, 5973, 5974, 6039, 6044, 6045, 6046, 6047, 6053, 6054, 6055, 6056, 
+6057, 6068, 6132, 6133, 6211, 6222, 6270, 6271, 6272, 6273, 6274, 6275, 6325, 6326, 6328, 6329, 6330, 6342, 6343, 6344, 
+6345, 6346, 6347, 6348, 6349, 6368, 6369, 6375, 6376, 6377, 6390, 6391, 6401, 6454, 6474, 6475, 6476, 6619, 6621, 6661, 
+6663, 6672, 6710, 6716, 6734, 6735, 6736, 6891, 6892, 6897, 7084, 7085, 7086, 7087, 7088, 7089, 7090, 7091, 7092, 7093, 
+7114, 7192, 7288, 7289, 7290, 7360, 7361, 7362, 7363, 7364, 7449, 7450, 7451, 7452, 7453, 7560, 7561, 7613, 7678, 7742, 
+7975, 7976, 7977, 7978, 7979, 7980, 7981, 7982, 7983, 7984, 7985, 7986, 7987, 7988, 7989, 7990, 7991, 7992, 7993, 7994, 
+7995, 8028, 8029, 8030, 8046, 8384, 8385, 8386, 8387, 8388, 8389, 8390, 8395, 8397, 8398, 8399, 8400, 8401, 8402, 8403, 
+8404, 8405, 8406, 8407, 8408, 8409, 8547, 8743, 8744, 8756, 8757, 8758, 8759, 8760, 8761, 8762, 8763, 8764, 8765, 8768, 
+8769, 8770, 8771, 8772, 8773, 8774, 8775, 8776, 8777, 8778, 8779, 8780, 8781, 8782, 8783, 8784, 8785, 8786, 8787, 8788, 
+8789, 8790, 8791, 8792, 8793, 8794, 8795, 8796, 8797, 8798, 8799, 8800, 8801, 8802, 8804, 8805, 8806, 8807, 8808, 8809, 
+8810, 8811, 8812, 8813, 8814, 8815, 8816, 8818, 8819, 8820, 8821, 8822, 8823, 8824, 8825, 8826, 8828, 8829, 8830, 8832, 
+8833, 8834, 8835, 8837, 8840, 8841, 8842, 8843, 8844, 8847, 8848, 8849, 8850, 8851, 8852, 8853, 8854, 8855, 8856, 8857, 
+8858, 8859, 8860, 8861, 8862, 8863, 8864, 8865, 8866, 8867, 8868, 8869, 8871, 8872, 8873, 8874, 8875, 8876, 8877, 8878, 
+8879, 8880, 8881, 8882, 8883, 8884, 8885, 8886, 8887, 8888, 8889, 8890, 8891, 8892, 8893, 8894, 8895, 8896, 8897, 8898, 
+8899, 8900, 8901, 8902, 8903, 8904, 8905, 8906, 8907, 8909, 8910, 8911, 8912, 8913, 8914, 8915, 8916, 8917, 8918, 8919, 
+8920, 8921, 8922, 8929, 8930, 8931, 8933, 8934, 8935, 8936, 8937, 8938, 8939, 8940, 8941, 8942, 8943, 8944, 8945, 8947, 
+8954, 8955, 8958, 8960, 8961, 8962, 8963, 8964, 8965, 8966, 8967, 8968, 8969, 8971, 8972, 8974, 8975, 8976, 8977, 8978, 
+8980, 8981, 8983, 8986, 8987, 8988, 8989, 8990, 8991, 8992, 8993, 8994, 8995, 8996, 8997, 8998, 8999, 9000, 9001, 9002, 
+9003, 9004, 9005, 9006, 9007, 9008, 9009, 9010, 9011, 9012, 9013, 9014, 9015, 9016, 9017, 9018, 9019, 9020, 9021, 9022, 
+9023, 9024, 9025, 9026, 9027, 9028, 9029, 9031, 9032, 9033, 9034, 9035, 9037, 9039, 9040, 9041, 9043, 9044, 9046, 9047, 
+9048, 9049, 9050, 9051, 9052, 9053, 9054, 9055, 9056, 9057, 9058, 9059, 9062, 9063, 9064, 9065, 9066, 9067, 9068, 9069, 
+9070, 9071, 9072, 9073, 9074, 9075, 9076, 9077, 9078, 9079, 9080, 9081, 9082, 9083, 9084, 9085, 9086, 9087, 9089, 9090, 
+9091, 9093, 9094, 9095, 9096, 9097, 9098, 9099, 9100, 9101, 9102, 9103, 9104, 9105, 9123, 9124, 9125, 9126, 9127, 9128, 
+9129, 9130, 9131, 9132, 9133, 9134, 9135, 9136, 9137, 9138, 9139, 9140, 9141, 9142, 9143, 9145, 9146, 9147, 9148, 9150, 
+9151, 9152, 9156, 9157, 9158, 9159, 9160, 9161, 9162, 9164, 9165, 9166, 9167, 9168, 9169, 9170, 9171, 9174, 9175, 9176, 
+9177, 9178, 9180, 9181, 9182, 9183, 9184, 9185, 9188, 9190, 9191, 9192, 9193, 9194, 9195, 9198, 9199, 9200, 9201, 9202, 
+9203, 9204, 9205, 9207, 9208, 9209, 9211, 9212, 9214, 9215, 9216, 9217, 9218, 9219, 9221, 9222, 9223, 9225, 9226, 9227, 
+9228, 9229, 9230, 9231, 9293, 9294, 9295, 9296, 9297, 9298, 9300, 9301, 9302, 9303, 9304, 9305, 9367, 10300, 10301, 10302, 
+10303, 10304, 10311, 10312, 10313, 10314, 10315, 10316, 10317, 10318, 10319, 10320, 10321, 10322, 10323, 10324, 10325, 10326, 10424, 10463, 
+10601, 10602, 10603, 10604, 10605, 10606, 10607, 10608, 10609, 10644, 10713, 10728, 10858, 11038, 11039, 11081, 11098, 11101, 11150, 11151, 
+11152, 11163, 11164, 11165, 11166, 11167, 11168, 11202, 11203, 11204, 11205, 11206, 11207, 11208, 11223, 11224, 11225, 11226, 11610, 11611, 
+11612, 11614, 11615, 11732, 11733, 11734, 11736, 11737, 11813, 11827, 11828, 12162, 12163, 12164, 12226, 12227, 12228, 12229, 12231, 12232, 
+12233, 12239, 12240, 12261, 12682, 12683, 12684, 12685, 12687, 12688, 12689, 12690, 12691, 12692, 12693, 12694, 12695, 12696, 12697, 12698, 
+12699, 12700, 12701, 12702, 12703, 12704, 12705, 12706, 12707, 12711, 12713, 12714, 12715, 12716, 12717, 12718, 12719, 12720, 12725, 12726, 
+12727, 12728, 12816, 12817, 12818, 12819, 12821, 12823, 12824, 12825, 12826, 12827, 12828, 12830, 12831, 12832, 12833, 12834, 12835, 12836, 
+12837, 12838, 12839, 12958, 13287, 13288, 13308, 13309, 13310, 13311, 13476, 13477, 13478, 13479, 13480, 13481, 13482, 13483, 13484, 13485, 
+13486, 13487, 13488, 13489, 13490, 13491, 13492, 13493, 13494, 13495, 13496, 13497, 13499, 13500, 13501, 13517, 13518, 13519, 13520, 13521, 
+13522, 13939, 13940, 13941, 13942, 13943, 13945, 13946, 13947, 13948, 13949, 14466, 14467, 14468, 14469, 14470, 14471, 14472, 14473, 14474, 
+14476, 14477, 14478, 14479, 14480, 14481, 14482, 14483, 14484, 14485, 14486, 14488, 14489, 14490, 14491, 14492, 14493, 14494, 14495, 14496, 
+14497, 14498, 14499, 14500, 14501, 14504, 14505, 14506, 14507, 14508, 14509, 14510, 14511, 14512, 14513, 14514, 14526, 14627, 14630, 14634, 
+14635, 14639, 15724, 15725, 15726, 15727, 15728, 15729, 15730, 15731, 15732, 15733, 15734, 15735, 15737, 15738, 15739, 15740, 15741, 15742, 
+15743, 15744, 15745, 15746, 15747, 15748, 15749, 15751, 15752, 15753, 15754, 15755, 15756, 15757, 15758, 15759, 15760, 15761, 15762, 15763, 
+15764, 15765, 15768, 15769, 15770, 15771, 15772, 15773, 15774, 15775, 15776, 15777, 15779, 15780, 15781, 16041, 16042, 16043, 16044, 16045, 
+16046, 16047, 16048, 16049, 16050, 16051, 16052, 16053, 16054, 16055, 16056, 16072, 16073, 16082, 16083, 16084, 16085, 16110, 16111, 16112, 
+16113, 16214, 16215, 16216, 16217, 16218, 16219, 16220, 16221, 16222, 16223, 16224, 16242, 16243, 16244, 16245, 16246, 16247, 16248, 16249, 
+16250, 16251, 16252, 16253, 16254, 16255, 16302, 16316, 16317, 16318, 16319, 16320, 16321, 16322, 16323, 16324, 16325, 16326, 16327, 16328, 
+16329, 16330, 16331, 16346, 16347, 16348, 16349, 16350, 16351, 16352, 16353, 16354, 16355, 16356, 16357, 16358, 16359, 16360, 16361, 16362, 
+16363, 16364, 16365, 16366, 16368, 16371, 16372, 16373, 16374, 16375, 16376, 16377, 16378, 16379, 16380, 16381, 16382, 16383, 16384, 16385, 
+16386, 16387, 16388, 16389, 16390, 16665, 16767, 17017, 17018, 17022, 17023, 17025, 17049, 17051, 17052, 17053, 17059, 17060, 17062, 17200, 
+17201, 17412, 17413, 17414, 17682, 17683, 17706, 17709, 17720, 17722, 17724, 17725, 18046, 18160, 18235, 18239, 18252, 18257, 18259, 18260, 
+18264, 18265, 18267, 18290, 18291, 18292, 18332, 18333, 18334, 18414, 18415, 18416, 18417, 18418, 18487, 18514, 18515, 18516, 18517, 18518, 
+18519, 18592, 18600, 18647, 18648, 18649, 18650, 18651, 18652, 18653, 18654, 18655, 18656, 18657, 18658, 18661, 18731, 18949, 19027, 19202, 
+19203, 19204, 19205, 19206, 19207, 19208, 19209, 19210, 19211, 19212, 19215, 19216, 19217, 19218, 19219, 19220, 19326, 19327, 19328, 19329, 
+19330, 19331, 19332, 19333, 19442, 19444, 19445, 19446, 19447, 19448, 19449, 19764, 19765, 19766, 19769, 19770, 19771, 19772, 19773, 19776, 
+19777, 19778, 19779, 19780, 19781, 20000, 20001, 20011, 20012, 20013, 20014, 20040, 20075, 20253, 20254, 20382, 20506, 20507, 20508, 20509, 
+20510, 20511, 20546, 20547, 20548, 20553, 20554, 20555, 20576, 20726, 20727, 20728, 20729, 20730, 20731, 20732, 20733, 20734, 20735, 20736, 
+20752, 20753, 20754, 20755, 20756, 20757, 20758, 20761, 20854, 20855, 20856, 20970, 20971, 20972, 20973, 20974, 20975, 20976, 21025, 21099, 
+21214, 21219, 21279, 21280, 21281, 21282, 21283, 21284, 21285, 21287, 21288, 21289, 21290, 21291, 21292, 21293, 21294, 21295, 21296, 21297, 
+21298, 21299, 21300, 21302, 21303, 21304, 21306, 21307, 21358, 21369, 21371, 21547, 21548, 21722, 21723, 21724, 21725, 21726, 21727, 21728, 
+21729, 21730, 21731, 21732, 21733, 21734, 21735, 21737, 21738, 21892, 21893, 21894, 21895, 21896, 21897, 21898, 21899, 21900, 21901, 21902, 
+21903, 21904, 21905, 21906, 21907, 21908, 21909, 21910, 21911, 21912, 21913, 21914, 21915, 21916, 21917, 21918, 21919, 21924, 21940, 21941, 
+21942, 21943, 21944, 21945, 21947, 21948, 21949, 21950, 21951, 21952, 21953, 21954, 21955, 21956, 21957, 21958, 21959, 21992, 21993, 22012, 
+22146, 22153, 22179, 22180, 22181, 22182, 22183, 22184, 22185, 22186, 22187, 22188, 22189, 22190, 22209, 22214, 22219, 22220, 22221, 22222, 
+22307, 22308, 22309, 22310, 22312, 22388, 22389, 22390, 22392, 22393, 22530, 22531, 22532, 22533, 22534, 22535, 22536, 22537, 22538, 22539, 
+22540, 22541, 22542, 22543, 22544, 22545, 22546, 22547, 22548, 22551, 22552, 22553, 22554, 22555, 22556, 22557, 22558, 22559, 22560, 22561, 
+22562, 22563, 22564, 22565, 22647, 22683, 22684, 22685, 22686, 22687, 22692, 22694, 22695, 22696, 22697, 22698, 22703, 22704, 22705, 22729, 
+22739, 22766, 22767, 22768, 22769, 22770, 22771, 22772, 22773, 22774, 22890, 22891, 22897, 22900, 22901, 22902, 22903, 22904, 22905, 22906, 
+22907, 22908, 22909, 22910, 22911, 22912, 22913, 22914, 22915, 22916, 22917, 22918, 22919, 22920, 22921, 22922, 22923, 22924, 22925, 22926, 
+22927, 23130, 23131, 23133, 23134, 23135, 23136, 23137, 23138, 23140, 23141, 23142, 23143, 23144, 23145, 23146, 23147, 23148, 23149, 23150, 
+23151, 23152, 23153, 23154, 23155, 23320, 23574, 23590, 23591, 23592, 23593, 23594, 23595, 23596, 23597, 23598, 23599, 23600, 23601, 23602, 
+23603, 23604, 23605, 23606, 23607, 23608, 23609, 23610, 23611, 23612, 23613, 23615, 23617, 23618, 23619, 23620, 23621, 23622, 23623, 23624, 
+23625, 23626, 23627, 23628, 23629, 23630, 23631, 23632, 23633, 23634, 23635, 23636, 23637, 23638, 23639, 23689, 23711, 23730, 23731, 23734, 
+23745, 23755, 23799, 23800, 23802, 23803, 23804, 23805, 23806, 23807, 23808, 23809, 23810, 23811, 23812, 23813, 23814, 23815, 23816, 23817, 
+23874, 23882, 23883, 23884, 23885, 23887, 23888, 24000, 24001, 24002, 24003, 24101, 24102, 24158, 24159, 24160, 24161, 24162, 24163, 24164, 
+24165, 24166, 24167, 24168, 24169, 24170, 24171, 24172, 24173, 24174, 24175, 24176, 24177, 24178, 24179, 24180, 24181, 24182, 24183, 24192, 
+24193, 24194, 24195, 24196, 24197, 24198, 24199, 24200, 24201, 24202, 24203, 24204, 24205, 24206, 24207, 24208, 24209, 24210, 24211, 24212, 
+24213, 24214, 24215, 24216, 24217, 24218, 24219, 24220, 24292, 24293, 24294, 24295, 24296, 24297, 24298, 24299, 24300, 24301, 24302, 24303, 
+24304, 24305, 24306, 24307, 24308, 24309, 24310, 24311, 24312, 24313, 24314, 24315, 24316, 24345, 25469, 25526, 25720, 25721, 25722, 25725, 
+25726, 25728, 25729, 25730, 25731, 25732, 25733, 25734, 25735, 25736, 25737, 25738, 25739, 25740, 25741, 25742, 25743, 25846, 25847, 25848, 
+25849, 25869, 25870, 25887, 25888, 25900, 25902, 25903, 25904, 25905, 25906, 25907, 25908, 25909, 25910, 27532, 27684, 27685, 27686, 27687, 
+27688, 27689, 27690, 27691, 27692, 27693, 27694, 27695, 27696, 27697, 27698, 27699, 27700, 27736, 28068, 28071, 28072, 28073, 28270, 28271, 
+28272, 28273, 28274, 28276, 28277, 28279, 28280, 28281, 28282, 28291, 28596, 28632, 29120, 29213, 29214, 29215, 29217, 29218, 29219, 29232, 
+29549, 29550, 29664, 29669, 29672, 29673, 29674, 29675, 29677, 29682, 29684, 29689, 29691, 29693, 29698, 29700, 29701, 29702, 29703, 29704, 
+29713, 29714, 29717, 29718, 29719, 29720, 29721, 29722, 29723, 29724, 29725, 29726, 29727, 29728, 29729, 29730, 29731, 29732, 29733, 29734, 
+30156, 30280, 30281, 30282, 30283, 30301, 30302, 30303, 30304, 30305, 30306, 30307, 30308, 30321, 30322, 30323, 30324, 30443, 30444, 30469, 
+30470, 30471, 30472, 30473, 30474, 30483, 30826, 30833, 30842, 30843, 30844, 31354, 31355, 31356, 31357, 31358, 31359, 31361, 31362, 31390, 
+31391, 31392, 31393, 31394, 31395, 31401, 31402, 31496, 31498, 31500, 31501, 31502, 31503, 31505, 31506, 31507, 31674, 31675, 31680, 31681, 
+31682, 31837, 31870, 31871, 31872, 31873, 31874, 31875, 31876, 31877, 31878, 31879, 32070, 32071, 32274, 32277, 32281, 32282, 32283, 32284, 
+32285, 32286, 32287, 32288, 32289, 32290, 32291, 32292, 32293, 32294, 32295, 32296, 32297, 32298, 32299, 32300, 32301, 32302, 32303, 32304, 
+32305, 32306, 32307, 32308, 32309, 32310, 32311, 32312, 32381, 32411, 32412, 32429, 32430, 32431, 32432, 32433, 32434, 32435, 32436, 32437, 
+32438, 32439, 32440, 32441, 32442, 32443, 32444, 32447, 32736, 32737, 32738, 32739, 32744, 32745, 32746, 32747, 32748, 32749, 32750, 32751, 
+32752, 32753, 32754, 32755, 33124, 33148, 33149, 33150, 33151, 33152, 33153, 33155, 33156, 33157, 33158, 33159, 33160, 33165, 33174, 33186, 
+33205, 33209, 33305, 33307, 33622, 33783, 33792, 33804, 33869, 33870, 33871, 33873, 33875, 33925, 33954, 34109, 34114, 34172, 34173, 34174, 
+34175, 34200, 34201, 34218, 34221, 34261, 34262, 34319, 34413, 34481, 34491, 34689, 34834, 34872, 35186, 35187, 35189, 35190, 35191, 35192, 
+35193, 35194, 35195, 35196, 35197, 35198, 35199, 35200, 35201, 35202, 35203, 35204, 35205, 35206, 35207, 35208, 35209, 35210, 35211, 35212, 
+35213, 35214, 35215, 35216, 35217, 35218, 35219, 35238, 35239, 35240, 35241, 35242, 35243, 35244, 35245, 35246, 35247, 35248, 35249, 35250, 
+35251, 35252, 35253, 35254, 35255, 35256, 35257, 35258, 35259, 35260, 35261, 35262, 35263, 35264, 35265, 35266, 35267, 35268, 35269, 35270, 
+35271, 35273, 35294, 35295, 35296, 35297, 35298, 35299, 35300, 35301, 35302, 35303, 35304, 35305, 35306, 35307, 35308, 35309, 35310, 35311, 
+35322, 35323, 35325, 35498, 35500, 35502, 35505, 35517, 35518, 35519, 35520, 35521, 35522, 35523, 35524, 35525, 35526, 35527, 35528, 35529, 
+35530, 35531, 35532, 35533, 35534, 35535, 35536, 35537, 35538, 35539, 35540, 35541, 35542, 35544, 35545, 35546, 35548, 35549, 35550, 35551, 
+35552, 35553, 35554, 35555, 35556, 35564, 35566, 35582, 35695, 35696, 35697, 35698, 35699, 35708, 35752, 35753, 35754, 35755, 35756, 35762, 
+35763, 35764, 35765, 35766, 35767, 35768, 35769, 37504, 37915, 38229, 38327, 38328, 185922, 185923, 185924, 185925, 185926, 186683, 187048, 187049
 })
 
 itemBindings = {
