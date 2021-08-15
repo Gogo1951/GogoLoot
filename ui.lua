@@ -181,13 +181,26 @@ function GogoLoot:BuildUI()
             if configHashNow ~= GogoLoot_Config.configHash or true then
                 GogoLoot_Config.configHash = configHashNow
 
+                local toSend = {}
+
                 for player, targets in pairs(playerLoots) do
                     local targetCount = #targets
                     table.sort(targets)
                     
                     if targetCount > 0 then
                         local targetList = ""
+                        local score = 0
+
+                        -- hack
+                        local scores = {
+                            ["White"] = 1,
+                            ["Green"] = 2,
+                            ["Blue"] = 4,
+                            ["Purple"] = 8
+                        }
+
                         for index, target in pairs(targets) do
+                            score = score + (scores[target] or 0)
                             if index == 1 then
                                 targetList = target
                             elseif index == targetCount then
@@ -196,9 +209,17 @@ function GogoLoot:BuildUI()
                                 targetList = targetList .. ", " .. target
                             end
                         end
-                        SendChatMessage(string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
+                        tinsert(toSend, {string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), score})
+                        --SendChatMessage(string.format(player == "standardlootwindow" and GogoLoot.LOOT_TARGET_DISABLED_MESSAGE or GogoLoot.LOOT_TARGET_MESSAGE, targetList, capitalize(player)), UnitInRaid("Player") and "RAID" or "PARTY")
                     end
-                    
+                end
+
+                table.sort(toSend, function(a, b)
+                    return a[2] < b[2]
+                end)
+
+                for _, v in pairs(toSend) do
+                    SendChatMessage(v[1], UnitInRaid("Player") and "RAID" or "PARTY")
                 end
 
                 --[[for player, targets in pairs(playerLoots) do

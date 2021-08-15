@@ -20,7 +20,7 @@ end
 
 GogoLoot = {}
 
-CONFIG_VERSION = 8
+CONFIG_VERSION = 10
 
 function GogoLoot:BuildConfig()
     GogoLoot_Config = {
@@ -30,6 +30,7 @@ function GogoLoot:BuildConfig()
         ["autoConfirm"] = false,
         ["autoRollThreshold"] = 2,
         ["players"] = {},
+        ["autoGreenRolls"] = "greed"
     }
     GogoLoot_Config.ignoredItemsSolo = {
         [4500] = true,
@@ -627,7 +628,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         if inGroup ~= GogoLoot.isInGroup then
             GogoLoot.isInGroup = inGroup
             if inGroup then -- we have just joined a group
-                if GetLootMethod() == "group" and GogoLoot_Config.autoRoll and 1 == GogoLoot_Config.autoRollThreshold then
+                if GetLootMethod() == "group" then
                     GogoLoot:AnnounceNeeds()--SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
                 end
             else -- we left, clear group-specific settings
@@ -653,13 +654,19 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
             GogoLoot:BuildConfig()
         end
         GogoLoot.isInGroup = IsInGroup() -- used to detect when we joined a group
+
+        if GogoLoot.isInGroup then
+            C_Timer.After(0.5, function()
+                if GetLootMethod() == "group" and select(5, GetInstanceInfo()) ~= 0 then
+                    GogoLoot:AnnounceNeeds() --SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
+                end
+            end)
+        end
+
         if select(5, GetInstanceInfo()) == 0 then
             GogoLoot._inInstance = false
         elseif GogoLoot._inInstance == false then
             GogoLoot._inInstance = true
-            if GogoLoot_Config.autoRoll and GetLootMethod() == "group" and 1 == GogoLoot_Config.autoRollThreshold then
-                GogoLoot:AnnounceNeeds() --SendChatMessage(string.format(GogoLoot.AUTO_ROLL_ENABLED, 1 == GogoLoot_Config.autoRollThreshold and "Need" or "Greed"), UnitInRaid("Player") and "RAID" or "PARTY")
-            end
         end
         for id in pairs(GogoLoot_Config.ignoredItemsSolo) do
             GetItemInfo(id)
