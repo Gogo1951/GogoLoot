@@ -678,7 +678,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         if GogoLoot_Config.speedyLoot then
             LootFrame:UnregisterEvent('LOOT_OPENED')
         end
-        local creatorText = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t GogoLoot Creator \124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t "
+        local creatorText = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t GogoLoot : Creator"
         GameTooltip:HookScript("OnTooltipSetUnit", function(self)
 
             local name, unit = self:GetUnit()
