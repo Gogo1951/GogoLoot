@@ -394,6 +394,11 @@ function hookAutoNeed()
 end
 
 function GogoLoot:AnnounceNeeds()
+
+    if not IsInGroup() then
+        return
+    end
+
     local types = nil
 
     if GogoLoot_Config.autoGreenRolls == "need" and GogoLoot_Config.autoBlueRolls == "need" and GogoLoot_Config.autoPurpleRolls == "need" then
