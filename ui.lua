@@ -16,7 +16,7 @@ GogoLoot.AUTO_NEED_WARNING = "{rt4} GogoLoot : WARNING! I'm Auto-Needing on %s!"
 
 GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out of range."
 
-GogoLoot.ADDON_CONFLICT = "GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
+GogoLoot.ADDON_CONFLICT = "{rt4} GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
 
 GogoLoot.conflicts = { -- name must match the .TOC filename
     "BetterAutoLoot",
@@ -624,7 +624,7 @@ function GogoLoot:BuildUI()
                 sf = scrollFrame(widget)
             end
 
-            label(sf, "GogoLoot will only attempt to Master Loot BOP items inside of a 20+ Member Raid instance as these are the only items that are tradable in-game. GogoLoot will not attempt to automate looting for BOP items on World Bosses, 10-man, or 5-man content.", nil)
+            label(sf, "GogoLoot will only attempt to Master Loot BOP items that are tradable, such as those found inside a Raid Instance. GogoLoot will not attempt to automate looting for BOP items that drop from World Bosses, as those are not tradable items.", nil)
 
             spacer(sf)
             local enabled = checkbox(sf, "Enable Automatic Looting for Master Looters")
