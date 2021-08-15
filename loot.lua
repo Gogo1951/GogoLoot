@@ -397,7 +397,7 @@ function GogoLoot:AnnounceNeeds()
     local types = nil
 
     if GogoLoot_Config.autoGreenRolls == "need" and GogoLoot_Config.autoBlueRolls == "need" and GogoLoot_Config.autoPurpleRolls == "need" then
-        types = "Greens, Blues and Purples"
+        types = "Greens, Blues, and Purples"
     else
         if GogoLoot_Config.autoGreenRolls == "need" then
             if not types then

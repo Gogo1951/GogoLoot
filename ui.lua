@@ -584,13 +584,13 @@ function GogoLoot:BuildUI()
                 widget:AddChild(dropdown)
             end
 
-            label(widget, "Automatic Rolls on Green BoE Items", 280)
+            label(widget, "Automatic Rolls on |cff1eff00Green BoE Items|r", 280)
             buildDropdown("autoGreenRolls")
 
-            label(widget, "Automatic Rolls on Blue BoE Items", 280)
+            label(widget, "Automatic Rolls on |cff0070ddBlue BoE Items|r", 280)
             buildDropdown("autoBlueRolls")
 
-            label(widget, "Automatic Rolls on Purple BoE Items", 280)
+            label(widget, "Automatic Rolls on |cffa335eePurple BoE Items|r", 280)
             buildDropdown("autoPurpleRolls")
             
 
