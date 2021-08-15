@@ -317,7 +317,12 @@ function GogoLoot:VacuumSlot(index, playerIndex, validPreviouslyHack)
         debug("ShouldLoot " .. tostring(index) .. " = " .. tostring(doLoot) .. " " .. tostring(rarity) .. " " .. tostring(color) .. " " .. lootLink)
         if id and doLoot 
             and (not internalIgnoreList[id])
-            and ((not internalIgnoreListRecipes[id]) or (GogoLoot_Config.professionRollDisable and itemBindings[id] ~= 1))
+            and ItemInfoCache[lootLink]
+            and (((not internalIgnoreListRecipes[id]) 
+                and ItemInfoCache[lootLink][12] ~= 9 -- recipes
+                and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 2)) -- pets
+                and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 5)) -- mounts
+            ) or (GogoLoot_Config.professionRollDisable and itemBindings[id] ~= 1))
             and (not GogoLoot_Config.ignoredItemsMaster[id]) -- items from config UI
             and ((not GogoLoot_Config.disableBOP) or (not itemBindings[id]) or itemBindings[id] ~= 1) -- check if item is BOP, and check disable BOP config option
             and ((not itemBindings[id]) or itemBindings[id] ~= 4) -- check if the item is a quest item
