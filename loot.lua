@@ -1,5 +1,5 @@
 local function debug(str)
-    tinsert(GogoLoot_Config.logs, str)
+    --tinsert(GogoLoot_Config.logs, str)
     --print(str)
 end
 
@@ -453,6 +453,8 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         end
     else]]
 
+    GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
+
     if "LOOT_READY" == evt then
         lootAPIOpen = true
     elseif ("LOOT_OPENED" == evt) and canLoot then
@@ -716,20 +718,34 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         if not GogoLoot_Config.logs then
             GogoLoot_Config.logs = {}
         end
+
         debug("Started up!")
+
+        for _, addon in pairs(GogoLoot.conflicts) do
+            if IsAddOnLoaded(addon) then
+                local conflict = addon
+                C_Timer.After(4, function()
+                    print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
+                    print("The conflicting AdddOn: " .. conflict)
+                end)
+                break
+            end
+        end
         
         GameTooltip:HookScript("OnHide", function()
             GogoLoot:HideNotification()
         end)
     elseif "PLAYER_LOGIN" == evt then
-        for _, addon in pairs(GogoLoot.conflicts) do
+        --[[for _, addon in pairs(GogoLoot.conflicts) do
+            print(addon)
             if IsAddOnLoaded(addon) then
+                print("LD")
                 C_Timer.After(4, function()
                     print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
                 end)
                 break
             end
-        end
+        end]]
     end
 end
 
@@ -889,6 +905,8 @@ events:SetScript("OnEvent", function()
         end
 
     end)
+
+    GogoLoot:HookTrades(events)
 
 end)
 events:RegisterEvent('PLAYER_LOGIN')

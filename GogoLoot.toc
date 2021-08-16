@@ -18,3 +18,4 @@ loot.lua
 ui.lua
 softres.lua
 json.lua
+trade.lua
