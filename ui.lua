@@ -18,7 +18,7 @@ GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out
 
 GogoLoot.ADDON_CONFLICT = "{rt4} GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
 
-GogoLoot.TRADE_COMPLETE = "{rt4} GogoLoot : I Traded %s %s" -- no period, added by the logic so COMPLETE_RECEIVED can be appended cleanly
+GogoLoot.TRADE_COMPLETE = "{rt4} GogoLoot : I traded %s %s" -- no period, added by the logic so COMPLETE_RECEIVED can be appended cleanly
 GogoLoot.TRADE_COMPLETE_RECEIVED = " and I received %s"
 GogoLoot.TRADE_CANCELLED = "{rt4} GogoLoot : Trade with %s cancelled."
 GogoLoot.TRADE_FAILED = "{rt4} GogoLoot : Trade with %s failed."
