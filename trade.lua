@@ -14,20 +14,25 @@ function GogoLoot:GetGoldString(value)
     local s = math.floor(value / 100) % 100
     local c = value % 100
     if g > 0 then
-        str = str .. g .. "g"
+        str = str .. g .. "G "
     end
     if s > 0 then
-        str = str .. s .. "s"
+        str = str .. s .. "S "
     end
     if c > 0 then
-        str = str .. c .. "c"
+        str = str .. c .. "C "
     end
+
+    if string.len(str) > 0 then
+        str = str:sub(1, -2)
+    end
+
     return str
 end
 
 function GogoLoot:PrintTrade()
 
-    if (not IsInGroup()) or GogoLoot_Config.disableTradeAnnounce then
+    if (not IsInGroup()) or GogoLoot_Config.disableTradeAnnounce or (not GogoLoot.tradeState.player) then
         return
     end
 
@@ -62,8 +67,8 @@ function GogoLoot:PrintTrade()
                 else
                     sent = sent .. ", "
                 end
-                sent = sent .. GogoLoot:GetItemLink(GogoLoot.tradeState.itemsMe[i])
             end
+            sent = sent .. GogoLoot:GetItemLink(GogoLoot.tradeState.itemsMe[i])
         end
         if GogoLoot.tradeState.itemsThem[i][3] > 0 then
             if string.len(received) > 0 then
@@ -72,8 +77,8 @@ function GogoLoot:PrintTrade()
                 else
                     received = received .. ", "
                 end
-                received = received .. GogoLoot:GetItemLink(GogoLoot.tradeState.itemsThem[i])
             end
+            received = received .. GogoLoot:GetItemLink(GogoLoot.tradeState.itemsThem[i])
         end
     end
 
@@ -86,6 +91,8 @@ function GogoLoot:PrintTrade()
     end
 
     --print(message)
+
+    message = string.gsub(message, "  ", " ")
 
     SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
 
@@ -123,7 +130,7 @@ function GogoLoot:UpdateTrade()
 
 end
 
-function GogoLoot:TestThing()
+function GogoLoot:TestThing() 
     local itemid = select(5, string.find(GetTradePlayerItemLink(1), "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?"))
     local lnk = select(2, GetItemInfo(tonumber(itemid)))
     print(itemid)
@@ -143,6 +150,7 @@ function GogoLoot:HookTrades(events)
 	events:RegisterEvent("TRADE_ACCEPT_UPDATE")
 	events:RegisterEvent("UI_INFO_MESSAGE")
 	events:RegisterEvent("UI_ERROR_MESSAGE")
+    events:RegisterEvent("ITEM_LOCKED")
 
     GogoLoot:ResetTrade()
     GogoLoot.lastTradeAnnounceTime = GetTime()
@@ -151,7 +159,9 @@ end
 function GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
     if evt == "UI_ERROR_MESSAGE" and (message == ERR_TRADE_BAG_FULL or message == ERR_TRADE_MAX_COUNT_EXCEEDED or message == ERR_TRADE_TARGET_BAG_FULL or message == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED) then
         -- trade failed
-        SendChatMessage(string.format(GogoLoot.TRADE_FAILED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+        if GogoLoot.tradeState.player then
+            SendChatMessage(string.format(GogoLoot.TRADE_FAILED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+        end
     elseif evt == "TRADE_REQUEST_CANCEL" or (evt == "UI_INFO_MESSAGE" and message == ERR_TRADE_CANCELLED) then--elseif (evt == "UI_INFO_MESSAGE" and message == ERR_TRADE_CANCELLED) or evt == "TRADE_CLOSED" or evt == "TRADE_REQUEST_CANCEL" then
         -- trade cancelled
         if (not IsInGroup()) or GogoLoot_Config.disableTradeAnnounce then
@@ -159,7 +169,7 @@ function GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
         end
 
         local now = GetTime()
-        if now - GogoLoot.lastTradeAnnounceTime > 0.1 then
+        if now - GogoLoot.lastTradeAnnounceTime > 0.1 and GogoLoot.tradeState.player then
             GogoLoot.lastTradeAnnounceTime = now
             SendChatMessage(string.format(GogoLoot.TRADE_CANCELLED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
         else
@@ -170,7 +180,7 @@ function GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
     elseif evt == "TRADE_PLAYER_ITEM_CHANGED" or evt == "TRADE_TARGET_ITEM_CHANGED" or evt == "TRADE_MONEY_CHANGED" or evt == "TRADE_ACCEPT_UPDATE" then
         -- trade has updated
         GogoLoot:UpdateTrade()
-    elseif evt == "TRADE_SHOW" then
+    elseif evt == "TRADE_SHOW" or evt == "ITEM_LOCKED" then
         GogoLoot:UpdateTrade()
     end
 end
