@@ -836,6 +836,7 @@ function GogoLoot:BuildUI()
 
         end,
         ["about"] = function(widget, group)
+            widget = scrollFrame(widget)
             labelLarge(widget, "Don't Let Loot Slow Down Your Zug!")
     
             spacer(widget)
