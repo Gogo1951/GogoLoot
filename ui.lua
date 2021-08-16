@@ -18,11 +18,6 @@ GogoLoot.OUT_OF_RANGE = "{rt4} GogoLoot : Tried to loot %s to %s, but %s was out
 
 GogoLoot.ADDON_CONFLICT = "{rt4} GogoLoot : You have multiple addons running that are attempting to interact with the loot window. This will cause problems. If you don't disable your other loot addons you will experience issues with GogoLoot."
 
-GogoLoot.TRADE_COMPLETE = "{rt4} GogoLoot : Traded %s %s" -- no period, added by the logic so COMPLETE_RECEIVED can be appended cleanly
-GogoLoot.TRADE_COMPLETE_RECEIVED = "and received %s"
-GogoLoot.TRADE_CANCELLED = "{rt4} GogoLoot : Trade with %s cancelled."
-GogoLoot.TRADE_FAILED = "{rt4} GogoLoot : Trade with %s failed."
-
 GogoLoot.conflicts = { -- name must match the .TOC filename
     "BetterAutoLoot",
     "SpeedyAutoLoot",
@@ -32,8 +27,7 @@ GogoLoot.conflicts = { -- name must match the .TOC filename
     "AutoLooter", 
     "CEPGP",
     "CommunityDKP",
-    "LootFast2",
-    "KillTrack"
+    "LootFast2"
 }
 
 local AceGUI = LibStub("AceGUI-3.0")
@@ -531,7 +525,7 @@ function GogoLoot:BuildUI()
 
     render = {
         ["ignoredBase"] = function(widget, group)
-            buildIgnoredFrame(widget, "Enter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsSolo, group)
+            buildIgnoredFrame(widget, "Items in this list will always show up for manual need or greed rolls.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsSolo, group)
         end,
         ["ignoredMaster"] = function(widget, group)
             buildIgnoredFrame(widget, "NOTE: All |cFFFF8000Legendary Quality|r items, as well as non-tradable Quest Items, are always ignored and will appear in a Standard Loot Window.\n\nItems on this list will always show up in the Standard Loot Window.\n\nEnter Item ID, or Drag Item on to Input.", GogoLoot_Config.ignoredItemsMaster, group, 200)
@@ -548,12 +542,6 @@ function GogoLoot:BuildUI()
                 end
             end)
 
-            local tradeAnnounce = checkbox(widget, "Announce Trades when in Group")
-            tradeAnnounce:SetValue(not GogoLoot_Config.disableTradeAnnounce)
-            tradeAnnounce:SetCallback("OnValueChanged", function()
-                GogoLoot_Config.disableTradeAnnounce = not tradeAnnounce:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
-            end)
-
             --[[
             local autoAccept = checkbox(widget, "Speedy Confirm (Auto Confirm BoP Loot)")
             autoAccept:SetCallback("OnValueChanged", function()
@@ -566,13 +554,12 @@ function GogoLoot:BuildUI()
 
 
 
-            --local professionRoll = checkbox(widget, "Manual Roll on All Profession Items (Such as Patterns and Recipes)")
-            --professionRoll:SetCallback("OnValueChanged", function()
-            --    GogoLoot_Config.professionRollDisable = not professionRoll:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
-            --end)
-            --professionRoll:SetDisabled(false)
-            --professionRoll:SetValue(not GogoLoot_Config.professionRoll)
-
+            local professionRoll = checkbox(widget, "Manual Roll on All Profession Items (Such as Patterns and Recipes)")
+            professionRoll:SetCallback("OnValueChanged", function()
+                GogoLoot_Config.professionRollDisable = not professionRoll:GetValue()--print("Callback!  " .. tostring(speedyLoot:GetValue()))
+            end)
+            professionRoll:SetDisabled(false)
+            professionRoll:SetValue(not GogoLoot_Config.professionRoll)
 
             --[[
             local autoRoll = checkbox(widget, "Automatic Rolls on BoEs", nil, 280)
@@ -596,32 +583,16 @@ function GogoLoot:BuildUI()
                 dropdown:SetDisabled(false)
                 widget:AddChild(dropdown)
             end
-            
-            spacer2(widget)
 
-            labelLarge(widget, "Automatic Rolls")
-            label(widget, "Rolls on |cff1eff00Green BoE Items|r", 250)
+            label(widget, "Automatic Rolls on |cff1eff00Green BoE Items|r", 280)
             buildDropdown("autoGreenRolls")
 
-            label(widget, "Rolls on |cff0070ddBlue BoE Items|r", 250)
+            label(widget, "Automatic Rolls on |cff0070ddBlue BoE Items|r", 280)
             buildDropdown("autoBlueRolls")
 
-            label(widget, "Rolls on |cffa335eePurple BoE Items|r", 250)
+            label(widget, "Automatic Rolls on |cffa335eePurple BoE Items|r", 280)
             buildDropdown("autoPurpleRolls")
-
-
-            spacer2(widget)
-            labelLarge(widget, "Manual Roll List")
-
-            label(widget, "• |cffff8000Orange Items")
-            label(widget, "• Recipes")
-            label(widget, "• Mounts")
-            label(widget, "• Pets")
-            spacer2(widget)
-            label(widget, "Additionally, Items on this list will always show up for manual rolls.")
-            spacer(widget)
-
-
+            
 
             if WOW_PROJECT_ID ~= WOW_PROJECT_BURNING_CRUSADE_CLASSIC then -- the function requires a hardware event in TBC
                 local autoGray = checkbox(widget, "Automatic Destroy Gray Items on Loot", nil, nil)
@@ -631,21 +602,20 @@ function GogoLoot:BuildUI()
                 autoGray:SetValue(true == GogoLoot_Config.enableAutoGray)
             end
 
-            local tabs = AceGUI:Create("SimpleGroup")--AceGUI:Create("TabGroup")
+            local tabs = AceGUI:Create("TabGroup")
             tabs:SetLayout("Flow")
-            --[[tabs:SetTabs({
+            tabs:SetTabs({
                 {
                     text = "Ignored Items",
                     value="ignoredBase"
                 },
-            })]]
+            })
             tabs:SetFullWidth(true)
             tabs:SetFullHeight(true)
-            --tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
-            --    widget:ReleaseChildren() render[group](widget, group)
-            --end)
-            render["ignoredBase"](tabs, "ignoredBase")
-            --tabs:SelectTab("ignoredBase")
+            tabs:SetCallback("OnGroupSelected", function(widget, event, group) 
+                widget:ReleaseChildren() render[group](widget, group)
+            end)
+            tabs:SelectTab("ignoredBase")
             widget:AddChild(tabs)
         end,
         ["ml"] = function(widget, group)
@@ -883,7 +853,15 @@ function GogoLoot:BuildUI()
 
             labelNormal(widget, "• Gogo (Mankrik-US).")
             labelNormal(widget, "• Aero (Earthfury-US). Aero was also the creator of Questie.")
-            labelNormal(widget, "• Special thanks to Codzima (Stonespine-EU). Codzima was also the creator of SoftRes.It.")
+            
+            spacer2(widget)
+            
+            labelLarge(widget, "Special Thanks")
+
+            spacer(widget)
+            
+            labelNormal(widget, "• Codzima (Stonespine-EU). Codzima was also the creator of SoftRes.It.")
+            labelNormal(widget, "• Aevala (Earthfury-US).")
         end
     }
 
