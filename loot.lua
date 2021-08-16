@@ -207,7 +207,7 @@ function GogoLoot:CreateNotification()
     local l2 = f2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     l2:SetAllPoints(f2)
     --l2:SetJustifyH("LEFT")
-    l2:SetText("|cFF00FF80<Creator of GogoLoot>|r")
+    l2:SetText("|cFF00FF80<GogoLoot Team>|r")
     l2:Show()
 
     GogoLoot.notificationFrames = {
