@@ -24,16 +24,16 @@ GogoLoot.TRADE_CANCELLED = "{rt4} GogoLoot : Trade with %s cancelled."
 GogoLoot.TRADE_FAILED = "{rt4} GogoLoot : Trade with %s failed."
 
 GogoLoot.conflicts = { -- name must match the .TOC filename
-    "BetterAutoLoot",
-    "SpeedyAutoLoot",
-    "RCLootCouncil_Classic",
     "AutoDestroy",
     "AutoLootAssist",
     "AutoLooter", 
+    "BetterAutoLoot",
     "CEPGP",
     "CommunityDKP",
+    "KillTrack",
     "LootFast2",
-    "KillTrack"
+    "RCLootCouncil_Classic",
+    "SpeedyAutoLoot",
 }
 
 local AceGUI = LibStub("AceGUI-3.0")
@@ -63,6 +63,10 @@ GogoLoot.creators = {
                 Gogoshaman = true,
                 Gogowarlock = true,
                 Gogowarrior = true,
+            }
+            ["Earthfury"] = {
+                Aevala = true,
+                Wew = true,
             }
         },
     },
