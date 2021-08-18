@@ -129,7 +129,10 @@ function GogoLoot:MirrorServerNames(playerList)
     return newList
 end
 
-function GogoLoot:HandleSoftresLoot(lootItemId, playerList, slot)
+-- list of mobs / loot slots that have already been announced this session
+local _announced_mobs = {}
+
+function GogoLoot:HandleSoftresLoot(lootItemId, playerList, slot, mobGUID)
     if not GogoLoot_Config.enableSoftres or not GogoLoot_Config.softres.profiles.weightedPlayerMap then
         return false -- no softres profile
     end
@@ -193,7 +196,12 @@ function GogoLoot:HandleSoftresLoot(lootItemId, playerList, slot)
     end
 
     GogoLoot:showLootFrame("Softres loot conflict")
-    SendChatMessage(string.format(GogoLoot.SOFTRES_ROLL, select(2, GetItemInfo(lootItemId)), targetList), UnitInRaid("Player") and "RAID" or "PARTY")
+
+    local lootKey = (mobGUID or "") .. "-" .. tostring(slot or 0) .. "-" .. tostring(lootItemId or 0)
+    if not _announced_mobs[lootKey] then
+        _announced_mobs[lootKey] = true -- prevent announcing the roll more than once, even if the events are fired multiple times (addon conflict?)
+        SendChatMessage(string.format(GogoLoot.SOFTRES_ROLL, select(2, GetItemInfo(lootItemId)), targetList), UnitInRaid("Player") and "RAID" or "PARTY")
+    end
 
     return targetTable -- players must roll
 end
