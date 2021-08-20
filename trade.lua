@@ -32,7 +32,7 @@ end
 
 function GogoLoot:PrintTrade()
 
-    if (not IsInGroup()) or GogoLoot_Config.disableTradeAnnounce or (not GogoLoot.tradeState.player) then
+    if GogoLoot_Config.disableTradeAnnounce or (not GogoLoot.tradeState.player) then
         return
     end
 
@@ -119,12 +119,20 @@ function GogoLoot:PrintTrade()
         local message = string.format(GogoLoot.TRADE_COMPLETE, sent, GogoLoot.tradeState.player)
         message = string.gsub(message, "  ", " ")
         message = message .. "."
-        SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+        if IsInGroup() then
+            SendChatMessage(message, UnitInRaid("Player") and "RAID" or "PARTY")
+        else
+            SendChatMessage(message, "WHISPER", nil, GogoLoot.tradeState.player)
+        end
         if string.len(received) > 0 then
             local message = string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received, GogoLoot.tradeState.player)
             message = string.gsub(message, "  ", " ")
             message = message .. "."
-            SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+            if IsInGroup() then
+                SendChatMessage(message, UnitInRaid("Player") and "RAID" or "PARTY")
+            else
+                SendChatMessage(message, "WHISPER", nil, GogoLoot.tradeState.player)
+            end
         end
     else
         if string.len(received) > 0 then
@@ -132,7 +140,11 @@ function GogoLoot:PrintTrade()
             local message = string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received, GogoLoot.tradeState.player)
             message = string.gsub(message, "  ", " ")
             message = message .. "."
-            SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+            if IsInGroup() then
+                SendChatMessage(message, UnitInRaid("Player") and "RAID" or "PARTY")
+            else
+                SendChatMessage(message, "WHISPER", nil, GogoLoot.tradeState.player)
+            end
         end
     end
 end
@@ -199,7 +211,7 @@ function GogoLoot:HookTrades(events)
 
     local check = CreateFrame("CheckButton", "GogoLoot_AnnounceToggle", TradeFrame, "OptionsCheckButtonTemplate")
     GogoLoot_AnnounceToggleText:SetText("Announce Trades")
-    check.tooltipText = "Announce trades to party or raid members."
+    check.tooltipText = "GogoLoot will announce trades to party or raid, or send a private message if you are not in a group."
 
     check:SetPoint("BOTTOMLEFT", "TradeFrame", "BOTTOMLEFT", 6, 4)
     check:SetWidth(26)
@@ -215,18 +227,26 @@ function GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
     if evt == "UI_ERROR_MESSAGE" and (message == ERR_TRADE_BAG_FULL or message == ERR_TRADE_MAX_COUNT_EXCEEDED or message == ERR_TRADE_TARGET_BAG_FULL or message == ERR_TRADE_TARGET_MAX_COUNT_EXCEEDED) then
         -- trade failed
         if GogoLoot.tradeState.player then
-            SendChatMessage(string.format(GogoLoot.TRADE_FAILED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+            if IsInGroup() then
+                SendChatMessage(string.format(GogoLoot.TRADE_FAILED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+            else
+                SendChatMessage(string.format(GogoLoot.TRADE_FAILED, GogoLoot.tradeState.player), "WHISPER", nil, GogoLoot.tradeState.player)
+            end
         end
     elseif evt == "TRADE_REQUEST_CANCEL" or (evt == "UI_INFO_MESSAGE" and message == ERR_TRADE_CANCELLED) then--elseif (evt == "UI_INFO_MESSAGE" and message == ERR_TRADE_CANCELLED) or evt == "TRADE_CLOSED" or evt == "TRADE_REQUEST_CANCEL" then
         -- trade cancelled
-        if (not IsInGroup()) or GogoLoot_Config.disableTradeAnnounce then
+        if GogoLoot_Config.disableTradeAnnounce then
             return
         end
 
         local now = GetTime()
         if now - GogoLoot.lastTradeAnnounceTime > 0.1 and GogoLoot.tradeState.player then
             GogoLoot.lastTradeAnnounceTime = now
-            SendChatMessage(string.format(GogoLoot.TRADE_CANCELLED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+            if IsInGroup() then
+                SendChatMessage(string.format(GogoLoot.TRADE_CANCELLED, GogoLoot.tradeState.player), UnitInRaid("Player") and "RAID" or "PARTY")
+            else
+                SendChatMessage(string.format(GogoLoot.TRADE_CANCELLED, GogoLoot.tradeState.player), "WHISPER", nil, GogoLoot.tradeState.player)
+            end
         else
             --print("Too recent!")
         end
