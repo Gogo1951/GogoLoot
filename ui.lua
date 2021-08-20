@@ -53,20 +53,25 @@ GogoLoot.creators = {
     [1] = { -- NA
         ["Horde"] = {
             ["Mankrik"] = {
-                Gogobank = true,
-                Gogodruid = true,
-                Gogohunter = true,
-                Gogomage = true,
-                Gogopaladin = true,
-                Gogopriest = true,
-                Gogorogue = true,
-                Gogoshaman = true,
-                Gogowarlock = true,
-                Gogowarrior = true,
+                Gogobank = true, -- Gogo
+                Gogodruid = true, -- Gogo
+                Gogohunter = true, -- Gogo
+                Gogomage = true, -- Gogo
+                Gogopaladin = true, -- Gogo
+                Gogopriest = true, -- Gogo
+                Gogorogue = true, -- Gogo
+                Gogoshaman = true, -- Gogo
+                Gogowarlock = true, -- Gogo
+                Gogowarrior = true, -- Gogo
             },
             ["Earthfury"] = {
-                Aevala = true,
-                Wew = true,
+                Aevala = true, -- Aevala
+                Astraia = true, -- Aevala
+                Astraya = true, -- Aevala
+                Calliste = true, -- Aevala
+                Maizee = true, -- Aevala
+                Melidere = true, -- Aevala
+                Wew = true, -- Aero
             }
         },
     },
