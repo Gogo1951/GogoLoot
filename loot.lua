@@ -532,7 +532,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                     --end
                     if not hadNormalLoot then
                         debug("There is loot, continuing timer...")
-                        lootTicker = C_Timer.NewTicker(0.05, doLootStep)
+                        lootTicker = C_Timer.NewTicker(0.05, doLootStep, 64)
                     end
                 end
             end

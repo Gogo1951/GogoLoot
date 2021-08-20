@@ -59,6 +59,14 @@ function GogoLoot:PrintTrade()
         end
     end
 
+    if GogoLoot.tradeState.enchantThem[5] and string.len(GogoLoot.tradeState.enchantThem[5]) > 0 then
+        receivedLastIndex = receivedLastIndex + 1
+    end
+
+    if GogoLoot.tradeState.enchantMe[5] and string.len(GogoLoot.tradeState.enchantMe[5]) > 0 then
+        sentLastIndex = sentLastIndex + 1
+    end
+
     for i=1,6 do
         if GogoLoot.tradeState.itemsMe[i][3] > 0 then
             if string.len(sent) > 0 then
@@ -82,20 +90,51 @@ function GogoLoot:PrintTrade()
         end
     end
 
-    local message = string.format(GogoLoot.TRADE_COMPLETE, GogoLoot.tradeState.player, sent)
-
-    if string.len(received) > 0 then
-        message = message .. string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received) .. "."
-    else
-        message = message .. "."
+    if GogoLoot.tradeState.enchantThem[5] and string.len(GogoLoot.tradeState.enchantThem[5]) > 0 then
+        sent = sent .. " and gave enchant [" .. GogoLoot.tradeState.enchantThem[5] .. "]"
     end
 
-    --print(message)
+    if GogoLoot.tradeState.enchantMe[5] and string.len(GogoLoot.tradeState.enchantMe[5]) > 0 then
+        received = received .. " and received enchant [" .. GogoLoot.tradeState.enchantMe[5] .. "]"
+    end
 
-    message = string.gsub(message, "  ", " ")
 
-    SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+    --[[
+        local message = string.format(GogoLoot.TRADE_COMPLETE, GogoLoot.tradeState.player, sent)
 
+        if string.len(received) > 0 then
+            message = message .. string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received) .. "."
+        else
+            message = message .. "."
+        end
+
+        --print(message)
+
+        message = string.gsub(message, "  ", " ")
+
+        SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+    ]]
+
+    if string.len(sent) > 0 then
+        local message = string.format(GogoLoot.TRADE_COMPLETE, sent, GogoLoot.tradeState.player)
+        message = string.gsub(message, "  ", " ")
+        message = message .. "."
+        SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+        if string.len(received) > 0 then
+            local message = string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received, GogoLoot.tradeState.player)
+            message = string.gsub(message, "  ", " ")
+            message = message .. "."
+            SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+        end
+    else
+        if string.len(received) > 0 then
+            received = " and received" .. received
+            local message = string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received, GogoLoot.tradeState.player)
+            message = string.gsub(message, "  ", " ")
+            message = message .. "."
+            SendChatMessage(message, IsInGroup() and (UnitInRaid("Player") and "RAID" or "PARTY") or "SAY")
+        end
+    end
 end
 
 function GogoLoot:ResetTrade()
@@ -126,6 +165,9 @@ function GogoLoot:UpdateTrade()
     GogoLoot.tradeState.enchantThem = {GetTradeTargetItemInfo(7)}
     GogoLoot.tradeState.enchantThem[7] = GetTradeTargetItemLink(7)
 
+    -- fix param order (???)
+    GogoLoot.tradeState.enchantThem[5] = GogoLoot.tradeState.enchantThem[6]
+
     GogoLoot.tradeState.player = UnitName("NPC")
 
 end
@@ -154,6 +196,19 @@ function GogoLoot:HookTrades(events)
 
     GogoLoot:ResetTrade()
     GogoLoot.lastTradeAnnounceTime = GetTime()
+
+    local check = CreateFrame("CheckButton", "GogoLoot_AnnounceToggle", TradeFrame, "OptionsCheckButtonTemplate")
+    GogoLoot_AnnounceToggleText:SetText("Announce Trades")
+    check.tooltipText = "Announce trades to party or raid members."
+
+    check:SetPoint("BOTTOMLEFT", "TradeFrame", "BOTTOMLEFT", 6, 4)
+    check:SetWidth(26)
+    check:SetHeight(26)
+
+    check:SetChecked(true)
+
+    check:SetScript("OnClick", function(self) GogoLoot_Config.disableTradeAnnounce = not self:GetChecked() end)
+
 end
 
 function GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
