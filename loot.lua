@@ -559,7 +559,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                 local itemID = tonumber(data[5])
                 if itemID then
                     if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
-                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID] and ((not internalIgnoreListRecipes[itemID]) or (GogoLoot_Config.professionRollDisable and itemBindings[itemID] ~= 1))) then
+                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) then
                             -- we should auto need or greed this
                             
                             -- find desired roll behavior for item type
@@ -722,7 +722,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         if not GogoLoot._has_done_conflict_check then
             GogoLoot._has_done_conflict_check = true
             for _, addon in pairs(GogoLoot.conflicts) do
-                if IsAddOnLoaded(addon) or true then
+                if IsAddOnLoaded(addon) then
                     local conflict = addon
                     C_Timer.After(4, function()
                         print(GogoLoot.ADDON_CONFLICT) -- send shortly after login, so its not drown out by other addon messages
