@@ -864,6 +864,7 @@ function GogoLoot:BuildUI()
             spacer2(widget)
             
             labelNormal(widget, "Macro to Delete Grays")
+            labelNormal(widget, "• Blizzard has removed the ability for add-ons to automatically delete gray items, however you can still use this macro to do it.")
             --labelNormal(widget, "Macro to Delete Grays")
             local box = AceGUI:Create("EditBox")
             box:DisableButton(true)
