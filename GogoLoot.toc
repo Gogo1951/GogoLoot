@@ -1,7 +1,7 @@
 ## Interface: 20501
 ## Title: GogoLoot|cFF00FF00 v1.9|r
 ## Author: Aero, Gogo
-## Notes: Filters for master loot autolooting items to specific players
+## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
 ## Version: 1.9
 ## RequiredDeps:
 ## SavedVariables: 
