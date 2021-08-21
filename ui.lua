@@ -1,4 +1,3 @@
-
 -- announce messages. TODO: put these in their own file
 GogoLoot.LOOT_TARGET_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will go to %s!"
 GogoLoot.LOOT_TARGET_DISABLED_MESSAGE = "{rt4} GogoLoot : Master Looter Active! %s items will use Standard Master Looter Window!"
@@ -864,12 +863,21 @@ function GogoLoot:BuildUI()
 
             spacer2(widget)
             
+            labelNormal(widget, "Macro to Delete Grays")
+            --labelNormal(widget, "Macro to Delete Grays")
+            local box = AceGUI:Create("EditBox")
+            box:DisableButton(true)
+            box:SetFullWidth(true)
+            box:SetText("/run for b=0,4 do for s=1,GetContainerNumSlots(b) do l=GetContainerItemLink(b,s) if l then _,_,r=GetItemInfo(l) if (r==0) then PickupContainerItem(b,s) DeleteCursorItem() end end end end")
+            widget:AddChild(box)
+            spacer2(widget)
+
             labelLarge(widget, "Feedback")
 
             spacer(widget)
  
             labelNormal(widget, "If you have feedback, feel free to share it on Discord.")
-            --labelNormal(widget, "https://github.com/Gogo1951/GogoLoot/issues/")
+            --labelNormal(widget, "https://discord.gg/GegY9JMuKQ")
             local box = AceGUI:Create("EditBox")
             box:DisableButton(true)
             box:SetFullWidth(true)
