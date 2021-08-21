@@ -558,8 +558,19 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                 debug(data[5])
                 local itemID = tonumber(data[5])
                 if itemID then
+                    if not itemLink or strlen(itemLink) < 8 then
+                        debug("Invalid item link")
+                        return -- likely gold TODO: CHECK THIS
+                    end
+                    if itemLink and not ItemInfoCache[itemLink] then
+                        ItemIDCache[itemLink] = {string.find(itemLink,"|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")}
+                        ItemInfoCache[itemLink] = {GetItemInfo(itemID)} -- note: GetItemInfo may not be available right away! test this
+                    end
                     if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
-                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) then
+                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) and ((ItemInfoCache[lootLink][12] ~= 9 -- recipes
+                            and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 2)) -- pets
+                            and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 5)) -- mounts
+                        ) or (GogoLoot_Config.professionRollDisable and itemBindings[id] ~= 1)) then
                             -- we should auto need or greed this
                             
                             -- find desired roll behavior for item type
