@@ -273,6 +273,11 @@ end
 GogoLoot.canOpenWindow = false
 
 function GogoLoot:showLootFrame(reason, force)
+    if InCombatLockdown() then
+        debug("Tried to show loot frame while in combat! Blizzard restricted this.")
+        return
+    end
+
     if GogoLoot_Config.speedyLoot and (force or GogoLoot.canOpenWindow) then
         debug("Showing loot frame because ".. reason)
         GogoLoot.canOpenWindow = false
@@ -567,9 +572,9 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                         ItemInfoCache[itemLink] = {GetItemInfo(itemID)} -- note: GetItemInfo may not be available right away! test this
                     end
                     if (not itemBindings[itemID]) or itemBindings[itemID] ~= 1 then -- not bind on pickup
-                        if (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) and ((ItemInfoCache[lootLink][12] ~= 9 -- recipes
-                            and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 2)) -- pets
-                            and (not (ItemInfoCache[lootLink][12] == 15 and ItemInfoCache[lootLink][13] == 5)) -- mounts
+                        if ItemInfoCache[itemLink] and (not GogoLoot_Config.ignoredItemsSolo[itemID]) and (not internalIgnoreList[itemID]) and ((ItemInfoCache[itemLink][12] ~= 9 -- recipes
+                            and (not (ItemInfoCache[itemLink][12] == 15 and ItemInfoCache[itemLink][13] == 2)) -- pets
+                            and (not (ItemInfoCache[itemLink][12] == 15 and ItemInfoCache[itemLink][13] == 5)) -- mounts
                         ) or (GogoLoot_Config.professionRollDisable and itemBindings[id] ~= 1)) then
                             -- we should auto need or greed this
                             
@@ -670,6 +675,14 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
         if GetCVarBool("autoLootDefault") == IsModifiedClick("AUTOLOOTTOGGLE") then
             GogoLoot:showLootFrame("modifier state changed")
         end
+    elseif "PLAYER_REGEN_DISABLED" == evt then
+        if GogoLoot_Config.speedyLoot then
+            LootFrame:RegisterEvent('LOOT_OPENED')
+        end
+    elseif "PLAYER_REGEN_ENABLED" == evt then
+        if GogoLoot_Config.speedyLoot then
+            LootFrame:UnregisterEvent('LOOT_OPENED')
+        end
     elseif "PLAYER_ENTERING_WORLD" == evt then -- init config default
         if (not GogoLoot_Config) or (not GogoLoot_Config._version) or GogoLoot_Config._version < CONFIG_VERSION then
             GogoLoot:BuildConfig()
@@ -696,7 +709,7 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
             GetItemInfo(id)
         end
 
-        if GogoLoot_Config.speedyLoot then
+        if GogoLoot_Config.speedyLoot and not InCombatLockdown() then
             LootFrame:UnregisterEvent('LOOT_OPENED')
         end
         local creatorText = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t GogoLoot : Team Member"
@@ -863,6 +876,9 @@ events:SetScript("OnEvent", function()
     events:RegisterEvent("GROUP_ROSTER_UPDATE")
     events:RegisterEvent("START_LOOT_ROLL")
     events:RegisterEvent("PLAYER_LOGIN")
+
+    events:RegisterEvent("PLAYER_REGEN_DISABLED")
+    events:RegisterEvent("PLAYER_REGEN_ENABLED")
 
     local lastItemHidden = false
 
