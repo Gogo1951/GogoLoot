@@ -136,7 +136,7 @@ function GogoLoot:PrintTrade()
         end
     else
         if string.len(received) > 0 then
-            received = " and received" .. received
+            --received = " and received" .. received
             local message = string.format(GogoLoot.TRADE_COMPLETE_RECEIVED, received, GogoLoot.tradeState.player)
             message = string.gsub(message, "  ", " ")
             message = message .. "."
