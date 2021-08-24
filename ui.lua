@@ -22,6 +22,8 @@ GogoLoot.TRADE_COMPLETE_RECEIVED = "{rt4} GogoLoot : I received %s from %s"
 GogoLoot.TRADE_CANCELLED = "{rt4} GogoLoot : Trade with %s cancelled."
 GogoLoot.TRADE_FAILED = "{rt4} GogoLoot : Trade with %s failed."
 
+GogoLoot.API_WARNING = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4.png:0\124t GogoLoot : Due to a recent Blizzard API change, you may occasionally see a Loot Window if you attempt loot while in combat. Sorry!"
+
 GogoLoot.conflicts = { -- name must match the .TOC filename
     "AutoDestroy",
     "AutoLootAssist",

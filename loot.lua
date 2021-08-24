@@ -756,6 +756,11 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
                 end
             end
         end
+
+        if not GogoLoot_Config._has_notified_api_change then
+            GogoLoot_Config._has_notified_api_change = true
+            print(GogoLoot.API_WARNING)
+        end
         
         GameTooltip:HookScript("OnHide", function()
             GogoLoot:HideNotification()
