@@ -417,6 +417,7 @@ function GogoLoot:BuildUI()
         button:SetCallback("OnClick", function()
             local input = box:GetText()
             local itemID = nil
+            if GetItemInfoInstant(input) == nil or GetItemInfoInstant(input) == "" then print(" |cFF00FF00GogoLoot|r : Invalid item specified: " .. input) return end
             if tonumber(input) then
                 itemID = tonumber(input)
             else
@@ -430,8 +431,6 @@ function GogoLoot:BuildUI()
                 widget:ReleaseChildren()
                 --print("Re-rendering " .. group)
                 render[group](widget, group)
-            else
-                print(" |cFF00FF00GogoLoot|r : Invalid item specified: " .. input)
             end
         end)
         --button:SetDisabled(true)
