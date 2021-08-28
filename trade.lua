@@ -10,23 +10,11 @@ function GogoLoot:GetItemLink(data)
 end
 
 function GogoLoot:GetGoldString(value)
-    local str = ""
     local g = math.floor(value / 10000)
     local s = math.floor(value / 100) % 100
     local c = value % 100
-    if g > 0 then
-        str = str .. g .. "G "
-    end
-    if s > 0 then
-        str = str .. s .. "S "
-    end
-    if c > 0 then
-        str = str .. c .. "C "
-    end
 
-    if string.len(str) > 0 then
-        str = str:sub(1, -2)
-    end
+    local str = string.sub(string.format("%dG %dS %dC", g, s, c), 1, -2)
 
     return str
 end
