@@ -1,6 +1,6 @@
 ## Interface: 20501
 ## Title: GogoLoot|cFF00FF00 v1.10|r
-## Author: Aero, Gogo
+## Author: Gogo, Aero, Tex 
 ## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
 ## Version: 1.10
 ## RequiredDeps:
