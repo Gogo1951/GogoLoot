@@ -5,7 +5,7 @@ function GogoLoot:GetItemLink(data)
     local link = data[7]--"[" .. data[1] .. "]" -- item links are broken on ptr. Use data[7] if its fixed
 
 
-    if quan == 1 then return link else return string.format("$s x$d", link, quan) end
+    if quan == 1 then return link else return string.format("%s x%d", link, quan) end
     --return link .. "x" .. tostring(quan)
 end
 
