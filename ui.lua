@@ -678,20 +678,22 @@ function GogoLoot:BuildUI()
             if not UnitIsGroupLeader("Player") then
                 dropdown:SetDisabled(true)
                 dropdown:SetList({
-                    ["gray"] = "Poor",
-                    ["white"] = "Common",
+                    -- ["gray"] = "Poor",
+                    -- ["white"] = "Common",
                     ["green"] = "Uncommon",
                     ["blue"] = "Rare",
                     ["purple"] = "Epic",
-                }, {"gray", "white", "green", "blue", "purple"})
+                }, {"green", "blue", "purple"})
+                --}, {"gray", "white", "green", "blue", "purple"})
             else
                 dropdown:SetList({
-                    ["gray"] = "|cff9d9d9dPoor|r",
-                    ["white"] = "|cffffffffCommon|r",
+                    -- ["gray"] = "|cff9d9d9dPoor|r",
+                    -- ["white"] = "|cffffffffCommon|r",
                     ["green"] = "|cff1eff00Uncommon|r",
                     ["blue"] = "|cff0070ddRare|r",
                     ["purple"] = "|cffa335eeEpic|r",
-                }, {"gray", "white", "green", "blue", "purple"})
+                --}, {"gray", "white", "green", "blue", "purple"})
+                }, {"green", "blue", "purple"})
             end
             
             dropdown:SetValue(GogoLoot.rarityToText[GetLootThreshold()])

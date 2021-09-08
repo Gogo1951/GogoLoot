@@ -111,8 +111,8 @@ GogoLoot.validFilters = {
     ["purple"] = true,
     ["blue"] = true,
     ["green"] = true,
-    ["white"] = true,
-    ["gray"] = true,
+    -- ["white"] = true,
+    -- ["gray"] = true,
     ["all"] = true,
 }
 
@@ -131,8 +131,8 @@ local badErrors = {
 }
 
 GogoLoot.rarityToText = {
-    [0] = "gray",
-    [1] = "white",
+    -- [0] = "gray",
+    -- [1] = "white",
     [2] = "green",
     [3] = "blue",
     [4] = "purple",
@@ -141,8 +141,8 @@ GogoLoot.rarityToText = {
 }
 
 GogoLoot.textToName = {
-    ["gray"] = "|cff9d9d9dPoor|r",
-    ["white"] = "|cffffffffCommon|r",
+    -- ["gray"] = "|cff9d9d9dPoor|r",
+    -- ["white"] = "|cffffffffCommon|r",
     ["green"] = "|cff1eff00Uncommon|r",
     ["blue"] = "|cff0070ddRare|r",
     ["purple"] = "|cffa335eeEpic|r",
@@ -150,8 +150,8 @@ GogoLoot.textToName = {
 }
 
 GogoLoot.textToLink = {
-    ["gray"] = "Poor Items",
-    ["white"] = "Common Items",
+    -- ["gray"] = "Poor Items",
+    -- ["white"] = "Common Items",
     ["green"] = "Uncommon Items",
     ["blue"] = "Rare Items",
     ["purple"] = "Epic Items",
