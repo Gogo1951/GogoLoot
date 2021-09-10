@@ -2,7 +2,7 @@
 ## Title: GogoLoot|cFF00FF00 (2021-09-13)|r
 ## Author: Gogo, Aero, Tex 
 ## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
-## Version: 2021.09.13
+## Version: 2021-09-13
 ## RequiredDeps:
 ## SavedVariables: 
 ## SavedVariablesPerCharacter: GogoLoot_Config
