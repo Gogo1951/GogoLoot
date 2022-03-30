@@ -1,3 +1,14 @@
+# Update
+
+After some thought, I just don't have it in me to support this project. It was fun, was happy with it, but honestly I don't have opportunities to master loot / test this like I used to. Hard for me to find groups, let alone lead groups, these days so it's impossible for me to test and get this right.
+
+Check out Gargul? I think it's similar.
+
+https://www.curseforge.com/wow/addons/gargul
+
+Cheers!
+
+
 # GogoLoot
 
 ### Don't Let Loot Slow Down Your Zug
