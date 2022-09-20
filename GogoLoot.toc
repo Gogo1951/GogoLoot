@@ -6,7 +6,8 @@
 ## RequiredDeps:
 ## SavedVariables: 
 ## SavedVariablesPerCharacter: GogoLoot_Config
-
+ X-Curse-Project-ID: 423347
+ 
 Libs\LibCompiledDB\stream.lua
 Libs\LibCompiledDB\serial.lua
 Libs\LibCompiledDB\compiler.lua
