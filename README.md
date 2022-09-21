@@ -30,17 +30,17 @@ Github : https://github.com/Gogo1951/GogoLoot
 
 **Gargul**
 > 
-> GogoLoot used to have more Automation for Master Looters, Trade-Announce, and some other features... but Gargul handles all of that stuff now. 
+> GogoLoot used to have more features... Automation for Master Looters, Trade-Announce, and some other features... but Gargul handles all of that stuff now. 
 > 
 > Download from CurseForge : https://www.curseforge.com/wow/addons/gargul
 
 <br>
 
-#### Other Projects from the GDKPd Team
+#### Other Projects from the GogoLoot Team
 
 <br>
 
-**Groupie** by Gogo, LemonDrake, & Kynura
+**Groupie** by Gogo, LemonDrake & Kynura
 > 
 > A better LFG tool for Classic WoW.
 > 
@@ -61,3 +61,10 @@ Github : https://github.com/Gogo1951/GogoLoot
 > Automate Your GDKP Auctions, Bids, & Payouts in Classic WoW.
 > 
 > Download from CurseForge : https://www.curseforge.com/wow/addons/gdkpdclassic
+<br>
+
+**Questie** by Aero & Gogo
+> 
+> Aero built Questie, and that's where he met Gogo. Together they created GogoLoot as a side project to test some new UI components that were intended to make it back into a proposed Questie redesign that never quite happened. Anyway, GogoLoot started off as just a proof of concept for some templated UI tweaks. (=
+> 
+> Download from CurseForge : https://www.curseforge.com/wow/addons/questie
