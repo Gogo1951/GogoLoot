@@ -1,20 +1,63 @@
-# Update
-
-After some thought, I just don't have it in me to support this project. It was fun, was happy with it, but honestly I don't have opportunities to master loot / test this like I used to. Hard for me to find groups, let alone lead groups, these days so it's impossible for me to test and get this right.
-
-Cheers!
-
-
 # GogoLoot
 
-### Don't Let Loot Slow Down Your Zug
+Don't let Loot slow down your zug!
 
-A Classic WoW addon to help speed up runs by automating the Master Looter and Group Loot settings.
+<br>
 
-GogoLoot settings will appear when you are promoted to Master Looter, or you can type ```/gl``` to bring up the settings window.
+### :gem:  **KEY FEATURES**
 
-By default "Auto Loot", "Auto Greed on BoEs", and "Speedy Loot (No Loot Window)" settings are enabled.
+<br>
 
-GogoLoot integrates with Softres.it! Simply paste in your CSV export from Softres.it and GogoLoot will automatically loot items to the people who it can; when more than one person had a SR on an item, the Master Looter can manually call for a roll on that item.
+* A Classic WoW addon to help speed up runs by automating your Need and Greed Rolls on BoEs.
 
-Stay tuned, there's more to come! (=
+* There's also an ignore list so you don't miss manual rolls on important items like bags or patterns.
+
+<br>
+
+### :link:  **LINKS**
+
+<br>
+
+Download from CurseForge : https://www.curseforge.com/wow/addons/gogoloot
+
+Github : https://github.com/Gogo1951/GogoLoot
+
+<br>
+
+### 🆒  **OTHER STUFF**
+
+<br>
+
+**Gargul**
+> 
+> GogoLoot used to have more Automation for Master Looters, Trade-Announce, and some other features... but Gargul handles all of that stuff now. 
+> 
+> Download from CurseForge : https://www.curseforge.com/wow/addons/gargul
+
+<br>
+
+#### Other Projects from the GDKPd Team
+
+<br>
+
+**Groupie** by Gogo, LemonDrake, & Kynura
+> 
+> A better LFG tool for Classic WoW.
+> 
+> Download from CurseForge : https://www.curseforge.com/wow/addons/ranksentinel
+
+<br>
+
+**RankSentinel** by Kynura & Gogo
+> 
+> Help your team put their best foot forward.
+> 
+> Download from CurseForge : https://www.curseforge.com/wow/addons/ranksentinel
+
+<br>
+
+**GDKPd** by Gogo & LemonDrake
+> 
+> Automate Your GDKP Auctions, Bids, & Payouts in Classic WoW.
+> 
+> Download from CurseForge : https://www.curseforge.com/wow/addons/gdkpdclassic
