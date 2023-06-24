@@ -442,7 +442,7 @@ function GogoLoot:AnnounceNeeds()
     end
 end
 
-function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
+function GogoLoot:EventHandler(events, evt, arg, message, a, b, c, ...)
     --debug(evt)
     --if ("LOOT_READY" == evt or "LOOT_OPENED" == evt) and not canLoot then
     --    canOpenWindow = true
@@ -458,7 +458,12 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
 
     GogoLoot:TradeEvent(evt, arg, message, a, b, c, ...)
 
-    if "LOOT_READY" == evt then
+    if ("ADDON_LOADED" == evt) then
+        if ("GogoLoot" == arg) then
+            events:UnregisterEvent("ADDON_LOADED")
+            GogoLoot:Initialize(events)
+        end
+    elseif "LOOT_READY" == evt then
         lootAPIOpen = true
     elseif ("LOOT_OPENED" == evt) and canLoot then
         debug("LootReady! " .. evt)
@@ -780,7 +785,10 @@ function GogoLoot:EventHandler(evt, arg, message, a, b, c, ...)
 end
 
 local events = CreateFrame('Frame')
-events:SetScript("OnEvent", function()
+events:RegisterEvent("ADDON_LOADED")
+events:SetScript("OnEvent", function(event, ...) GogoLoot.EventHandler(self, event, ...) end)
+
+function GogoLoot:Initialize(events)
     local function capitalize(str)
         return (str:gsub("^%l", string.upper))
     end
@@ -849,7 +857,6 @@ events:SetScript("OnEvent", function()
 
     SLASH_TG1 = "/tg"
 
-    local events = CreateFrame("Frame")
     local canLoot = true
     local lootAPIOpen = false
     local lootTicker = nil
@@ -884,7 +891,6 @@ events:SetScript("OnEvent", function()
 
     events:RegisterEvent("PLAYER_REGEN_DISABLED")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
-
     local lastItemHidden = false
 
     --[[ -- auto confirm
@@ -897,52 +903,10 @@ events:SetScript("OnEvent", function()
         end
     end)]]
 
-    events:SetScript("OnEvent", GogoLoot.EventHandler)
-
     LootFrame.selectedQuality = GetLootThreshold()
 
-    -- hook loot menu to add common/poor
-    UnitPopupMenus["LOOT_THRESHOLD"] = { "ITEM_QUALITY0_DESC", "ITEM_QUALITY1_DESC", "ITEM_QUALITY2_DESC_GL", "ITEM_QUALITY3_DESC_GL", "ITEM_QUALITY4_DESC_GL", "CANCEL" }
-    
-    UnitPopupButtons["ITEM_QUALITY4_DESC_GL"] = { text = ITEM_QUALITY4_DESC, color = ITEM_QUALITY_COLORS[4], checkable = 1 } -- implement custom options for existing thresholds, the logic is set up to convert the index in the list to the loot threshold, so it doesn't work with additional entries
-    UnitPopupButtons["ITEM_QUALITY3_DESC_GL"] = { text = ITEM_QUALITY3_DESC, color = ITEM_QUALITY_COLORS[3], checkable = 1 }
-    UnitPopupButtons["ITEM_QUALITY2_DESC_GL"] = { text = ITEM_QUALITY2_DESC, color = ITEM_QUALITY_COLORS[2], checkable = 1 }
-
-    UnitPopupButtons["ITEM_QUALITY1_DESC"] = { text = ITEM_QUALITY1_DESC, color = ITEM_QUALITY_COLORS[1], checkable = 1 }
-    UnitPopupButtons["ITEM_QUALITY0_DESC"] = { text = ITEM_QUALITY0_DESC, color = ITEM_QUALITY_COLORS[0], checkable = 1 }
-
-    local lookup = {
-        ["ITEM_QUALITY4_DESC_GL"] = 4,
-        ["ITEM_QUALITY3_DESC_GL"] = 3,
-        ["ITEM_QUALITY2_DESC_GL"] = 2,
-        ["ITEM_QUALITY1_DESC"] = 1,
-        ["ITEM_QUALITY0_DESC"] = 0
-    }
-
-    hooksecurefunc("UnitPopup_OnClick", function(self)
-        local qual = lookup[self.value]
-        
-        if qual then
-            UIDropDownMenu_SetButtonText(self:GetParent().parentLevel, self:GetParent().parentID, UnitPopupButtons[self.value].text, ITEM_QUALITY_COLORS[qual].hex)
-            local method, index, index2 = GetLootMethod()
-
-            if 0 == index then -- the player
-                index = GogoLoot:UnitName("Player")
-            elseif index2 then
-                index = GogoLoot:UnitName("raid"..tostring(index2))
-            elseif index then
-                index = GogoLoot:UnitName("party"..tostring(index))
-            end
-
-            SetLootMethod(method, method == "master" and index or qual, method == "master" and qual or nil)
-        end
-
-    end)
-
     GogoLoot:HookTrades(events)
-
-end)
-events:RegisterEvent('PLAYER_LOGIN')
+end
 
 internalIgnoreList = valToKey(
 { -- manual blacklist
