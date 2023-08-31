@@ -905,6 +905,46 @@ function GogoLoot:Initialize(events)
 
     LootFrame.selectedQuality = GetLootThreshold()
 
+    UnitPopupItemQuality0DescButtonMixin = CreateFromMixins(UnitPopupItemQuality2DescButtonMixin);
+
+    function UnitPopupItemQuality0DescButtonMixin:GetText()
+    	return ITEM_QUALITY0_DESC;
+    end
+
+    function UnitPopupItemQuality0DescButtonMixin:GetID()
+    	return 0;
+    end
+
+    UnitPopupItemQuality1DescButtonMixin = CreateFromMixins(UnitPopupItemQuality2DescButtonMixin);
+
+    function UnitPopupItemQuality1DescButtonMixin:GetText()
+    	return ITEM_QUALITY1_DESC;
+    end
+
+    function UnitPopupItemQuality1DescButtonMixin:GetID()
+    	return 1;
+    end
+
+    local UnitPopupLootThresholdButtonMixinGetButtons = UnitPopupLootThresholdButtonMixin.GetButtons
+    function UnitPopupLootThresholdButtonMixin:GetButtons()
+        local buttons = UnitPopupLootThresholdButtonMixinGetButtons(self)
+        table.insert(buttons, UnitPopupItemQuality1DescButtonMixin)
+        table.insert(buttons, UnitPopupItemQuality0DescButtonMixin)
+
+        --Fixup button ids to be in some sort of sane order, fixes an issue in the default UI.
+        table.sort(buttons, function (a, b)
+            if (b.GetID == nil) then
+                return a.GetID ~= nil;
+            elseif (a.GetID == nil) then
+                return false;
+            else
+                return a.GetID() < b.GetID();
+            end
+        end);
+
+        return buttons;
+    end
+
     GogoLoot:HookTrades(events)
 end
 
