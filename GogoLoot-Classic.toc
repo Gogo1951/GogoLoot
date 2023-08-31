@@ -1,6 +1,4 @@
-## Interface: 30402
-## Interface-Classic: 11404
-## Interface-Wrath: 30402
+## Interface: 11404
 ## Title: GogoLoot
 ## Author: Gogo, Aero
 ## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
