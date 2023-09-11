@@ -2,8 +2,8 @@ name: Package Addon
 
 on:
   push:
-    branches: [ main ]
-    tags: [ "*" ]
+    branches: [main]
+    tags: ["*"]
 
 jobs:
   release:
@@ -15,13 +15,14 @@ jobs:
 
     steps:
       - name: Clone project
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
-      - name: Package and release classic
-        uses: BigWigsMods/packager@master
+      - name: Package and release for Classic Era
+        uses: BigWigsMods/packager@v2
         with:
-          args: -g classic
-      - name: Package and release Wrath
-        uses: BigWigsMods/packager@master
+          args: -g classic -S
+
+      - name: Package and release for Wrath of the Lich King Classic
+        uses: BigWigsMods/packager@v2
         with:
-          args: -g wrath
+          args: -g wrath -S
