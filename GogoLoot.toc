@@ -4,11 +4,11 @@
 ## Title: GogoLoot
 ## Author: Gogo, Aero
 ## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
-## Version: v1.11.3
+## Version: v1.11.4
 ## RequiredDeps:
 ## SavedVariables: 
 ## SavedVariablesPerCharacter: GogoLoot_Config
-## X-Curse-Packaged-Version: v1.11.3
+## X-Curse-Packaged-Version: v1.11.4
 ## X-Curse-Project-ID: 423347
 ## X-Curse-Project-Name: gogoloot
  
