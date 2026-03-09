@@ -1,13 +1,16 @@
-name: Package Addon
+name: Package and release
 
 on:
   push:
-    branches: [main]
-    tags: ["*"]
+    tags:
+      - '**'
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
 
     env:
       CF_API_KEY: ${{ secrets.CF_API_KEY }}
@@ -15,14 +18,9 @@ jobs:
 
     steps:
       - name: Clone project
-        uses: actions/checkout@v3
-
-      - name: Package and release for Classic Era
-        uses: BigWigsMods/packager@v2
+        uses: actions/checkout@v4
         with:
-          args: -g classic -S
+          fetch-depth: 0
 
-      - name: Package and release for Wrath of the Lich King Classic
+      - name: Package and release
         uses: BigWigsMods/packager@v2
-        with:
-          args: -g wrath -S
