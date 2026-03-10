@@ -1,26 +1,33 @@
-## Interface: 30402
-## Interface-Classic: 11404
-## Interface-Wrath: 30402
 ## Title: GogoLoot
-## Author: Gogo, Aero
-## Notes: Don't Let Loot Slow Down Your Zug! A Classic WoW Master Looting & Loot Automation Tool.
-## Version: v1.11.4
-## RequiredDeps:
-## SavedVariables: 
-## SavedVariablesPerCharacter: GogoLoot_Config
-## X-Curse-Packaged-Version: v1.11.4
+## Notes: A simple add-on that discards the lowest-value item in your bags -- including completed quest items, vendor-quality white items, low-level consumables, and gray-quality "trash" items -- when you click the mini-map button.
+## Author: Gogo1951 & Aero
+
+## IconTexture: Interface\AddOns\GogoLoot\GogoLoot.tga
+## Category-enUS: Bags & Inventory
+## X-License: MIT
+
+## Version: @project-version@
+## Interface: 11508, 20505
 ## X-Curse-Project-ID: 423347
-## X-Curse-Project-Name: gogoloot
- 
-Libs\LibCompiledDB\stream.lua
-Libs\LibCompiledDB\serial.lua
-Libs\LibCompiledDB\compiler.lua
-Libs\LibDeflate\lib.xml
 
-embeds.xml
+## SavedVariables: GogoLoot_Configuration
 
-loot.lua
-ui.lua
-softres.lua
-json.lua
-trade.lua
+# Includes
+Includes\LibStub\LibStub.lua
+Includes\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Includes\AceGUI-3.0\AceGUI-3.0.xml
+
+# GogoLoot
+Data.lua
+Core.lua
+Master-Loot.lua
+Automatic-Rolls.lua
+Trade-Announce.lua
+Options.lua
+
+# Feedback Welcome! (=
+# GogoLoot on CurseForge // https://www.curseforge.com/wow/addons/gogoloot
+# GogoLoot on GitHub // https://github.com/Gogo1951/GogoLoot
+
+# GogoLoot on Discord // https://discord.gg/eh8hKq992Q
+

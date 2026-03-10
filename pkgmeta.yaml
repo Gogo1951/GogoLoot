@@ -1,0 +1,18 @@
+package-as: GogoLoot
+
+externals:
+  Includes/LibStub:
+    url: https://repos.curseforge.com/wow/libstub/trunk
+    tag: 1.0
+  Includes/CallbackHandler-1.0:
+    url: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+    tag: 1.0
+  Includes/AceGUI-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0
+
+ignore:
+  - .github
+  - README.md
+  - LICENSE
+  - .gitignore
+  - "*.sh"
