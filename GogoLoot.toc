@@ -1,5 +1,5 @@
 ## Title: GogoLoot
-## Notes: A simple add-on that discards the lowest-value item in your bags -- including completed quest items, vendor-quality white items, low-level consumables, and gray-quality "trash" items -- when you click the mini-map button.
+## Notes: Automated master looting, roll automation, and trade announcements. Don't let Loot slow down your zug!
 ## Author: Gogo1951 & Aero
 
 ## IconTexture: Interface\AddOns\GogoLoot\GogoLoot.tga
@@ -16,6 +16,7 @@
 Includes\LibStub\LibStub.lua
 Includes\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Includes\AceGUI-3.0\AceGUI-3.0.xml
+Includes\AceConfig-3.0\AceConfig-3.0.xml
 
 # GogoLoot
 Data.lua
@@ -24,10 +25,11 @@ Master-Loot.lua
 Automatic-Rolls.lua
 Trade-Announce.lua
 Options.lua
+Options-Trade-Announcements.lua
+Options-Automatic-Rolls.lua
+Options-Master-Looter.lua
 
 # Feedback Welcome! (=
 # GogoLoot on CurseForge // https://www.curseforge.com/wow/addons/gogoloot
 # GogoLoot on GitHub // https://github.com/Gogo1951/GogoLoot
-
 # GogoLoot on Discord // https://discord.gg/eh8hKq992Q
-

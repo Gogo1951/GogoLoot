@@ -37,7 +37,6 @@ GogoLoot.BIND_ON_EQUIP = 2
 GogoLoot.BIND_ON_USE = 3
 GogoLoot.BIND_QUEST_ITEM = 4
 
--- classId 9 covers Books (subclass 0), Recipes, Patterns, Plans, Schematics, Formulas, etc.
 GogoLoot.ITEM_CLASS_RECIPE = 9
 GogoLoot.ITEM_CLASS_QUEST = 12
 GogoLoot.ITEM_CLASS_MISCELLANEOUS = 15
@@ -48,6 +47,35 @@ GogoLoot.TRADE_ENCHANT_SLOT = 7
 GogoLoot.TRADE_ITEM_SLOT_COUNT = 6
 
 GogoLoot.PRINT_COLOR = "FF00FF80"
+
+-------------------------------------------------------------------------------
+-- UI Colors
+-------------------------------------------------------------------------------
+local C_TITLE    = "FFD100"
+local C_INFO     = "00BBFF"
+local C_BODY     = "CCCCCC"
+local C_TEXT     = "FFFFFF"
+local C_SUCCESS  = "33CC33"
+local C_DISABLED = "CC3333"
+local C_SEP      = "AAAAAA"
+local C_MUTED    = "808080"
+
+local COLOR_PREFIX = "|cff"
+
+GogoLoot.COLORS = {
+    TITLE    = COLOR_PREFIX .. C_TITLE,
+    INFO     = COLOR_PREFIX .. C_INFO,
+    DESC     = COLOR_PREFIX .. C_BODY,
+    TEXT     = COLOR_PREFIX .. C_TEXT,
+    SUCCESS  = COLOR_PREFIX .. C_SUCCESS,
+    DISABLED = COLOR_PREFIX .. C_DISABLED,
+    SEP      = COLOR_PREFIX .. C_SEP,
+    MUTED    = COLOR_PREFIX .. C_MUTED,
+}
+
+function GogoLoot:GetColor(key)
+    return GogoLoot.COLORS[key] or GogoLoot.COLORS.TEXT
+end
 
 -------------------------------------------------------------------------------
 -- Roll Constants
@@ -219,12 +247,23 @@ GogoLoot.DEFAULT_IGNORE_LIST_SOLO = {
 }
 
 GogoLoot.DEFAULT_IGNORE_LIST_MASTER = {
+    -- Vanilla: BoP Crafting Materials
     [12662] = {1}, -- Demonic Rune
     [20520] = {1}, -- Dark Rune
-    [22237] = {2}, -- Arcane Tome
-    [22815] = {2}, -- Fel Armament
-    [23571] = {2}, -- Primal Nether
+
+    -- Vanilla: Bags
+    [17966] = {1}, -- Onyxia Hide Backpack
+    [19914] = {1}, -- Panther Hide Sack
+
+    -- TBC: BoP Crafting Materials
+    [23572] = {2}, -- Primal Nether
     [30183] = {2}, -- Nether Vortex
+    [32428] = {2}, -- Heart of Darkness
+    [34664] = {2}, -- Sunmote
+
+    -- TBC: Bags
+    [34845] = {2}, -- Pit Lord's Satchel
+    [34846] = {2}, -- Black Sack of Gems
 }
 
 function GogoLoot:BuildDefaultIgnoreListSolo()
@@ -248,21 +287,28 @@ function GogoLoot:BuildDefaultIgnoreListMaster()
 end
 
 -------------------------------------------------------------------------------
+-- Configuration Version
+-- Bump this to force a full reset on next load.
+-------------------------------------------------------------------------------
+GogoLoot.CONFIG_VERSION = 1
+
+-------------------------------------------------------------------------------
 -- Default Configuration
 -------------------------------------------------------------------------------
 GogoLoot.DEFAULT_CONFIGURATION = {
-    speedyLoot = false,
+    speedyLoot = true,
     
     announceMasterLoot = true,
     announceMasterLootThreshold = 3, -- Rare default
     
-    announceTrade = false,
-    announceTradeCondition = "group", -- "always", "group_ml", "group"
+    announceTrade = true,
+    announceTradeCondition = "always",    -- "always", "party_or_raid", "raid_only"
+    announceTradeOutput = "whisper",      -- "whisper", "group", "raid"
     
     autoGreed = false,
     autoGreedThreshold = 2, -- Uncommon default
     
-    autoMasterLoot = false,
+    autoMasterLoot = true,
     autoMasterLootOutsideInstances = false,
     
     destinations = {

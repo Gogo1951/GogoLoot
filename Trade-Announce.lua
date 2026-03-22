@@ -91,19 +91,36 @@ local function AnnounceTradeComplete()
     if not GogoLoot.tradeState.player then return end
 
     local condition = GogoLoot_Configuration.announceTradeCondition
+    local output = GogoLoot_Configuration.announceTradeOutput
 
+    -- Condition gate: should we announce at all?
+    if condition == "party_or_raid" then
+        if not IsInGroup() then return end
+    elseif condition == "raid_only" then
+        if not UnitInRaid("player") then return end
+    end
+    -- "always" passes through unconditionally
+
+    -- Determine chat channel from output setting
     local chatChannel, whisperTarget
-    if condition == "always" then
+    if output == "whisper" then
         chatChannel = "WHISPER"
         whisperTarget = GogoLoot.tradeState.player
-    elseif condition == "group_ml" then
-        if not (IsInGroup() and GogoLoot:AreWeMasterLooter()) then return end
+    elseif output == "raid" then
+        if UnitInRaid("player") then
+            chatChannel = "RAID"
+        elseif IsInGroup() then
+            chatChannel = "PARTY"
+        else
+            chatChannel = "WHISPER"
+            whisperTarget = GogoLoot.tradeState.player
+        end
+    else -- "group"
         chatChannel = GogoLoot:GetGroupChatChannel()
-    elseif condition == "group" then
-        if not IsInGroup() then return end
-        chatChannel = GogoLoot:GetGroupChatChannel()
-    else
-        return
+        if chatChannel == "SAY" then
+            chatChannel = "WHISPER"
+            whisperTarget = GogoLoot.tradeState.player
+        end
     end
 
     if not chatChannel then return end
@@ -218,3 +235,59 @@ GogoLoot:RegisterModuleEvent("TRADE_REQUEST_CANCEL", HandleTradeRequestCancel)
 GogoLoot:RegisterModuleEvent("TRADE_PLAYER_ITEM_CHANGED", HandleTradePlayerItemChanged)
 GogoLoot:RegisterModuleEvent("TRADE_TARGET_ITEM_CHANGED", HandleTradeTargetItemChanged)
 GogoLoot:RegisterModuleEvent("UI_INFO_MESSAGE", HandleUserInterfaceInfoMessage)
+
+-------------------------------------------------------------------------------
+-- Trade Window Checkbox
+-- Mirrors the "Enable Trade Announcements" toggle directly on the trade frame.
+-------------------------------------------------------------------------------
+local tradeAnnounceCheckbox = nil
+
+local function CreateTradeAnnounceCheckbox()
+    if tradeAnnounceCheckbox then return end
+    if not TradeFrame then return end
+
+    local checkbox = CreateFrame("CheckButton", "GogoLootTradeAnnounceCheckbox", TradeFrame, "UICheckButtonTemplate")
+    checkbox:SetSize(26, 26)
+    checkbox:SetPoint("BOTTOMLEFT", TradeFrame, "BOTTOMLEFT", 8, 4)
+
+    local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    label:SetPoint("LEFT", checkbox, "RIGHT", 2, 0)
+    label:SetText("Announce")
+
+    checkbox:SetScript("OnClick", function(self)
+        GogoLoot_Configuration.announceTrade = self:GetChecked() and true or false
+    end)
+
+    checkbox:SetScript("OnEnter", function(self)
+        local outputLabels = {
+            ["whisper"] = "Whisper",
+            ["group"]   = "Party Chat",
+            ["raid"]    = "Raid Chat",
+        }
+        local currentOutput = outputLabels[GogoLoot_Configuration.announceTradeOutput] or "Whisper"
+
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("|cff00FF80GogoLoot|r", 1, 1, 1)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Trade Announcements", 1, 0.82, 0)
+        GameTooltip:AddLine("Posts a trade summary to chat when this trade completes.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddDoubleLine("Current Output", currentOutput, 0.8, 0.8, 0.8, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+
+    checkbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    tradeAnnounceCheckbox = checkbox
+end
+
+function GogoLoot:SyncTradeCheckbox()
+    if tradeAnnounceCheckbox then
+        tradeAnnounceCheckbox:SetChecked(GogoLoot_Configuration.announceTrade)
+    end
+end
+
+GogoLoot:RegisterModuleEvent("TRADE_SHOW", function()
+    CreateTradeAnnounceCheckbox()
+    GogoLoot:SyncTradeCheckbox()
+end)

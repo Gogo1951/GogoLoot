@@ -185,13 +185,13 @@ local function BuildMasterIgnoreListArgs()
         table.insert(sortedIdentifiers, itemIdentifier)
     end
     table.sort(sortedIdentifiers, function(a, b)
-        local nameA, _, qualityA = GogoLoot.GetItemInfo(a)
-        local nameB, _, qualityB = GogoLoot.GetItemInfo(b)
-        qualityA = qualityA or -1
-        qualityB = qualityB or -1
+        local infoA = GogoLoot:SafeGetItemInfo(a)
+        local infoB = GogoLoot:SafeGetItemInfo(b)
+        local qualityA = infoA and infoA.quality or -1
+        local qualityB = infoB and infoB.quality or -1
         if qualityA ~= qualityB then return qualityA > qualityB end
-        nameA = nameA or ""
-        nameB = nameB or ""
+        local nameA = infoA and infoA.name or ""
+        local nameB = infoB and infoB.name or ""
         if nameA == "" and nameB == "" then return a < b end
         if nameA == "" then return false end
         if nameB == "" then return true end
@@ -283,7 +283,6 @@ function GogoLoot.BuildMasterLooterOptions()
         GogoLoot_Configuration.announceMasterLootThreshold = currentThreshold
     end
 
-    local groupMemberNames = GetGroupMemberNames()
     local announceThresholdOptions = BuildFilteredThresholdOptions(currentThreshold)
 
     local args = {
@@ -320,7 +319,7 @@ function GogoLoot.BuildMasterLooterOptions()
 
         autoMasterLoot = {
             type  = "toggle",
-            name  = "Enable Automatic Looting when Master Looter",
+            name  = "Enable Automated Master Looting In Instances",
             desc  = "Distributes loot to configured destinations automatically.",
             width = "full",
             order = 8,
@@ -336,7 +335,7 @@ function GogoLoot.BuildMasterLooterOptions()
 
         autoMasterLootOutsideInstances = {
             type  = "toggle",
-            name  = "Enable Automated Looting Outside of Instances",
+            name  = "Enable Automated Master Looting Outside of Instances",
             width = "full",
             order = 10,
             get   = function() return GogoLoot_Configuration.autoMasterLootOutsideInstances end,
@@ -365,7 +364,7 @@ function GogoLoot.BuildMasterLooterOptions()
 
         announceMasterLoot = {
             type  = "toggle",
-            name  = "Enable Loot Announce when Master Looter",
+            name  = "Enable Loot Announcements",
             desc  = "Announces item distributions to group chat.",
             width = "full",
             order = 43,

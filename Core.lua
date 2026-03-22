@@ -17,9 +17,51 @@ local function MigrateIgnoreLists()
     end
 end
 
+-- Migrate old combined trade condition values into the new two-key system
+local function MigrateTradeAnnounceConfig()
+    local oldCondition = GogoLoot_Configuration.announceTradeCondition
+    if oldCondition == "group" or oldCondition == "group_ml" then
+        GogoLoot_Configuration.announceTradeCondition = "party_or_raid"
+        if not GogoLoot_Configuration.announceTradeOutput then
+            GogoLoot_Configuration.announceTradeOutput = "group"
+        end
+    end
+end
+
 local function InitializeSavedVariables()
     if not GogoLoot_Configuration then
         GogoLoot_Configuration = {}
+    end
+
+    -- Force a full reset when the config version is outdated or missing
+    local savedVersion = GogoLoot_Configuration.configVersion
+    if savedVersion ~= GogoLoot.CONFIG_VERSION then
+        -- Existing users have keys in their config; fresh installs have an empty table
+        local isUpgrade = (next(GogoLoot_Configuration) ~= nil)
+        GogoLoot_Configuration = {}
+
+        for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
+            if type(defaultValue) == "table" then
+                GogoLoot_Configuration[configurationKey] = {}
+                for key, value in pairs(defaultValue) do
+                    GogoLoot_Configuration[configurationKey][key] = value
+                end
+            else
+                GogoLoot_Configuration[configurationKey] = defaultValue
+            end
+        end
+
+        GogoLoot_Configuration.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
+        GogoLoot_Configuration.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
+        GogoLoot_Configuration.configVersion = GogoLoot.CONFIG_VERSION
+
+        if isUpgrade then
+            C_Timer.After(5, function()
+                GogoLoot:PrintMessage("Settings have been reset for this update. Use /gl to review your options.")
+            end)
+        end
+
+        return
     end
 
     GogoLoot_Configuration.globalEnable = nil
@@ -45,6 +87,7 @@ local function InitializeSavedVariables()
     end
 
     MigrateIgnoreLists()
+    MigrateTradeAnnounceConfig()
 end
 
 local function CheckForConflictingAddons()
