@@ -1,10 +1,21 @@
 package-as: GogoLoot
+enable-nolib-creation: no
 
 externals:
-  Includes/LibStub: https://repos.curseforge.com/wow/libstub/trunk
-  Includes/CallbackHandler-1.0: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0
-  Includes/AceGUI-3.0: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0
-  Includes/AceConfig-3.0: https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0
+  Includes/LibStub:
+    url: svn://svn.wowace.com/wow/libstub/mainline/trunk
+
+  Includes/CallbackHandler-1.0:
+    url: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0/
+
+  Includes/AceLocale-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceLocale-3.0
+
+  Includes/AceGUI-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0
+
+  Includes/AceConfig-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0
 
 ignore:
   - .github
