@@ -1,25 +1,42 @@
 ## Title: GogoLoot
 ## Notes: Automated master looting, roll automation, and trade announcements. Don't let Loot slow down your zug!
-## Author: Gogo1951 & Aero
+## Author: Gogo1951
 
-## IconTexture: Interface\AddOns\GogoLoot\GogoLoot.tga
+## IconTexture: Interface/AddOns/GogoLoot/GogoLoot.tga
 ## Category-enUS: Bags & Inventory
 ## X-License: MIT
 
-## Version: @project-version@
 ## Interface: 11508, 20505
+## Version: @project-version@
 ## X-Curse-Project-ID: 423347
 
-## SavedVariables: GogoLoot_Configuration
+## SavedVariables: GogoLootDB, GogoLoot_Configuration
 
 # Includes
-Includes\LibStub\LibStub.lua
-Includes\CallbackHandler-1.0\CallbackHandler-1.0.lua
-Includes\AceGUI-3.0\AceGUI-3.0.xml
-Includes\AceConfig-3.0\AceConfig-3.0.xml
+Includes/LibStub/LibStub.lua
+Includes/CallbackHandler-1.0/CallbackHandler-1.0.lua
+Includes/AceLocale-3.0/AceLocale-3.0.lua
+Includes/AceGUI-3.0/AceGUI-3.0.xml
+Includes/AceConfig-3.0/AceConfigRegistry-3.0/AceConfigRegistry-3.0.lua
+Includes/AceConfig-3.0/AceConfigDialog-3.0/AceConfigDialog-3.0.lua
+Includes/AceConfig-3.0/AceConfig-3.0.lua
+
+# Localization
+Locales/enUS.lua
+Locales/deDE.lua
+Locales/esES.lua
+Locales/frFR.lua
+Locales/itIT.lua
+Locales/koKR.lua
+Locales/ptBR.lua
+Locales/ruRU.lua
+Locales/zhCN.lua
+Locales/zhTW.lua
+
+# Data
+Data.lua
 
 # GogoLoot
-Data.lua
 Core.lua
 Master-Loot.lua
 Automatic-Rolls.lua

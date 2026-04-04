@@ -1,6 +1,8 @@
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- GogoLoot Trade Module
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local L = GogoLoot.L
+
 GogoLoot.tradeState = {
     player = nil,
     ourItems = {},
@@ -9,8 +11,12 @@ GogoLoot.tradeState = {
     theirEnchantDescription = nil,
     ourMoney = 0,
     theirMoney = 0,
-    accepted = false,
+    accepted = false
 }
+
+--------------------------------------------------------------------------------
+-- State Management
+--------------------------------------------------------------------------------
 
 local function ResetTradeState()
     GogoLoot.tradeState = {
@@ -21,19 +27,31 @@ local function ResetTradeState()
         theirEnchantDescription = nil,
         ourMoney = 0,
         theirMoney = 0,
-        accepted = false,
+        accepted = false
     }
 end
 
+--------------------------------------------------------------------------------
+-- Formatting
+--------------------------------------------------------------------------------
+
 local function FormatMoneyString(copperAmount)
-    if not copperAmount or copperAmount <= 0 then return nil end
+    if not copperAmount or copperAmount <= 0 then
+        return nil
+    end
     local gold = math.floor(copperAmount / 10000)
     local silver = math.floor((copperAmount % 10000) / 100)
     local copper = copperAmount % 100
     local parts = {}
-    if gold > 0 then table.insert(parts, gold .. "g") end
-    if silver > 0 then table.insert(parts, silver .. "s") end
-    if copper > 0 then table.insert(parts, copper .. "c") end
+    if gold > 0 then
+        table.insert(parts, gold .. "g")
+    end
+    if silver > 0 then
+        table.insert(parts, silver .. "s")
+    end
+    if copper > 0 then
+        table.insert(parts, copper .. "c")
+    end
     return table.concat(parts, " ")
 end
 
@@ -82,24 +100,37 @@ local function BuildTradeSummary(itemTable, enchantDescription, moneyAmount)
         table.insert(parts, moneyString)
     end
 
-    if #parts == 0 then return nil end
+    if #parts == 0 then
+        return nil
+    end
     return table.concat(parts, ", ")
 end
 
-local function AnnounceTradeComplete()
-    if not GogoLoot_Configuration.announceTrade then return end
-    if not GogoLoot.tradeState.player then return end
+--------------------------------------------------------------------------------
+-- Announcement
+--------------------------------------------------------------------------------
 
-    local condition = GogoLoot_Configuration.announceTradeCondition
-    local output = GogoLoot_Configuration.announceTradeOutput
+local function AnnounceTradeComplete()
+    if not GogoLootDB.announceTrade then
+        return
+    end
+    if not GogoLoot.tradeState.player then
+        return
+    end
+
+    local condition = GogoLootDB.announceTradeCondition
+    local output = GogoLootDB.announceTradeOutput
 
     -- Condition gate: should we announce at all?
     if condition == "party_or_raid" then
-        if not IsInGroup() then return end
+        if not IsInGroup() then
+            return
+        end
     elseif condition == "raid_only" then
-        if not UnitInRaid("player") then return end
+        if not UnitInRaid("player") then
+            return
+        end
     end
-    -- "always" passes through unconditionally
 
     -- Determine chat channel from output setting
     local chatChannel, whisperTarget
@@ -115,7 +146,7 @@ local function AnnounceTradeComplete()
             chatChannel = "WHISPER"
             whisperTarget = GogoLoot.tradeState.player
         end
-    else -- "group"
+    else
         chatChannel = GogoLoot:GetGroupChatChannel()
         if chatChannel == "SAY" then
             chatChannel = "WHISPER"
@@ -123,14 +154,28 @@ local function AnnounceTradeComplete()
         end
     end
 
-    if not chatChannel then return end
+    if not chatChannel then
+        return
+    end
 
     local theirName = GogoLoot.tradeState.player
 
-    local ourSummary = BuildTradeSummary(GogoLoot.tradeState.ourItems, GogoLoot.tradeState.ourEnchantDescription, GogoLoot.tradeState.ourMoney)
-    local theirSummary = BuildTradeSummary(GogoLoot.tradeState.theirItems, GogoLoot.tradeState.theirEnchantDescription, GogoLoot.tradeState.theirMoney)
+    local ourSummary =
+        BuildTradeSummary(
+        GogoLoot.tradeState.ourItems,
+        GogoLoot.tradeState.ourEnchantDescription,
+        GogoLoot.tradeState.ourMoney
+    )
+    local theirSummary =
+        BuildTradeSummary(
+        GogoLoot.tradeState.theirItems,
+        GogoLoot.tradeState.theirEnchantDescription,
+        GogoLoot.tradeState.theirMoney
+    )
 
-    if not ourSummary and not theirSummary then return end
+    if not ourSummary and not theirSummary then
+        return
+    end
 
     local body
     if ourSummary and theirSummary then
@@ -145,8 +190,14 @@ local function AnnounceTradeComplete()
     SendChatMessage(message, chatChannel, nil, whisperTarget)
 end
 
+--------------------------------------------------------------------------------
+-- Snapshot
+--------------------------------------------------------------------------------
+
 local function SafeGetTradeEnchantName(getInfoFunction, slotIndex)
-    if type(getInfoFunction) ~= "function" then return nil end
+    if type(getInfoFunction) ~= "function" then
+        return nil
+    end
     local success, _, _, _, _, _, enchantName = pcall(getInfoFunction, slotIndex)
     if success and type(enchantName) == "string" and enchantName ~= "" then
         return enchantName
@@ -157,11 +208,15 @@ end
 local function SnapshotTradeItems()
     for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
         local itemLink = GetTradePlayerItemLink(slotIndex)
-        if itemLink then GogoLoot.tradeState.ourItems[slotIndex] = itemLink end
+        if itemLink then
+            GogoLoot.tradeState.ourItems[slotIndex] = itemLink
+        end
     end
     for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
         local itemLink = GetTradeTargetItemLink(slotIndex)
-        if itemLink then GogoLoot.tradeState.theirItems[slotIndex] = itemLink end
+        if itemLink then
+            GogoLoot.tradeState.theirItems[slotIndex] = itemLink
+        end
     end
 
     local enchantSlot = GogoLoot.TRADE_ENCHANT_SLOT
@@ -184,7 +239,6 @@ local function SnapshotTradeItems()
         end
     end
 
-    -- Capture gold amounts
     if type(GetPlayerTradeMoney) == "function" then
         GogoLoot.tradeState.ourMoney = GetPlayerTradeMoney() or 0
     end
@@ -193,9 +247,13 @@ local function SnapshotTradeItems()
     end
 end
 
+--------------------------------------------------------------------------------
+-- Event Handling
+--------------------------------------------------------------------------------
+
 local function HandleTradeShow(eventName)
     ResetTradeState()
-    GogoLoot.tradeState.player = GogoLoot:GetCleanUnitName("NPC") or UnitName("NPC")
+    GogoLoot.tradeState.player = GogoLoot:GetCleanUnitName("npc") or UnitName("npc")
 end
 
 local function HandleTradeAcceptUpdate(eventName, playerAccepted, targetAccepted)
@@ -210,7 +268,8 @@ local function HandleTradeRequestCancel(eventName)
 end
 
 local function HandleUserInterfaceInfoMessage(eventName, errorType, informationMessage)
-    if informationMessage == ERR_TRADE_CANCELLED then HandleTradeRequestCancel(eventName)
+    if informationMessage == ERR_TRADE_CANCELLED then
+        HandleTradeRequestCancel(eventName)
     elseif informationMessage == ERR_TRADE_COMPLETE then
         AnnounceTradeComplete()
         ResetTradeState()
@@ -236,15 +295,20 @@ GogoLoot:RegisterModuleEvent("TRADE_PLAYER_ITEM_CHANGED", HandleTradePlayerItemC
 GogoLoot:RegisterModuleEvent("TRADE_TARGET_ITEM_CHANGED", HandleTradeTargetItemChanged)
 GogoLoot:RegisterModuleEvent("UI_INFO_MESSAGE", HandleUserInterfaceInfoMessage)
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Trade Window Checkbox
 -- Mirrors the "Enable Trade Announcements" toggle directly on the trade frame.
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 local tradeAnnounceCheckbox = nil
 
 local function CreateTradeAnnounceCheckbox()
-    if tradeAnnounceCheckbox then return end
-    if not TradeFrame then return end
+    if tradeAnnounceCheckbox then
+        return
+    end
+    if not TradeFrame then
+        return
+    end
 
     local checkbox = CreateFrame("CheckButton", "GogoLootTradeAnnounceCheckbox", TradeFrame, "UICheckButtonTemplate")
     checkbox:SetSize(26, 26)
@@ -252,42 +316,56 @@ local function CreateTradeAnnounceCheckbox()
 
     local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     label:SetPoint("LEFT", checkbox, "RIGHT", 2, 0)
-    label:SetText("Announce")
+    label:SetText(L["TRADE_CHECKBOX_LABEL"])
 
-    checkbox:SetScript("OnClick", function(self)
-        GogoLoot_Configuration.announceTrade = self:GetChecked() and true or false
-    end)
+    checkbox:SetScript(
+        "OnClick",
+        function(self)
+            GogoLootDB.announceTrade = self:GetChecked() and true or false
+        end
+    )
 
-    checkbox:SetScript("OnEnter", function(self)
-        local outputLabels = {
-            ["whisper"] = "Whisper",
-            ["group"]   = "Party Chat",
-            ["raid"]    = "Raid Chat",
-        }
-        local currentOutput = outputLabels[GogoLoot_Configuration.announceTradeOutput] or "Whisper"
+    checkbox:SetScript(
+        "OnEnter",
+        function(self)
+            local outputLabels = {
+                ["whisper"] = L["TRADE_OUTPUT_WHISPER"],
+                ["group"] = L["TRADE_OUTPUT_GROUP"],
+                ["raid"] = L["TRADE_OUTPUT_RAID"]
+            }
+            local currentOutput = outputLabels[GogoLootDB.announceTradeOutput] or L["TRADE_OUTPUT_WHISPER"]
 
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("|cff00FF80GogoLoot|r", 1, 1, 1)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Trade Announcements", 1, 0.82, 0)
-        GameTooltip:AddLine("Posts a trade summary to chat when this trade completes.", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(" ")
-        GameTooltip:AddDoubleLine("Current Output", currentOutput, 0.8, 0.8, 0.8, 1, 1, 1)
-        GameTooltip:Show()
-    end)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(GogoLoot.COLORS.INFO .. "GogoLoot|r", 1, 1, 1)
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine(L["TRADE_TOOLTIP_TITLE"], 1, 0.82, 0)
+            GameTooltip:AddLine(L["TRADE_TOOLTIP_DESC"], 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddDoubleLine(L["TRADE_TOOLTIP_OUTPUT"], currentOutput, 0.8, 0.8, 0.8, 1, 1, 1)
+            GameTooltip:Show()
+        end
+    )
 
-    checkbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    checkbox:SetScript(
+        "OnLeave",
+        function()
+            GameTooltip:Hide()
+        end
+    )
 
     tradeAnnounceCheckbox = checkbox
 end
 
 function GogoLoot:SyncTradeCheckbox()
     if tradeAnnounceCheckbox then
-        tradeAnnounceCheckbox:SetChecked(GogoLoot_Configuration.announceTrade)
+        tradeAnnounceCheckbox:SetChecked(GogoLootDB.announceTrade)
     end
 end
 
-GogoLoot:RegisterModuleEvent("TRADE_SHOW", function()
-    CreateTradeAnnounceCheckbox()
-    GogoLoot:SyncTradeCheckbox()
-end)
+GogoLoot:RegisterModuleEvent(
+    "TRADE_SHOW",
+    function()
+        CreateTradeAnnounceCheckbox()
+        GogoLoot:SyncTradeCheckbox()
+    end
+)

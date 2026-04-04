@@ -1,67 +1,76 @@
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- GogoLoot Options — Automated Rolls
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 local ACR = LibStub("AceConfigRegistry-3.0")
+local L = GogoLoot.L
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Item Input Parsing
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 local function ParseItemInput(rawInput)
-    if not rawInput or rawInput == "" then return nil end
+    if not rawInput or rawInput == "" then
+        return nil
+    end
 
     local numericIdentifier = tonumber(rawInput)
-    if numericIdentifier then return numericIdentifier end
+    if numericIdentifier then
+        return numericIdentifier
+    end
 
     local fromLink = string.match(rawInput, "item:(%d+)")
-    if fromLink then return tonumber(fromLink) end
+    if fromLink then
+        return tonumber(fromLink)
+    end
 
     return nil
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Custom Roll List — Dynamic AceConfig Args
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 local function BuildCustomRollListArgs()
     local args = {}
     local order = 1
 
     args.restoreDefaults = {
-        type    = "execute",
-        name    = "Restore Default Custom Roll List",
-        width   = "double",
-        order   = order,
+        type = "execute",
+        name = L["ROLLS_RESTORE_DEFAULTS"],
+        width = "double",
+        order = order,
         confirm = true,
-        confirmText = "This will replace your custom roll list with the default items for your expansion. Continue?",
-        func    = function()
-            GogoLoot_Configuration.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
+        confirmText = L["ROLLS_RESTORE_CONFIRM"],
+        func = function()
+            GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
             ACR:NotifyChange("GogoLoot_AutomaticRolls")
-        end,
+        end
     }
     order = order + 1
 
     args.spacerAfterRestore = GogoLoot:OptionsSpacer(order)
     order = order + 1
 
-    args.addItemDesc = GogoLoot:OptionsDesc(
-        "Enter an Item ID or paste an item link to add it to the list.",
-        order
-    )
+    args.addItemDesc = GogoLoot:OptionsDesc(L["ROLLS_ADD_ITEM_DESC"], order)
     order = order + 1
 
     args.addItemInput = {
-        type  = "input",
-        name  = "Add Item",
-        desc  = "Enter Item ID or drag an item link here.",
+        type = "input",
+        name = L["ROLLS_ADD_ITEM"],
+        desc = L["ROLLS_ADD_ITEM_TOOLTIP"],
         order = order,
-        get   = function() return "" end,
-        set   = function(_, value)
+        get = function()
+            return ""
+        end,
+        set = function(_, value)
             local itemIdentifier = ParseItemInput(value)
-            if not itemIdentifier then return end
-            GogoLoot_Configuration.ignoredItemsSolo[itemIdentifier] = GogoLoot.MANUAL
-            -- Trigger a cache request so the name is ready
+            if not itemIdentifier then
+                return
+            end
+            GogoLootDB.ignoredItemsSolo[itemIdentifier] = GogoLoot.MANUAL
             GogoLoot.GetItemInfo(itemIdentifier)
             ACR:NotifyChange("GogoLoot_AutomaticRolls")
-        end,
+        end
     }
     order = order + 1
 
@@ -70,67 +79,81 @@ local function BuildCustomRollListArgs()
 
     -- Sort by rarity (highest first), then alphabetically by name
     local sortedIdentifiers = {}
-    for itemIdentifier in pairs(GogoLoot_Configuration.ignoredItemsSolo) do
+    for itemIdentifier in pairs(GogoLootDB.ignoredItemsSolo) do
         table.insert(sortedIdentifiers, itemIdentifier)
     end
-    table.sort(sortedIdentifiers, function(a, b)
-        local infoA = GogoLoot:SafeGetItemInfo(a)
-        local infoB = GogoLoot:SafeGetItemInfo(b)
-        local qualityA = infoA and infoA.quality or -1
-        local qualityB = infoB and infoB.quality or -1
-        if qualityA ~= qualityB then return qualityA > qualityB end
-        local nameA = infoA and infoA.name or ""
-        local nameB = infoB and infoB.name or ""
-        if nameA == "" and nameB == "" then return a < b end
-        if nameA == "" then return false end
-        if nameB == "" then return true end
-        return nameA < nameB
-    end)
+    table.sort(
+        sortedIdentifiers,
+        function(a, b)
+            local infoA = GogoLoot:SafeGetItemInfo(a)
+            local infoB = GogoLoot:SafeGetItemInfo(b)
+            local qualityA = infoA and infoA.quality or -1
+            local qualityB = infoB and infoB.quality or -1
+            if qualityA ~= qualityB then
+                return qualityA > qualityB
+            end
+            local nameA = infoA and infoA.name or ""
+            local nameB = infoB and infoB.name or ""
+            if nameA == "" and nameB == "" then
+                return a < b
+            end
+            if nameA == "" then
+                return false
+            end
+            if nameB == "" then
+                return true
+            end
+            return nameA < nameB
+        end
+    )
 
     for _, itemIdentifier in ipairs(sortedIdentifiers) do
         local groupKey = "item_" .. itemIdentifier
 
         args[groupKey] = {
-            type   = "group",
-            name   = "",
+            type = "group",
+            name = "",
             inline = true,
-            order  = order,
-            args   = {
+            order = order,
+            args = {
                 label = {
-                    type          = "input",
+                    type = "input",
                     dialogControl = "GogoLoot_ItemLink",
-                    name          = "",
-                    width         = 1.3,
-                    order         = 1,
-                    get           = function() return tostring(itemIdentifier) end,
-                    set           = function() end,
+                    name = "",
+                    width = 1.3,
+                    order = 1,
+                    get = function()
+                        return tostring(itemIdentifier)
+                    end,
+                    set = function()
+                    end
                 },
                 action = {
-                    type   = "select",
-                    name   = "",
-                    desc   = "Choose the automatic roll action for this item.",
+                    type = "select",
+                    name = "",
+                    desc = L["ROLLS_CHOOSE_ACTION"],
                     values = GogoLoot.ROLL_OVERRIDE_LABELS,
-                    width  = 0.7,
-                    order  = 2,
-                    get    = function()
-                        return GogoLoot_Configuration.ignoredItemsSolo[itemIdentifier]
+                    width = 0.7,
+                    order = 2,
+                    get = function()
+                        return GogoLootDB.ignoredItemsSolo[itemIdentifier]
                     end,
-                    set    = function(_, value)
-                        GogoLoot_Configuration.ignoredItemsSolo[itemIdentifier] = value
-                    end,
+                    set = function(_, value)
+                        GogoLootDB.ignoredItemsSolo[itemIdentifier] = value
+                    end
                 },
                 remove = {
-                    type  = "execute",
-                    name  = "Remove",
-                    desc  = "Remove this item from the custom roll list.",
+                    type = "execute",
+                    name = L["ROLLS_REMOVE"],
+                    desc = L["ROLLS_REMOVE_DESC"],
                     width = 0.6,
                     order = 3,
-                    func  = function()
-                        GogoLoot_Configuration.ignoredItemsSolo[itemIdentifier] = nil
+                    func = function()
+                        GogoLootDB.ignoredItemsSolo[itemIdentifier] = nil
                         ACR:NotifyChange("GogoLoot_AutomaticRolls")
-                    end,
-                },
-            },
+                    end
+                }
+            }
         }
         order = order + 1
     end
@@ -138,66 +161,64 @@ local function BuildCustomRollListArgs()
     return args
 end
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- Options Table Builder
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 function GogoLoot.BuildAutomaticRollOptions()
     local greedThresholdValues = {
-        [0] = "|c" .. GogoLoot.QUALITY_COLORS[0] .. "Poor Only|r",
-        [1] = "|c" .. GogoLoot.QUALITY_COLORS[1] .. "Common & Lower|r",
-        [2] = "|c" .. GogoLoot.QUALITY_COLORS[2] .. "Uncommon & Lower|r",
-        [3] = "|c" .. GogoLoot.QUALITY_COLORS[3] .. "Rare & Lower|r",
-        [4] = "|c" .. GogoLoot.QUALITY_COLORS[4] .. "Epic & Lower|r",
+        [0] = "|c" .. GogoLoot.QUALITY_COLORS[0] .. L["THRESHOLD_POOR_ONLY"] .. "|r",
+        [1] = "|c" .. GogoLoot.QUALITY_COLORS[1] .. L["THRESHOLD_COMMON_LOWER"] .. "|r",
+        [2] = "|c" .. GogoLoot.QUALITY_COLORS[2] .. L["THRESHOLD_UNCOMMON_LOWER"] .. "|r",
+        [3] = "|c" .. GogoLoot.QUALITY_COLORS[3] .. L["THRESHOLD_RARE_LOWER"] .. "|r",
+        [4] = "|c" .. GogoLoot.QUALITY_COLORS[4] .. L["THRESHOLD_EPIC_LOWER"] .. "|r"
     }
 
     return {
         type = "group",
         name = "Automated Rolls",
         args = {
-            description = GogoLoot:OptionsDesc(
-                "Automatically rolls Greed on non-BoP items at or below the selected quality. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped. BoP items are never auto-greeded by the threshold, but can be automated via the Custom Roll List below.",
-                2
-            ),
+            description = GogoLoot:OptionsDesc(L["ROLLS_DESC"], 2),
             spacerAfterDesc = GogoLoot:OptionsSpacer(3),
-
             autoGreed = {
-                type  = "toggle",
-                name  = "Enable Automated Rolls",
-                desc  = "Automatically rolls Greed on eligible items at or below the threshold.",
+                type = "toggle",
+                name = L["ROLLS_ENABLE"],
+                desc = L["ROLLS_ENABLE_DESC"],
                 width = "full",
                 order = 4,
-                get   = function() return GogoLoot_Configuration.autoGreed end,
-                set   = function(_, value) GogoLoot_Configuration.autoGreed = value end,
+                get = function()
+                    return GogoLootDB.autoGreed
+                end,
+                set = function(_, value)
+                    GogoLootDB.autoGreed = value
+                end
             },
-
             spacerAfterToggle = GogoLoot:OptionsSpacer(5),
-
             autoGreedThreshold = {
-                type   = "select",
-                name   = "Automated Greed Threshold",
-                desc   = "Items at or below this quality will be automatically greeded.",
-                style  = "dropdown",
+                type = "select",
+                name = L["ROLLS_THRESHOLD"],
+                desc = L["ROLLS_THRESHOLD_DESC"],
+                style = "dropdown",
                 values = greedThresholdValues,
-                order  = 6,
-                get    = function() return GogoLoot_Configuration.autoGreedThreshold end,
-                set    = function(_, value) GogoLoot_Configuration.autoGreedThreshold = value end,
+                order = 6,
+                get = function()
+                    return GogoLootDB.autoGreedThreshold
+                end,
+                set = function(_, value)
+                    GogoLootDB.autoGreedThreshold = value
+                end
             },
-
             spacerBeforeCustom = GogoLoot:OptionsSpacer(9),
-            customListHeader = GogoLoot:OptionsHeader("Custom Roll List", 10),
-            customListDesc = GogoLoot:OptionsDesc(
-                "Items on this list have their own roll rule that overrides the threshold. This is the only way to automate BoP items like Scourgestones or Demonic Runes. Set each item to Manual Roll, Greed, Need, or Pass. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped regardless of setting.",
-                11
-            ),
+            customListHeader = GogoLoot:OptionsHeader(L["ROLLS_CUSTOM_LIST"], 10),
+            customListDesc = GogoLoot:OptionsDesc(L["ROLLS_CUSTOM_LIST_DESC"], 11),
             spacerAfterCustomDesc = GogoLoot:OptionsSpacer(12),
-
             customList = {
-                type   = "group",
-                name   = "",
+                type = "group",
+                name = "",
                 inline = true,
-                order  = 13,
-                args   = BuildCustomRollListArgs(),
-            },
-        },
+                order = 13,
+                args = BuildCustomRollListArgs()
+            }
+        }
     }
 end
