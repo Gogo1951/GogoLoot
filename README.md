@@ -14,7 +14,7 @@ GogoLoot automates the tedious parts of looting in Classic WoW. Vaccuum up loot 
 
 🦺 **Safety First** : Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped. BoP items are never auto-greeded by the threshold.
 
-🗺️ **Localized** : Works with all Classic WoW Locales (enUS, deDE, esES, esMX, frFR, itIT, koKR, ptBR, ruRU, zhCN, zhTW).
+🗺️ Localized : Works with all Classic WoW Locales (enUS, deDE, esES, esMX, frFR, itIT, koKR, ptBR, ruRU, zhCN, zhTW).
 
 ## Setup
 
