@@ -1,6 +1,6 @@
 # GogoLoot
 
-GogoLoot automates the tedious parts of looting in Classic WoW. Auto-roll Greed on junk so you never miss a pull. Distribute Master Loot to the right players without fumbling through windows. Announce completed trades to your group with a single chat message. Don't let Loot slow down your zug!
+GogoLoot automates the tedious parts of looting in Classic WoW. Vaccuum up loot using Master Loot so you can hand out loot at the end of hte raid. Auto-roll Greed on junk so you can stay focused on the run. Announce completed trades to your group with a single chat message. Don't let Loot slow down your zug!
 
 ## Features
 
