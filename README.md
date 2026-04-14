@@ -4,7 +4,7 @@ GogoLoot automates the tedious parts of looting in Classic WoW. Vaccuum up loot 
 
 ## Features
 
-👑 **Master Looter** : Distributes loot to designated players by quality tier when you are the Master Looter. Destinations update live as group members join and leave.
+💰 **Master Looter** : Distributes loot to designated players by quality tier when you are the Master Looter. Destinations update live as group members join and leave.
 
 💬 **Trade Announcements** : Posts a summary of completed trades to chat — including items, enchants, and gold exchanged. Output can go to Whisper, Party, or Raid chat.
 
