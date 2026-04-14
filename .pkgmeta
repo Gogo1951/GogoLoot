@@ -15,6 +15,7 @@ externals:
 
 ignore:
   - .git
+  - .github
   - .gitignore
   - .idea
   - .pkgmeta
