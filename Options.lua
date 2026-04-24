@@ -46,6 +46,139 @@ function GogoLoot:OptionsSubHeader(text, order)
 end
 
 --------------------------------------------------------------------------------
+-- Shared Item List Builder
+-- Used by both the Automated Rolls custom list and the Master Looter ignore
+-- list. Handles the restore button, add-item input, sort, and per-item rows
+-- with optional action dropdown. Pass in a spec table:
+--
+--   getSourceTable: function returning the DB table to iterate
+--   onRestore:      function that replaces the source with defaults
+--   onAdd:          function(itemId) that adds an item to the source
+--   onRemove:       function(itemId) that removes an item from the source
+--   notifyKey:      AceConfigRegistry table name to NotifyChange on edits
+--   labels:         { restore, restoreConfirm, addDesc, addName, addTooltip,
+--                     removeName, removeDesc }
+--   actionColumn:   optional { desc, values, get, set }; when present each
+--                   row gets an action dropdown and the item label is narrower
+--------------------------------------------------------------------------------
+
+function GogoLoot:BuildItemListOptions(spec)
+    local labels = spec.labels
+    local args = {}
+    local order = 1
+
+    args.restoreDefaults = {
+        type = "execute",
+        name = labels.restore,
+        width = "double",
+        order = order,
+        confirm = true,
+        confirmText = labels.restoreConfirm,
+        func = function()
+            spec.onRestore()
+            ACR:NotifyChange(spec.notifyKey)
+        end
+    }
+    order = order + 1
+
+    args.spacerAfterRestore = GogoLoot:OptionsSpacer(order)
+    order = order + 1
+
+    args.addItemDesc = GogoLoot:OptionsDesc(labels.addDesc, order)
+    order = order + 1
+
+    args.addItemInput = {
+        type = "input",
+        name = labels.addName,
+        desc = labels.addTooltip,
+        order = order,
+        get = function()
+            return ""
+        end,
+        set = function(_, value)
+            local itemIdentifier = GogoLoot:ParseItemInput(value)
+            if not itemIdentifier then
+                return
+            end
+            spec.onAdd(itemIdentifier)
+            GogoLoot.GetItemInfo(itemIdentifier)
+            ACR:NotifyChange(spec.notifyKey)
+        end
+    }
+    order = order + 1
+
+    args.spacerBeforeItems = GogoLoot:OptionsSpacer(order)
+    order = order + 1
+
+    local sortedIdentifiers = {}
+    for itemIdentifier in pairs(spec.getSourceTable()) do
+        table.insert(sortedIdentifiers, itemIdentifier)
+    end
+    GogoLoot:SortItemIdentifiersByRarity(sortedIdentifiers)
+
+    local hasActionColumn = spec.actionColumn ~= nil
+    local labelWidth = hasActionColumn and 1.3 or 2.0
+
+    for _, itemIdentifier in ipairs(sortedIdentifiers) do
+        local capturedId = itemIdentifier
+        local rowArgs = {
+            label = {
+                type = "input",
+                dialogControl = "GogoLoot_ItemLink",
+                name = "",
+                width = labelWidth,
+                order = 1,
+                get = function()
+                    return tostring(capturedId)
+                end,
+                set = function()
+                end
+            }
+        }
+
+        if hasActionColumn then
+            rowArgs.action = {
+                type = "select",
+                name = "",
+                desc = spec.actionColumn.desc,
+                values = spec.actionColumn.values,
+                width = 0.7,
+                order = 2,
+                get = function()
+                    return spec.actionColumn.get(capturedId)
+                end,
+                set = function(_, value)
+                    spec.actionColumn.set(capturedId, value)
+                end
+            }
+        end
+
+        rowArgs.remove = {
+            type = "execute",
+            name = labels.removeName,
+            desc = labels.removeDesc,
+            width = 0.6,
+            order = 3,
+            func = function()
+                spec.onRemove(capturedId)
+                ACR:NotifyChange(spec.notifyKey)
+            end
+        }
+
+        args["item_" .. capturedId] = {
+            type = "group",
+            name = "",
+            inline = true,
+            order = order,
+            args = rowArgs
+        }
+        order = order + 1
+    end
+
+    return args
+end
+
+--------------------------------------------------------------------------------
 -- Custom AceGUI Widget: GogoLoot_ItemLink
 -- A lightweight label that shows the full item tooltip on hover.
 -- Used via dialogControl on AceConfig "input" entries; the get() function
@@ -161,6 +294,7 @@ end
 --------------------------------------------------------------------------------
 
 local itemCacheRefreshTimer = nil
+local itemCacheEventRegistered = false
 
 local function RefreshOptionsAfterDelay()
     if itemCacheRefreshTimer then
@@ -200,12 +334,15 @@ local function WarmItemCache()
 
     C_Timer.After(1, RefreshOptionsAfterDelay)
 
-    GogoLoot:RegisterModuleEvent(
-        "GET_ITEM_INFO_RECEIVED",
-        function()
-            RefreshOptionsAfterDelay()
-        end
-    )
+    if not itemCacheEventRegistered then
+        itemCacheEventRegistered = true
+        GogoLoot:RegisterModuleEvent(
+            "GET_ITEM_INFO_RECEIVED",
+            function()
+                RefreshOptionsAfterDelay()
+            end
+        )
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -237,13 +374,9 @@ local function BuildGeneralOptions()
             headerCommands = GogoLoot:OptionsHeader(L["COMMANDS"], 6),
             spacerCommands1 = GogoLoot:OptionsSpacer(7),
             descCommands = GogoLoot:OptionsDesc(
-                COLORS.INFO ..
-                    "/gl|r" ..
-                        "  " ..
-                            L["COMMANDS_DESC_GL"] ..
-                                "\n" .. COLORS.INFO .. "/gogoloot|r" .. "  " .. L["COMMANDS_DESC_GOGOLOOT"],
-                8
-            ),
+                COLORS.INFO .. "/gl|r" .. "  " .. L["COMMANDS_DESC_GL"] .. 
+                "\n\n" ..
+                COLORS.INFO .. "/gogoloot|r" .. "  " .. L["COMMANDS_DESC_GOGOLOOT"], 8),
             spacerResetSection = GogoLoot:OptionsSpacer(79),
             resetHeader = GogoLoot:OptionsHeader(L["RESET"], 80),
             resetDesc = GogoLoot:OptionsDesc(L["RESET_DESC"], 81),
@@ -256,20 +389,7 @@ local function BuildGeneralOptions()
                 confirm = true,
                 confirmText = L["RESET_CONFIRM"],
                 func = function()
-                    GogoLootDB = {}
-                    for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
-                        if type(defaultValue) == "table" then
-                            GogoLootDB[configurationKey] = {}
-                            for key, value in pairs(defaultValue) do
-                                GogoLootDB[configurationKey][key] = value
-                            end
-                        else
-                            GogoLootDB[configurationKey] = defaultValue
-                        end
-                    end
-                    GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
-                    GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
-                    GogoLootDB.configVersion = GogoLoot.CONFIG_VERSION
+                    GogoLoot:ResetAllSettings()
                     ACR:NotifyChange("GogoLoot")
                     ACR:NotifyChange("GogoLoot_TradeAnnouncements")
                     ACR:NotifyChange("GogoLoot_AutomaticRolls")

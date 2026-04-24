@@ -3,23 +3,12 @@
 --------------------------------------------------------------------------------
 local L = GogoLoot.L
 
-GogoLoot.tradeState = {
-    player = nil,
-    ourItems = {},
-    theirItems = {},
-    ourEnchantDescription = nil,
-    theirEnchantDescription = nil,
-    ourMoney = 0,
-    theirMoney = 0,
-    accepted = false
-}
-
 --------------------------------------------------------------------------------
 -- State Management
 --------------------------------------------------------------------------------
 
-local function ResetTradeState()
-    GogoLoot.tradeState = {
+local function NewTradeState()
+    return {
         player = nil,
         ourItems = {},
         theirItems = {},
@@ -29,6 +18,45 @@ local function ResetTradeState()
         theirMoney = 0,
         accepted = false
     }
+end
+
+GogoLoot.tradeState = NewTradeState()
+
+local function ResetTradeState()
+    GogoLoot.tradeState = NewTradeState()
+end
+
+--------------------------------------------------------------------------------
+-- API Helpers
+--------------------------------------------------------------------------------
+
+-- Returns the stack count for a trade slot on our side, defaulting to 1.
+local function GetOurTradeSlotCount(slotIndex)
+    if type(GetTradePlayerItemInfo) ~= "function" then
+        return 1
+    end
+    local _, _, quantity = GetTradePlayerItemInfo(slotIndex)
+    return quantity or 1
+end
+
+-- Returns the stack count for a trade slot on their side, defaulting to 1.
+local function GetTheirTradeSlotCount(slotIndex)
+    if type(GetTradeTargetItemInfo) ~= "function" then
+        return 1
+    end
+    local _, _, quantity = GetTradeTargetItemInfo(slotIndex)
+    return quantity or 1
+end
+
+local function SafeGetTradeEnchantName(getInfoFunction, slotIndex)
+    if type(getInfoFunction) ~= "function" then
+        return nil
+    end
+    local success, _, _, _, _, _, enchantName = pcall(getInfoFunction, slotIndex)
+    if success and type(enchantName) == "string" and enchantName ~= "" then
+        return enchantName
+    end
+    return nil
 end
 
 --------------------------------------------------------------------------------
@@ -61,13 +89,15 @@ local function BuildItemListStrings(itemTable)
     local finalStrings = {}
 
     for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
-        local link = itemTable[slotIndex]
-        if link then
+        local entry = itemTable[slotIndex]
+        if entry and entry.link then
+            local link = entry.link
+            local count = entry.count or 1
             if not itemCounts[link] then
                 itemCounts[link] = 0
                 table.insert(itemOrder, link)
             end
-            itemCounts[link] = itemCounts[link] + 1
+            itemCounts[link] = itemCounts[link] + count
         end
     end
 
@@ -104,6 +134,62 @@ local function BuildTradeSummary(itemTable, enchantDescription, moneyAmount)
         return nil
     end
     return table.concat(parts, ", ")
+end
+
+--------------------------------------------------------------------------------
+-- Snapshot
+--------------------------------------------------------------------------------
+
+local function SnapshotTradeItems()
+    for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
+        local itemLink = GetTradePlayerItemLink(slotIndex)
+        if itemLink then
+            GogoLoot.tradeState.ourItems[slotIndex] = {
+                link = itemLink,
+                count = GetOurTradeSlotCount(slotIndex)
+            }
+        else
+            GogoLoot.tradeState.ourItems[slotIndex] = nil
+        end
+    end
+    for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
+        local itemLink = GetTradeTargetItemLink(slotIndex)
+        if itemLink then
+            GogoLoot.tradeState.theirItems[slotIndex] = {
+                link = itemLink,
+                count = GetTheirTradeSlotCount(slotIndex)
+            }
+        else
+            GogoLoot.tradeState.theirItems[slotIndex] = nil
+        end
+    end
+
+    local enchantSlot = GogoLoot.TRADE_ENCHANT_SLOT
+
+    -- Our enchant slot has an item: they are performing a service on our item
+    local ourEnchantSlotLink = GetTradePlayerItemLink(enchantSlot)
+    if ourEnchantSlotLink then
+        local enchantName = SafeGetTradeEnchantName(GetTradePlayerItemInfo, enchantSlot)
+        if enchantName then
+            GogoLoot.tradeState.theirEnchantDescription = enchantName
+        end
+    end
+
+    -- Their enchant slot has an item: we are performing a service on their item
+    local theirEnchantSlotLink = GetTradeTargetItemLink(enchantSlot)
+    if theirEnchantSlotLink then
+        local enchantName = SafeGetTradeEnchantName(GetTradeTargetItemInfo, enchantSlot)
+        if enchantName then
+            GogoLoot.tradeState.ourEnchantDescription = enchantName
+        end
+    end
+
+    if type(GetPlayerTradeMoney) == "function" then
+        GogoLoot.tradeState.ourMoney = GetPlayerTradeMoney() or 0
+    end
+    if type(GetTargetTradeMoney) == "function" then
+        GogoLoot.tradeState.theirMoney = GetTargetTradeMoney() or 0
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -191,100 +277,59 @@ local function AnnounceTradeComplete()
 end
 
 --------------------------------------------------------------------------------
--- Snapshot
---------------------------------------------------------------------------------
-
-local function SafeGetTradeEnchantName(getInfoFunction, slotIndex)
-    if type(getInfoFunction) ~= "function" then
-        return nil
-    end
-    local success, _, _, _, _, _, enchantName = pcall(getInfoFunction, slotIndex)
-    if success and type(enchantName) == "string" and enchantName ~= "" then
-        return enchantName
-    end
-    return nil
-end
-
-local function SnapshotTradeItems()
-    for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
-        local itemLink = GetTradePlayerItemLink(slotIndex)
-        if itemLink then
-            GogoLoot.tradeState.ourItems[slotIndex] = itemLink
-        end
-    end
-    for slotIndex = 1, GogoLoot.TRADE_ITEM_SLOT_COUNT do
-        local itemLink = GetTradeTargetItemLink(slotIndex)
-        if itemLink then
-            GogoLoot.tradeState.theirItems[slotIndex] = itemLink
-        end
-    end
-
-    local enchantSlot = GogoLoot.TRADE_ENCHANT_SLOT
-
-    -- Our enchant slot has an item: they are performing a service on our item
-    local ourEnchantSlotLink = GetTradePlayerItemLink(enchantSlot)
-    if ourEnchantSlotLink then
-        local enchantName = SafeGetTradeEnchantName(GetTradePlayerItemInfo, enchantSlot)
-        if enchantName then
-            GogoLoot.tradeState.theirEnchantDescription = enchantName
-        end
-    end
-
-    -- Their enchant slot has an item: we are performing a service on their item
-    local theirEnchantSlotLink = GetTradeTargetItemLink(enchantSlot)
-    if theirEnchantSlotLink then
-        local enchantName = SafeGetTradeEnchantName(GetTradeTargetItemInfo, enchantSlot)
-        if enchantName then
-            GogoLoot.tradeState.ourEnchantDescription = enchantName
-        end
-    end
-
-    if type(GetPlayerTradeMoney) == "function" then
-        GogoLoot.tradeState.ourMoney = GetPlayerTradeMoney() or 0
-    end
-    if type(GetTargetTradeMoney) == "function" then
-        GogoLoot.tradeState.theirMoney = GetTargetTradeMoney() or 0
-    end
-end
-
---------------------------------------------------------------------------------
 -- Event Handling
 --------------------------------------------------------------------------------
 
-local function HandleTradeShow(eventName)
+local function HandleTradeShow(_)
     ResetTradeState()
-    GogoLoot.tradeState.player = GogoLoot:GetCleanUnitName("npc") or UnitName("npc")
+    GogoLoot.tradeState.player = GogoLoot:GetCleanUnitName("npc")
 end
 
-local function HandleTradeAcceptUpdate(eventName, playerAccepted, targetAccepted)
+local function HandleTradeAcceptUpdate(_, playerAccepted, targetAccepted)
     if playerAccepted == 1 or targetAccepted == 1 then
         SnapshotTradeItems()
         GogoLoot.tradeState.accepted = true
     end
 end
 
-local function HandleTradeRequestCancel(eventName)
+local function HandleTradeRequestCancel(_)
     ResetTradeState()
 end
 
-local function HandleUserInterfaceInfoMessage(eventName, errorType, informationMessage)
+local function HandleUserInterfaceInfoMessage(_, _, informationMessage)
     if informationMessage == ERR_TRADE_CANCELLED then
-        HandleTradeRequestCancel(eventName)
+        ResetTradeState()
     elseif informationMessage == ERR_TRADE_COMPLETE then
         AnnounceTradeComplete()
         ResetTradeState()
     end
 end
 
-local function HandleTradePlayerItemChanged(eventName, slotIndex)
+local function HandleTradePlayerItemChanged(_, slotIndex)
     if slotIndex and slotIndex >= 1 and slotIndex <= GogoLoot.TRADE_ITEM_SLOT_COUNT then
-        GogoLoot.tradeState.ourItems[slotIndex] = GetTradePlayerItemLink(slotIndex)
+        local itemLink = GetTradePlayerItemLink(slotIndex)
+        if itemLink then
+            GogoLoot.tradeState.ourItems[slotIndex] = {
+                link = itemLink,
+                count = GetOurTradeSlotCount(slotIndex)
+            }
+        else
+            GogoLoot.tradeState.ourItems[slotIndex] = nil
+        end
     end
 end
 
-local function HandleTradeTargetItemChanged(eventName, slotIndex)
+local function HandleTradeTargetItemChanged(_, slotIndex)
     if slotIndex and slotIndex >= 1 and slotIndex <= GogoLoot.TRADE_ITEM_SLOT_COUNT then
-        GogoLoot.tradeState.theirItems[slotIndex] = GetTradeTargetItemLink(slotIndex)
+        local itemLink = GetTradeTargetItemLink(slotIndex)
+        if itemLink then
+            GogoLoot.tradeState.theirItems[slotIndex] = {
+                link = itemLink,
+                count = GetTheirTradeSlotCount(slotIndex)
+            }
+        else
+            GogoLoot.tradeState.theirItems[slotIndex] = nil
+        end
     end
 end
 
@@ -322,6 +367,10 @@ local function CreateTradeAnnounceCheckbox()
         "OnClick",
         function(self)
             GogoLootDB.announceTrade = self:GetChecked() and true or false
+            local ACR = LibStub("AceConfigRegistry-3.0", true)
+            if ACR then
+                ACR:NotifyChange("GogoLoot_TradeAnnouncements")
+            end
         end
     )
 
@@ -336,12 +385,12 @@ local function CreateTradeAnnounceCheckbox()
             local currentOutput = outputLabels[GogoLootDB.announceTradeOutput] or L["TRADE_OUTPUT_WHISPER"]
 
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:AddLine(GogoLoot.COLORS.INFO .. "GogoLoot|r", 1, 1, 1)
+            GogoLoot:AddTooltipLine(GameTooltip, GogoLoot:GetColor("INFO") .. "GogoLoot|r")
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine(L["TRADE_TOOLTIP_TITLE"], 1, 0.82, 0)
-            GameTooltip:AddLine(L["TRADE_TOOLTIP_DESC"], 0.8, 0.8, 0.8, true)
+            GogoLoot:AddTooltipLine(GameTooltip, L["TRADE_TOOLTIP_TITLE"], "TITLE")
+            GogoLoot:AddTooltipLine(GameTooltip, L["TRADE_TOOLTIP_DESC"], "DESC", true)
             GameTooltip:AddLine(" ")
-            GameTooltip:AddDoubleLine(L["TRADE_TOOLTIP_OUTPUT"], currentOutput, 0.8, 0.8, 0.8, 1, 1, 1)
+            GogoLoot:AddTooltipDoubleLine(GameTooltip, L["TRADE_TOOLTIP_OUTPUT"], currentOutput, "DESC", "TEXT")
             GameTooltip:Show()
         end
     )

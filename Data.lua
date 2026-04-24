@@ -55,32 +55,48 @@ GogoLoot.TRADE_ITEM_SLOT_COUNT = 6
 
 --------------------------------------------------------------------------------
 -- UI Colors
+-- Single source of truth: each color is defined once as a 6-char hex string,
+-- then exposed in two forms:
+--   * GogoLoot.COLORS[key]     -> "|cffRRGGBB"  (for inline chat/string use)
+--   * GogoLoot.COLORS_RGB[key] -> {r, g, b}     (for tooltip/texture APIs)
+-- Consumers should prefer GogoLoot:GetColor(key) / GogoLoot:GetColorRGB(key)
+-- over indexing the tables directly.
 --------------------------------------------------------------------------------
 
-local C_TITLE = "FFD100"
-local C_INFO = "00BBFF"
-local C_BODY = "CCCCCC"
-local C_TEXT = "FFFFFF"
-local C_SUCCESS = "33CC33"
-local C_DISABLED = "CC3333"
-local C_SEP = "AAAAAA"
-local C_MUTED = "808080"
-
-local COLOR_PREFIX = "|cff"
-
-GogoLoot.COLORS = {
-    TITLE = COLOR_PREFIX .. C_TITLE,
-    INFO = COLOR_PREFIX .. C_INFO,
-    DESC = COLOR_PREFIX .. C_BODY,
-    TEXT = COLOR_PREFIX .. C_TEXT,
-    SUCCESS = COLOR_PREFIX .. C_SUCCESS,
-    DISABLED = COLOR_PREFIX .. C_DISABLED,
-    SEP = COLOR_PREFIX .. C_SEP,
-    MUTED = COLOR_PREFIX .. C_MUTED
+local RAW_UI_COLORS = {
+    TITLE = "FFD100",
+    INFO = "00BBFF",
+    DESC = "CCCCCC",
+    TEXT = "FFFFFF",
+    SUCCESS = "33CC33",
+    DISABLED = "CC3333",
+    SEP = "AAAAAA",
+    MUTED = "808080"
 }
+
+local function HexToNormalizedRGB(hex)
+    local r = tonumber(string.sub(hex, 1, 2), 16) / 255
+    local g = tonumber(string.sub(hex, 3, 4), 16) / 255
+    local b = tonumber(string.sub(hex, 5, 6), 16) / 255
+    return r, g, b
+end
+
+GogoLoot.COLORS = {}
+GogoLoot.COLORS_RGB = {}
+
+for colorKey, hexValue in pairs(RAW_UI_COLORS) do
+    GogoLoot.COLORS[colorKey] = "|cff" .. hexValue
+    local r, g, b = HexToNormalizedRGB(hexValue)
+    GogoLoot.COLORS_RGB[colorKey] = {r = r, g = g, b = b}
+end
 
 function GogoLoot:GetColor(key)
     return GogoLoot.COLORS[key] or GogoLoot.COLORS.TEXT
+end
+
+function GogoLoot:GetColorRGB(key)
+    local rgb = GogoLoot.COLORS_RGB[key] or GogoLoot.COLORS_RGB.TEXT
+    return rgb.r, rgb.g, rgb.b
 end
 
 --------------------------------------------------------------------------------

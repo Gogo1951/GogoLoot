@@ -45,6 +45,100 @@ function GogoLoot:BuildDefaultIgnoreListMaster()
 end
 
 --------------------------------------------------------------------------------
+-- Default Application Helper
+-- Copies one default value (including tables) onto a target DB table.
+--------------------------------------------------------------------------------
+
+local function CopyDefault(target, key, defaultValue)
+    if type(defaultValue) == "table" then
+        target[key] = {}
+        for subKey, subValue in pairs(defaultValue) do
+            target[key][subKey] = subValue
+        end
+    else
+        target[key] = defaultValue
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Reset Helper
+-- Wipes GogoLootDB in place and reapplies all defaults + default item lists.
+-- Called from InitializeSavedVariables (on config version mismatch) and from
+-- the Reset All button in Options.lua.
+--------------------------------------------------------------------------------
+
+function GogoLoot:ResetAllSettings()
+    for existingKey in pairs(GogoLootDB) do
+        GogoLootDB[existingKey] = nil
+    end
+
+    for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
+        CopyDefault(GogoLootDB, configurationKey, defaultValue)
+    end
+
+    GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
+    GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
+    GogoLootDB.configVersion = GogoLoot.CONFIG_VERSION
+end
+
+--------------------------------------------------------------------------------
+-- Item Input Parsing
+-- Accepts a numeric item ID string or a full item link; returns the numeric
+-- item ID or nil. Shared by the Options panels that let users add items.
+--------------------------------------------------------------------------------
+
+function GogoLoot:ParseItemInput(rawInput)
+    if not rawInput or rawInput == "" then
+        return nil
+    end
+
+    local numericIdentifier = tonumber(rawInput)
+    if numericIdentifier then
+        return numericIdentifier
+    end
+
+    local fromLink = string.match(rawInput, "item:(%d+)")
+    if fromLink then
+        return tonumber(fromLink)
+    end
+
+    return nil
+end
+
+--------------------------------------------------------------------------------
+-- Item Identifier Sort
+-- Sorts in place by rarity (highest first), then alphabetically by name.
+-- Items whose info hasn't been cached yet fall to the bottom.
+--------------------------------------------------------------------------------
+
+function GogoLoot:SortItemIdentifiersByRarity(identifiers)
+    table.sort(
+        identifiers,
+        function(a, b)
+            local infoA = GogoLoot:SafeGetItemInfo(a)
+            local infoB = GogoLoot:SafeGetItemInfo(b)
+            local qualityA = infoA and infoA.quality or -1
+            local qualityB = infoB and infoB.quality or -1
+            if qualityA ~= qualityB then
+                return qualityA > qualityB
+            end
+            local nameA = infoA and infoA.name or ""
+            local nameB = infoB and infoB.name or ""
+            if nameA == "" and nameB == "" then
+                return a < b
+            end
+            if nameA == "" then
+                return false
+            end
+            if nameB == "" then
+                return true
+            end
+            return nameA < nameB
+        end
+    )
+end
+
+--------------------------------------------------------------------------------
 -- Initialization & Addon Setup
 --------------------------------------------------------------------------------
 
@@ -84,22 +178,7 @@ local function InitializeSavedVariables()
     local savedVersion = GogoLootDB.configVersion
     if savedVersion ~= GogoLoot.CONFIG_VERSION then
         local isUpgrade = (next(GogoLootDB) ~= nil)
-        GogoLootDB = {}
-
-        for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
-            if type(defaultValue) == "table" then
-                GogoLootDB[configurationKey] = {}
-                for key, value in pairs(defaultValue) do
-                    GogoLootDB[configurationKey][key] = value
-                end
-            else
-                GogoLootDB[configurationKey] = defaultValue
-            end
-        end
-
-        GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
-        GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
-        GogoLootDB.configVersion = GogoLoot.CONFIG_VERSION
+        GogoLoot:ResetAllSettings()
 
         if isUpgrade then
             C_Timer.After(
@@ -113,18 +192,14 @@ local function InitializeSavedVariables()
         return
     end
 
+    -- Legacy cleanup: globalEnable was removed in a prior version.
     GogoLootDB.globalEnable = nil
 
+    -- Additive merge: apply any defaults missing from the saved table
+    -- (happens when new options ship within the same config version).
     for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
         if GogoLootDB[configurationKey] == nil then
-            if type(defaultValue) == "table" then
-                GogoLootDB[configurationKey] = {}
-                for key, value in pairs(defaultValue) do
-                    GogoLootDB[configurationKey][key] = value
-                end
-            else
-                GogoLootDB[configurationKey] = defaultValue
-            end
+            CopyDefault(GogoLootDB, configurationKey, defaultValue)
         end
     end
 
@@ -237,6 +312,28 @@ function GogoLoot:DebugPrint(...)
         print(GogoLoot:GetColor("MUTED") .. "[GogoLoot Debug]|r", ...)
     end
 end
+
+--------------------------------------------------------------------------------
+-- Tooltip Helpers
+-- Thin wrappers around GameTooltip:AddLine / AddDoubleLine that accept color
+-- keys from GogoLoot.COLORS_RGB, so tooltip code doesn't repeat RGB literals.
+-- Pass nil for colorKey to use the default text color.
+--------------------------------------------------------------------------------
+
+function GogoLoot:AddTooltipLine(tooltip, text, colorKey, wrap)
+    local r, g, b = GogoLoot:GetColorRGB(colorKey or "TEXT")
+    tooltip:AddLine(text, r, g, b, wrap)
+end
+
+function GogoLoot:AddTooltipDoubleLine(tooltip, leftText, rightText, leftColorKey, rightColorKey)
+    local lr, lg, lb = GogoLoot:GetColorRGB(leftColorKey or "TEXT")
+    local rr, rg, rb = GogoLoot:GetColorRGB(rightColorKey or "TEXT")
+    tooltip:AddDoubleLine(leftText, rightText, lr, lg, lb, rr, rg, rb)
+end
+
+--------------------------------------------------------------------------------
+-- Name / Text Helpers
+--------------------------------------------------------------------------------
 
 function GogoLoot:GetCleanUnitName(unitIdentifier)
     local fullName = UnitName(unitIdentifier)

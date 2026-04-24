@@ -92,7 +92,7 @@ L["TRADE_OUTPUT"] = "Sortie des Messages"
 L["TRADE_OUTPUT_DESC"] = "Où le résumé de l'échange est envoyé."
 L["TRADE_OUTPUT_WHISPER"] = "Chuchotement"
 L["TRADE_OUTPUT_GROUP"] = "Canal Groupe"
-L["TRADE_OUTPUT_RAID"] = "Canal Raid"
+L["TRADE_OUTPUT_RAID"] = "Discussion Raid"
 L["TRADE_EXAMPLE"] = "Exemple : {rt4} A donné [Objet X] x2, [Objet Y] à Fathom. // GogoLoot"
 
 L["TRADE_TOOLTIP_TITLE"] = "Annonces d'Échange"

@@ -1,151 +1,7 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Options — Master Looter
 --------------------------------------------------------------------------------
-local ACR = LibStub("AceConfigRegistry-3.0")
 local L = GogoLoot.L
-
---------------------------------------------------------------------------------
--- Item Input Parsing
---------------------------------------------------------------------------------
-
-local function ParseItemInput(rawInput)
-    if not rawInput or rawInput == "" then
-        return nil
-    end
-
-    local numericIdentifier = tonumber(rawInput)
-    if numericIdentifier then
-        return numericIdentifier
-    end
-
-    local fromLink = string.match(rawInput, "item:(%d+)")
-    if fromLink then
-        return tonumber(fromLink)
-    end
-
-    return nil
-end
-
---------------------------------------------------------------------------------
--- Master Ignore List — Dynamic AceConfig Args
---------------------------------------------------------------------------------
-
-local function BuildMasterIgnoreListArgs()
-    local args = {}
-    local order = 1
-
-    args.restoreDefaults = {
-        type = "execute",
-        name = L["ML_IGNORE_RESTORE"],
-        width = "double",
-        order = order,
-        confirm = true,
-        confirmText = L["ML_IGNORE_RESTORE_CONFIRM"],
-        func = function()
-            GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
-            ACR:NotifyChange("GogoLoot_MasterLooter")
-        end
-    }
-    order = order + 1
-
-    args.spacerAfterRestore = GogoLoot:OptionsSpacer(order)
-    order = order + 1
-
-    args.addItemDesc = GogoLoot:OptionsDesc(L["ML_IGNORE_ADD_DESC"], order)
-    order = order + 1
-
-    args.addItemInput = {
-        type = "input",
-        name = L["ML_IGNORE_ADD"],
-        desc = L["ML_IGNORE_ADD_TOOLTIP"],
-        order = order,
-        get = function()
-            return ""
-        end,
-        set = function(_, value)
-            local itemIdentifier = ParseItemInput(value)
-            if not itemIdentifier then
-                return
-            end
-            GogoLootDB.ignoredItemsMaster[itemIdentifier] = true
-            GogoLoot.GetItemInfo(itemIdentifier)
-            ACR:NotifyChange("GogoLoot_MasterLooter")
-        end
-    }
-    order = order + 1
-
-    args.spacerBeforeItems = GogoLoot:OptionsSpacer(order)
-    order = order + 1
-
-    -- Sort by rarity (highest first), then alphabetically by name
-    local sortedIdentifiers = {}
-    for itemIdentifier in pairs(GogoLootDB.ignoredItemsMaster) do
-        table.insert(sortedIdentifiers, itemIdentifier)
-    end
-    table.sort(
-        sortedIdentifiers,
-        function(a, b)
-            local infoA = GogoLoot:SafeGetItemInfo(a)
-            local infoB = GogoLoot:SafeGetItemInfo(b)
-            local qualityA = infoA and infoA.quality or -1
-            local qualityB = infoB and infoB.quality or -1
-            if qualityA ~= qualityB then
-                return qualityA > qualityB
-            end
-            local nameA = infoA and infoA.name or ""
-            local nameB = infoB and infoB.name or ""
-            if nameA == "" and nameB == "" then
-                return a < b
-            end
-            if nameA == "" then
-                return false
-            end
-            if nameB == "" then
-                return true
-            end
-            return nameA < nameB
-        end
-    )
-
-    for _, itemIdentifier in ipairs(sortedIdentifiers) do
-        local groupKey = "item_" .. itemIdentifier
-
-        args[groupKey] = {
-            type = "group",
-            name = "",
-            inline = true,
-            order = order,
-            args = {
-                label = {
-                    type = "input",
-                    dialogControl = "GogoLoot_ItemLink",
-                    name = "",
-                    width = 2.0,
-                    order = 1,
-                    get = function()
-                        return tostring(itemIdentifier)
-                    end,
-                    set = function()
-                    end
-                },
-                remove = {
-                    type = "execute",
-                    name = L["ML_IGNORE_REMOVE"],
-                    desc = L["ML_IGNORE_REMOVE_DESC"],
-                    width = 0.6,
-                    order = 2,
-                    func = function()
-                        GogoLootDB.ignoredItemsMaster[itemIdentifier] = nil
-                        ACR:NotifyChange("GogoLoot_MasterLooter")
-                    end
-                }
-            }
-        }
-        order = order + 1
-    end
-
-    return args
-end
 
 --------------------------------------------------------------------------------
 -- Filtered Threshold Dropdown (respects current loot threshold)
@@ -198,6 +54,34 @@ function GogoLoot.BuildMasterLooterOptions()
     end
 
     local announceThresholdOptions = BuildFilteredThresholdOptions(currentThreshold)
+
+    local ignoreListArgs =
+        GogoLoot:BuildItemListOptions(
+        {
+            getSourceTable = function()
+                return GogoLootDB.ignoredItemsMaster
+            end,
+            onRestore = function()
+                GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
+            end,
+            onAdd = function(itemIdentifier)
+                GogoLootDB.ignoredItemsMaster[itemIdentifier] = true
+            end,
+            onRemove = function(itemIdentifier)
+                GogoLootDB.ignoredItemsMaster[itemIdentifier] = nil
+            end,
+            notifyKey = "GogoLoot_MasterLooter",
+            labels = {
+                restore = L["ML_IGNORE_RESTORE"],
+                restoreConfirm = L["ML_IGNORE_RESTORE_CONFIRM"],
+                addDesc = L["ML_IGNORE_ADD_DESC"],
+                addName = L["ML_IGNORE_ADD"],
+                addTooltip = L["ML_IGNORE_ADD_TOOLTIP"],
+                removeName = L["ML_IGNORE_REMOVE"],
+                removeDesc = L["ML_IGNORE_REMOVE_DESC"]
+            }
+        }
+    )
 
     local args = {
         lootType = {
@@ -311,7 +195,7 @@ function GogoLoot.BuildMasterLooterOptions()
             name = "",
             inline = true,
             order = 53,
-            args = BuildMasterIgnoreListArgs()
+            args = ignoreListArgs
         }
     }
 

@@ -7,6 +7,11 @@ local function ExecuteRollOverride(rollIdentifier, rollOverride, rollGreedAllowe
         if rollNeedAllowed then
             RollOnLoot(rollIdentifier, GogoLoot.ROLL_ACTION_NEED)
         elseif rollGreedAllowed then
+            GogoLoot:DebugPrint(
+                "Need not allowed for roll",
+                rollIdentifier,
+                "- falling back to Greed"
+            )
             RollOnLoot(rollIdentifier, GogoLoot.ROLL_ACTION_GREED)
         end
     elseif rollOverride == GogoLoot.GREED then
