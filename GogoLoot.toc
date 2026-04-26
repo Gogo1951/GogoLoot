@@ -38,6 +38,7 @@ Data.lua
 
 # GogoLoot
 Core.lua
+Speedy-Loot.lua
 Master-Loot.lua
 Automatic-Rolls.lua
 Trade-Announce.lua
