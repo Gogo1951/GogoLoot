@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "GogoLoot가 정상적으로 작동하려면 자동
 L["MSG_NOT_MASTER_LOOTER"] = "현재 전리품 담당자가 아닙니다."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "활성화됨"
+L["STATUS_DISABLED"] = "비활성화됨"
+
+L["MINIMAP_AUTO_GREED"] = "자동 차상위"
+L["MINIMAP_AUTO_GREED_DESC"] = "선택한 품질 임계값 이하의 대상 아이템에 대해 자동으로 차상위를 굴립니다."
+L["MINIMAP_SPEEDY_LOOT"] = "빠른 획득"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "전리품 창을 표시하지 않고 즉시 전리품을 획득합니다."
+
+L["MINIMAP_LEFT_CLICK"] = "좌클릭"
+L["MINIMAP_RIGHT_CLICK"] = "우클릭"
+L["MINIMAP_TOGGLE"] = "전환"
+L["MINIMAP_HINT"] = "추가 설정은 설정 > 애드온 > GogoLoot에서 찾을 수 있습니다."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -67,7 +85,7 @@ L["COMMANDS_DESC_GOGOLOOT"] = "GogoLoot 옵션 인터페이스를 엽니다."
 L["RESET"] = "초기화"
 L["RESET_DESC"] = "모든 GogoLoot 설정을 지우고 각 옵션을 기본값으로 복원합니다."
 L["RESET_ALL"] = "모든 GogoLoot 옵션 초기화"
-L["RESET_CONFIRM"] = "모든 GogoLoot 설정을 기본값으로 초기화합니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?"
+L["RESET_CONFIRM"] = "모든 GogoLoot 설정을 기본값으로 초기화합니다. 이 작업은 되돌릴 수 옵습니다. 계속하시겠습니까?"
 
 L["FEEDBACK_SUPPORT"] = "피드백 및 지원"
 L["CURSEFORGE"] = "CurseForge"
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "사용자 지정 주사위 목록"
 L["ROLLS_CUSTOM_LIST_DESC"] = "이 목록의 아이템은 임계값을 무시하는 고유한 주사위 규칙을 갖습니다. 스컬지석이나 악마의 룬 같은 획득 시 귀속 아이템을 자동화하는 유일한 방법입니다. 각 아이템을 수동 주사위, 차상위, 입찰 또는 포기로 설정하세요. 퀘스트 아이템, 책, 도안, 탈것, 애완동물, 전설은 설정과 관계없이 항상 건너뜁니다."
 L["ROLLS_RESTORE_DEFAULTS"] = "기본 사용자 지정 주사위 목록 복원"
 L["ROLLS_RESTORE_CONFIRM"] = "사용자 지정 주사위 목록을 현재 확장팩의 기본 아이템으로 바꿉니다. 계속하시겠습니까?"
-L["ROLLS_ADD_ITEM_DESC"] = "목록에 추가하려면 아이템 ID를 입력하거나 아이템 링크를 붙여넣으세요."
+L["ROLLS_ADD_ITEM_DESC"] = "아이템 ID를 입력하거나 아이템을 여기로 드래그하여 목록에 추가하세요."
 L["ROLLS_ADD_ITEM"] = "아이템 추가"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "여기에 아이템 ID를 입력하거나 아이템 링크를 드래그하세요."
 L["ROLLS_CHOOSE_ACTION"] = "이 아이템에 대한 자동 주사위 작업을 선택하세요."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "기본 무시 목록 복원"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "전리품 담당자 무시 목록을 현재 확장팩의 기본 아이템으로 바꿉니다. 계속하시겠습니까?"
 L["ML_IGNORE_ADD_DESC"] = "무시 목록에 추가하려면 아이템 ID를 입력하거나 아이템 링크를 붙여넣으세요."
 L["ML_IGNORE_ADD"] = "아이템 추가"
-L["ML_IGNORE_ADD_TOOLTIP"] = "여기에 아이템 ID를 입력하거나 아이템 링크를 드래그하세요."
+L["ML_IGNORE_ADD_TOOLTIP"] = "아이템 ID를 입력하거나 아이템을 여기로 드래그하여 목록에 추가하세요."
 L["ML_IGNORE_REMOVE"] = "제거"
 L["ML_IGNORE_REMOVE_DESC"] = "무시 목록에서 이 아이템을 제거합니다."

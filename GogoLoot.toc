@@ -1,7 +1,6 @@
 ## Title: GogoLoot
 ## Notes: Automated master looting, roll automation, and trade announcements. Don't let Loot slow down your zug!
 ## Author: Gogo1951
-
 ## IconTexture: Interface/AddOns/GogoLoot/GogoLoot.tga
 ## Category-enUS: Bags & Inventory
 ## X-License: MIT
@@ -20,6 +19,8 @@ Includes/AceGUI-3.0/AceGUI-3.0.xml
 Includes/AceConfig-3.0/AceConfigRegistry-3.0/AceConfigRegistry-3.0.lua
 Includes/AceConfig-3.0/AceConfigDialog-3.0/AceConfigDialog-3.0.lua
 Includes/AceConfig-3.0/AceConfig-3.0.lua
+Includes/LibDataBroker-1.1/LibDataBroker-1.1.lua
+Includes/LibDBIcon-1.0/LibDBIcon-1.0.lua
 
 # Localization
 Locales/enUS.lua
@@ -42,6 +43,7 @@ Speedy-Loot.lua
 Master-Loot.lua
 Automatic-Rolls.lua
 Trade-Announce.lua
+Minimap-Button.lua
 Options.lua
 Options-Trade-Announcements.lua
 Options-Automatic-Rolls.lua

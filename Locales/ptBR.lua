@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "O Saque Automático é necessário para que o Gogo
 L["MSG_NOT_MASTER_LOOTER"] = "Você não é o Mestre Saqueador no momento."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Ativado"
+L["STATUS_DISABLED"] = "Desativado"
+
+L["MINIMAP_AUTO_GREED"] = "Ganância Automática"
+L["MINIMAP_AUTO_GREED_DESC"] = "Rola Ganância automaticamente em itens elegíveis iguais ou inferiores ao limite de qualidade selecionado."
+L["MINIMAP_SPEEDY_LOOT"] = "Saque Rápido"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Pega o saque instantaneamente sem mostrar a janela de saque."
+
+L["MINIMAP_LEFT_CLICK"] = "Botão Esquerdo"
+L["MINIMAP_RIGHT_CLICK"] = "Botão Direito"
+L["MINIMAP_TOGGLE"] = "Alternar"
+L["MINIMAP_HINT"] = "Configurações adicionais podem ser encontradas em Opções > AddOns > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Lista de Rolagem Personalizada"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Itens nesta lista têm sua própria regra de rolagem que substitui o limite. Esta é a única maneira de automatizar itens Vinculados ao Recolher como Pedras do Flagelo ou Runas Demoníacas. Defina cada item para Rolagem Manual, Ganância, Necessidade ou Passar. Itens de Missão, Livros, Receitas, Montarias, Mascotes e Lendários são sempre ignorados, independentemente da configuração."
 L["ROLLS_RESTORE_DEFAULTS"] = "Restaurar Lista de Rolagem Personalizada Padrão"
 L["ROLLS_RESTORE_CONFIRM"] = "Isso substituirá sua lista de rolagem personalizada pelos itens padrão de sua expansão. Continuar?"
-L["ROLLS_ADD_ITEM_DESC"] = "Insira um ID de Item ou cole um link de item para adicioná-lo à lista."
+L["ROLLS_ADD_ITEM_DESC"] = "Insira um ID de Item ou arraste um item aqui para adicioná-lo à lista."
 L["ROLLS_ADD_ITEM"] = "Adicionar Item"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Insira o ID do Item ou arraste um link de item aqui."
 L["ROLLS_CHOOSE_ACTION"] = "Escolha a ação de rolagem automática para este item."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "Restaurar Lista de Ignorados Padrão"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "Isso substituirá sua lista de ignorados do mestre saqueador pelos itens padrão de sua expansão. Continuar?"
 L["ML_IGNORE_ADD_DESC"] = "Insira um ID de Item ou cole um link de item para adicioná-lo à lista de ignorados."
 L["ML_IGNORE_ADD"] = "Adicionar Item"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Insira o ID do Item ou arraste um link de item aqui."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Insira um ID de Item ou arraste um item aqui para adicioná-lo à lista."
 L["ML_IGNORE_REMOVE"] = "Remover"
 L["ML_IGNORE_REMOVE_DESC"] = "Remover este item da lista de ignorados."

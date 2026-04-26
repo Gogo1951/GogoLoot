@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "GogoLoot 正常運作需要開啟自動拾取。�
 L["MSG_NOT_MASTER_LOOTER"] = "您目前不是隊長分配者。"
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "已啟用"
+L["STATUS_DISABLED"] = "已停用"
+
+L["MINIMAP_AUTO_GREED"] = "自動貪婪"
+L["MINIMAP_AUTO_GREED_DESC"] = "對等於或低於所選品質門檻的符合條件物品自動擲貪婪。"
+L["MINIMAP_SPEEDY_LOOT"] = "快速拾取"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "立即拾取戰利品而不顯示拾取視窗。"
+
+L["MINIMAP_LEFT_CLICK"] = "左鍵點擊"
+L["MINIMAP_RIGHT_CLICK"] = "右鍵點擊"
+L["MINIMAP_TOGGLE"] = "切換"
+L["MINIMAP_HINT"] = "其他設定可在 選項 > 插件 > GogoLoot 中找到。"
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "自訂擲骰列表"
 L["ROLLS_CUSTOM_LIST_DESC"] = "此列表中的物品具有覆寫門檻的獨立擲骰規則。這是使天譴石或惡魔符文等拾取綁定物品自動化的唯一方法。將每個物品設定為手動擲骰、貪婪、需求或放棄。任務物品、書籍、配方、坐騎、寵物和傳說物品無論設定為何總是會被略過。"
 L["ROLLS_RESTORE_DEFAULTS"] = "恢復預設自訂擲骰列表"
 L["ROLLS_RESTORE_CONFIRM"] = "這將使用您的資料片的預設物品取代您的自訂擲骰列表。是否繼續？"
-L["ROLLS_ADD_ITEM_DESC"] = "輸入物品 ID 或貼上物品連結以將其新增至列表。"
+L["ROLLS_ADD_ITEM_DESC"] = "輸入物品 ID 或將物品拖曳至此處以將其新增至列表。"
 L["ROLLS_ADD_ITEM"] = "新增物品"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "在此處輸入物品 ID 或拖放物品連結。"
 L["ROLLS_CHOOSE_ACTION"] = "選擇此物品的自動擲骰動作。"
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "恢復預設忽略列表"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "這將使用您的資料片的預設物品取代您的隊長分配忽略列表。是否繼續？"
 L["ML_IGNORE_ADD_DESC"] = "輸入物品 ID 或貼上物品連結以將其新增至忽略列表。"
 L["ML_IGNORE_ADD"] = "新增物品"
-L["ML_IGNORE_ADD_TOOLTIP"] = "在此處輸入物品 ID 或拖放物品連結。"
+L["ML_IGNORE_ADD_TOOLTIP"] = "輸入物品 ID 或將物品拖曳至此處以將其新增至列表。"
 L["ML_IGNORE_REMOVE"] = "移除"
 L["ML_IGNORE_REMOVE_DESC"] = "從忽略列表中移除此物品。"

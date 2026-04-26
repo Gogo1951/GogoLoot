@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "Auto Loot is required for GogoLoot to function pro
 L["MSG_NOT_MASTER_LOOTER"] = "You are not currently the Master Looter."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Enabled"
+L["STATUS_DISABLED"] = "Disabled"
+
+L["MINIMAP_AUTO_GREED"] = "Auto-Greed"
+L["MINIMAP_AUTO_GREED_DESC"] = "Automatically rolls Greed on eligible items at or below the selected quality threshold."
+L["MINIMAP_SPEEDY_LOOT"] = "Speedy Loot"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Instantly picks up loot without showing the loot window."
+
+L["MINIMAP_LEFT_CLICK"] = "Left-Click"
+L["MINIMAP_RIGHT_CLICK"] = "Right-Click"
+L["MINIMAP_TOGGLE"] = "Toggle"
+L["MINIMAP_HINT"] = "Additional settings can be found under Options > AddOns > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Custom Roll List"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Items on this list have their own roll rule that overrides the threshold. This is the only way to automate BoP items like Scourgestones or Demonic Runes. Set each item to Manual Roll, Greed, Need, or Pass. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped regardless of setting."
 L["ROLLS_RESTORE_DEFAULTS"] = "Restore Default Custom Roll List"
 L["ROLLS_RESTORE_CONFIRM"] = "This will replace your custom roll list with the default items for your expansion. Continue?"
-L["ROLLS_ADD_ITEM_DESC"] = "Enter an Item ID or paste an item link to add it to the list."
+L["ROLLS_ADD_ITEM_DESC"] = "Enter Item ID or drag an item here to add it to the list."
 L["ROLLS_ADD_ITEM"] = "Add Item"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Enter Item ID or drag an item link here."
 L["ROLLS_CHOOSE_ACTION"] = "Choose the automatic roll action for this item."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "Restore Default Ignore List"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "This will replace your master loot ignore list with the default items for your expansion. Continue?"
 L["ML_IGNORE_ADD_DESC"] = "Enter an Item ID or paste an item link to add it to the ignore list."
 L["ML_IGNORE_ADD"] = "Add Item"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Enter Item ID or drag an item link here."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Enter Item ID or drag an item here to add it to the list."
 L["ML_IGNORE_REMOVE"] = "Remove"
 L["ML_IGNORE_REMOVE_DESC"] = "Remove this item from the ignore list."

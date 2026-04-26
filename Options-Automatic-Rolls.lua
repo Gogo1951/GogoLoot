@@ -71,6 +71,9 @@ function GogoLoot.BuildAutomaticRollOptions()
                 end,
                 set = function(_, value)
                     GogoLootDB.autoGreed = value
+                    if GogoLoot.UpdateMinimapIcon then
+                        GogoLoot:UpdateMinimapIcon()
+                    end
                 end
             },
             spacerAfterToggle = GogoLoot:OptionsSpacer(5),

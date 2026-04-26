@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "Il Depredamento Automatico è necessario affinché
 L["MSG_NOT_MASTER_LOOTER"] = "Al momento non sei il Maestro del Bottino."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Abilitato"
+L["STATUS_DISABLED"] = "Disabilitato"
+
+L["MINIMAP_AUTO_GREED"] = "Cupidità Automatica"
+L["MINIMAP_AUTO_GREED_DESC"] = "Tira automaticamente su Cupidità per gli oggetti idonei di qualità pari o inferiore alla soglia selezionata."
+L["MINIMAP_SPEEDY_LOOT"] = "Depredamento Rapido"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Raccoglie istantaneamente il bottino senza mostrare la finestra di bottino."
+
+L["MINIMAP_LEFT_CLICK"] = "Clic Sinistro"
+L["MINIMAP_RIGHT_CLICK"] = "Clic Destro"
+L["MINIMAP_TOGGLE"] = "Attiva/Disattiva"
+L["MINIMAP_HINT"] = "Ulteriori impostazioni possono essere trovate in Opzioni > Addon > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Lista Tiri Personalizzati"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Gli oggetti in questa lista hanno una loro regola di tiro che annulla la soglia. Questo è l'unico modo per automatizzare oggetti Vincolati alla raccolta come Pietre del Flagello o Rune Demoniache. Imposta ogni oggetto su Tiro Manuale, Cupidità, Necessità o Passa. Oggetti di missione, libri, ricette, cavalcature, mascotte e leggendari vengono sempre saltati."
 L["ROLLS_RESTORE_DEFAULTS"] = "Ripristina Lista Tiri Personalizzati Predefinita"
 L["ROLLS_RESTORE_CONFIRM"] = "Questo sostituirà la tua lista tiri personalizzati con gli oggetti predefiniti per la tua espansione. Continuare?"
-L["ROLLS_ADD_ITEM_DESC"] = "Inserisci un ID oggetto o incolla il link dell'oggetto per aggiungerlo alla lista."
+L["ROLLS_ADD_ITEM_DESC"] = "Inserisci un ID oggetto o trascina un oggetto qui per aggiungerlo alla lista."
 L["ROLLS_ADD_ITEM"] = "Aggiungi Oggetto"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Inserisci l'ID o trascina il link dell'oggetto qui."
 L["ROLLS_CHOOSE_ACTION"] = "Scegli l'azione di tiro automatica per questo oggetto."
@@ -151,9 +169,9 @@ L["ML_ANNOUNCE_EXAMPLE"] = "Esempio: {rt4} Ha dato [Oggetto X] a Gogowarrior. //
 L["ML_IGNORE_HEADER"] = "Lista Ignorati"
 L["ML_IGNORE_DESC"] = "Gli oggetti in questa lista non verranno distribuiti automaticamente e appariranno in una finestra di bottino standard per un'assegnazione manuale."
 L["ML_IGNORE_RESTORE"] = "Ripristina Lista Ignorati Predefinita"
-L["ML_IGNORE_RESTORE_CONFIRM"] = "Questo sostituirà la tua lista ignorati del maestro del bottino con gli oggetti predefiniti. Continuare?"
+L["ML_IGNORE_RESTORE_CONFIRM"] = "Questo sostituirà la tua lista ignorati del maestro del bottino con gli oggetti predefiniti per la tua espansione. Continuare?"
 L["ML_IGNORE_ADD_DESC"] = "Inserisci un ID oggetto o incolla un link dell'oggetto per aggiungerlo alla lista degli ignorati."
 L["ML_IGNORE_ADD"] = "Aggiungi Oggetto"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Inserisci l'ID o trascina il link dell'oggetto qui."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Inserisci un ID oggetto o trascina un oggetto qui per aggiungerlo alla lista."
 L["ML_IGNORE_REMOVE"] = "Rimuovi"
 L["ML_IGNORE_REMOVE_DESC"] = "Rimuovi questo oggetto dalla lista degli ignorati."

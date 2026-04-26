@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "La fouille automatique est requise pour que GogoLo
 L["MSG_NOT_MASTER_LOOTER"] = "Vous n'êtes actuellement pas le Maître du butin."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Activé"
+L["STATUS_DISABLED"] = "Désactivé"
+
+L["MINIMAP_AUTO_GREED"] = "Cupidité Auto"
+L["MINIMAP_AUTO_GREED_DESC"] = "Effectue automatiquement un jet de Cupidité sur les objets éligibles au niveau ou en dessous du seuil de qualité sélectionné."
+L["MINIMAP_SPEEDY_LOOT"] = "Butin Rapide"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Ramasse instantanément le butin sans afficher la fenêtre de butin."
+
+L["MINIMAP_LEFT_CLICK"] = "Clic gauche"
+L["MINIMAP_RIGHT_CLICK"] = "Clic droit"
+L["MINIMAP_TOGGLE"] = "Basculer"
+L["MINIMAP_HINT"] = "Des paramètres supplémentaires se trouvent dans Options > AddOns > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -104,7 +122,7 @@ L["TRADE_CHECKBOX_LABEL"] = "Annoncer"
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "Effectue automatiquement un jet de Cupidité sur les objets non liés quand ramassés de qualité égale ou inférieure à celle sélectionnée. Les objets de quête, livres, recettes, montures, mascottes et objets légendaires sont toujours ignorés. Les objets liés quand ramassés ne sont jamais automatiquement tirés en Cupidité par le seuil, mais peuvent être automatisés via la Liste de Jets Personnalisés ci-dessous."
+L["ROLLS_DESC"] = "Effectue automatiquement un jet de Cupidité sur les objets non liés quand ramassés de qualité égale ou inférieure à celle sélectionnée. Les objets de quête, livres, recettes, monturas, mascottes et objets légendaires sont toujours ignorés. Les objets liés quand ramassés ne sont jamais automatiquement tirés en Cupidité par le seuil, mais peuvent être automatisés via la Liste de Jets Personnalisés ci-dessous."
 L["ROLLS_ENABLE"] = "Activer les Jets Automatiques"
 L["ROLLS_ENABLE_DESC"] = "Effectue automatiquement un jet de Cupidité sur les objets éligibles au niveau ou en dessous du seuil."
 L["ROLLS_THRESHOLD"] = "Seuil de Cupidité Automatique"
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Liste de Jets Personnalisés"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Les objets de cette liste ont leur propre règle de jet qui l'emporte sur le seuil. C'est le seul moyen d'automatiser les objets liés quand ramassés comme les Pierres du Fléau ou les Runes Démoniaques. Réglez chaque objet sur Jet Manuel, Cupidité, Besoin ou Passer. Les objets de quête, livres, recettes, montures, mascottes et légendaires sont toujours ignorés quels que soient les paramètres."
 L["ROLLS_RESTORE_DEFAULTS"] = "Restaurer la Liste de Jets Personnalisés par Défaut"
 L["ROLLS_RESTORE_CONFIRM"] = "Cela remplacera votre liste de jets personnalisés par les objets par défaut de votre extension. Continuer ?"
-L["ROLLS_ADD_ITEM_DESC"] = "Entrez l'ID d'un objet ou collez un lien d'objet pour l'ajouter à la liste."
+L["ROLLS_ADD_ITEM_DESC"] = "Entrez l'ID d'un objet ou faites glisser un objet ici pour l'ajouter à la liste."
 L["ROLLS_ADD_ITEM"] = "Ajouter un objet"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Entrez l'ID de l'objet ou faites glisser un lien d'objet ici."
 L["ROLLS_CHOOSE_ACTION"] = "Choisissez l'action de jet automatique pour cet objet."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "Restaurer la Liste d'Ignorés par Défaut"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "Cela remplacera votre liste d'ignorés du maître du butin par les objets par défaut de votre extension. Continuer ?"
 L["ML_IGNORE_ADD_DESC"] = "Entrez l'ID d'un objet ou collez un lien d'objet pour l'ajouter à la liste d'ignorés."
 L["ML_IGNORE_ADD"] = "Ajouter un objet"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Entrez l'ID de l'objet ou faites glisser un lien d'objet ici."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Entrez l'ID d'un objet ou faites glisser un objet ici pour l'ajouter à la liste."
 L["ML_IGNORE_REMOVE"] = "Retirer"
 L["ML_IGNORE_REMOVE_DESC"] = "Retirer cet objet de la liste d'ignorés."

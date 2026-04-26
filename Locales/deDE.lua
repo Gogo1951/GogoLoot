@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "Automatisches Plündern ist erforderlich, damit Go
 L["MSG_NOT_MASTER_LOOTER"] = "Du bist derzeit nicht der Plündermeister."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Aktiviert"
+L["STATUS_DISABLED"] = "Deaktiviert"
+
+L["MINIMAP_AUTO_GREED"] = "Auto-Gier"
+L["MINIMAP_AUTO_GREED_DESC"] = "Würfelt automatisch Gier auf berechtigte Gegenstände auf oder unter dem ausgewählten Qualitätsschwellenwert."
+L["MINIMAP_SPEEDY_LOOT"] = "Schnelles Plündern"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Nimmt Beute sofort auf, ohne das Beutefenster anzuzeigen."
+
+L["MINIMAP_LEFT_CLICK"] = "Linksklick"
+L["MINIMAP_RIGHT_CLICK"] = "Rechtsklick"
+L["MINIMAP_TOGGLE"] = "Ein-/Ausschalten"
+L["MINIMAP_HINT"] = "Weitere Einstellungen findest du unter Optionen > AddOns > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Benutzerdefinierte Würfelliste"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Gegenstände auf dieser Liste haben ihre eigene Würfelregel, die den Schwellenwert überschreibt. Dies ist die einzige Möglichkeit, beim Aufheben gebundene Gegenstände wie Geißelsteine oder Dämonische Runen zu automatisieren. Stelle jeden Gegenstand auf Manuelles Würfeln, Gier, Bedarf oder Passen ein. Questgegenstände, Bücher, Rezepte, Reittiere, Haustiere und legendäre Gegenstände werden unabhängig von der Einstellung immer übersprungen."
 L["ROLLS_RESTORE_DEFAULTS"] = "Standard-Würfelliste wiederherstellen"
 L["ROLLS_RESTORE_CONFIRM"] = "Dadurch wird deine benutzerdefinierte Würfelliste durch die Standardgegenstände für deine Erweiterung ersetzt. Fortfahren?"
-L["ROLLS_ADD_ITEM_DESC"] = "Gib eine Gegenstands-ID ein oder füge einen Gegenstandslink ein, um ihn der Liste hinzuzufügen."
+L["ROLLS_ADD_ITEM_DESC"] = "Gib eine Gegenstands-ID ein oder ziehe einen Gegenstand hierher, um ihn der Liste hinzuzufügen."
 L["ROLLS_ADD_ITEM"] = "Gegenstand hinzufügen"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Gegenstands-ID eingeben oder Gegenstandslink hierher ziehen."
 L["ROLLS_CHOOSE_ACTION"] = "Wähle die automatische Würfelaktion für diesen Gegenstand."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "Standard-Ignorieren-Liste wiederherstellen"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "Dadurch wird deine Plündermeister-Ignorieren-Liste durch die Standardgegenstände für deine Erweiterung ersetzt. Fortfahren?"
 L["ML_IGNORE_ADD_DESC"] = "Gib eine Gegenstands-ID ein oder füge einen Gegenstandslink ein, um ihn der Ignorieren-Liste hinzuzufügen."
 L["ML_IGNORE_ADD"] = "Gegenstand hinzufügen"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Gegenstands-ID eingeben oder Gegenstandslink hierher ziehen."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Gib eine Gegenstands-ID ein oder ziehe einen Gegenstand hierher, um ihn der Liste hinzuzufügen."
 L["ML_IGNORE_REMOVE"] = "Entfernen"
 L["ML_IGNORE_REMOVE_DESC"] = "Diesen Gegenstand aus der Ignorieren-Liste entfernen."

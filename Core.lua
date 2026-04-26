@@ -270,6 +270,9 @@ local function OnAddonLoaded(eventName, loadedAddonName)
         return
     end
     InitializeSavedVariables()
+    if GogoLoot.InitMinimap then
+        GogoLoot:InitMinimap()
+    end
     CheckForConflictingAddons()
     if GogoLoot.InitializeOptions then
         GogoLoot:InitializeOptions()

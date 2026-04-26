@@ -332,8 +332,16 @@ GogoLoot.DEFAULT_IGNORE_LIST_MASTER = {
 -- Configuration Version
 -- Bump this to force a full reset on next load.
 --------------------------------------------------------------------------------
-
 GogoLoot.CONFIG_VERSION = 2
+
+--------------------------------------------------------------------------------
+-- Minimap
+--------------------------------------------------------------------------------
+
+GogoLoot.MINIMAP_ICONS = {
+    on = 134467,  -- Auto-Greed On
+    off = 134468  -- Auto-Greed Off
+}
 
 --------------------------------------------------------------------------------
 -- Default Configuration
@@ -358,5 +366,6 @@ GogoLoot.DEFAULT_CONFIGURATION = {
         epic = "self"
     },
     ignoredItemsMaster = {},
-    ignoredItemsSolo = {}
+    ignoredItemsSolo = {},
+    minimap = {hide = false}
 }

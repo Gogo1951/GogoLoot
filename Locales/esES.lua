@@ -13,6 +13,24 @@ L["MSG_AUTO_LOOT_ENABLED"] = "El despojo automático es necesario para que GogoL
 L["MSG_NOT_MASTER_LOOTER"] = "Actualmente no eres el Maestro Despojador."
 
 --------------------------------------------------------------------------------
+-- Minimap Button
+--------------------------------------------------------------------------------
+
+L["ADDON_TITLE"] = "GogoLoot"
+L["STATUS_ENABLED"] = "Activado"
+L["STATUS_DISABLED"] = "Desactivado"
+
+L["MINIMAP_AUTO_GREED"] = "Codicia Automática"
+L["MINIMAP_AUTO_GREED_DESC"] = "Tira automáticamente Codicia por los objetos elegibles de calidad igual o inferior al umbral seleccionado."
+L["MINIMAP_SPEEDY_LOOT"] = "Despojo Rápido"
+L["MINIMAP_SPEEDY_LOOT_DESC"] = "Recoge el botín al instante sin mostrar la ventana de despojo."
+
+L["MINIMAP_LEFT_CLICK"] = "Clic izquierdo"
+L["MINIMAP_RIGHT_CLICK"] = "Clic derecho"
+L["MINIMAP_TOGGLE"] = "Alternar"
+L["MINIMAP_HINT"] = "Puedes encontrar ajustes adicionales en Opciones > AddOns > GogoLoot."
+
+--------------------------------------------------------------------------------
 -- Quality Labels
 --------------------------------------------------------------------------------
 
@@ -114,7 +132,7 @@ L["ROLLS_CUSTOM_LIST"] = "Lista de Tirada Personalizada"
 L["ROLLS_CUSTOM_LIST_DESC"] = "Los objetos de esta lista tienen su propia regla de tirada que anula el umbral. Esta es la única forma de automatizar objetos que se ligan al recogerlos como las Piedras de la Plaga o Runas demoníacas. Establece cada objeto en Tirada Manual, Codicia, Necesidad o Pasar. Los objetos de misión, libros, recetas, monturas, mascotas y legendarios siempre se omiten independientemente de la configuración."
 L["ROLLS_RESTORE_DEFAULTS"] = "Restaurar Lista de Tirada Personalizada Predeterminada"
 L["ROLLS_RESTORE_CONFIRM"] = "Esto reemplazará tu lista de tirada personalizada con los objetos predeterminados para tu expansión. ¿Continuar?"
-L["ROLLS_ADD_ITEM_DESC"] = "Introduce el ID de un objeto o pega un enlace de objeto para añadirlo a la lista."
+L["ROLLS_ADD_ITEM_DESC"] = "Introduce el ID de un objeto o arrastra un objeto aquí para añadirlo a la lista."
 L["ROLLS_ADD_ITEM"] = "Añadir Objeto"
 L["ROLLS_ADD_ITEM_TOOLTIP"] = "Introduce el ID del objeto o arrastra el enlace del objeto aquí."
 L["ROLLS_CHOOSE_ACTION"] = "Elige la acción de tirada automática para este objeto."
@@ -154,6 +172,6 @@ L["ML_IGNORE_RESTORE"] = "Restaurar Lista de Ignorados Predeterminada"
 L["ML_IGNORE_RESTORE_CONFIRM"] = "Esto reemplazará tu lista de ignorados del maestro despojador con los objetos predeterminados para tu expansión. ¿Continuar?"
 L["ML_IGNORE_ADD_DESC"] = "Introduce el ID de un objeto o pega un enlace de objeto para añadirlo a la lista de ignorados."
 L["ML_IGNORE_ADD"] = "Añadir Objeto"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Introduce el ID del objeto o arrastra el enlace del objeto aquí."
+L["ML_IGNORE_ADD_TOOLTIP"] = "Introduce el ID de un objeto o arrastra un objeto aquí para añadirlo a la lista."
 L["ML_IGNORE_REMOVE"] = "Eliminar"
 L["ML_IGNORE_REMOVE_DESC"] = "Elimina este objeto de la lista de ignorados."
