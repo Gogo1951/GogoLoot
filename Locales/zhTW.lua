@@ -202,4 +202,22 @@ L["ML_LOOT_THRESHOLD"] = "分配品質（唯讀，透過遊戲選單更改）"
 
 L["ML_AUTO_HEADER"] = "自動隊長分配"
 L["ML_AUTO_DESC"] = "當您是隊長分配者時，自動將戰利品分配給指定的玩家。任務物品、書籍、配方、坐騎、寵物和傳說物品總是被略過，並出現在標準的拾取視窗中。"
-L["ML_AUTO_ENABLE
+L["ML_AUTO_ENABLE"] = "在副本中啟用自動隊長分配"
+L["ML_AUTO_ENABLE_DESC"] = "將戰利品自動分配給設定的目標。"
+L["ML_AUTO_OUTSIDE"] = "在副本外啟用自動隊長分配"
+L["ML_AUTO_OUTSIDE_CAUTION"] = "警告：由於世界首領掉落無法交易，不建議使用此功能！"
+
+L["ML_DEST_HEADER"] = "戰利品目標"
+L["ML_DEST_DESC"] = "指定小隊成員接收每個品質級別的物品。"
+L["ML_DEST_SELF"] = "自己"
+L["ML_DEST_CHOOSE"] = "選擇誰接收 %s 物品。"
+
+L["ML_IGNORE_HEADER"] = "忽略列表"
+L["ML_IGNORE_DESC"] = "此列表中的物品將不會自動分配，並出現在標準的拾取視窗中以供手動分配。"
+L["ML_IGNORE_RESTORE"] = "恢復預設忽略列表"
+L["ML_IGNORE_RESTORE_CONFIRM"] = "這將使用您的資料片的預設物品取代您的隊長分配忽略列表。是否繼續？"
+L["ML_IGNORE_ADD_DESC"] = "輸入物品 ID 或貼上物品連結以將其新增至忽略列表。"
+L["ML_IGNORE_ADD"] = "新增物品"
+L["ML_IGNORE_ADD_TOOLTIP"] = "輸入物品 ID 或將物品拖曳至此處以將其新增至列表。"
+L["ML_IGNORE_REMOVE"] = "移除"
+L["ML_IGNORE_REMOVE_DESC"] = "從忽略列表中移除此物品。"
