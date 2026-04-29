@@ -5,7 +5,6 @@ GogoLoot = GogoLoot or {}
 
 local _, ns = ...
 ns.L = LibStub("AceLocale-3.0"):GetLocale("GogoLoot")
-GogoLoot.L = ns.L
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemInfoInstant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
@@ -35,9 +34,6 @@ end
 --------------------------------------------------------------------------------
 -- Item Constants
 --------------------------------------------------------------------------------
-
-GogoLoot.ITEM_LINK_PATTERN =
-    "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?"
 
 GogoLoot.BIND_ON_PICKUP = 1
 GogoLoot.BIND_ON_EQUIP = 2
@@ -135,13 +131,20 @@ GogoLoot.ROLL_OVERRIDE_LABELS = {
 -- Quality Constants
 --------------------------------------------------------------------------------
 
+-- Plain RRGGBB hex strings, matching the format used by RAW_UI_COLORS / COLORS.
+-- For inline-color strings ("|cffRRGGBB"), use GogoLoot:GetQualityColor(quality).
 GogoLoot.QUALITY_COLORS = {
-    [0] = "FF9D9D9D", -- Poor (Gray)
-    [1] = "FFFFFFFF", -- Common (White)
-    [2] = "FF1EFF00", -- Uncommon (Green)
-    [3] = "FF0070DD", -- Rare (Blue)
-    [4] = "FFA335EE" -- Epic (Purple)
+    [0] = "9D9D9D", -- Poor (Gray)
+    [1] = "FFFFFF", -- Common (White)
+    [2] = "1EFF00", -- Uncommon (Green)
+    [3] = "0070DD", -- Rare (Blue)
+    [4] = "A335EE" -- Epic (Purple)
 }
+
+function GogoLoot:GetQualityColor(quality)
+    local hex = GogoLoot.QUALITY_COLORS[quality] or GogoLoot.QUALITY_COLORS[1]
+    return "|cff" .. hex
+end
 
 GogoLoot.rarityToConfigurationKey = {
     [0] = "poor",
@@ -166,56 +169,6 @@ GogoLoot.QUALITY_DISPLAY_NAMES = {
 GogoLoot.URL_CURSEFORGE = "https://www.curseforge.com/wow/addons/gogoloot"
 GogoLoot.URL_GITHUB = "https://github.com/Gogo1951/GogoLoot"
 GogoLoot.URL_DISCORD = "https://discord.gg/eh8hKq992Q"
-
---------------------------------------------------------------------------------
--- Conflicting Addons
---------------------------------------------------------------------------------
-
-GogoLoot.conflictingAddonNames = {
-    "AutoDestroy",
-    "AutoLootAssist",
-    "AutoLooter",
-    "BetterAutoLoot",
-    "CEPGP",
-    "CommunityDKP",
-    "KillTrack",
-    "LootFast2",
-    "RCLootCouncil_Classic",
-    "SpeedyAutoLoot"
-}
-
---------------------------------------------------------------------------------
--- Chat Message Templates
--- Sent via SendChatMessage to other players; intentionally not localized.
---------------------------------------------------------------------------------
-
-GogoLoot.MESSAGE_PREFIX = "{rt4} "
-GogoLoot.MESSAGE_SUFFIX = " // GogoLoot"
-
-GogoLoot.MESSAGE_NOT_MASTER_LOOTER =
-    GogoLoot.MESSAGE_PREFIX .. "You are not currently the Master Looter." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.MESSAGE_LOOT_ANNOUNCE = GogoLoot.MESSAGE_PREFIX .. "Gave %s to %s." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.MESSAGE_DESTINATION_SET =
-    GogoLoot.MESSAGE_PREFIX .. "%s will be receiving all the %s items." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.MESSAGE_DESTINATION_LEFT =
-    GogoLoot.MESSAGE_PREFIX ..
-    "%s has left the group. %s will now be receiving all the %s items." .. GogoLoot.MESSAGE_SUFFIX
-
-GogoLoot.ERROR_BAG_FULL =
-    GogoLoot.MESSAGE_PREFIX ..
-    "The player you selected to receive that item has no space in their bags." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.ERROR_MAX_COUNT =
-    GogoLoot.MESSAGE_PREFIX ..
-    "The player you selected to receive that item has too many of that item already." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.ERROR_OUT_OF_RANGE =
-    GogoLoot.MESSAGE_PREFIX ..
-    "The player you selected to receive that item is not in range." .. GogoLoot.MESSAGE_SUFFIX
-GogoLoot.ERROR_NOT_IN_GROUP =
-    GogoLoot.MESSAGE_PREFIX ..
-    "The player you selected to receive that item is no longer in the party or raid." .. GogoLoot.MESSAGE_SUFFIX
-
-GogoLoot.MESSAGE_ADDON_CONFLICT =
-    GogoLoot.MESSAGE_PREFIX .. "Conflicting loot addons detected." .. GogoLoot.MESSAGE_SUFFIX
 
 --------------------------------------------------------------------------------
 -- Default Custom Roll / Ignore Lists
@@ -332,7 +285,7 @@ GogoLoot.DEFAULT_IGNORE_LIST_MASTER = {
 -- Configuration Version
 -- Bump this to force a full reset on next load.
 --------------------------------------------------------------------------------
-GogoLoot.CONFIG_VERSION = 2
+GogoLoot.CONFIG_VERSION = 4
 
 --------------------------------------------------------------------------------
 -- Minimap
@@ -349,8 +302,11 @@ GogoLoot.MINIMAP_ICONS = {
 
 GogoLoot.DEFAULT_CONFIGURATION = {
     speedyLoot = true,
-    announceMasterLoot = true,
-    announceMasterLootThreshold = 3,
+    announceDestinations = true,
+    announceMasterLootAuto = true,
+    announceMasterLootAutoThreshold = 3,
+    announceMasterLootManual = true,
+    announceMasterLootManualThreshold = 1,
     announceTrade = true,
     announceTradeCondition = "always",
     announceTradeOutput = "whisper",
@@ -367,5 +323,5 @@ GogoLoot.DEFAULT_CONFIGURATION = {
     },
     ignoredItemsMaster = {},
     ignoredItemsSolo = {},
-    minimap = {hide = false}
+    minimap = {}
 }

@@ -2,7 +2,8 @@
 -- GogoLoot Minimap Button
 --------------------------------------------------------------------------------
 local ADDON_NAME = "GogoLoot"
-local L = GogoLoot.L
+local _, ns = ...
+local L = ns.L
 local LDB = LibStub("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0")
 local ACR = LibStub("AceConfigRegistry-3.0")

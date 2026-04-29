@@ -2,15 +2,49 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "enUS", true)
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "Settings have been reset for this update. Use /gl to review your options."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "All settings have been reset to defaults."
-L["MSG_CONFLICT_DETECTED"] = "Conflicting loot addons detected."
-L["MSG_CONFLICT_ADDON"] = "Conflicting addon: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "Auto Loot is required for GogoLoot to function properly. Auto Loot has been enabled."
 L["MSG_NOT_MASTER_LOOTER"] = "You are not currently the Master Looter."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+-- These are wrapped with MSG_PREFIX/MSG_SUFFIX by the Announce helper before
+-- being passed to SendChatMessage. Format placeholders (%s) are filled with
+-- the relevant arguments at call time.
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "Gave %s to %s."
+L["MSG_DESTINATION_SET"] = "%s will be receiving all the %s items."
+L["MSG_DESTINATION_LEFT"] = "%s has left the group. %s will now be receiving all the %s items."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "Gave %s to %s, received %s."
+L["MSG_TRADE_GAVE"] = "Gave %s to %s."
+L["MSG_TRADE_RECEIVED"] = "Received %s from %s."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "The player you selected to receive that item has no space in their bags."
+L["ERR_MAX_COUNT"] = "The player you selected to receive that item has too many of that item already."
+L["ERR_OUT_OF_RANGE"] = "The player you selected to receive that item is not in range."
+L["ERR_NOT_IN_GROUP"] = "The player you selected to receive that item is no longer in the party or raid."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "Automated Rolls"
+L["TAB_MASTER_LOOTER"] = "Master Looter"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "Announcements"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +113,7 @@ L["SPEEDY_LOOT"] = "Enable Speedy Loot"
 L["SPEEDY_LOOT_DESC"] = "Instantly picks up loot without showing the loot window, saving time between kills."
 
 L["COMMANDS"] = "/Commands"
-L["COMMANDS_DESC_GL"] = "Opens the GogoLoot options interface."
-L["COMMANDS_DESC_GOGOLOOT"] = "Opens the GogoLoot options interface."
+L["COMMANDS_DESC"] = "Opens the GogoLoot options interface."
 
 L["RESET"] = "Reset"
 L["RESET_DESC"] = "Clears all GogoLoot settings and restores every option to its default value."
@@ -95,13 +128,16 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "Loading... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "Trade Announcements"
 L["TRADE_DESC"] = "Automatically posts a summary of completed trades to chat, including items, enchants, and gold exchanged."
 L["TRADE_ENABLE"] = "Enable Trade Announcements"
 L["TRADE_ENABLE_DESC"] = "Posts a trade summary when a trade completes."
-L["TRADE_CONDITION"] = "When in Group"
+L["TRADE_CONDITION"] = "When"
 L["TRADE_CONDITION_DESC"] = "Controls when trade announcements are active."
 L["TRADE_CONDITION_ALWAYS"] = "Always"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "Only in Party or Raid"
@@ -117,6 +153,27 @@ L["TRADE_TOOLTIP_TITLE"] = "Trade Announcements"
 L["TRADE_TOOLTIP_DESC"] = "Posts a trade summary to chat when this trade completes."
 L["TRADE_TOOLTIP_OUTPUT"] = "Current Output"
 L["TRADE_CHECKBOX_LABEL"] = "Announce"
+
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "Master Looter Announcements"
+L["ML_ANNOUNCE_DESC"] = "Posts master loot activity to group chat for transparency. Configure separate thresholds for automated and manual distributions so routine auto-loot doesn't spam chat while manual deviations stay visible."
+
+L["ML_ANNOUNCE_DESTINATION"] = "Enable Messages when Master Looter is Set"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "Announces when loot destinations are configured, and when a destination player leaves the group."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Example: {rt4} Aevala will be receiving all the Epic items. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "Enable Automated Master Looting Announcements"
+L["ML_ANNOUNCE_AUTO_DESC"] = "Announces items distributed automatically by GogoLoot."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Auto Announce Threshold"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Only announce automated distributions at or above this quality."
+
+L["ML_ANNOUNCE_MANUAL"] = "Enable Manual Master Looting Announcements"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "Announces items distributed manually via the candidate dropdown. Defaulted lower than auto so deviations from the configured rules are visible to the group."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Manual Announce Threshold"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Only announce manual distributions at or above this quality."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "Example: {rt4} Gave [Item X] to Gogowarrior. // GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
@@ -157,14 +214,6 @@ L["ML_DEST_HEADER"] = "Loot Destinations"
 L["ML_DEST_DESC"] = "Assign a group member to receive items of each quality tier."
 L["ML_DEST_SELF"] = "Self"
 L["ML_DEST_CHOOSE"] = "Choose who receives %s items."
-
-L["ML_ANNOUNCE_HEADER"] = "Loot Announcements"
-L["ML_ANNOUNCE_DESC"] = "Posts a message to group chat when items are distributed via Master Loot. Manual distributions are always announced regardless of threshold."
-L["ML_ANNOUNCE_ENABLE"] = "Enable Loot Announcements"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "Announces item distributions to group chat."
-L["ML_ANNOUNCE_THRESHOLD"] = "Announce Threshold"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "Only announce items at or above this quality."
-L["ML_ANNOUNCE_EXAMPLE"] = "Example: {rt4} Gave [Item X] to Gogowarrior. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "Ignore List"
 L["ML_IGNORE_DESC"] = "Items on this list will not be automatically distributed and will appear in a standard loot window for manual assignment."

@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "ptBR")
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "As configurações foram redefinidas para esta atualização. Use /gl para revisar suas opções."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "Todas as configurações foram redefinidas para os padrões."
-L["MSG_CONFLICT_DETECTED"] = "Addons de saque conflitantes detectados."
-L["MSG_CONFLICT_ADDON"] = "Addon conflitante: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "O Saque Automático é necessário para que o GogoLoot funcione corretamente. O Saque Automático foi ativado."
 L["MSG_NOT_MASTER_LOOTER"] = "Você não é o Mestre Saqueador no momento."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "Deu %s para %s."
+L["MSG_DESTINATION_SET"] = "%s receberá todos os itens %s."
+L["MSG_DESTINATION_LEFT"] = "%s saiu do grupo. %s agora receberá todos os itens %s."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "Deu %s para %s, recebeu %s."
+L["MSG_TRADE_GAVE"] = "Deu %s para %s."
+L["MSG_TRADE_RECEIVED"] = "Recebeu %s de %s."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "O jogador que você selecionou para receber o item não tem espaço nas bolsas."
+L["ERR_MAX_COUNT"] = "O jogador selecionado já possui muitos deste item."
+L["ERR_OUT_OF_RANGE"] = "O jogador que você selecionou para receber o item está fora de alcance."
+L["ERR_NOT_IN_GROUP"] = "O jogador que você selecionou para receber esse item não está mais no grupo ou raide."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "Rolagens Automáticas"
+L["TAB_MASTER_LOOTER"] = "Mestre Saqueador"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "Anúncios"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +110,7 @@ L["SPEEDY_LOOT"] = "Ativar Saque Rápido"
 L["SPEEDY_LOOT_DESC"] = "Pega o saque instantaneamente sem mostrar a janela de saque, economizando tempo entre os abates."
 
 L["COMMANDS"] = "/Comandos"
-L["COMMANDS_DESC_GL"] = "Abre a interface de opções do GogoLoot."
-L["COMMANDS_DESC_GOGOLOOT"] = "Abre a interface de opções do GogoLoot."
+L["COMMANDS_DESC"] = "Abre a interface de opções do GogoLoot."
 
 L["RESET"] = "Redefinir"
 L["RESET_DESC"] = "Limpa todas as configurações do GogoLoot e restaura cada opção para seu valor padrão."
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "Carregando... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "Anúncios de Troca"
 L["TRADE_DESC"] = "Posta automaticamente um resumo das trocas concluídas no chat, incluindo itens, encantamentos e ouro trocados."
 L["TRADE_ENABLE"] = "Ativar Anúncios de Troca"
 L["TRADE_ENABLE_DESC"] = "Posta um resumo da troca quando uma troca é concluída."
@@ -117,6 +150,27 @@ L["TRADE_TOOLTIP_TITLE"] = "Anúncios de Troca"
 L["TRADE_TOOLTIP_DESC"] = "Posta um resumo no chat quando esta troca for concluída."
 L["TRADE_TOOLTIP_OUTPUT"] = "Saída Atual"
 L["TRADE_CHECKBOX_LABEL"] = "Anunciar"
+
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "Anúncios do Mestre Saqueador"
+L["ML_ANNOUNCE_DESC"] = "Posta a atividade do mestre saqueador no chat do grupo para transparência. Configure limites separados para distribuições automáticas e manuais para que o saque automático não encha o chat de spam, enquanto os desvios manuais permaneçam visíveis."
+
+L["ML_ANNOUNCE_DESTINATION"] = "Ativar Mensagens quando Mestre Saqueador For Definido"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "Anuncia quando os destinos de saque são configurados e quando um jogador de destino sai do grupo."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Exemplo: {rt4} Aevala receberá todos os itens Épicos. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "Ativar Anúncios de Saque Automático"
+L["ML_ANNOUNCE_AUTO_DESC"] = "Anuncia os itens distribuídos automaticamente pelo GogoLoot."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Limite de Anúncio Automático"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Apenas anunciar distribuições automáticas desta qualidade ou superior."
+
+L["ML_ANNOUNCE_MANUAL"] = "Ativar Anúncios de Saque Manual"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "Anuncia itens distribuídos manualmente via menu suspenso. Por padrão inferior ao automático para que desvios das regras configuradas sejam visíveis para o grupo."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Limite de Anúncio Manual"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Apenas anunciar distribuições manuais desta qualidade ou superior."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "Exemplo: {rt4} Deu [Item X] para Gogowarrior. // GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "Destinos do Saque"
 L["ML_DEST_DESC"] = "Designe um membro do grupo para receber itens de cada nível de qualidade."
 L["ML_DEST_SELF"] = "A si mesmo"
 L["ML_DEST_CHOOSE"] = "Escolha quem recebe itens %s."
-
-L["ML_ANNOUNCE_HEADER"] = "Anúncios de Saque"
-L["ML_ANNOUNCE_DESC"] = "Posta uma mensagem no chat do grupo quando os itens são distribuídos pelo Mestre Saqueador. Distribuições manuais são sempre anunciadas, independentemente do limite."
-L["ML_ANNOUNCE_ENABLE"] = "Ativar Anúncios de Saque"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "Anuncia as distribuições de itens no chat do grupo."
-L["ML_ANNOUNCE_THRESHOLD"] = "Limite de Anúncio"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "Apenas anunciar itens desta qualidade ou superior."
-L["ML_ANNOUNCE_EXAMPLE"] = "Exemplo: {rt4} Deu [Item X] para Gogowarrior. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "Lista de Ignorados"
 L["ML_IGNORE_DESC"] = "Itens nesta lista não serão distribuídos automaticamente e aparecerão em uma janela de saque padrão para atribuição manual."

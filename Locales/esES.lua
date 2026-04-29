@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "esES") or LibStub("Ace
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "Se han restablecido los ajustes para esta actualización. Usa /gl para revisar tus opciones."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "Todos los ajustes han sido restablecidos a sus valores predeterminados."
-L["MSG_CONFLICT_DETECTED"] = "Se detectaron addons de botín conflictivos."
-L["MSG_CONFLICT_ADDON"] = "Addon en conflicto: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "El despojo automático es necesario para que GogoLoot funcione correctamente. Se ha activado el despojo automático."
 L["MSG_NOT_MASTER_LOOTER"] = "Actualmente no eres el Maestro Despojador."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "Entregó %s a %s."
+L["MSG_DESTINATION_SET"] = "%s recibirá todos los objetos de calidad %s."
+L["MSG_DESTINATION_LEFT"] = "%s ha abandonado el grupo. %s ahora recibirá todos los objetos de calidad %s."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "Entregó %s a %s, recibió %s."
+L["MSG_TRADE_GAVE"] = "Entregó %s a %s."
+L["MSG_TRADE_RECEIVED"] = "Recibió %s de %s."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "El jugador que seleccionaste para recibir ese objeto no tiene espacio en sus bolsas."
+L["ERR_MAX_COUNT"] = "El jugador que seleccionaste para recibir ese objeto ya tiene demasiados de ese objeto."
+L["ERR_OUT_OF_RANGE"] = "El jugador que seleccionaste para recibir ese objeto no está en el rango."
+L["ERR_NOT_IN_GROUP"] = "El jugador que seleccionaste para recibir ese objeto ya no está en el grupo o banda."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "Tiradas Automáticas"
+L["TAB_MASTER_LOOTER"] = "Maestro Despojador"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "Anuncios"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +110,7 @@ L["SPEEDY_LOOT"] = "Activar Despojo Rápido"
 L["SPEEDY_LOOT_DESC"] = "Recoge el botín al instante sin mostrar la ventana de despojo, ahorrando tiempo entre muertes."
 
 L["COMMANDS"] = "/Comandos"
-L["COMMANDS_DESC_GL"] = "Abre la interfaz de opciones de GogoLoot."
-L["COMMANDS_DESC_GOGOLOOT"] = "Abre la interfaz de opciones de GogoLoot."
+L["COMMANDS_DESC"] = "Abre la interfaz de opciones de GogoLoot."
 
 L["RESET"] = "Restablecer"
 L["RESET_DESC"] = "Borra todos los ajustes de GogoLoot y restaura cada opción a su valor predeterminado."
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "Cargando... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "Anuncios de Intercambio"
 L["TRADE_DESC"] = "Publica automáticamente en el chat un resumen de los intercambios completados, incluyendo objetos, encantamientos y oro intercambiado."
 L["TRADE_ENABLE"] = "Activar Anuncios de Intercambio"
 L["TRADE_ENABLE_DESC"] = "Publica un resumen del intercambio cuando este se completa."
@@ -118,11 +151,32 @@ L["TRADE_TOOLTIP_DESC"] = "Publica un resumen en el chat cuando este intercambio
 L["TRADE_TOOLTIP_OUTPUT"] = "Salida actual"
 L["TRADE_CHECKBOX_LABEL"] = "Anunciar"
 
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "Anuncios del Maestro Despojador"
+L["ML_ANNOUNCE_DESC"] = "Publica la actividad del maestro despojador en el chat de grupo por transparencia. Configura umbrales separados para distribuciones automáticas y manuales para que el despojo automático de rutina no inunde el chat mientras las desviaciones manuales sigan siendo visibles."
+
+L["ML_ANNOUNCE_DESTINATION"] = "Activar mensajes cuando se establece el Maestro Despojador"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "Anuncia cuándo se configuran los destinos de botín y cuándo un jugador de destino abandona el grupo."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Ejemplo: {rt4} Aevala recibirá todos los objetos de calidad Épica. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "Activar Anuncios de Distribución Automática"
+L["ML_ANNOUNCE_AUTO_DESC"] = "Anuncia los objetos distribuidos automáticamente por GogoLoot."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Umbral de Anuncio Automático"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Anuncia solo distribuciones automáticas de esta calidad o superior."
+
+L["ML_ANNOUNCE_MANUAL"] = "Activar Anuncios de Distribución Manual"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "Anuncia los objetos distribuidos manualmente a través del menú desplegable. Por defecto es inferior al automático para que las desviaciones de las reglas configuradas sean visibles para el grupo."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Umbral de Anuncio Manual"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Anuncia solo distribuciones manuales de esta calidad o superior."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "Ejemplo: {rt4} Entregó [Objeto X] a Gogowarrior. // GogoLoot"
+
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "Tira automáticamente Codicia por los objetos que no se ligan al recogerlos de calidad igual o inferior a la seleccionada. Los objetos de misión, libros, recetas, monturas, mascotas y legendarios siempre se omiten. Los objetos que se ligan al recogerlos nunca se tiran automáticamente por el umbral, pero pueden automatizarse a través de la Lista de Tirada Personalizada a continuación."
+L["ROLLS_DESC"] = "Tira automáticamente Codicia por los objetos que no se ligan al recogerlos de calidad igual o inferior a la seleccionada. Los objetos de misión, libros, recetas, monturas, mascotas y legendarios siempre se omiten. Los objetos que se ligan al recogerlos (BoP) nunca se tiran automáticamente por el umbral, pero pueden automatizarse a través de la Lista de Tirada Personalizada a continuación."
 L["ROLLS_ENABLE"] = "Activar Tiradas Automáticas"
 L["ROLLS_ENABLE_DESC"] = "Tira automáticamente Codicia por los objetos elegibles de calidad igual o inferior al umbral."
 L["ROLLS_THRESHOLD"] = "Umbral de Codicia Automática"
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "Destinos del Botín"
 L["ML_DEST_DESC"] = "Asigna a un miembro del grupo para que reciba los objetos de cada nivel de calidad."
 L["ML_DEST_SELF"] = "A mí mismo"
 L["ML_DEST_CHOOSE"] = "Elige quién recibe los objetos de calidad %s."
-
-L["ML_ANNOUNCE_HEADER"] = "Anuncios de Botín"
-L["ML_ANNOUNCE_DESC"] = "Publica un mensaje en el chat de grupo cuando los objetos se distribuyen a través del Maestro Despojador. Las distribuciones manuales siempre se anuncian independientemente del umbral."
-L["ML_ANNOUNCE_ENABLE"] = "Activar Anuncios de Botín"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "Anuncia las distribuciones de objetos en el chat de grupo."
-L["ML_ANNOUNCE_THRESHOLD"] = "Umbral de Anuncio"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "Anuncia solo objetos de esta calidad o superior."
-L["ML_ANNOUNCE_EXAMPLE"] = "Ejemplo: {rt4} Entregó [Objeto X] a Gogowarrior. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "Lista de Ignorados"
 L["ML_IGNORE_DESC"] = "Los objetos de esta lista no se distribuirán automáticamente y aparecerán en la ventana de botín estándar para su asignación manual."

@@ -1,22 +1,8 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Options — Master Looter
 --------------------------------------------------------------------------------
-local L = GogoLoot.L
-
---------------------------------------------------------------------------------
--- Filtered Threshold Dropdown (respects current loot threshold)
---------------------------------------------------------------------------------
-
-local function BuildFilteredThresholdOptions(minimumQuality)
-    local filteredOptions = {}
-    for quality = minimumQuality, 4 do
-        local colorHex = GogoLoot.QUALITY_COLORS[quality]
-        local rarityKey = GogoLoot.rarityToConfigurationKey[quality]
-        local displayName = GogoLoot:CapitalizeFirstLetter(rarityKey) .. "+"
-        filteredOptions[quality] = "|c" .. colorHex .. displayName .. "|r"
-    end
-    return filteredOptions
-end
+local _, ns = ...
+local L = ns.L
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -35,25 +21,17 @@ function GogoLoot.BuildMasterLooterOptions()
     }
 
     local thresholdValues = {
-        [4] = "|c" .. GogoLoot.QUALITY_COLORS[4] .. L["QUALITY_EPIC"] .. "|r",
-        [3] = "|c" .. GogoLoot.QUALITY_COLORS[3] .. L["QUALITY_RARE"] .. "|r",
-        [2] = "|c" .. GogoLoot.QUALITY_COLORS[2] .. L["QUALITY_UNCOMMON"] .. "|r",
-        [1] = "|c" .. GogoLoot.QUALITY_COLORS[1] .. L["QUALITY_COMMON"] .. "|r",
-        [0] = "|c" .. GogoLoot.QUALITY_COLORS[0] .. L["QUALITY_POOR"] .. "|r"
+        [4] = GogoLoot:GetQualityColor(4) .. L["QUALITY_EPIC"] .. "|r",
+        [3] = GogoLoot:GetQualityColor(3) .. L["QUALITY_RARE"] .. "|r",
+        [2] = GogoLoot:GetQualityColor(2) .. L["QUALITY_UNCOMMON"] .. "|r",
+        [1] = GogoLoot:GetQualityColor(1) .. L["QUALITY_COMMON"] .. "|r",
+        [0] = GogoLoot:GetQualityColor(0) .. L["QUALITY_POOR"] .. "|r"
     }
 
     if GogoLoot.isBurningCrusadeClassic then
         thresholdValues[1] = nil
         thresholdValues[0] = nil
     end
-
-    -- Clamp announce threshold to the game's current loot threshold
-    local announceThreshold = GogoLootDB.announceMasterLootThreshold
-    if announceThreshold < currentThreshold then
-        GogoLootDB.announceMasterLootThreshold = currentThreshold
-    end
-
-    local announceThresholdOptions = BuildFilteredThresholdOptions(currentThreshold)
 
     local ignoreListArgs =
         GogoLoot:BuildItemListOptions(
@@ -83,144 +61,112 @@ function GogoLoot.BuildMasterLooterOptions()
         }
     )
 
-    local args = {
-        lootType = {
-            type = "select",
-            name = L["ML_LOOT_TYPE"],
-            style = "dropdown",
-            values = lootTypeValues,
-            order = 1,
-            disabled = true,
-            get = function()
-                return currentLootMethod
-            end,
-            set = function()
-            end
-        },
-        spacerAfterLootType = GogoLoot:OptionsSpacer(2),
-        lootThreshold = {
-            type = "select",
-            name = L["ML_LOOT_THRESHOLD"],
-            style = "dropdown",
-            values = thresholdValues,
-            order = 3,
-            disabled = true,
-            get = function()
-                return currentThreshold
-            end,
-            set = function()
-            end
-        },
-        spacerBeforeAuto = GogoLoot:OptionsSpacer(4),
-        autoHeader = GogoLoot:OptionsHeader(L["ML_AUTO_HEADER"], 5),
-        autoDesc = GogoLoot:OptionsDesc(L["ML_AUTO_DESC"], 6),
-        spacerAfterAutoDesc = GogoLoot:OptionsSpacer(7),
-        autoMasterLoot = {
-            type = "toggle",
-            name = L["ML_AUTO_ENABLE"],
-            desc = L["ML_AUTO_ENABLE_DESC"],
-            width = "full",
-            order = 8,
-            get = function()
-                return GogoLootDB.autoMasterLoot
-            end,
-            set = function(_, value)
-                GogoLootDB.autoMasterLoot = value
-                if value and not GogoLoot:AreWeMasterLooter() then
-                    GogoLoot:PrintMessage(L["MSG_NOT_MASTER_LOOTER"])
-                end
-            end
-        },
-        spacerAfterAutoToggle = GogoLoot:OptionsSpacer(9),
-        autoMasterLootOutsideInstances = {
-            type = "toggle",
-            name = L["ML_AUTO_OUTSIDE"],
-            width = "full",
-            order = 10,
-            get = function()
-                return GogoLootDB.autoMasterLootOutsideInstances
-            end,
-            set = function(_, value)
-                GogoLootDB.autoMasterLootOutsideInstances = value
-            end
-        },
-        outsideInstancesCaution = GogoLoot:OptionsDesc(
-            GogoLoot:GetColor("DISABLED") .. L["ML_AUTO_OUTSIDE_CAUTION"] .. "|r",
-            11
-        ),
-        spacerBeforeDest = GogoLoot:OptionsSpacer(19),
-        destSubHeader = GogoLoot:OptionsSubHeader(L["ML_DEST_HEADER"], 20),
-        destDesc = GogoLoot:OptionsDesc(L["ML_DEST_DESC"], 21),
-        spacerAfterDestDesc = GogoLoot:OptionsSpacer(22),
-        spacerBeforeAnnounce = GogoLoot:OptionsSpacer(39),
-        announceHeader = GogoLoot:OptionsHeader(L["ML_ANNOUNCE_HEADER"], 40),
-        announceDesc = GogoLoot:OptionsDesc(L["ML_ANNOUNCE_DESC"], 41),
-        spacerAfterAnnounceDesc = GogoLoot:OptionsSpacer(42),
-        announceMasterLoot = {
-            type = "toggle",
-            name = L["ML_ANNOUNCE_ENABLE"],
-            desc = L["ML_ANNOUNCE_ENABLE_DESC"],
-            width = "full",
-            order = 43,
-            get = function()
-                return GogoLootDB.announceMasterLoot
-            end,
-            set = function(_, value)
-                GogoLootDB.announceMasterLoot = value
-            end
-        },
-        spacerAfterAnnounceToggle = GogoLoot:OptionsSpacer(44),
-        announceMasterLootThreshold = {
-            type = "select",
-            name = L["ML_ANNOUNCE_THRESHOLD"],
-            desc = L["ML_ANNOUNCE_THRESHOLD_DESC"],
-            style = "dropdown",
-            values = announceThresholdOptions,
-            order = 45,
-            get = function()
-                return GogoLootDB.announceMasterLootThreshold
-            end,
-            set = function(_, value)
-                GogoLootDB.announceMasterLootThreshold = value
-            end
-        },
-        spacerAfterAnnounceThreshold = GogoLoot:OptionsSpacer(46),
-        announceExample = GogoLoot:OptionsDesc(GogoLoot:GetColor("MUTED") .. L["ML_ANNOUNCE_EXAMPLE"] .. "|r", 47),
-        spacerBeforeIgnore = GogoLoot:OptionsSpacer(49),
-        ignoreHeader = GogoLoot:OptionsHeader(L["ML_IGNORE_HEADER"], 50),
-        ignoreDesc = GogoLoot:OptionsDesc(L["ML_IGNORE_DESC"], 51),
-        spacerAfterIgnoreDesc = GogoLoot:OptionsSpacer(52),
-        ignoreList = {
-            type = "group",
-            name = "",
-            inline = true,
-            order = 53,
-            args = ignoreListArgs
-        }
+    local args = {}
+    local order = 1
+
+    args.lootType = {
+        type = "select",
+        name = L["ML_LOOT_TYPE"],
+        style = "dropdown",
+        values = lootTypeValues,
+        order = order,
+        disabled = true,
+        get = function()
+            return currentLootMethod
+        end,
+        set = function()
+        end
     }
+    order = order + 1
+    args.spacerAfterLootType = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.lootThreshold = {
+        type = "select",
+        name = L["ML_LOOT_THRESHOLD"],
+        style = "dropdown",
+        values = thresholdValues,
+        order = order,
+        disabled = true,
+        get = function()
+            return currentThreshold
+        end,
+        set = function()
+        end
+    }
+    order = order + 1
+    args.spacerBeforeAuto = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.autoHeader = GogoLoot.OptionsHeader(L["ML_AUTO_HEADER"], order)
+    order = order + 1
+    args.autoDesc = GogoLoot.OptionsDesc(L["ML_AUTO_DESC"], order)
+    order = order + 1
+    args.spacerAfterAutoDesc = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.autoMasterLoot = {
+        type = "toggle",
+        name = L["ML_AUTO_ENABLE"],
+        desc = L["ML_AUTO_ENABLE_DESC"],
+        width = "full",
+        order = order,
+        get = function()
+            return GogoLootDB.autoMasterLoot
+        end,
+        set = function(_, value)
+            GogoLootDB.autoMasterLoot = value
+            if value and not GogoLoot:AreWeMasterLooter() then
+                GogoLoot:PrintMessage(L["MSG_NOT_MASTER_LOOTER"])
+            end
+        end
+    }
+    order = order + 1
+    args.spacerAfterAutoToggle = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.autoMasterLootOutsideInstances = {
+        type = "toggle",
+        name = L["ML_AUTO_OUTSIDE"],
+        width = "full",
+        order = order,
+        get = function()
+            return GogoLootDB.autoMasterLootOutsideInstances
+        end,
+        set = function(_, value)
+            GogoLootDB.autoMasterLootOutsideInstances = value
+        end
+    }
+    order = order + 1
+    args.outsideInstancesCaution =
+        GogoLoot.OptionsDesc(GogoLoot:GetColor("DISABLED") .. L["ML_AUTO_OUTSIDE_CAUTION"] .. "|r", order)
+    order = order + 1
+    args.spacerBeforeDest = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.destSubHeader = GogoLoot.OptionsSubHeader(L["ML_DEST_HEADER"], order)
+    order = order + 1
+    args.destDesc = GogoLoot.OptionsDesc(L["ML_DEST_DESC"], order)
+    order = order + 1
+    args.spacerAfterDestDesc = GogoLoot.OptionsSpacer(order)
+    order = order + 1
 
     -- Destination dropdowns — one per quality tier at or above loot threshold
     local destinationRarities = {
-        {quality = 4, key = "epic", label = L["QUALITY_EPIC"], order = 23},
-        {quality = 3, key = "rare", label = L["QUALITY_RARE"], order = 25},
-        {quality = 2, key = "uncommon", label = L["QUALITY_UNCOMMON"], order = 27},
-        {quality = 1, key = "common", label = L["QUALITY_COMMON"], order = 29},
-        {quality = 0, key = "poor", label = L["QUALITY_POOR"], order = 31}
+        {quality = 4, key = "epic", label = L["QUALITY_EPIC"]},
+        {quality = 3, key = "rare", label = L["QUALITY_RARE"]},
+        {quality = 2, key = "uncommon", label = L["QUALITY_UNCOMMON"]},
+        {quality = 1, key = "common", label = L["QUALITY_COMMON"]},
+        {quality = 0, key = "poor", label = L["QUALITY_POOR"]}
     }
 
     for _, entry in ipairs(destinationRarities) do
         local qualityKey = entry.key
-        local colorHex = GogoLoot.QUALITY_COLORS[entry.quality]
 
         args["dest_" .. qualityKey] = {
             type = "select",
-            name = "|c" .. colorHex .. entry.label .. "|r",
+            name = GogoLoot:GetQualityColor(entry.quality) .. entry.label .. "|r",
             desc = string.format(L["ML_DEST_CHOOSE"], entry.label),
             style = "dropdown",
             values = function()
                 return GogoLoot:GetGroupMemberNames()
             end,
-            order = entry.order,
+            order = order,
             hidden = function()
                 return entry.quality < currentThreshold
             end,
@@ -234,12 +180,30 @@ function GogoLoot.BuildMasterLooterOptions()
                 end
             end
         }
-        args["spacer_dest_" .. qualityKey] = GogoLoot:OptionsSpacer(entry.order + 1)
+        order = order + 1
+        args["spacer_dest_" .. qualityKey] = GogoLoot.OptionsSpacer(order)
+        order = order + 1
     end
+
+    args.spacerBeforeIgnore = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.ignoreHeader = GogoLoot.OptionsHeader(L["ML_IGNORE_HEADER"], order)
+    order = order + 1
+    args.ignoreDesc = GogoLoot.OptionsDesc(L["ML_IGNORE_DESC"], order)
+    order = order + 1
+    args.spacerAfterIgnoreDesc = GogoLoot.OptionsSpacer(order)
+    order = order + 1
+    args.ignoreList = {
+        type = "group",
+        name = "",
+        inline = true,
+        order = order,
+        args = ignoreListArgs
+    }
 
     return {
         type = "group",
-        name = "Master Looter",
+        name = L["TAB_MASTER_LOOTER"],
         args = args
     }
 end

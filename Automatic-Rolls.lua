@@ -7,11 +7,6 @@ local function ExecuteRollOverride(rollIdentifier, rollOverride, rollGreedAllowe
         if rollNeedAllowed then
             RollOnLoot(rollIdentifier, GogoLoot.ROLL_ACTION_NEED)
         elseif rollGreedAllowed then
-            GogoLoot:DebugPrint(
-                "Need not allowed for roll",
-                rollIdentifier,
-                "- falling back to Greed"
-            )
             RollOnLoot(rollIdentifier, GogoLoot.ROLL_ACTION_GREED)
         end
     elseif rollOverride == GogoLoot.GREED then
@@ -27,8 +22,10 @@ end
 -- START_LOOT_ROLL
 --------------------------------------------------------------------------------
 
-local function HandleStartLootRoll(eventName, rollIdentifier)
-    local _, _, _, rollQuality, _, _, rollGreedAllowed, rollNeedAllowed = GetLootRollItemInfo(rollIdentifier)
+local function HandleStartLootRoll(rollIdentifier)
+    -- GetLootRollItemInfo returns: texture, name, count, quality,
+    -- bindOnPickUp, canNeed, canGreed, canDisenchant, ...
+    local _, _, _, rollQuality, _, rollNeedAllowed, rollGreedAllowed = GetLootRollItemInfo(rollIdentifier)
     local rollItemLink = GetLootRollItemLink(rollIdentifier)
     if not rollItemLink then
         return
@@ -81,7 +78,7 @@ GogoLoot:RegisterModuleEvent("START_LOOT_ROLL", HandleStartLootRoll)
 
 GogoLoot:RegisterModuleEvent(
     "CONFIRM_LOOT_ROLL",
-    function(_, rollIdentifier, rollAction)
+    function(rollIdentifier, rollAction)
         ConfirmLootRoll(rollIdentifier, rollAction)
     end
 )

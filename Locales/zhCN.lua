@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "zhCN")
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "此更新已重置设置。使用 /gl 检查您的选项。"
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "所有设置均已重置为默认值。"
-L["MSG_CONFLICT_DETECTED"] = "检测到冲突的拾取插件。"
-L["MSG_CONFLICT_ADDON"] = "冲突的插件：%s"
 L["MSG_AUTO_LOOT_ENABLED"] = "GogoLoot 正常工作需要开启自动拾取。自动拾取已启用。"
 L["MSG_NOT_MASTER_LOOTER"] = "您当前不是队长分配者。"
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "将 %s 交给了 %s。"
+L["MSG_DESTINATION_SET"] = "%s 将接收所有的 %s 物品。"
+L["MSG_DESTINATION_LEFT"] = "%s 离开了队伍。%s 现在将接收所有的 %s 物品。"
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "将 %s 交给了 %s，收到了 %s。"
+L["MSG_TRADE_GAVE"] = "将 %s 交给了 %s。"
+L["MSG_TRADE_RECEIVED"] = "收到了来自 %s 的 %s。"
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "您选择接收该物品的玩家背包已满。"
+L["ERR_MAX_COUNT"] = "您选择接收该物品的玩家已经拥有太多该物品。"
+L["ERR_OUT_OF_RANGE"] = "您选择接收该物品的玩家距离过远。"
+L["ERR_NOT_IN_GROUP"] = "您选择接收该物品的玩家不再处于队伍或团队中。"
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "自动掷骰"
+L["TAB_MASTER_LOOTER"] = "队长分配"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "通报"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +110,7 @@ L["SPEEDY_LOOT"] = "启用快速拾取"
 L["SPEEDY_LOOT_DESC"] = "立即拾取战利品而不显示拾取窗口，节省击杀之间的时间。"
 
 L["COMMANDS"] = "/命令"
-L["COMMANDS_DESC_GL"] = "打开 GogoLoot 选项界面。"
-L["COMMANDS_DESC_GOGOLOOT"] = "打开 GogoLoot 选项界面。"
+L["COMMANDS_DESC"] = "打开 GogoLoot 选项界面。"
 
 L["RESET"] = "重置"
 L["RESET_DESC"] = "清除所有 GogoLoot 设置并将每个选项恢复为其默认值。"
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "加载中... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "交易通报"
 L["TRADE_DESC"] = "自动向聊天频道发送完成的交易摘要，包括交易的物品、附魔和金币。"
 L["TRADE_ENABLE"] = "启用交易通报"
 L["TRADE_ENABLE_DESC"] = "交易完成时发送交易摘要。"
@@ -118,11 +151,32 @@ L["TRADE_TOOLTIP_DESC"] = "此交易完成时将摘要发送到聊天频道。"
 L["TRADE_TOOLTIP_OUTPUT"] = "当前输出"
 L["TRADE_CHECKBOX_LABEL"] = "通报"
 
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "队长分配通报"
+L["ML_ANNOUNCE_DESC"] = "将队长分配活动发送到队伍频道以保持透明。为自动和手动分配配置不同的阈值，这样常规的自动分配就不会刷屏，而手动的破例分配依然可见。"
+
+L["ML_ANNOUNCE_DESTINATION"] = "启用队长分配设置提示"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "在设置战利品目标或目标玩家离开队伍时进行通报。"
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "示例：{rt4} Aevala 将接收所有的 史诗 物品。 // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "启用自动分配通报"
+L["ML_ANNOUNCE_AUTO_DESC"] = "通报由 GogoLoot 自动分配的物品。"
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "自动通报阈值"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "仅通报不低于此品质的自动分配。"
+
+L["ML_ANNOUNCE_MANUAL"] = "启用手动分配通报"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "通报通过下拉菜单手动分配的物品。默认阈值低于自动分配，以使未按规则的分配情况对队伍可见。"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "手动通报阈值"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "仅通报不低于此品质的手动分配。"
+
+L["ML_ANNOUNCE_EXAMPLE"] = "示例：{rt4} 将 [物品 X] 交给了 Gogowarrior。// GogoLoot"
+
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "对不高于所选品质的非拾取绑定物品自动掷贪婪。任务物品、书籍、配方、坐骑、宠物和传说物品总是被跳过。拾取绑定物品永远不会根据阈值自动掷贪婪，但可以通过下方的自定义掷骰列表进行自动化设置。"
+L["ROLLS_DESC"] = "对不高于所选品质的非拾取绑定物品（BoE）自动掷贪婪。任务物品、书籍、配方、坐骑、宠物和传说物品总是被跳过。拾取绑定物品（BoP）永远不会根据阈值自动掷贪婪，但可以通过下方的自定义掷骰列表进行自动化设置。"
 L["ROLLS_ENABLE"] = "启用自动掷骰"
 L["ROLLS_ENABLE_DESC"] = "对等于或低于该阈值的符合条件的物品自动掷贪婪。"
 L["ROLLS_THRESHOLD"] = "自动贪婪阈值"
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "战利品目标"
 L["ML_DEST_DESC"] = "指定小队成员接收每个品质级别的物品。"
 L["ML_DEST_SELF"] = "自己"
 L["ML_DEST_CHOOSE"] = "选择谁接收 %s 物品。"
-
-L["ML_ANNOUNCE_HEADER"] = "战利品通报"
-L["ML_ANNOUNCE_DESC"] = "通过队长分配分发物品时，向队伍聊天频道发送消息。无论阈值如何，总是会通报手动分配。"
-L["ML_ANNOUNCE_ENABLE"] = "启用战利品通报"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "在队伍聊天频道通报物品分配情况。"
-L["ML_ANNOUNCE_THRESHOLD"] = "通报阈值"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "仅通报不低于此品质的物品。"
-L["ML_ANNOUNCE_EXAMPLE"] = "示例：{rt4} 将 [物品 X] 交给了 Gogowarrior。// GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "忽略列表"
 L["ML_IGNORE_DESC"] = "此列表中的物品将不会自动分配，并出现在标准的拾取窗口中以供手动分配。"
