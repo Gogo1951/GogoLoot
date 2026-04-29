@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "itIT")
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "Le impostazioni sono state ripristinate per questo aggiornamento. Usa /gl per rivedere le tue opzioni."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "Tutte le impostazioni sono state riportate ai valori predefiniti."
-L["MSG_CONFLICT_DETECTED"] = "Rilevati addon di bottino in conflitto."
-L["MSG_CONFLICT_ADDON"] = "Addon in conflitto: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "Il Depredamento Automatico è necessario affinché GogoLoot funzioni correttamente. È stato attivato."
 L["MSG_NOT_MASTER_LOOTER"] = "Al momento non sei il Maestro del Bottino."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "Dato %s a %s."
+L["MSG_DESTINATION_SET"] = "%s riceverà tutti gli oggetti %s."
+L["MSG_DESTINATION_LEFT"] = "%s ha lasciato il gruppo. %s ora riceverà tutti gli oggetti %s."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "Dato %s a %s, ricevuto %s."
+L["MSG_TRADE_GAVE"] = "Dato %s a %s."
+L["MSG_TRADE_RECEIVED"] = "Ricevuto %s da %s."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "Il giocatore che hai selezionato per ricevere quell'oggetto non ha spazio nelle borse."
+L["ERR_MAX_COUNT"] = "Il giocatore che hai selezionato ha già troppi di questo oggetto."
+L["ERR_OUT_OF_RANGE"] = "Il giocatore che hai selezionato per ricevere quell'oggetto non è nel raggio d'azione."
+L["ERR_NOT_IN_GROUP"] = "Il giocatore selezionato non è più nel gruppo o nell'incursione."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "Tiri Automatici"
+L["TAB_MASTER_LOOTER"] = "Maestro del Bottino"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "Annunci"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +110,7 @@ L["SPEEDY_LOOT"] = "Abilita Depredamento Rapido"
 L["SPEEDY_LOOT_DESC"] = "Raccoglie istantaneamente il bottino senza mostrare la finestra, risparmiando tempo tra le uccisioni."
 
 L["COMMANDS"] = "/Comandi"
-L["COMMANDS_DESC_GL"] = "Apre l'interfaccia delle opzioni di GogoLoot."
-L["COMMANDS_DESC_GOGOLOOT"] = "Apre l'interfaccia delle opzioni di GogoLoot."
+L["COMMANDS_DESC"] = "Apre l'interfaccia delle opzioni di GogoLoot."
 
 L["RESET"] = "Ripristina"
 L["RESET_DESC"] = "Cancella tutte le impostazioni di GogoLoot e ripristina ogni opzione al suo valore predefinito."
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "Caricamento... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "Annunci di Scambio"
 L["TRADE_DESC"] = "Invia automaticamente un riepilogo degli scambi completati nella chat, inclusi oggetti, incantamenti e oro scambiati."
 L["TRADE_ENABLE"] = "Abilita Annunci di Scambio"
 L["TRADE_ENABLE_DESC"] = "Invia un riepilogo dello scambio quando viene completato."
@@ -111,18 +144,39 @@ L["TRADE_OUTPUT_DESC"] = "Dove viene inviato il riepilogo dello scambio."
 L["TRADE_OUTPUT_WHISPER"] = "Sussurro"
 L["TRADE_OUTPUT_GROUP"] = "Chat di Gruppo"
 L["TRADE_OUTPUT_RAID"] = "Chat di Incursione"
-L["TRADE_EXAMPLE"] = "Esempio: {rt4} Ha dato [Oggetto X] x2, [Oggetto Y] a Fathom. // GogoLoot"
+L["TRADE_EXAMPLE"] = "Esempio: {rt4} Dato [Oggetto X] x2, [Oggetto Y] a Fathom. // GogoLoot"
 
 L["TRADE_TOOLTIP_TITLE"] = "Annunci di Scambio"
 L["TRADE_TOOLTIP_DESC"] = "Invia un riepilogo nella chat quando questo scambio è completato."
 L["TRADE_TOOLTIP_OUTPUT"] = "Output Corrente"
 L["TRADE_CHECKBOX_LABEL"] = "Annuncia"
 
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "Annunci del Maestro del Bottino"
+L["ML_ANNOUNCE_DESC"] = "Invia l'attività del maestro del bottino nella chat di gruppo per trasparenza. Configura soglie separate per le distribuzioni automatiche e manuali in modo che il bottino automatico di routine non riempia la chat, mantenendo visibili le deviazioni manuali."
+
+L["ML_ANNOUNCE_DESTINATION"] = "Abilita i Messaggi quando il Maestro del Bottino è Impostato"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "Annuncia quando le destinazioni del bottino sono configurate e quando un giocatore di destinazione lascia il gruppo."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Esempio: {rt4} Aevala riceverà tutti gli oggetti Epici. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "Abilita Annunci Distribuzione Automatica"
+L["ML_ANNOUNCE_AUTO_DESC"] = "Annuncia gli oggetti distribuiti automaticamente da GogoLoot."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Soglia Annunci Automatici"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Annuncia solo le distribuzioni automatiche di questa qualità o superiore."
+
+L["ML_ANNOUNCE_MANUAL"] = "Abilita Annunci Distribuzione Manuale"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "Annuncia gli oggetti distribuiti manualmente tramite il menu a discesa. Per impostazione predefinita è inferiore a quella automatica in modo che le deviazioni dalle regole configurate siano visibili al gruppo."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Soglia Annunci Manuali"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Annuncia solo distribuzioni manuali di questa qualità o superiore."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "Esempio: {rt4} Dato [Oggetto X] a Gogowarrior. // GogoLoot"
+
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "Tira automaticamente su Cupidità per oggetti Non Vincolati alla raccolta di qualità pari o inferiore a quella selezionata. Oggetti di missione, libri, ricette, cavalcature, mascotte e leggendari vengono sempre saltati. Gli oggetti Vincolati alla raccolta non vengono mai tirati in automatico con Cupidità tramite la soglia, ma possono essere automatizzati tramite la Lista Tiri Personalizzati di seguito."
+L["ROLLS_DESC"] = "Tira automaticamente su Cupidità per oggetti Non Vincolati alla raccolta (BoE) di qualità pari o inferiore a quella selezionata. Oggetti di missione, libri, ricette, cavalcature, mascotte e leggendari vengono sempre saltati. Gli oggetti Vincolati alla raccolta (BoP) non vengono mai tirati in automatico con Cupidità tramite la soglia, ma possono essere automatizzati tramite la Lista Tiri Personalizzati di seguito."
 L["ROLLS_ENABLE"] = "Abilita Tiri Automatici"
 L["ROLLS_ENABLE_DESC"] = "Tira automaticamente su Cupidità per oggetti idonei alla soglia o inferiori."
 L["ROLLS_THRESHOLD"] = "Soglia Cupidità Automatica"
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "Destinazioni del Bottino"
 L["ML_DEST_DESC"] = "Assegna a un membro del gruppo la ricezione di oggetti per ogni livello di qualità."
 L["ML_DEST_SELF"] = "Te Stesso"
 L["ML_DEST_CHOOSE"] = "Scegli chi riceve oggetti %s."
-
-L["ML_ANNOUNCE_HEADER"] = "Annunci Bottino"
-L["ML_ANNOUNCE_DESC"] = "Invia un messaggio nella chat di gruppo quando gli oggetti vengono distribuiti tramite il Maestro del Bottino. Le distribuzioni manuali sono sempre annunciate a prescindere dalla soglia."
-L["ML_ANNOUNCE_ENABLE"] = "Abilita Annunci Bottino"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "Annuncia le distribuzioni di oggetti nella chat di gruppo."
-L["ML_ANNOUNCE_THRESHOLD"] = "Soglia Annunci"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "Annuncia solo oggetti di questa qualità o superiore."
-L["ML_ANNOUNCE_EXAMPLE"] = "Esempio: {rt4} Ha dato [Oggetto X] a Gogowarrior. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "Lista Ignorati"
 L["ML_IGNORE_DESC"] = "Gli oggetti in questa lista non verranno distribuiti automaticamente e appariranno in una finestra di bottino standard per un'assegnazione manuale."

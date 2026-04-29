@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "deDE")
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "Die Einstellungen wurden für dieses Update zurückgesetzt. Verwende /gl, um deine Optionen zu überprüfen."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "Alle Einstellungen wurden auf die Standardwerte zurückgesetzt."
-L["MSG_CONFLICT_DETECTED"] = "In Konflikt stehende Plünder-Addons erkannt."
-L["MSG_CONFLICT_ADDON"] = "In Konflikt stehendes Addon: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "Automatisches Plündern ist erforderlich, damit GogoLoot ordnungsgemäß funktioniert. Automatisches Plündern wurde aktiviert."
 L["MSG_NOT_MASTER_LOOTER"] = "Du bist derzeit nicht der Plündermeister."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "%s an %s gegeben."
+L["MSG_DESTINATION_SET"] = "%s erhält nun alle %s Gegenstände."
+L["MSG_DESTINATION_LEFT"] = "%s hat die Gruppe verlassen. %s erhält nun alle %s Gegenstände."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "%s an %s gegeben, %s erhalten."
+L["MSG_TRADE_GAVE"] = "%s an %s gegeben."
+L["MSG_TRADE_RECEIVED"] = "%s von %s erhalten."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "Der Spieler, den du ausgewählt hast, hat keinen Platz mehr in den Taschen."
+L["ERR_MAX_COUNT"] = "Der Spieler, den du ausgewählt hast, hat bereits zu viele dieser Gegenstände."
+L["ERR_OUT_OF_RANGE"] = "Der ausgewählte Spieler ist nicht in Reichweite."
+L["ERR_NOT_IN_GROUP"] = "Der ausgewählte Spieler ist nicht mehr in der Gruppe oder im Schlachtzug."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "Automatisches Würfeln"
+L["TAB_MASTER_LOOTER"] = "Plündermeister"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "Ankündigungen"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,8 +110,7 @@ L["SPEEDY_LOOT"] = "Schnelles Plündern aktivieren"
 L["SPEEDY_LOOT_DESC"] = "Nimmt Beute sofort auf, ohne das Beutefenster anzuzeigen, was Zeit zwischen den Kills spart."
 
 L["COMMANDS"] = "/Befehle"
-L["COMMANDS_DESC_GL"] = "Öffnet das Optionsmenü von GogoLoot."
-L["COMMANDS_DESC_GOGOLOOT"] = "Öffnet das Optionsmenü von GogoLoot."
+L["COMMANDS_DESC"] = "Öffnet das Optionsmenü von GogoLoot."
 
 L["RESET"] = "Zurücksetzen"
 L["RESET_DESC"] = "Löscht alle GogoLoot-Einstellungen und stellt jede Option auf ihren Standardwert zurück."
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "Laden... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "Handelsankündigungen"
 L["TRADE_DESC"] = "Postet automatisch eine Zusammenfassung abgeschlossener Handel in den Chat, einschließlich getauschter Gegenstände, Verzauberungen und Gold."
 L["TRADE_ENABLE"] = "Handelsankündigungen aktivieren"
 L["TRADE_ENABLE_DESC"] = "Postet eine Handelszusammenfassung, wenn ein Handel abgeschlossen ist."
@@ -111,18 +144,39 @@ L["TRADE_OUTPUT_DESC"] = "Wohin die Handelszusammenfassung gesendet wird."
 L["TRADE_OUTPUT_WHISPER"] = "Flüstern"
 L["TRADE_OUTPUT_GROUP"] = "Gruppenchat"
 L["TRADE_OUTPUT_RAID"] = "Schlachtzugs-/Raidchat"
-L["TRADE_EXAMPLE"] = "Beispiel: {rt4} Hat Fathom [Item X] x2, [Item Y] gegeben. // GogoLoot"
+L["TRADE_EXAMPLE"] = "Beispiel: {rt4} Hat [Item X] x2, [Item Y] an Fathom gegeben. // GogoLoot"
 
 L["TRADE_TOOLTIP_TITLE"] = "Handelsankündigungen"
 L["TRADE_TOOLTIP_DESC"] = "Postet eine Handelszusammenfassung im Chat, wenn dieser Handel abgeschlossen ist."
 L["TRADE_TOOLTIP_OUTPUT"] = "Aktuelle Ausgabe"
 L["TRADE_CHECKBOX_LABEL"] = "Ankündigen"
 
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "Plündermeister Ankündigungen"
+L["ML_ANNOUNCE_DESC"] = "Postet Plündermeister-Aktivitäten zur Transparenz in den Gruppenchat. Konfiguriere separate Schwellenwerte für automatische und manuelle Verteilungen, damit Routine-Auto-Loot den Chat nicht zuspammt, während manuelle Abweichungen sichtbar bleiben."
+
+L["ML_ANNOUNCE_DESTINATION"] = "Nachrichten aktivieren, wenn Plündermeister gesetzt ist"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "Kündigt an, wenn Beuteziele konfiguriert werden und wenn ein zugewiesener Spieler die Gruppe verlässt."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Beispiel: {rt4} Aevala erhält nun alle Epischen Gegenstände. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "Automatische Plündermeister-Ankündigungen aktivieren"
+L["ML_ANNOUNCE_AUTO_DESC"] = "Kündigt Gegenstände an, die automatisch von GogoLoot verteilt werden."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Automatischer Ankündigungsschwellenwert"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Kündige nur automatische Verteilungen ab dieser Qualität an."
+
+L["ML_ANNOUNCE_MANUAL"] = "Manuelle Plündermeister-Ankündigungen aktivieren"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "Kündigt Gegenstände an, die manuell über das Dropdown-Menü verteilt werden. Standardmäßig niedriger als automatisch, damit Abweichungen von den Regeln für die Gruppe sichtbar sind."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Manueller Ankündigungsschwellenwert"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Kündige nur manuelle Verteilungen ab dieser Qualität an."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "Beispiel: {rt4} Hat [Item X] an Gogowarrior gegeben. // GogoLoot"
+
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "Würfelt automatisch Gier auf nicht beim Aufheben gebundene Gegenstände auf oder unter der ausgewählten Qualität. Questgegenstände, Bücher, Rezepte, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen. Beim Aufheben gebundene Gegenstände werden niemals automatisch durch den Schwellenwert auf Gier gewürfelt, können jedoch über die benutzerdefinierte Würfelliste unten automatisiert werden."
+L["ROLLS_DESC"] = "Würfelt automatisch Gier auf nicht beim Aufheben gebundene Gegenstände (BoE) auf oder unter der ausgewählten Qualität. Questgegenstände, Bücher, Rezepte, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen. Beim Aufheben gebundene Gegenstände (BoP) werden niemals automatisch durch den Schwellenwert auf Gier gewürfelt, können jedoch über die benutzerdefinierte Würfelliste unten automatisiert werden."
 L["ROLLS_ENABLE"] = "Automatisches Würfeln aktivieren"
 L["ROLLS_ENABLE_DESC"] = "Würfelt automatisch Gier auf berechtigte Gegenstände auf oder unter dem Schwellenwert."
 L["ROLLS_THRESHOLD"] = "Automatischer Gier-Schwellenwert"
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "Beuteziele"
 L["ML_DEST_DESC"] = "Weise ein Gruppenmitglied zu, um Gegenstände jeder Qualitätsstufe zu erhalten."
 L["ML_DEST_SELF"] = "Selbst"
 L["ML_DEST_CHOOSE"] = "Wähle, wer %s Gegenstände erhält."
-
-L["ML_ANNOUNCE_HEADER"] = "Beuteankündigungen"
-L["ML_ANNOUNCE_DESC"] = "Postet eine Nachricht in den Gruppenchat, wenn Gegenstände über den Plündermeister verteilt werden. Manuelle Verteilungen werden unabhängig vom Schwellenwert immer angekündigt."
-L["ML_ANNOUNCE_ENABLE"] = "Beuteankündigungen aktivieren"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "Kündigt die Verteilung von Gegenständen im Gruppenchat an."
-L["ML_ANNOUNCE_THRESHOLD"] = "Ankündigungsschwellenwert"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "Kündige nur Gegenstände ab dieser Qualität an."
-L["ML_ANNOUNCE_EXAMPLE"] = "Beispiel: {rt4} Hat Gogowarrior [Item X] gegeben. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "Ignorieren-Liste"
 L["ML_IGNORE_DESC"] = "Gegenstände auf dieser Liste werden nicht automatisch verteilt und erscheinen in einem Standard-Beutefenster zur manuellen Zuweisung."

@@ -9,7 +9,7 @@
 ## Version: @project-version@
 ## X-Curse-Project-ID: 423347
 
-## SavedVariables: GogoLootDB, GogoLoot_Configuration
+## SavedVariables: GogoLootDB
 
 # Includes
 Includes/LibStub/LibStub.lua
@@ -37,15 +37,19 @@ Locales/zhTW.lua
 # Data
 Data.lua
 
-# GogoLoot
+# Features
 Core.lua
 Speedy-Loot.lua
-Master-Loot.lua
+Master-Looter.lua
+Master-Looter-Distribution.lua
 Automatic-Rolls.lua
 Trade-Announce.lua
 Minimap-Button.lua
+
+# Options
+Options-Item-Link-Widget.lua
 Options.lua
-Options-Trade-Announcements.lua
+Options-Announcements.lua
 Options-Automatic-Rolls.lua
 Options-Master-Looter.lua
 

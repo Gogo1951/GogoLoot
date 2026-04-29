@@ -4,10 +4,12 @@
 -- Watches LOOT_READY and rapidly loots every available slot, bypassing the
 -- loot window for faster pickup.
 --
--- Speedy Loot is gated only by the GogoLootDB.speedyLoot toggle — it runs in
--- solo, party, raid, and Master Looter contexts alike whenever the user has
--- it enabled in Options. There are intentionally no group / instance / ML
--- conditions on top of the user's preference.
+-- Speedy Loot is gated by GogoLootDB.speedyLoot (the user's toggle) and
+-- defers to Master-Loot.lua when GogoLoot:WillAutoMasterLoot() is true —
+-- otherwise our LootSlot calls would race the distribution path and pop
+-- the ML candidate dropdown for at-or-above-threshold items the Master
+-- Loot module would have placed automatically. Outside the ML path it
+-- runs in solo, party, raid, etc. as before.
 --------------------------------------------------------------------------------
 
 local LOOT_THROTTLE_SECONDS = 0.3
@@ -34,6 +36,21 @@ local function CountFreeBagSlots()
 end
 
 --------------------------------------------------------------------------------
+-- Auto-Loot CVar Compatibility
+-- Picks the API by availability, not by truthy result. The previous
+-- `(modern call) or (legacy call)` pattern fell through to the legacy
+-- check whenever the modern API returned false (auto-loot disabled),
+-- which happened to give the right answer here but is a brittle pattern.
+--------------------------------------------------------------------------------
+
+local function IsAutoLootCVarEnabled()
+    if C_CVar and C_CVar.GetCVarBool then
+        return C_CVar.GetCVarBool("autoLootDefault")
+    end
+    return GetCVar("autoLootDefault") == "1"
+end
+
+--------------------------------------------------------------------------------
 -- LOOT_READY Handler
 --------------------------------------------------------------------------------
 
@@ -42,11 +59,16 @@ local function HandleLootReady()
         return
     end
 
+    -- Defer to Master-Loot.lua when it will own this loot session.
+    -- Calling LootSlot in ML mode for at-or-above-threshold items pops
+    -- the candidate dropdown, which races our automated distribution.
+    if GogoLoot.WillAutoMasterLoot and GogoLoot:WillAutoMasterLoot() then
+        return
+    end
+
     -- Respect the user's Auto Loot CVar plus the modifier-key inversion, so
     -- holding the auto-loot modifier still flips behavior as expected.
-    local autoLootEnabled =
-        (C_CVar and C_CVar.GetCVarBool and C_CVar.GetCVarBool("autoLootDefault")) or
-        (GetCVar("autoLootDefault") == "1")
+    local autoLootEnabled = IsAutoLootCVarEnabled()
     local modifierKeyHeld = IsModifiedClick("AUTOLOOTTOGGLE")
     local shouldAutoLoot = (autoLootEnabled ~= modifierKeyHeld)
     if not shouldAutoLoot then
@@ -70,10 +92,18 @@ local function HandleLootReady()
 
     -- Iterate from the bottom of the loot list upward to mirror default
     -- WoW auto-loot behavior and avoid index shifts as slots empty.
+    -- Cache the free-slot count once and decrement as we loot. Items can
+    -- stack into existing slots so this is conservative — we may stop a
+    -- slot or two early on a stackable run, but anything left in the loot
+    -- window is still recoverable normally and this avoids an O(N*bags)
+    -- scan inside the loop.
+    local availableBagSlots = CountFreeBagSlots()
     for slotIndex = lootSlotCount, 1, -1 do
-        if CountFreeBagSlots() > 0 then
-            LootSlot(slotIndex)
+        if availableBagSlots <= 0 then
+            break
         end
+        LootSlot(slotIndex)
+        availableBagSlots = availableBagSlots - 1
     end
 
     lastLootAttemptTime = currentTime

@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Options — Automated Rolls
 --------------------------------------------------------------------------------
-local L = GogoLoot.L
+local _, ns = ...
+local L = ns.L
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -9,11 +10,11 @@ local L = GogoLoot.L
 
 function GogoLoot.BuildAutomaticRollOptions()
     local greedThresholdValues = {
-        [0] = "|c" .. GogoLoot.QUALITY_COLORS[0] .. L["THRESHOLD_POOR_ONLY"] .. "|r",
-        [1] = "|c" .. GogoLoot.QUALITY_COLORS[1] .. L["THRESHOLD_COMMON_LOWER"] .. "|r",
-        [2] = "|c" .. GogoLoot.QUALITY_COLORS[2] .. L["THRESHOLD_UNCOMMON_LOWER"] .. "|r",
-        [3] = "|c" .. GogoLoot.QUALITY_COLORS[3] .. L["THRESHOLD_RARE_LOWER"] .. "|r",
-        [4] = "|c" .. GogoLoot.QUALITY_COLORS[4] .. L["THRESHOLD_EPIC_LOWER"] .. "|r"
+        [0] = GogoLoot:GetQualityColor(0) .. L["THRESHOLD_POOR_ONLY"] .. "|r",
+        [1] = GogoLoot:GetQualityColor(1) .. L["THRESHOLD_COMMON_LOWER"] .. "|r",
+        [2] = GogoLoot:GetQualityColor(2) .. L["THRESHOLD_UNCOMMON_LOWER"] .. "|r",
+        [3] = GogoLoot:GetQualityColor(3) .. L["THRESHOLD_RARE_LOWER"] .. "|r",
+        [4] = GogoLoot:GetQualityColor(4) .. L["THRESHOLD_EPIC_LOWER"] .. "|r"
     }
 
     local customListArgs =
@@ -56,10 +57,10 @@ function GogoLoot.BuildAutomaticRollOptions()
 
     return {
         type = "group",
-        name = "Automated Rolls",
+        name = L["TAB_AUTOMATED_ROLLS"],
         args = {
-            description = GogoLoot:OptionsDesc(L["ROLLS_DESC"], 2),
-            spacerAfterDesc = GogoLoot:OptionsSpacer(3),
+            description = GogoLoot.OptionsDesc(L["ROLLS_DESC"], 2),
+            spacerAfterDesc = GogoLoot.OptionsSpacer(3),
             autoGreed = {
                 type = "toggle",
                 name = L["ROLLS_ENABLE"],
@@ -76,7 +77,7 @@ function GogoLoot.BuildAutomaticRollOptions()
                     end
                 end
             },
-            spacerAfterToggle = GogoLoot:OptionsSpacer(5),
+            spacerAfterToggle = GogoLoot.OptionsSpacer(5),
             autoGreedThreshold = {
                 type = "select",
                 name = L["ROLLS_THRESHOLD"],
@@ -91,10 +92,10 @@ function GogoLoot.BuildAutomaticRollOptions()
                     GogoLootDB.autoGreedThreshold = value
                 end
             },
-            spacerBeforeCustom = GogoLoot:OptionsSpacer(9),
-            customListHeader = GogoLoot:OptionsHeader(L["ROLLS_CUSTOM_LIST"], 10),
-            customListDesc = GogoLoot:OptionsDesc(L["ROLLS_CUSTOM_LIST_DESC"], 11),
-            spacerAfterCustomDesc = GogoLoot:OptionsSpacer(12),
+            spacerBeforeCustom = GogoLoot.OptionsSpacer(9),
+            customListHeader = GogoLoot.OptionsHeader(L["ROLLS_CUSTOM_LIST"], 10),
+            customListDesc = GogoLoot.OptionsDesc(L["ROLLS_CUSTOM_LIST_DESC"], 11),
+            spacerAfterCustomDesc = GogoLoot.OptionsSpacer(12),
             customList = {
                 type = "group",
                 name = "",

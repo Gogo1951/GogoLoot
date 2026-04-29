@@ -2,7 +2,8 @@
 -- GogoLoot Core & Utilities
 --------------------------------------------------------------------------------
 local ADDON_NAME = "GogoLoot"
-local L = GogoLoot.L
+local _, ns = ...
+local L = ns.L
 local GetItemInfo = GogoLoot.GetItemInfo
 
 --------------------------------------------------------------------------------
@@ -65,9 +66,15 @@ end
 -- Wipes GogoLootDB in place and reapplies all defaults + default item lists.
 -- Called from InitializeSavedVariables (on config version mismatch) and from
 -- the Reset All button in Options.lua.
+--
+-- LibDBIcon stores its minimap position inside GogoLootDB.minimap; we preserve
+-- that table across resets so the user's minimap button doesn't jump back to
+-- its default angle every time they reset settings (or upgrade).
 --------------------------------------------------------------------------------
 
 function GogoLoot:ResetAllSettings()
+    local preservedMinimap = GogoLootDB and GogoLootDB.minimap
+
     for existingKey in pairs(GogoLootDB) do
         GogoLootDB[existingKey] = nil
     end
@@ -79,6 +86,10 @@ function GogoLoot:ResetAllSettings()
     GogoLootDB.ignoredItemsMaster = GogoLoot:BuildDefaultIgnoreListMaster()
     GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
     GogoLootDB.configVersion = GogoLoot.CONFIG_VERSION
+
+    if preservedMinimap then
+        GogoLootDB.minimap = preservedMinimap
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -142,34 +153,7 @@ end
 -- Initialization & Addon Setup
 --------------------------------------------------------------------------------
 
-local function MigrateIgnoreLists()
-    if GogoLootDB.ignoredItemsSolo then
-        for identifier, value in pairs(GogoLootDB.ignoredItemsSolo) do
-            if value == true then
-                GogoLootDB.ignoredItemsSolo[identifier] = GogoLoot.MANUAL
-            end
-        end
-    end
-end
-
--- Migrate old combined trade condition values into the new two-key system
-local function MigrateTradeAnnounceConfig()
-    local oldCondition = GogoLootDB.announceTradeCondition
-    if oldCondition == "group" or oldCondition == "group_ml" then
-        GogoLootDB.announceTradeCondition = "party_or_raid"
-        if not GogoLootDB.announceTradeOutput then
-            GogoLootDB.announceTradeOutput = "group"
-        end
-    end
-end
-
 local function InitializeSavedVariables()
-    -- Migration from legacy SavedVariables name
-    if GogoLoot_Configuration and not GogoLootDB then
-        GogoLootDB = GogoLoot_Configuration
-    end
-    GogoLoot_Configuration = nil
-
     if not GogoLootDB then
         GogoLootDB = {}
     end
@@ -192,9 +176,6 @@ local function InitializeSavedVariables()
         return
     end
 
-    -- Legacy cleanup: globalEnable was removed in a prior version.
-    GogoLootDB.globalEnable = nil
-
     -- Additive merge: apply any defaults missing from the saved table
     -- (happens when new options ship within the same config version).
     for configurationKey, defaultValue in pairs(GogoLoot.DEFAULT_CONFIGURATION) do
@@ -208,25 +189,6 @@ local function InitializeSavedVariables()
     end
     if next(GogoLootDB.ignoredItemsSolo) == nil then
         GogoLootDB.ignoredItemsSolo = GogoLoot:BuildDefaultIgnoreListSolo()
-    end
-
-    MigrateIgnoreLists()
-    MigrateTradeAnnounceConfig()
-end
-
-local function CheckForConflictingAddons()
-    local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
-    for _, addonName in ipairs(GogoLoot.conflictingAddonNames) do
-        if IsAddOnLoaded(addonName) then
-            C_Timer.After(
-                5,
-                function()
-                    GogoLoot:PrintMessage(L["MSG_CONFLICT_DETECTED"])
-                    GogoLoot:PrintMessage(string.format(L["MSG_CONFLICT_ADDON"], addonName))
-                end
-            )
-            return
-        end
     end
 end
 
@@ -259,13 +221,13 @@ eventFrame:SetScript(
         local handlers = GogoLoot.eventHandlers[eventName]
         if handlers then
             for _, handlerFunction in ipairs(handlers) do
-                handlerFunction(eventName, ...)
+                handlerFunction(...)
             end
         end
     end
 )
 
-local function OnAddonLoaded(eventName, loadedAddonName)
+local function OnAddonLoaded(loadedAddonName)
     if loadedAddonName ~= ADDON_NAME then
         return
     end
@@ -273,7 +235,6 @@ local function OnAddonLoaded(eventName, loadedAddonName)
     if GogoLoot.InitMinimap then
         GogoLoot:InitMinimap()
     end
-    CheckForConflictingAddons()
     if GogoLoot.InitializeOptions then
         GogoLoot:InitializeOptions()
     end
@@ -292,14 +253,22 @@ GogoLoot:RegisterModuleEvent(
     end
 )
 
-SLASH_GOGOLOOT1 = "/gl"
-SLASH_GOGOLOOT2 = "/gogoloot"
-SlashCmdList["GOGOLOOT"] = function(inputText)
-    GogoLoot:HandleSlashCommand(inputText)
-end
-
 --------------------------------------------------------------------------------
--- Utilities
+-- Messaging
+-- PrintMessage and Announce are siblings:
+--   * PrintMessage writes to the player's local chat frame (informational).
+--   * Announce sends a chat message to other players via SendChatMessage,
+--     pulling the body template from L[formatKey] and wrapping it in the
+--     localized MSG_PREFIX / MSG_SUFFIX. All cross-player chat output should
+--     route through Announce so prefix/suffix and locale are handled in one
+--     place. Locales can override MSG_PREFIX (e.g. the {rt4} raid target
+--     marker) and MSG_SUFFIX without touching every call site.
+--
+-- Announce signature:
+--   channel    - "PARTY", "RAID", "SAY", "WHISPER", etc.
+--   target     - whisper target name (or nil for non-whisper channels)
+--   formatKey  - L[] key for the format string (e.g. "MSG_LOOT_ANNOUNCE")
+--   ...        - format arguments substituted via string.format
 --------------------------------------------------------------------------------
 
 function GogoLoot:PrintMessage(text)
@@ -310,10 +279,17 @@ function GogoLoot:PrintMessage(text)
     )
 end
 
-function GogoLoot:DebugPrint(...)
-    if GogoLootDB and GogoLootDB.debugMode then
-        print(GogoLoot:GetColor("MUTED") .. "[GogoLoot Debug]|r", ...)
+function GogoLoot:Announce(channel, target, formatKey, ...)
+    if not channel then
+        return
     end
+    local template = L[formatKey]
+    if not template then
+        return
+    end
+    local body = string.format(template, ...)
+    local message = L["MSG_PREFIX"] .. body .. L["MSG_SUFFIX"]
+    SendChatMessage(message, channel, nil, target)
 end
 
 --------------------------------------------------------------------------------
@@ -366,14 +342,13 @@ function GogoLoot:ParseItemLink(itemLink)
     if not itemLink then
         return nil
     end
-    local matchResults = {string.find(itemLink, GogoLoot.ITEM_LINK_PATTERN)}
-    if not matchResults[1] then
+    local itemIdentifier, itemName = string.match(itemLink, "item:(%d+).-%[([^%]]+)%]")
+    if not itemIdentifier then
         return nil
     end
-
     return {
-        itemIdentifier = tonumber(matchResults[5]),
-        itemName = matchResults[16]
+        itemIdentifier = tonumber(itemIdentifier),
+        itemName = itemName
     }
 end
 
@@ -437,19 +412,6 @@ end
 function GogoLoot:IsInBindOnPickupTradeInstance()
     local _, instanceType = GetInstanceInfo()
     return (instanceType == "raid" or instanceType == "party")
-end
-
-function GogoLoot:IsItemOnIgnoreList(itemIdentifier, checkMasterList, checkSoloList)
-    if not itemIdentifier then
-        return true
-    end
-    if checkMasterList and GogoLootDB.ignoredItemsMaster[itemIdentifier] then
-        return true
-    end
-    if checkSoloList and GogoLootDB.ignoredItemsSolo[itemIdentifier] then
-        return true
-    end
-    return false
 end
 
 function GogoLoot:GetItemRollOverride(itemIdentifier)

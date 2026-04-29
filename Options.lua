@@ -1,17 +1,22 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Options — Registration, Helpers, General Settings
 --------------------------------------------------------------------------------
+local _, ns = ...
+local L = ns.L
 local ACR = LibStub("AceConfigRegistry-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 
 local COLORS = GogoLoot.COLORS
-local L = GogoLoot.L
 
 --------------------------------------------------------------------------------
 -- AceConfig Widget Helpers (shared by all Options-*.lua files)
+-- Defined with `.` (not `:`) — these helpers don't use self, and a `.`
+-- definition forces callers to use `.` invocation, which is consistent with
+-- how GogoLoot.BuildAutomaticRollOptions / BuildMasterLooterOptions are
+-- defined and called.
 --------------------------------------------------------------------------------
 
-function GogoLoot:OptionsHeader(text, order)
+function GogoLoot.OptionsHeader(text, order)
     return {
         type = "header",
         name = COLORS.TITLE .. text .. "|r",
@@ -19,7 +24,7 @@ function GogoLoot:OptionsHeader(text, order)
     }
 end
 
-function GogoLoot:OptionsDesc(text, order)
+function GogoLoot.OptionsDesc(text, order)
     return {
         type = "description",
         name = text,
@@ -28,7 +33,7 @@ function GogoLoot:OptionsDesc(text, order)
     }
 end
 
-function GogoLoot:OptionsSpacer(order)
+function GogoLoot.OptionsSpacer(order)
     return {
         type = "description",
         name = " ",
@@ -36,7 +41,7 @@ function GogoLoot:OptionsSpacer(order)
     }
 end
 
-function GogoLoot:OptionsSubHeader(text, order)
+function GogoLoot.OptionsSubHeader(text, order)
     return {
         type = "description",
         name = "\n" .. COLORS.TITLE .. text .. "|r",
@@ -81,10 +86,10 @@ function GogoLoot:BuildItemListOptions(spec)
     }
     order = order + 1
 
-    args.spacerAfterRestore = GogoLoot:OptionsSpacer(order)
+    args.spacerAfterRestore = GogoLoot.OptionsSpacer(order)
     order = order + 1
 
-    args.addItemDesc = GogoLoot:OptionsDesc(labels.addDesc, order)
+    args.addItemDesc = GogoLoot.OptionsDesc(labels.addDesc, order)
     order = order + 1
 
     args.addItemInput = {
@@ -107,7 +112,7 @@ function GogoLoot:BuildItemListOptions(spec)
     }
     order = order + 1
 
-    args.spacerBeforeItems = GogoLoot:OptionsSpacer(order)
+    args.spacerBeforeItems = GogoLoot.OptionsSpacer(order)
     order = order + 1
 
     local sortedIdentifiers = {}
@@ -179,96 +184,9 @@ function GogoLoot:BuildItemListOptions(spec)
 end
 
 --------------------------------------------------------------------------------
--- Custom AceGUI Widget: GogoLoot_ItemLink
--- A lightweight label that shows the full item tooltip on hover.
--- Used via dialogControl on AceConfig "input" entries; the get() function
--- returns the item ID as a string, and SetText handles lookup + rendering.
---------------------------------------------------------------------------------
-
-do
-    local AceGUI = LibStub("AceGUI-3.0")
-    local widgetType = "GogoLoot_ItemLink"
-    local widgetVersion = 1
-
-    local function OnEnter(frame)
-        local self = frame.obj
-        if not self.itemIdentifier then
-            return
-        end
-        local _, itemLink = GogoLoot.GetItemInfo(self.itemIdentifier)
-        if itemLink then
-            GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-            GameTooltip:SetHyperlink(itemLink)
-            GameTooltip:Show()
-        end
-    end
-
-    local function OnLeave(frame)
-        GameTooltip:Hide()
-    end
-
-    local methods = {}
-
-    function methods:OnAcquire()
-        self.itemIdentifier = nil
-        self:SetHeight(20)
-    end
-
-    function methods:OnRelease()
-        self.itemIdentifier = nil
-    end
-
-    function methods:SetText(text)
-        local itemId = tonumber(text)
-        if itemId then
-            self.itemIdentifier = itemId
-            self.label:SetText(GogoLoot:GetItemDisplayName(itemId))
-        else
-            self.label:SetText(text or "")
-        end
-    end
-
-    function methods:GetText()
-        return self.itemIdentifier and tostring(self.itemIdentifier) or ""
-    end
-
-    function methods:SetLabel(text)
-    end
-    function methods:SetMaxLetters(num)
-    end
-    function methods:SetDisabled(disabled)
-    end
-
-    local function Constructor()
-        local frame = CreateFrame("Frame", nil, UIParent)
-        frame:SetHeight(20)
-        frame:EnableMouse(true)
-        frame:SetScript("OnEnter", OnEnter)
-        frame:SetScript("OnLeave", OnLeave)
-
-        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        label:SetJustifyH("LEFT")
-        label:SetPoint("TOPLEFT")
-        label:SetPoint("BOTTOMRIGHT")
-
-        local widget = {
-            label = label,
-            frame = frame,
-            type = widgetType
-        }
-
-        for method, func in pairs(methods) do
-            widget[method] = func
-        end
-
-        return AceGUI:RegisterAsWidget(widget)
-    end
-
-    AceGUI:RegisterWidgetType(widgetType, Constructor, widgetVersion)
-end
-
---------------------------------------------------------------------------------
 -- Item Display Helper
+-- Used by the GogoLoot_ItemLink AceGUI widget (defined in
+-- Options-Item-Link-Widget.lua) to render the row label.
 --------------------------------------------------------------------------------
 
 function GogoLoot:GetItemDisplayName(itemIdentifier)
@@ -352,11 +270,11 @@ end
 local function BuildGeneralOptions()
     return {
         type = "group",
-        name = "GogoLoot",
+        name = L["TAB_GENERAL"],
         args = {
-            header = GogoLoot:OptionsHeader(L["GENERAL"], 1),
-            description = GogoLoot:OptionsDesc(L["GENERAL_DESC"], 2),
-            spacerAfterDesc = GogoLoot:OptionsSpacer(3),
+            header = GogoLoot.OptionsHeader(L["GENERAL"], 1),
+            description = GogoLoot.OptionsDesc(L["GENERAL_DESC"], 2),
+            spacerAfterDesc = GogoLoot.OptionsSpacer(3),
             speedyLoot = {
                 type = "toggle",
                 name = L["SPEEDY_LOOT"],
@@ -370,17 +288,16 @@ local function BuildGeneralOptions()
                     GogoLootDB.speedyLoot = value
                 end
             },
-            spacerCommands0 = GogoLoot:OptionsSpacer(5),
-            headerCommands = GogoLoot:OptionsHeader(L["COMMANDS"], 6),
-            spacerCommands1 = GogoLoot:OptionsSpacer(7),
-            descCommands = GogoLoot:OptionsDesc(
-                COLORS.INFO .. "/gl|r" .. "  " .. L["COMMANDS_DESC_GL"] .. 
-                "\n\n" ..
-                COLORS.INFO .. "/gogoloot|r" .. "  " .. L["COMMANDS_DESC_GOGOLOOT"], 8),
-            spacerResetSection = GogoLoot:OptionsSpacer(79),
-            resetHeader = GogoLoot:OptionsHeader(L["RESET"], 80),
-            resetDesc = GogoLoot:OptionsDesc(L["RESET_DESC"], 81),
-            spacerBeforeReset = GogoLoot:OptionsSpacer(82),
+            spacerCommands0 = GogoLoot.OptionsSpacer(5),
+            headerCommands = GogoLoot.OptionsHeader(L["COMMANDS"], 6),
+            spacerCommands1 = GogoLoot.OptionsSpacer(7),
+            descCommandGl = GogoLoot.OptionsDesc(COLORS.INFO .. "/gl|r" .. "  " .. L["COMMANDS_DESC"], 8),
+            spacerBetweenCommands = GogoLoot.OptionsSpacer(9),
+            descCommandGogoloot = GogoLoot.OptionsDesc(COLORS.INFO .. "/gogoloot|r" .. "  " .. L["COMMANDS_DESC"], 10),
+            spacerResetSection = GogoLoot.OptionsSpacer(79),
+            resetHeader = GogoLoot.OptionsHeader(L["RESET"], 80),
+            resetDesc = GogoLoot.OptionsDesc(L["RESET_DESC"], 81),
+            spacerBeforeReset = GogoLoot.OptionsSpacer(82),
             resetButton = {
                 type = "execute",
                 name = L["RESET_ALL"],
@@ -397,10 +314,10 @@ local function BuildGeneralOptions()
                     GogoLoot:PrintMessage(L["MSG_SETTINGS_RESET_DEFAULTS"])
                 end
             },
-            spacerFeedbackSection = GogoLoot:OptionsSpacer(89),
-            feedbackHeader = GogoLoot:OptionsHeader(L["FEEDBACK_SUPPORT"], 90),
-            spacerAfterFeedback = GogoLoot:OptionsSpacer(91),
-            curseforgeLabel = GogoLoot:OptionsDesc(COLORS.TITLE .. L["CURSEFORGE"] .. "|r", 92),
+            spacerFeedbackSection = GogoLoot.OptionsSpacer(89),
+            feedbackHeader = GogoLoot.OptionsHeader(L["FEEDBACK_SUPPORT"], 90),
+            spacerAfterFeedback = GogoLoot.OptionsSpacer(91),
+            curseforgeLabel = GogoLoot.OptionsDesc(COLORS.TITLE .. L["CURSEFORGE"] .. "|r", 92),
             curseforgeUrl = {
                 type = "input",
                 name = "",
@@ -412,8 +329,8 @@ local function BuildGeneralOptions()
                 set = function()
                 end
             },
-            spacerBetweenLinks1 = GogoLoot:OptionsSpacer(94),
-            githubLabel = GogoLoot:OptionsDesc(COLORS.TITLE .. L["GITHUB"] .. "|r", 95),
+            spacerBetweenLinks1 = GogoLoot.OptionsSpacer(94),
+            githubLabel = GogoLoot.OptionsDesc(COLORS.TITLE .. L["GITHUB"] .. "|r", 95),
             githubUrl = {
                 type = "input",
                 name = "",
@@ -425,8 +342,8 @@ local function BuildGeneralOptions()
                 set = function()
                 end
             },
-            spacerBetweenLinks2 = GogoLoot:OptionsSpacer(97),
-            discordLabel = GogoLoot:OptionsDesc(COLORS.TITLE .. L["DISCORD"] .. "|r", 98),
+            spacerBetweenLinks2 = GogoLoot.OptionsSpacer(97),
+            discordLabel = GogoLoot.OptionsDesc(COLORS.TITLE .. L["DISCORD"] .. "|r", 98),
             discordUrl = {
                 type = "input",
                 name = "",
@@ -444,6 +361,16 @@ end
 
 --------------------------------------------------------------------------------
 -- Initialization & Registration
+--
+-- AceConfigRegistry table names (first arg to RegisterOptionsTable / first
+-- arg to AddToBlizOptions) are stable identifiers and intentionally NOT
+-- localized — they're used by NotifyChange calls across modules.
+--
+-- The user-facing display names passed as the SECOND arg to
+-- AddToBlizOptions, and the parent reference (THIRD arg), are localized
+-- via the TAB_* locale keys. The parent reference must match the display
+-- name registered for the parent panel exactly, so OpenOptionsPanel below
+-- looks up Settings categories by the same TAB_* keys.
 --------------------------------------------------------------------------------
 
 function GogoLoot:InitializeOptions()
@@ -461,20 +388,25 @@ function GogoLoot:InitializeOptions()
         ACR:RegisterOptionsTable("GogoLoot_MasterLooter", GogoLoot.BuildMasterLooterOptions)
     end
 
-    local mainPanel = ACD:AddToBlizOptions("GogoLoot", "GogoLoot")
+    local mainPanel = ACD:AddToBlizOptions("GogoLoot", L["TAB_GENERAL"])
     GogoLoot.optionsFrames = {main = mainPanel}
 
-    if GogoLoot.BuildTradeAnnouncementOptions then
-        GogoLoot.optionsFrames.trade =
-            ACD:AddToBlizOptions("GogoLoot_TradeAnnouncements", "Trade Announcements", "GogoLoot")
+    -- Child-panel display order in Blizzard's settings UI is the order of
+    -- AddToBlizOptions calls: Master Looter, Automated Rolls, Announcements.
+
+    if GogoLoot.BuildMasterLooterOptions then
+        GogoLoot.optionsFrames.ml =
+            ACD:AddToBlizOptions("GogoLoot_MasterLooter", L["TAB_MASTER_LOOTER"], L["TAB_GENERAL"])
     end
 
     if GogoLoot.BuildAutomaticRollOptions then
-        GogoLoot.optionsFrames.rolls = ACD:AddToBlizOptions("GogoLoot_AutomaticRolls", "Automated Rolls", "GogoLoot")
+        GogoLoot.optionsFrames.rolls =
+            ACD:AddToBlizOptions("GogoLoot_AutomaticRolls", L["TAB_AUTOMATED_ROLLS"], L["TAB_GENERAL"])
     end
 
-    if GogoLoot.BuildMasterLooterOptions then
-        GogoLoot.optionsFrames.ml = ACD:AddToBlizOptions("GogoLoot_MasterLooter", "Master Looter", "GogoLoot")
+    if GogoLoot.BuildTradeAnnouncementOptions then
+        GogoLoot.optionsFrames.trade =
+            ACD:AddToBlizOptions("GogoLoot_TradeAnnouncements", L["TAB_TRADE_ANNOUNCEMENTS"], L["TAB_GENERAL"])
     end
 
     WarmItemCache()
@@ -484,24 +416,13 @@ end
 -- Panel Navigation
 --------------------------------------------------------------------------------
 
-function GogoLoot:OpenOptionsPanel(targetTab)
+function GogoLoot:OpenOptionsPanel()
     if not GogoLoot.optionsFrames then
         return
     end
 
     if Settings and Settings.OpenToCategory then
-        local categoryName = "GogoLoot"
-        if targetTab == "masterlooter" then
-            categoryName = "Master Looter"
-        end
-
-        local category = Settings.GetCategory and Settings.GetCategory(categoryName)
-        if category then
-            Settings.OpenToCategory(category.ID)
-            return
-        end
-
-        category = Settings.GetCategory and Settings.GetCategory("GogoLoot")
+        local category = Settings.GetCategory and Settings.GetCategory(L["TAB_GENERAL"])
         if category then
             Settings.OpenToCategory(category.ID)
             return
@@ -519,9 +440,11 @@ function GogoLoot:OpenOptionsPanel(targetTab)
 end
 
 --------------------------------------------------------------------------------
--- Slash Command
+-- Slash Commands
 --------------------------------------------------------------------------------
 
-function GogoLoot:HandleSlashCommand(inputText)
+SLASH_GOGOLOOT1 = "/gl"
+SLASH_GOGOLOOT2 = "/gogoloot"
+SlashCmdList["GOGOLOOT"] = function()
     GogoLoot:OpenOptionsPanel()
 end

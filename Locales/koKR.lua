@@ -2,15 +2,46 @@ local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "koKR")
 if not L then return end
 
 --------------------------------------------------------------------------------
--- Chat Messages
+-- Chat Messages (printed to local chat frame via PrintMessage)
 --------------------------------------------------------------------------------
 
 L["MSG_SETTINGS_RESET_UPDATE"] = "이번 업데이트로 설정이 초기화되었습니다. 옵션을 확인하려면 /gl 을 사용하세요."
 L["MSG_SETTINGS_RESET_DEFAULTS"] = "모든 설정이 기본값으로 초기화되었습니다."
-L["MSG_CONFLICT_DETECTED"] = "충돌하는 전리품 애드온이 감지되었습니다."
-L["MSG_CONFLICT_ADDON"] = "충돌하는 애드온: %s"
 L["MSG_AUTO_LOOT_ENABLED"] = "GogoLoot가 정상적으로 작동하려면 자동 획득이 필요합니다. 자동 획득이 활성화되었습니다."
 L["MSG_NOT_MASTER_LOOTER"] = "현재 전리품 담당자가 아닙니다."
+
+--------------------------------------------------------------------------------
+-- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["MSG_PREFIX"] = "{rt4} "
+L["MSG_SUFFIX"] = " // GogoLoot"
+
+L["MSG_LOOT_ANNOUNCE"] = "%s을(를) %s에게 주었습니다."
+L["MSG_DESTINATION_SET"] = "%s님이 모든 %s 아이템을 받습니다."
+L["MSG_DESTINATION_LEFT"] = "%s님이 파티를 떠났습니다. 이제 %s님이 모든 %s 아이템을 받습니다."
+
+L["MSG_TRADE_GAVE_RECEIVED"] = "%s을(를) %s에게 주고 %s을(를) 받았습니다."
+L["MSG_TRADE_GAVE"] = "%s을(를) %s에게 주었습니다."
+L["MSG_TRADE_RECEIVED"] = "%s에게서 %s을(를) 받았습니다."
+
+--------------------------------------------------------------------------------
+-- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+--------------------------------------------------------------------------------
+
+L["ERR_BAG_FULL"] = "아이템을 받을 플레이어의 가방에 여유 공간이 없습니다."
+L["ERR_MAX_COUNT"] = "선택한 플레이어는 이미 해당 아이템을 너무 많이 가지고 있습니다."
+L["ERR_OUT_OF_RANGE"] = "선택한 플레이어가 시야에 없습니다."
+L["ERR_NOT_IN_GROUP"] = "선택한 플레이어가 더 이상 파티나 공격대에 없습니다."
+
+--------------------------------------------------------------------------------
+-- Options Panel Tab Names
+--------------------------------------------------------------------------------
+
+L["TAB_GENERAL"] = "GogoLoot"
+L["TAB_AUTOMATED_ROLLS"] = "자동 주사위"
+L["TAB_MASTER_LOOTER"] = "전리품 담당자"
+L["TAB_TRADE_ANNOUNCEMENTS"] = "알림"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
@@ -79,13 +110,12 @@ L["SPEEDY_LOOT"] = "빠른 획득 활성화"
 L["SPEEDY_LOOT_DESC"] = "전리품 창을 표시하지 않고 즉시 전리품을 획득하여 시간을 절약합니다."
 
 L["COMMANDS"] = "/명령어"
-L["COMMANDS_DESC_GL"] = "GogoLoot 옵션 인터페이스를 엽니다."
-L["COMMANDS_DESC_GOGOLOOT"] = "GogoLoot 옵션 인터페이스를 엽니다."
+L["COMMANDS_DESC"] = "GogoLoot 옵션 인터페이스를 엽니다."
 
 L["RESET"] = "초기화"
 L["RESET_DESC"] = "모든 GogoLoot 설정을 지우고 각 옵션을 기본값으로 복원합니다."
 L["RESET_ALL"] = "모든 GogoLoot 옵션 초기화"
-L["RESET_CONFIRM"] = "모든 GogoLoot 설정을 기본값으로 초기화합니다. 이 작업은 되돌릴 수 옵습니다. 계속하시겠습니까?"
+L["RESET_CONFIRM"] = "모든 GogoLoot 설정을 기본값으로 초기화합니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?"
 
 L["FEEDBACK_SUPPORT"] = "피드백 및 지원"
 L["CURSEFORGE"] = "CurseForge"
@@ -95,9 +125,12 @@ L["DISCORD"] = "Discord"
 L["ITEM_LOADING"] = "불러오는 중... (ID: %d)"
 
 --------------------------------------------------------------------------------
--- Options: Trade Announcements
+-- Options: Announcements
 --------------------------------------------------------------------------------
 
+-- Trade Announcements
+
+L["TRADE_HEADER"] = "거래 알림"
 L["TRADE_DESC"] = "거래된 아이템, 마법부여, 골드를 포함하여 완료된 거래 요약을 채팅에 자동으로 게시합니다."
 L["TRADE_ENABLE"] = "거래 알림 활성화"
 L["TRADE_ENABLE_DESC"] = "거래가 완료되면 거래 요약을 게시합니다."
@@ -118,11 +151,32 @@ L["TRADE_TOOLTIP_DESC"] = "이 거래가 완료되면 채팅에 요약을 게시
 L["TRADE_TOOLTIP_OUTPUT"] = "현재 출력"
 L["TRADE_CHECKBOX_LABEL"] = "알림"
 
+-- Master Looter Announcements
+
+L["ML_ANNOUNCE_HEADER"] = "전리품 담당자 알림"
+L["ML_ANNOUNCE_DESC"] = "투명성을 위해 전리품 담당자 활동을 파티 대화에 게시합니다. 일상적인 자동 획득으로 인해 채팅창이 도배되지 않도록 수동 및 자동 분배에 대한 임계값을 별도로 구성하세요."
+
+L["ML_ANNOUNCE_DESTINATION"] = "전리품 담당자 지정 시 메시지 활성화"
+L["ML_ANNOUNCE_DESTINATION_DESC"] = "전리품 대상이 구성되거나 대상 플레이어가 파티를 떠날 때 알립니다."
+L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "예시: {rt4} Aevala님이 모든 영웅 아이템을 받습니다. // GogoLoot"
+
+L["ML_ANNOUNCE_AUTO"] = "자동 전리품 담당자 알림 활성화"
+L["ML_ANNOUNCE_AUTO_DESC"] = "GogoLoot에 의해 자동으로 분배된 아이템을 알립니다."
+L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "자동 알림 임계값"
+L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "이 품질 이상의 자동 분배만 알립니다."
+
+L["ML_ANNOUNCE_MANUAL"] = "수동 전리품 담당자 알림 활성화"
+L["ML_ANNOUNCE_MANUAL_DESC"] = "드롭다운을 통해 수동으로 분배된 아이템을 알립니다. 기본적으로 자동 분배보다 낮게 설정되어 파티원이 변경 사항을 알 수 있습니다."
+L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "수동 알림 임계값"
+L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "이 품질 이상의 수동 분배만 알립니다."
+
+L["ML_ANNOUNCE_EXAMPLE"] = "예시: {rt4} [아이템 X]을(를) Gogowarrior에게 주었습니다. // GogoLoot"
+
 --------------------------------------------------------------------------------
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESC"] = "선택한 품질 이하의 획득 시 귀속이 아닌 아이템에 대해 자동으로 차상위를 굴립니다. 퀘스트 아이템, 책, 도안, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다. 획득 시 귀속 아이템은 임계값에 의해 자동으로 차상위가 굴려지지 않지만, 아래의 사용자 지정 주사위 목록을 통해 자동화할 수 있습니다."
+L["ROLLS_DESC"] = "선택한 품질 이하의 획득 시 귀속이 아닌 아이템에 대해 자동으로 차상위를 굴립니다. 퀘스트 아이템, 책, 도안, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다. 획득 시 귀속(획귀) 아이템은 임계값에 의해 자동으로 차상위가 굴려지지 않지만, 아래의 사용자 지정 주사위 목록을 통해 자동화할 수 있습니다."
 L["ROLLS_ENABLE"] = "자동 주사위 활성화"
 L["ROLLS_ENABLE_DESC"] = "임계값 이하의 대상 아이템에 대해 자동으로 차상위를 굴립니다."
 L["ROLLS_THRESHOLD"] = "자동 차상위 임계값"
@@ -157,14 +211,6 @@ L["ML_DEST_HEADER"] = "전리품 대상"
 L["ML_DEST_DESC"] = "각 품질 등급의 아이템을 받을 파티원을 할당하세요."
 L["ML_DEST_SELF"] = "자신"
 L["ML_DEST_CHOOSE"] = "%s 아이템을 받을 사람을 선택하세요."
-
-L["ML_ANNOUNCE_HEADER"] = "전리품 알림"
-L["ML_ANNOUNCE_DESC"] = "전리품 담당자를 통해 아이템이 분배되면 파티 대화에 메시지를 게시합니다. 수동 분배는 임계값에 관계없이 항상 알립니다."
-L["ML_ANNOUNCE_ENABLE"] = "전리품 알림 활성화"
-L["ML_ANNOUNCE_ENABLE_DESC"] = "파티 대화에 아이템 분배를 알립니다."
-L["ML_ANNOUNCE_THRESHOLD"] = "알림 임계값"
-L["ML_ANNOUNCE_THRESHOLD_DESC"] = "이 품질 이상의 아이템만 알립니다."
-L["ML_ANNOUNCE_EXAMPLE"] = "예시: {rt4} [아이템 X]을(를) Gogowarrior에게 주었습니다. // GogoLoot"
 
 L["ML_IGNORE_HEADER"] = "무시 목록"
 L["ML_IGNORE_DESC"] = "이 목록의 아이템은 자동으로 분배되지 않으며 수동 할당을 위해 표준 전리품 창에 나타납니다."
