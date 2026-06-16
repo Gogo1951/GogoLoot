@@ -13,20 +13,20 @@ jobs:
       GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Clone project
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
       - name: Package and release
         uses: BigWigsMods/packager@v2
-      - name: Install yq
-        uses: mikefarah/yq@v4
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y subversion
       - name: Update vendored libraries from .pkgmeta
         run: |
           yq e '.externals | to_entries[] | .key + "|" + .value.url' .pkgmeta | while IFS='|' read -r path url; do
             rm -rf "$path"
             if [[ "$url" == *"curseforge.com"* ]]; then
-              svn export --force "$url" "$path"
+              svn export --force --non-interactive "$url" "$path"
             else
               git clone --depth 1 "$url" "$path"
               rm -rf "$path/.git"
@@ -37,6 +37,6 @@ jobs:
           BRANCH="${{ github.event.repository.default_branch }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Includes/
+          git add Includes/Libraries/
           git diff --staged --quiet || git commit -m "Update vendored libraries for $(git describe --tags --abbrev=0)"
           git push origin "$BRANCH"
