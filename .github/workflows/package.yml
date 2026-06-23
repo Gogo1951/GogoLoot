@@ -17,10 +17,10 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
-      - name: Package and release
-        uses: BigWigsMods/packager@v2
+
       - name: Install Subversion
         run: sudo apt-get update && sudo apt-get install -y subversion
+
       - name: Update vendored libraries from .pkgmeta
         run: |
           yq e '.externals | to_entries[] | .key + "|" + .value.url' .pkgmeta | while IFS='|' read -r path url; do
@@ -32,11 +32,24 @@ jobs:
               rm -rf "$path/.git"
             fi
           done
-      - name: Commit updated libraries
+
+      - name: Commit libraries and move tag onto the new commit
         run: |
           BRANCH="${{ github.event.repository.default_branch }}"
+          TAG="${GITHUB_REF_NAME}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Includes/Libraries/
-          git diff --staged --quiet || git commit -m "Update vendored libraries for $(git describe --tags --abbrev=0)"
-          git push origin "$BRANCH"
+          if git diff --staged --quiet; then
+            echo "Libraries already up to date; nothing to commit."
+          else
+            git commit -m "Update vendored libraries for ${TAG}"
+            git push origin "HEAD:${BRANCH}"
+            # Fast-forward the release tag onto the commit that has the libraries,
+            # so the packager builds a clean release (HEAD == tag), not an alpha.
+            git tag -f "${TAG}"
+            git push -f origin "refs/tags/${TAG}"
+          fi
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
