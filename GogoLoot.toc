@@ -5,7 +5,7 @@
 ## Category-enUS: Bags & Inventory
 ## X-License: MIT
 
-## Interface: 11508, 20505
+## Interface: 11508, 20506
 ## Version: @project-version@
 ## X-Curse-Project-ID: 423347
 
