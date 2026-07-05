@@ -1,32 +1,35 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Minimap Button
 --------------------------------------------------------------------------------
-local ADDON_NAME = "GogoLoot"
-local _, ns = ...
+local ADDON_NAME, ns = ...
 local L = ns.L
-local LDB = LibStub("LibDataBroker-1.1")
-local LDBIcon = LibStub("LibDBIcon-1.0")
-local ACR = LibStub("AceConfigRegistry-3.0")
+local LibDataBroker = LibStub("LibDataBroker-1.1")
+local LibDBIcon = LibStub("LibDBIcon-1.0")
+local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local GetColor = ns.GetColor
 
-local brokerObj
+local brokerObject
 
 --------------------------------------------------------------------------------
 -- Icon State
--- The minimap icon reflects the Auto-Greed toggle: on/off swap. Called from
--- the click handler here and from the matching Options toggle so the icon
--- stays in sync no matter where the user flips it.
 --------------------------------------------------------------------------------
 
-function GogoLoot:UpdateMinimapIcon()
-    if not brokerObj then
+--[[
+    The minimap icon reflects the Auto-Greed toggle: on/off swap. Called from
+    the click handler here and from the matching Options toggle so the icon
+    stays in sync no matter where the user flips it.
+]]
+
+function ns:UpdateMinimapIcon()
+    if not brokerObject then
         return
     end
 
-    local state = GogoLootDB.autoGreed and "on" or "off"
-    brokerObj.icon = GogoLoot.MINIMAP_ICONS[state] or GogoLoot.MINIMAP_ICONS.off
+    local state = ns.db.profile.autoGreed and "on" or "off"
+    brokerObject.icon = ns.MINIMAP_ICONS[state] or ns.MINIMAP_ICONS.off
 
-    if GogoLootDB.minimap then
-        LDBIcon:Refresh(ADDON_NAME, GogoLootDB.minimap)
+    if ns.db.global.minimap then
+        LibDBIcon:Refresh(ADDON_NAME, ns.db.global.minimap)
     end
 end
 
@@ -36,9 +39,9 @@ end
 
 local function GetStatusText(isEnabled)
     if isEnabled then
-        return GogoLoot:GetColor("SUCCESS") .. L["STATUS_ENABLED"] .. "|r"
+        return GetColor("ON") .. L["STATUS_ENABLED"] .. "|r"
     end
-    return GogoLoot:GetColor("DISABLED") .. L["STATUS_DISABLED"] .. "|r"
+    return GetColor("OFF") .. L["STATUS_DISABLED"] .. "|r"
 end
 
 --------------------------------------------------------------------------------
@@ -46,14 +49,14 @@ end
 --------------------------------------------------------------------------------
 
 local function ToggleAutoGreed()
-    GogoLootDB.autoGreed = not GogoLootDB.autoGreed
-    GogoLoot:UpdateMinimapIcon()
-    ACR:NotifyChange("GogoLoot_AutomaticRolls")
+    ns.db.profile.autoGreed = not ns.db.profile.autoGreed
+    ns:UpdateMinimapIcon()
+    AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.AutomatedRolls)
 end
 
 local function ToggleSpeedyLoot()
-    GogoLootDB.speedyLoot = not GogoLootDB.speedyLoot
-    ACR:NotifyChange("GogoLoot")
+    ns.db.profile.speedyLoot = not ns.db.profile.speedyLoot
+    AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
 end
 
 --------------------------------------------------------------------------------
@@ -68,38 +71,39 @@ local function ShowTooltip(anchor)
 
     -- Title and version
     tooltip:AddDoubleLine(
-        GogoLoot:GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r",
-        GogoLoot:GetColor("MUTED") .. GogoLoot.Version .. "|r"
+        GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r",
+        GetColor("MUTED") .. ns.Version .. "|r"
     )
     tooltip:AddLine(" ")
     tooltip:AddLine(" ")
 
     -- Auto-Greed
     tooltip:AddDoubleLine(
-        GogoLoot:GetColor("TITLE") .. L["MINIMAP_AUTO_GREED"] .. "|r",
-        GetStatusText(GogoLootDB.autoGreed)
+        GetColor("TITLE") .. L["MINIMAP_AUTO_GREED"] .. "|r",
+        GetStatusText(ns.db.profile.autoGreed)
     )
-    GogoLoot:AddTooltipLine(tooltip, L["MINIMAP_AUTO_GREED_DESC"], "DESC", true)
+    ns:AddTooltipLine(tooltip, L["MINIMAP_AUTO_GREED_DESCRIPTION"], "BODY", true)
     tooltip:AddDoubleLine(
-        GogoLoot:GetColor("INFO") .. L["MINIMAP_LEFT_CLICK"] .. "|r",
-        GogoLoot:GetColor("INFO") .. L["MINIMAP_TOGGLE"] .. "|r"
+        GetColor("INFO") .. L["MINIMAP_LEFT_CLICK"] .. "|r",
+        GetColor("INFO") .. L["MINIMAP_TOGGLE"] .. "|r"
     )
     tooltip:AddLine(" ")
 
     -- Speedy Loot
     tooltip:AddDoubleLine(
-        GogoLoot:GetColor("TITLE") .. L["MINIMAP_SPEEDY_LOOT"] .. "|r",
-        GetStatusText(GogoLootDB.speedyLoot)
+        GetColor("TITLE") .. L["MINIMAP_SPEEDY_LOOT"] .. "|r",
+        GetStatusText(ns.db.profile.speedyLoot)
     )
-    GogoLoot:AddTooltipLine(tooltip, L["MINIMAP_SPEEDY_LOOT_DESC"], "DESC", true)
+    ns:AddTooltipLine(tooltip, L["MINIMAP_SPEEDY_LOOT_DESCRIPTION"], "BODY", true)
     tooltip:AddDoubleLine(
-        GogoLoot:GetColor("INFO") .. L["MINIMAP_RIGHT_CLICK"] .. "|r",
-        GogoLoot:GetColor("INFO") .. L["MINIMAP_TOGGLE"] .. "|r"
+        GetColor("INFO") .. L["MINIMAP_RIGHT_CLICK"] .. "|r",
+        GetColor("INFO") .. L["MINIMAP_TOGGLE"] .. "|r"
     )
     tooltip:AddLine(" ")
 
-    -- Hint
-    GogoLoot:AddTooltipLine(tooltip, L["MINIMAP_HINT"], "DESC", true)
+    -- GogoLoot Options (Shift + Middle-Click opens the options panel)
+    ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS"], "TITLE")
+    ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS_KEYBIND"], "INFO")
 
     tooltip:Show()
 end
@@ -108,14 +112,20 @@ end
 -- Initialization
 --------------------------------------------------------------------------------
 
-function GogoLoot:InitMinimap()
-    local initialState = GogoLootDB.autoGreed and "on" or "off"
+function ns:InitMinimap()
+    local initialState = ns.db.profile.autoGreed and "on" or "off"
 
-    brokerObj = LDB:NewDataObject(ADDON_NAME, {
+    brokerObject = LibDataBroker:NewDataObject(ADDON_NAME, {
         type = "launcher",
         label = L["ADDON_TITLE"],
-        icon = GogoLoot.MINIMAP_ICONS[initialState],
+        icon = ns.MINIMAP_ICONS[initialState],
         OnClick = function(self, button)
+            if button == "MiddleButton" and IsShiftKeyDown() then
+                if ns.OpenOptionsPanel then
+                    ns:OpenOptionsPanel()
+                end
+                return
+            end
             if button == "LeftButton" then
                 ToggleAutoGreed()
             elseif button == "RightButton" then
@@ -135,5 +145,5 @@ function GogoLoot:InitMinimap()
         end
     })
 
-    LDBIcon:Register(ADDON_NAME, brokerObj, GogoLootDB.minimap)
+    LibDBIcon:Register(ADDON_NAME, brokerObject, ns.db.global.minimap)
 end

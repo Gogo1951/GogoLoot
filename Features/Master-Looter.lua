@@ -1,33 +1,36 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Master Loot Module
---
--- Master Loot configuration plumbing:
---   * API wrappers for GetLootMethod / GetLootThreshold across Classic and
---     modern clients.
---   * Eligibility check (WillAutoMasterLoot) shared with Speedy-Loot.lua so
---     Speedy Loot defers when this module owns the session.
---   * Destination tracking — group roster cleanup when a destination player
---     leaves, and the loot type / threshold readout used by the Options panel.
---   * Manual distribution hook — GiveMasterLoot from the candidate dropdown
---     is announced regardless of the announcement threshold.
---
--- The automated LOOT_OPENED → GiveMasterLoot distribution engine and its
--- UI_ERROR_MESSAGE correlation live in Master-Looter-Distribution.lua.
---
--- All chat output to the group routes through GogoLoot:Announce, which
--- pulls the body template from L[] and wraps it in the localized
--- MSG_PREFIX / MSG_SUFFIX. This module never calls SendChatMessage
--- directly.
 --------------------------------------------------------------------------------
+
+--[[
+    Master Loot configuration plumbing:
+      * API wrappers for GetLootMethod / GetLootThreshold across Classic and
+        modern clients.
+      * Eligibility check (WillAutoMasterLoot) shared with Speedy-Loot.lua so
+        Speedy Loot defers when this module owns the session.
+      * Destination tracking — group roster cleanup when a destination player
+        leaves, and the loot type / threshold readout used by the Options
+        panel.
+
+    The manual distribution hook and the automated LOOT_OPENED → GiveMasterLoot
+    distribution engine (with its UI_ERROR_MESSAGE correlation and Pending
+    Announcement Registry) live in Master-Looter-Distribution.lua, which loads
+    immediately after this file.
+
+    All chat output to the group routes through ns:Announce, which
+    pulls the body template from L[] and applies the target marker and
+    add-on name for the channel. This module never calls SendChatMessage
+    directly.
+]]
 local _, ns = ...
 local L = ns.L
-local ACR = LibStub("AceConfigRegistry-3.0")
+local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --------------------------------------------------------------------------------
 -- API Wrappers (Classic Compatibility)
 --------------------------------------------------------------------------------
 
-function GogoLoot:SafeGetLootMethod()
+function ns:SafeGetLootMethod()
     if type(GetLootMethod) == "function" then
         return GetLootMethod()
     elseif C_PartyInfo and type(C_PartyInfo.GetLootMethod) == "function" then
@@ -68,7 +71,7 @@ function GogoLoot:SafeGetLootMethod()
     return "group"
 end
 
-function GogoLoot:SafeGetLootThreshold()
+function ns:SafeGetLootThreshold()
     if type(GetLootThreshold) == "function" then
         return GetLootThreshold()
     end
@@ -78,19 +81,84 @@ function GogoLoot:SafeGetLootThreshold()
     return 2
 end
 
---------------------------------------------------------------------------------
--- Distribution Eligibility
--- Single shared check used by Master-Looter-Distribution.lua (to decide
--- whether to run the LOOT_OPENED distribution pass) and by Speedy-Loot.lua
--- (to decide whether to defer). Returns true when GogoLoot will own the
--- next loot session.
---------------------------------------------------------------------------------
-
-function GogoLoot:WillAutoMasterLoot()
-    if not GogoLoot:AreWeMasterLooter() then
+--[[
+    Only the group leader may change the loot method and threshold, so the
+    options dropdowns are editable only for them. UnitIsGroupLeader is the
+    Classic surface; guard it in case a build lacks it.
+]]
+function ns:IsGroupLeader()
+    if not IsInGroup() then
         return false
     end
-    if not GogoLootDB or not GogoLootDB.autoMasterLoot then
+    if type(UnitIsGroupLeader) == "function" then
+        return UnitIsGroupLeader("player") and true or false
+    end
+    return false
+end
+
+-- Display name of the group leader, or nil when solo or when the player leads.
+function ns:GetGroupLeaderName()
+    if not IsInGroup() or type(UnitIsGroupLeader) ~= "function" then
+        return nil
+    end
+    local memberCount = GetNumGroupMembers()
+    if IsInRaid() then
+        for memberIndex = 1, memberCount do
+            local unitIdentifier = "raid" .. memberIndex
+            if UnitIsGroupLeader(unitIdentifier) then
+                return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
+            end
+        end
+        return nil
+    end
+    for memberIndex = 1, memberCount - 1 do
+        local unitIdentifier = "party" .. memberIndex
+        if UnitIsGroupLeader(unitIdentifier) then
+            return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
+        end
+    end
+    return nil
+end
+
+--[[
+    Setters, group-leader only (the game ignores the call otherwise). Selecting
+    Master Loot needs a master looter, so default it to the leader who made the
+    change; they can reassign from the standard ML window. Classic/TBC expose
+    the legacy globals; guard in case a build lacks them.
+]]
+function ns:SafeSetLootMethod(method)
+    if type(SetLootMethod) ~= "function" then
+        return
+    end
+    if method == "master" then
+        SetLootMethod("master", UnitName("player"))
+    else
+        SetLootMethod(method)
+    end
+end
+
+function ns:SafeSetLootThreshold(threshold)
+    if type(SetLootThreshold) == "function" then
+        SetLootThreshold(threshold)
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Distribution Eligibility
+--------------------------------------------------------------------------------
+
+--[[
+    Single shared check used by the distribution engine below (to decide
+    whether to run the LOOT_OPENED distribution pass) and by Speedy-Loot.lua
+    (to decide whether to defer). Returns true when GogoLoot will own the
+    next loot session.
+]]
+
+function ns:WillAutoMasterLoot()
+    if not ns:AreWeMasterLooter() then
+        return false
+    end
+    if not ns.db or not ns.db.profile.autoMasterLoot then
         return false
     end
 
@@ -100,29 +168,29 @@ function GogoLoot:WillAutoMasterLoot()
     if isInsideInstance then
         return true
     end
-    return GogoLootDB.autoMasterLootOutsideInstances == true
+    return ns.db.profile.autoMasterLootOutsideInstances == true
 end
 
 --------------------------------------------------------------------------------
 -- Destination Management
 --------------------------------------------------------------------------------
 
-function GogoLoot:GetGroupMemberNames()
-    local memberNames = {["self"] = L["ML_DEST_SELF"]}
-    local playerName = GogoLoot:GetLowercaseUnitName("player")
+function ns:GetGroupMemberNames()
+    local memberNames = {["self"] = L["MASTER_LOOTER_DESTINATION_SELF"]}
+    local playerName = ns:GetLowercaseUnitName("player")
 
     for memberIndex = 1, GetNumGroupMembers() do
         local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
-        local memberName = GogoLoot:GetLowercaseUnitName(unitIdentifier)
+        local memberName = ns:GetLowercaseUnitName(unitIdentifier)
         if memberName and memberName ~= playerName then
-            memberNames[memberName] = GogoLoot:CapitalizeFirstLetter(memberName)
+            memberNames[memberName] = ns:CapitalizeFirstLetter(memberName)
         end
     end
 
     return memberNames
 end
 
-function GogoLoot:IsNonSelfDestination(targetPlayerName)
+function ns:IsNonSelfDestination(targetPlayerName)
     if not targetPlayerName then
         return false
     end
@@ -130,36 +198,36 @@ function GogoLoot:IsNonSelfDestination(targetPlayerName)
     return targetLower ~= "self" and targetLower ~= "player"
 end
 
-function GogoLoot:AnnounceDestinationSet(targetPlayerName, qualityKey)
+function ns:AnnounceDestinationSet(targetPlayerName, qualityKey)
     if not IsInGroup() then
         return
     end
-    if not GogoLootDB.announceDestinations then
+    if not ns.db.profile.announceDestinations then
         return
     end
-    local displayName = GogoLoot:CapitalizeFirstLetter(targetPlayerName)
-    local qualityLabel = GogoLoot.QUALITY_DISPLAY_NAMES[qualityKey] or GogoLoot:CapitalizeFirstLetter(qualityKey)
-    GogoLoot:Announce(GogoLoot:GetGroupChatChannel(), nil, "MSG_DESTINATION_SET", displayName, qualityLabel)
+    local displayName = ns:CapitalizeFirstLetter(targetPlayerName)
+    local qualityLabel = ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
+    ns:Announce(ns:GetGroupChatChannel(), nil, "MESSAGE_DESTINATION_SET", displayName, qualityLabel)
 end
 
 local function ResetAllDestinations()
     for quality = 0, 4 do
-        local qualityKey = GogoLoot.rarityToConfigurationKey[quality]
+        local qualityKey = ns.rarityToConfigurationKey[quality]
         if qualityKey then
-            GogoLootDB.destinations[qualityKey] = "self"
+            ns.db.profile.destinations[qualityKey] = "self"
         end
     end
 end
 
 local function GetCurrentGroupMemberLookup()
     local groupMembers = {}
-    local myName = GogoLoot:GetLowercaseUnitName("player")
+    local myName = ns:GetLowercaseUnitName("player")
     if myName then
         groupMembers[myName] = true
     end
     for memberIndex = 1, GetNumGroupMembers() do
         local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
-        local memberName = GogoLoot:GetLowercaseUnitName(unitIdentifier)
+        local memberName = ns:GetLowercaseUnitName(unitIdentifier)
         if memberName then
             groupMembers[memberName] = true
         end
@@ -171,31 +239,31 @@ local function CheckDestinationsForLeavers()
     if not IsInGroup() then
         return
     end
-    if not GogoLoot:AreWeMasterLooter() then
+    if not ns:AreWeMasterLooter() then
         return
     end
 
     local groupMembers = GetCurrentGroupMemberLookup()
-    local myName = GogoLoot:GetCleanUnitName("player")
-    local masterLooterDisplayName = GogoLoot:CapitalizeFirstLetter(myName)
-    local chatChannel = GogoLoot:GetGroupChatChannel()
+    local myName = ns:GetCleanUnitName("player")
+    local masterLooterDisplayName = ns:CapitalizeFirstLetter(myName)
+    local chatChannel = ns:GetGroupChatChannel()
 
     for quality = 0, 4 do
-        local qualityKey = GogoLoot.rarityToConfigurationKey[quality]
+        local qualityKey = ns.rarityToConfigurationKey[quality]
         if qualityKey then
-            local targetPlayerName = GogoLootDB.destinations[qualityKey]
-            if GogoLoot:IsNonSelfDestination(targetPlayerName) then
+            local targetPlayerName = ns.db.profile.destinations[qualityKey]
+            if ns:IsNonSelfDestination(targetPlayerName) then
                 local targetLower = strlower(targetPlayerName)
                 if not groupMembers[targetLower] then
-                    local leaverDisplayName = GogoLoot:CapitalizeFirstLetter(targetPlayerName)
+                    local leaverDisplayName = ns:CapitalizeFirstLetter(targetPlayerName)
                     local qualityLabel =
-                        GogoLoot.QUALITY_DISPLAY_NAMES[qualityKey] or GogoLoot:CapitalizeFirstLetter(qualityKey)
-                    GogoLootDB.destinations[qualityKey] = "self"
-                    if GogoLootDB.announceDestinations then
-                        GogoLoot:Announce(
+                        ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
+                    ns.db.profile.destinations[qualityKey] = "self"
+                    if ns.db.profile.announceDestinations then
+                        ns:Announce(
                             chatChannel,
                             nil,
-                            "MSG_DESTINATION_LEFT",
+                            "MESSAGE_DESTINATION_LEFT",
                             leaverDisplayName,
                             masterLooterDisplayName,
                             qualityLabel
@@ -208,81 +276,13 @@ local function CheckDestinationsForLeavers()
 end
 
 --------------------------------------------------------------------------------
--- Manual Distribution Hook
--- Items distributed manually via the standard ML candidate dropdown announce
--- only when announceMasterLootManual is on AND the item meets the manual
--- threshold. Manual is intentionally separated from auto (see
--- Options-Announcements.lua) so the user can keep a low manual threshold
--- for transparency without spamming chat with every auto-routed green.
--- The automated path in Master-Looter-Distribution.lua passes `true` as the
--- third argument to GiveMasterLoot so this hook can tell them apart and
--- skip — automated announcements are registered by TryDistributeSlot.
---
--- Announce timing: GiveMasterLoot returns immediately, but the server only
--- confirms success on a subsequent frame (slot clears) or surfaces a
--- failure via UI_ERROR_MESSAGE. Announcing inline here would produce a
--- "Gave X to Y" line before the delivery succeeded, and a retry after a
--- failure would announce twice. Instead we register a pending entry keyed
--- by slot; Master-Looter-Distribution.lua's LOOT_SLOT_CLEARED handler
--- emits MSG_LOOT_ANNOUNCE only when the server has actually cleared the
--- slot. A retry on the same slot overwrites the prior entry so the
--- announcement always reflects the recipient of the successful delivery.
---
--- If item info hasn't been cached yet (rare on a manual click but possible),
--- we fail open and register the pending announcement anyway — the user
--- clicked the dropdown deliberately, so silence is the worse failure mode.
---------------------------------------------------------------------------------
-
-if type(GiveMasterLoot) == "function" then
-    hooksecurefunc(
-        "GiveMasterLoot",
-        function(slotIndex, candidateIndex, isAutomated)
-            if isAutomated then
-                return
-            end
-            if not GogoLootDB or not GogoLootDB.announceMasterLootManual then
-                return
-            end
-            if not GogoLoot:AreWeMasterLooter() then
-                return
-            end
-            if not IsInGroup() then
-                return
-            end
-
-            local lootLink = GetLootSlotLink(slotIndex)
-            if not lootLink then
-                return
-            end
-
-            -- Manual threshold filter
-            local parsedLink = GogoLoot:ParseItemLink(lootLink)
-            if parsedLink and parsedLink.itemIdentifier then
-                local itemInfo = GogoLoot:SafeGetItemInfo(parsedLink.itemIdentifier)
-                if itemInfo and itemInfo.quality < GogoLootDB.announceMasterLootManualThreshold then
-                    return
-                end
-            end
-
-            local candidateName = GetMasterLootCandidate(slotIndex, candidateIndex)
-            if not candidateName then
-                return
-            end
-
-            local displayName = GogoLoot:CapitalizeFirstLetter(strlower(candidateName))
-            GogoLoot:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName)
-        end
-    )
-end
-
---------------------------------------------------------------------------------
 -- Dynamic Event Hooks — Group Roster & Loot Method Changes
 --------------------------------------------------------------------------------
 
 local wasInGroup = IsInGroup()
 
 local function RefreshMasterLooterPanel()
-    ACR:NotifyChange("GogoLoot_MasterLooter")
+    AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooter)
 end
 
 local function HandleGroupRosterUpdate()
@@ -302,5 +302,5 @@ local function HandleGroupRosterUpdate()
     RefreshMasterLooterPanel()
 end
 
-GogoLoot:RegisterModuleEvent("PARTY_LOOT_METHOD_CHANGED", RefreshMasterLooterPanel)
-GogoLoot:RegisterModuleEvent("GROUP_ROSTER_UPDATE", HandleGroupRosterUpdate)
+ns:RegisterModuleEvent("PARTY_LOOT_METHOD_CHANGED", RefreshMasterLooterPanel)
+ns:RegisterModuleEvent("GROUP_ROSTER_UPDATE", HandleGroupRosterUpdate)

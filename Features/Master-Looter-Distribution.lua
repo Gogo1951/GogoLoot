@@ -1,49 +1,102 @@
 --------------------------------------------------------------------------------
 -- GogoLoot Master Loot Distribution Engine
---
--- On LOOT_OPENED in ML mode, walks the loot list and uses GiveMasterLoot
--- to assign each at-or-above-threshold item to the player configured in
--- GogoLootDB.destinations for its quality tier.
---
--- Skipped items (legendaries, quest items, recipes, mounts, pets, anything
--- in the ignore list, BoP outside trade-eligible instances) are left in
--- the standard loot frame for manual handling.
---
--- Initial pass + retry ticker: GetMasterLootCandidate occasionally returns
--- nil for the first frame or two after LOOT_OPENED while the server is
--- populating candidate data, and SafeGetItemInfo returns nil until the
--- client caches the item. The ticker re-runs the pass until either
--- everything resolves or DISTRIBUTION_QUIET_TICKS consecutive ticks pass
--- with no progress (meaning the rest is genuinely unhandleable here and
--- belongs in the standard window).
---
--- Announcement timing: GiveMasterLoot returns immediately; success or
--- failure is reported asynchronously by the server. Announcing inline
--- with the call would post "Gave X to Y" before the server confirms,
--- so a failed delivery (bag full, out of range, retried with a different
--- player) would still produce the message and could even be sent twice
--- if the user retried after the failure. Instead, both the auto path
--- (TryDistributeSlot) and the manual path (the GiveMasterLoot hook in
--- Master-Looter.lua, via RegisterPendingLootAnnouncement) record a
--- pending announcement keyed by slot, and only the LOOT_SLOT_CLEARED
--- handler emits MSG_LOOT_ANNOUNCE — which fires only on confirmed
--- successful distribution. Failures never clear the slot, so they
--- never announce. LOOT_CLOSED wipes any remaining pending entries so
--- nothing leaks into the next loot session.
---
--- Error correlation: GiveMasterLoot can fail silently from the API
--- caller's perspective — the failure surfaces as a UI_ERROR_MESSAGE on a
--- subsequent frame. We correlate the error string to the pending
--- distribution and, if it matches a known failure mode, post the
--- corresponding ERR_* announcement (with the item link and target name
--- substituted in) so the group sees which delivery failed and why.
--- Unknown errors are left alone; we don't want to spam chat for unrelated
--- UI errors that happen to fire during the correlation window.
---
--- Dependencies: GogoLoot:WillAutoMasterLoot is defined in Master-Looter.lua,
--- which loads first. The call happens at LOOT_OPENED time so file load
--- order is not strictly required, but the convention is dependency-first.
 --------------------------------------------------------------------------------
+
+--[[
+    The automated loot-distribution half of Master Looting, split out from
+    Master-Looter.lua (which keeps the API wrappers, eligibility check, and
+    destination management):
+      * Manual distribution hook — GiveMasterLoot from the candidate dropdown
+        is announced regardless of the announcement threshold.
+      * The LOOT_OPENED -> GiveMasterLoot automated distribution engine, its
+        retry ticker, and the Pending Announcement Registry.
+      * UI_ERROR_MESSAGE correlation and the LOOT_SLOT_CLEARED success path.
+
+    Eligibility (ns:WillAutoMasterLoot) and the destination table it reads live
+    in Master-Looter.lua; everything shared crosses via ns methods, so this file
+    needs only the namespace. All chat output routes through ns:Announce, which
+    pulls the body template from L[] and applies the marker and add-on name —
+    this module never calls SendChatMessage directly.
+]]
+local _, ns = ...
+
+--------------------------------------------------------------------------------
+-- Manual Distribution Hook
+--------------------------------------------------------------------------------
+
+--[[
+    Items distributed manually via the standard ML candidate dropdown are
+    always announced — no toggle, no quality threshold — since a manual
+    hand-out is a deliberate act the group should always see. The automated
+    path (TryDistributeSlot below) passes `true` as the third argument to
+    GiveMasterLoot so this hook can tell them apart and skip.
+
+    Never announce inline here — register a pending entry instead; the
+    Pending Announcement Registry below documents the timing rules.
+]]
+
+if type(GiveMasterLoot) == "function" then
+    hooksecurefunc(
+        "GiveMasterLoot",
+        function(slotIndex, candidateIndex, isAutomated)
+            if isAutomated then
+                return
+            end
+            if not ns.db then
+                return
+            end
+            if not ns:AreWeMasterLooter() then
+                return
+            end
+            if not IsInGroup() then
+                return
+            end
+
+            local lootLink = GetLootSlotLink(slotIndex)
+            if not lootLink then
+                return
+            end
+
+            local candidateName = GetMasterLootCandidate(slotIndex, candidateIndex)
+            if not candidateName then
+                return
+            end
+
+            local displayName = ns:CapitalizeFirstLetter(ns:NormalizePlayerName(candidateName))
+            ns:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName)
+        end
+    )
+end
+
+--------------------------------------------------------------------------------
+-- Distribution Engine
+--------------------------------------------------------------------------------
+
+--[[
+    On LOOT_OPENED in ML mode, walks the loot list and uses GiveMasterLoot
+    to assign each at-or-above-threshold item to the player configured in
+    ns.db.profile.destinations for its quality tier. Skipped items
+    (legendaries, quest items, recipes, mounts, pets, anything in the
+    ignore list, BoP outside trade-eligible instances) are left in the
+    standard loot frame for manual handling.
+
+    Initial pass + retry ticker: GetMasterLootCandidate can return nil for
+    the first frame or two after LOOT_OPENED, and SafeGetItemInfo returns
+    nil until the client caches the item. The ticker re-runs the pass until
+    everything resolves or DISTRIBUTION_QUIET_TICKS consecutive ticks make
+    no progress.
+
+    Announcements are never sent inline with GiveMasterLoot — see the
+    Pending Announcement Registry below for the timing rules.
+
+    Error correlation: a failed GiveMasterLoot surfaces only as a
+    UI_ERROR_MESSAGE on a later frame. Known failure strings post a generic
+    ERROR_* announcement; unknown errors are ignored rather than spamming
+    chat for unrelated UI errors. pendingDistribution is a single value, so
+    an error arriving while several calls are in flight is attributed to
+    the most recent one — acceptable, since the announcement names no item
+    or player.
+]]
 
 local DISTRIBUTION_RETRY_INTERVAL = 0.1
 local DISTRIBUTION_MAX_RETRIES = 20
@@ -59,18 +112,24 @@ local quietTickCount = 0
 
 --------------------------------------------------------------------------------
 -- Pending Announcement Registry
--- Keyed by loot slot index. Both the auto path (TryDistributeSlot) and the
--- manual path (the GiveMasterLoot hook in Master-Looter.lua) call
--- RegisterPendingLootAnnouncement after issuing GiveMasterLoot. The
--- LOOT_SLOT_CLEARED handler below consumes the entry and emits the
--- announcement only when the server has actually cleared the slot.
---
--- A retry on the same slot (e.g., user picked a new candidate after the
--- first failed) overwrites the prior entry, so the announcement always
--- reflects the recipient of the successful delivery.
 --------------------------------------------------------------------------------
 
-function GogoLoot:RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName)
+--[[
+    Why announcements are deferred: GiveMasterLoot returns immediately, and
+    the server confirms success only on a later frame (the slot clears) or
+    surfaces failure via UI_ERROR_MESSAGE. Announcing inline would post
+    "Gave X to Y" for deliveries that then fail — and twice after a retry.
+
+    So both the auto path (TryDistributeSlot) and the manual hook above
+    register a pending entry keyed by loot slot, and only the
+    LOOT_SLOT_CLEARED handler emits MESSAGE_LOOT_ANNOUNCE — failures never
+    clear the slot, so they never announce. A retry on the same slot
+    overwrites the entry, so the announcement names the recipient of the
+    successful delivery. LOOT_CLOSED wipes leftovers so nothing leaks into
+    the next loot session.
+]]
+
+function ns:RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName)
     if not slotIndex or not itemLink or not displayName then
         return
     end
@@ -95,38 +154,69 @@ local function ClearDistributionState()
     end
 end
 
+--[[
+    Candidate names come back as "Name" for same-realm members but
+    "Name-Realm" for cross-realm members, while destinations are stored
+    realm-stripped (ns:NormalizePlayerName). Each slot's map therefore
+    holds two kinds of keys: the exact lowercased full name, plus a
+    normalized alias — but the alias only when exactly one candidate
+    normalizes to it. When two members share a base name ("Bob" and
+    "Bob-OtherRealm"), no alias is created and a realm-stripped destination
+    matches nothing, so the item falls back to manual handling rather than
+    guessing a recipient.
+]]
 local function BuildCandidateMap()
     local map = {}
     local numItems = GetNumLootItems()
     local groupSize = GetNumGroupMembers()
     for slotIndex = 1, numItems do
-        map[slotIndex] = {}
+        local slotCandidates = {}
+        local normalizedCounts = {}
+        local normalizedIndexes = {}
         for groupIndex = 1, groupSize do
             local candidateName = GetMasterLootCandidate(slotIndex, groupIndex)
             if candidateName then
-                map[slotIndex][strlower(candidateName)] = groupIndex
+                slotCandidates[strlower(candidateName)] = groupIndex
+                local normalizedName = ns:NormalizePlayerName(candidateName)
+                if normalizedName then
+                    normalizedCounts[normalizedName] = (normalizedCounts[normalizedName] or 0) + 1
+                    normalizedIndexes[normalizedName] = groupIndex
+                end
             end
         end
+        for normalizedName, nameCount in pairs(normalizedCounts) do
+            if nameCount == 1 and slotCandidates[normalizedName] == nil then
+                slotCandidates[normalizedName] = normalizedIndexes[normalizedName]
+            end
+        end
+        map[slotIndex] = slotCandidates
     end
     return map
 end
 
 local function ResolveDestinationCandidate(qualityKey, slotCandidates)
-    local destinationName = GogoLootDB.destinations[qualityKey]
+    local destinationName = ns.db.profile.destinations[qualityKey]
     if not destinationName or destinationName == "" then
         return nil, nil
     end
 
     local resolvedName = destinationName
     if destinationName == "self" then
-        resolvedName = GogoLoot:GetLowercaseUnitName("player")
+        resolvedName = ns:GetLowercaseUnitName("player")
     end
     if not resolvedName then
         return nil, nil
     end
 
-    local lookupKey = strlower(resolvedName)
-    local candidateIndex = slotCandidates[lookupKey]
+    --[[
+        Normalize rather than just lowercase so legacy values that were saved
+        with a realm suffix still match the candidate map's alias keys.
+    ]]
+    local lookupKey = ns:NormalizePlayerName(resolvedName)
+    if not lookupKey then
+        return nil, nil
+    end
+    local candidateIndex = slotCandidates[lookupKey] or slotCandidates[strlower(resolvedName)]
     return resolvedName, candidateIndex
 end
 
@@ -145,34 +235,34 @@ local function TryDistributeSlot(slotIndex, candidateMap)
         return false
     end
 
-    local parsedLink = GogoLoot:ParseItemLink(lootLink)
+    local parsedLink = ns:ParseItemLink(lootLink)
     if not parsedLink or not parsedLink.itemIdentifier then
         return false
     end
 
     local itemId = parsedLink.itemIdentifier
-    local itemInfo = GogoLoot:SafeGetItemInfo(itemId)
+    local itemInfo = ns:SafeGetItemInfo(itemId)
     if not itemInfo then
         -- Item info not yet cached — the retry ticker will pick this up
         return false
     end
 
     -- Hard skip: legendaries, quest items, recipes, mounts, pets
-    if GogoLoot:ShouldSkipItemByType(itemInfo) then
+    if ns:ShouldSkipItemByType(itemInfo) then
         return false
     end
 
     -- User-configured ignore list
-    if GogoLootDB.ignoredItemsMaster[itemId] then
+    if ns.db.profile.ignoredItemsMaster[itemId] then
         return false
     end
 
     -- BoP items can only be redistributed inside trade-eligible instances
-    if itemInfo.bindType == GogoLoot.BIND_ON_PICKUP and not GogoLoot:IsInBindOnPickupTradeInstance() then
+    if itemInfo.bindType == ns.BIND_ON_PICKUP and not ns:IsInBindOnPickupTradeInstance() then
         return false
     end
 
-    local qualityKey = GogoLoot.rarityToConfigurationKey[itemInfo.quality]
+    local qualityKey = ns.rarityToConfigurationKey[itemInfo.quality]
     if not qualityKey then
         return false
     end
@@ -184,37 +274,42 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 
     local resolvedName, candidateIndex = ResolveDestinationCandidate(qualityKey, slotCandidates)
     if not candidateIndex then
-        -- Destination isn't a valid candidate for this slot (out of range,
-        -- different sub-group, no longer in group, etc.). Leave it for
-        -- manual handling rather than silently re-routing.
+        --[[
+            Destination isn't a valid candidate for this slot (out of range,
+            different sub-group, no longer in group, or an ambiguous duplicate
+            base name across realms). Leave it for manual handling rather
+            than silently re-routing.
+        ]]
         return false
     end
 
-    local displayName = GogoLoot:CapitalizeFirstLetter(resolvedName)
+    local displayName = ns:CapitalizeFirstLetter(resolvedName)
 
-    -- Record context for the UI_ERROR_MESSAGE handler before the call —
-    -- the error fires on a subsequent frame and needs to know what we tried.
+    --[[
+        Record context for the UI_ERROR_MESSAGE handler before the call —
+        the error fires on a subsequent frame and needs to know which slot was
+        attempted, who it was meant for (named in the error announcement), and
+        when.
+    ]]
     pendingDistribution = {
         slotIndex = slotIndex,
-        targetName = displayName,
-        itemLink = lootLink,
-        itemQuality = itemInfo.quality,
+        displayName = displayName,
         timestamp = GetTime()
     }
 
     distributedSlots[slotIndex] = true
     GiveMasterLoot(slotIndex, candidateIndex, true)
 
-    -- Defer the announcement until LOOT_SLOT_CLEARED confirms a successful
-    -- distribution. The auto toggle / threshold gate fires here at register
-    -- time so we don't accumulate pending entries for items the user didn't
-    -- want announced. Manual distributions go through the GiveMasterLoot
-    -- hook in Master-Looter.lua and use a separate toggle + threshold.
+    --[[
+        Gate the auto announce toggle/threshold at register time so pending
+        entries exist only for items the user wants announced (see Pending
+        Announcement Registry above).
+    ]]
     if
-        GogoLootDB.announceMasterLootAuto and itemInfo.quality >= GogoLootDB.announceMasterLootAutoThreshold and
+        ns.db.profile.announceMasterLootAuto and itemInfo.quality >= ns.db.profile.announceMasterLootAutoThreshold and
             IsInGroup()
      then
-        GogoLoot:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName)
+        ns:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName)
     end
 
     return true
@@ -229,8 +324,10 @@ local function RunDistributionPass()
     local numItems = GetNumLootItems()
     local distributedAny = false
 
-    -- Iterate from the bottom upward so that as slots are consumed, the
-    -- remaining indices we still care about don't shift.
+    --[[
+        Iterate from the bottom upward so that as slots are consumed, the
+        remaining indices we still care about don't shift.
+    ]]
     for slotIndex = numItems, 1, -1 do
         if not distributedSlots[slotIndex] then
             if TryDistributeSlot(slotIndex, candidateMap) then
@@ -286,7 +383,7 @@ local function HandleLootOpened()
     pendingAnnouncements = {}
     quietTickCount = 0
 
-    if not GogoLoot:WillAutoMasterLoot() then
+    if not ns:WillAutoMasterLoot() then
         return
     end
 
@@ -311,49 +408,55 @@ local function MapErrorMessageToLocaleKey(errorString)
         return nil
     end
 
-    -- Compare against globalized strings first; these vary by client locale
-    -- but are reliable when bound. Some globals don't exist on every WoW
-    -- build, so the comparison is safe even when the global is nil.
+    --[[
+        Compare against globalized strings first; these vary by client locale
+        but are reliable when bound. Some globals don't exist on every WoW
+        build, so the comparison is safe even when the global is nil.
+    ]]
     if errorString == ERR_INV_FULL or errorString == ERR_LOOT_BAG_FULL then
-        return "ERR_BAG_FULL"
+        return "ERROR_BAG_FULL"
     end
     if errorString == ERR_ITEM_MAX_COUNT then
-        return "ERR_MAX_COUNT"
+        return "ERROR_MAX_COUNT"
     end
     if errorString == ERR_LOOT_PLAYER_NOT_PRESENT or errorString == LOOT_PLAYER_NOT_PRESENT then
-        return "ERR_OUT_OF_RANGE"
+        return "ERROR_OUT_OF_RANGE"
     end
     if errorString == ERR_NOT_IN_GROUP or errorString == ERR_NOT_IN_RAID then
-        return "ERR_NOT_IN_GROUP"
+        return "ERROR_NOT_IN_GROUP"
     end
 
-    -- Substring fallbacks for builds where the global isn't bound. Plain
-    -- text matches only — no patterns, so locale-specific punctuation
-    -- doesn't break things.
+    --[[
+        Substring fallbacks for builds where the global isn't bound. Plain
+        text matches only — no patterns, so locale-specific punctuation
+        doesn't break things.
+    ]]
     local lowerMessage = string.lower(errorString)
     if string.find(lowerMessage, "bag is full", 1, true) or string.find(lowerMessage, "inventory is full", 1, true) then
-        return "ERR_BAG_FULL"
+        return "ERROR_BAG_FULL"
     end
     if string.find(lowerMessage, "more of that item", 1, true) or string.find(lowerMessage, "max count", 1, true) then
-        return "ERR_MAX_COUNT"
+        return "ERROR_MAX_COUNT"
     end
     if string.find(lowerMessage, "not in range", 1, true) or string.find(lowerMessage, "too far away", 1, true) then
-        return "ERR_OUT_OF_RANGE"
+        return "ERROR_OUT_OF_RANGE"
     end
     if
         string.find(lowerMessage, "not in your party", 1, true) or
             string.find(lowerMessage, "not in your raid", 1, true)
      then
-        return "ERR_NOT_IN_GROUP"
+        return "ERROR_NOT_IN_GROUP"
     end
 
     return nil
 end
 
 local function ExtractErrorString(...)
-    -- UI_ERROR_MESSAGE signature varies between clients — modern is
-    -- (errorType, message); some Classic builds pass (message). Find
-    -- the first string argument and use it.
+    --[[
+        UI_ERROR_MESSAGE signature varies between clients — modern is
+        (errorType, message); some Classic builds pass (message). Find
+        the first string argument and use it.
+    ]]
     for argIndex = 1, select("#", ...) do
         local argValue = select(argIndex, ...)
         if type(argValue) == "string" then
@@ -384,24 +487,16 @@ local function HandleUIErrorMessage(...)
     end
 
     if IsInGroup() then
-        GogoLoot:Announce(
-            GogoLoot:GetGroupChatChannel(),
-            nil,
-            errorLocaleKey,
-            pendingDistribution.itemLink,
-            pendingDistribution.targetName
-        )
+        ns:Announce(ns:GetGroupChatChannel(), nil, errorLocaleKey, pendingDistribution.displayName or "")
     end
 
-    -- Drop the success announcement for this slot. The slot didn't clear,
-    -- so LOOT_SLOT_CLEARED won't fire for the failed attempt anyway, but
-    -- if the user retries this slot with a different candidate the manual
-    -- hook will overwrite the entry — clearing it here keeps the state
-    -- tidy and removes any chance of a stale pending entry surviving.
+    -- Clear the failed slot's pending announcement; a retry re-registers through the manual hook.
     pendingAnnouncements[pendingDistribution.slotIndex] = nil
 
-    -- Cancel the retry ticker — re-attempting a bag-full or max-count
-    -- error will just produce the same failure on the next pass.
+    --[[
+        Cancel the retry ticker — re-attempting a bag-full or max-count
+        error will just produce the same failure on the next pass.
+    ]]
     if lootDistributionTicker then
         lootDistributionTicker:Cancel()
         lootDistributionTicker = nil
@@ -412,17 +507,15 @@ end
 
 --------------------------------------------------------------------------------
 -- Successful Distribution Confirmation
--- LOOT_SLOT_CLEARED fires only when the server has actually emptied the
--- slot, which for a master-loot session means the GiveMasterLoot call
--- succeeded. This is the only place MSG_LOOT_ANNOUNCE is emitted —
--- failures (bag full, out of range, target left group) never reach here
--- because the slot stays populated, so a failed click cannot produce a
--- "Gave X to Y" line.
---
--- The same slot index can fire LOOT_SLOT_CLEARED for non-ML reasons too
--- (the player picked up the item themselves, etc.). We only act if a
--- pending entry exists for that slot, so unrelated clears are no-ops.
 --------------------------------------------------------------------------------
+
+--[[
+    LOOT_SLOT_CLEARED fires only when the server actually empties the slot
+    — in an ML session, that means GiveMasterLoot succeeded — so this is
+    the only place MESSAGE_LOOT_ANNOUNCE is emitted. Slots also clear for
+    non-ML reasons (the player looted the item), so only act when a pending
+    entry exists for that slot.
+]]
 
 local function HandleLootSlotCleared(slotIndex)
     if not slotIndex then
@@ -439,20 +532,20 @@ local function HandleLootSlotCleared(slotIndex)
         return
     end
 
-    GogoLoot:Announce(
-        GogoLoot:GetGroupChatChannel(),
+    ns:Announce(
+        ns:GetGroupChatChannel(),
         nil,
-        "MSG_LOOT_ANNOUNCE",
+        "MESSAGE_LOOT_ANNOUNCE",
         pending.itemLink,
         pending.displayName
     )
 end
 
 --------------------------------------------------------------------------------
--- Event Registrations
+-- Distribution Event Registrations
 --------------------------------------------------------------------------------
 
-GogoLoot:RegisterModuleEvent("LOOT_OPENED", HandleLootOpened)
-GogoLoot:RegisterModuleEvent("LOOT_CLOSED", HandleLootClosed)
-GogoLoot:RegisterModuleEvent("LOOT_SLOT_CLEARED", HandleLootSlotCleared)
-GogoLoot:RegisterModuleEvent("UI_ERROR_MESSAGE", HandleUIErrorMessage)
+ns:RegisterModuleEvent("LOOT_OPENED", HandleLootOpened)
+ns:RegisterModuleEvent("LOOT_CLOSED", HandleLootClosed)
+ns:RegisterModuleEvent("LOOT_SLOT_CLEARED", HandleLootSlotCleared)
+ns:RegisterModuleEvent("UI_ERROR_MESSAGE", HandleUIErrorMessage)

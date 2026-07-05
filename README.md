@@ -1,18 +1,18 @@
 # GogoLoot
 
-Vacuum up gear with Master Loot, auto-roll Greed on junk, and announce every trade to chat — all hands-free. Quest items, recipes, mounts, and legendaries always stay safe. Don't let loot slow down your zug!
+Automate master looting, auto-roll greed or need on non-BoP drops, loot faster with the loot window hidden, and announce every trade to chat. Quest items, recipes, mounts, pets, and legendaries always stay safe. Don't let loot slow down your zug!
 
 ## Features
 
-💰 **Master Looter** // Auto-distributes loot to designated players by quality tier when you're the Master Looter — destinations update live as group members join and leave.
+💰 **Master Looter** // Auto-distributes loot to designated players by quality tier while you're Master Looter — destinations update live as group members join and leave.
 
-🎲 **Automated Rolls** // Auto-rolls Greed on non-BoP items at or below your chosen quality threshold. BoP items like Scourgestones and Demonic Runes can be added to a Custom Roll List for need, greed, or pass overrides.
+💬 **Trade Announcements** // Posts a tidy summary of every completed trade — items, enchants, and gold — whispered to your partner or announced to your party or raid.
 
-💬 **Trade Announcements** // Posts a tidy summary of every completed trade to chat — items, enchants, and gold exchanged — sent to whisper, party, or raid.
+🎲 **Automated Rolls** // Auto-rolls Greed on non-BoP items at or below the quality you choose. Add BoP items like Scourgestones and Demonic Runes to a Custom Roll List for Need, Greed, or Pass overrides.
 
 ⚡ **Speedy Loot** // Instantly picks up loot without showing the loot window, saving time between every kill.
 
-🦺 **Safety First** // Quest items, books, recipes, mounts, pets, and legendaries are always skipped. BoP items are never auto-greeded by the threshold.
+🦺 **Safety First** // Quest items, books, recipes, mounts, pets, and legendaries are always skipped, and BoP items are never auto-greeded by the threshold.
 
 ## Setup
 
@@ -32,6 +32,7 @@ Hover for a tooltip showing the current state of Automated Rolls and Speedy Loot
 | --- | --- |
 | Left-click | Toggle Automated Rolls |
 | Right-click | Toggle Speedy Loot |
+| Shift + Middle-click | Open the options panel |
 
 ### Slash Commands
 
@@ -41,11 +42,11 @@ Type `/gl` or `/gogoloot` to open the options panel.
 
 🟢 World of Warcraft Classic (🟡 Season of Discovery) // WoW 1.15.8
 
-🟢 Burning Crusade Anniversary // WoW 2.5.5
+🟢 Burning Crusade Anniversary // WoW 2.5.6
 
-🔴 Mists of Pandaria Classic // WoW 5.5.3
+🔴 Mists of Pandaria Classic // WoW 5.5.4
 
-🔴 World of Warcraft // WoW 12.0.5
+🔴 World of Warcraft // WoW 12.1.0
 
 **Localization Status** // Works with all Classic WoW Locales (enUS, deDE, esES, esMX, frFR, itIT, koKR, ptBR, ruRU, zhCN, zhTW).
 
