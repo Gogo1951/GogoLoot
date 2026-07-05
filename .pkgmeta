@@ -12,6 +12,10 @@ externals:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0/
   Includes/Libraries/AceConfig-3.0:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0/
+  Includes/Libraries/AceDB-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0/
+  Includes/Libraries/AceDBOptions-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceDBOptions-3.0/
   Includes/Libraries/LibDataBroker-1.1:
     url: https://github.com/tekkub/libdatabroker-1-1
   Includes/Libraries/LibDBIcon-1.0:
