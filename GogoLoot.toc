@@ -2,12 +2,24 @@
 ## Notes: Automate master looting, auto-roll greed or need on non-BoP drops, loot faster with the loot window hidden, and announce every trade to chat. Quest items, recipes, mounts, pets, and legendaries always stay safe. Don't let loot slow down your zug!
 ## Author: Gogo1951
 ## IconTexture: Interface/AddOns/GogoLoot/Includes/Images/GogoLoot.tga
-## Category-enUS: Bags & Inventory
 ## X-License: MIT
+
+## Category-enUS: Loot
+## Category-deDE: Beute
+## Category-esES: Botín
+## Category-esMX: Botín
+## Category-frFR: Butin
+## Category-itIT: Bottino
+## Category-koKR: 전리품
+## Category-ptBR: Saque
+## Category-ruRU: Добыча
+## Category-zhCN: 战利品
+## Category-zhTW: 戰利品
 
 ## Interface: 11508, 20506
 ## Version: @project-version@
 ## X-Curse-Project-ID: 423347
+## X-Wago-ID: qGYZ3ONg
 
 ## SavedVariables: GogoLootDB
 
