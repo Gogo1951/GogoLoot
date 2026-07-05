@@ -1,226 +1,213 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("GogoLoot", "enUS", true)
 if not L then return end
 
---------------------------------------------------------------------------------
--- Chat Messages (printed to local chat frame via PrintMessage)
---------------------------------------------------------------------------------
-
-L["MSG_SETTINGS_RESET_UPDATE"] = "Settings have been reset for this update. Use /gl to review your options."
-L["MSG_SETTINGS_RESET_DEFAULTS"] = "All settings have been reset to defaults."
-L["MSG_AUTO_LOOT_ENABLED"] = "Auto Loot is required for GogoLoot to function properly. Auto Loot has been enabled."
-L["MSG_NOT_MASTER_LOOTER"] = "You are not currently the Master Looter."
+--[[
+    Source locale: every other locale falls back to these strings. Translate
+    the values only. Never change the L["KEY"] names, the %s / %d placeholders,
+    or the {rt4} raid marker — code and other locales rely on them.
+]]
 
 --------------------------------------------------------------------------------
--- Chat Announcement Templates (sent to other players via GogoLoot:Announce)
--- These are wrapped with MSG_PREFIX/MSG_SUFFIX by the Announce helper before
--- being passed to SendChatMessage. Format placeholders (%s) are filled with
--- the relevant arguments at call time.
+-- Chat Messages
 --------------------------------------------------------------------------------
 
-L["MSG_PREFIX"] = "{rt4} "
-L["MSG_SUFFIX"] = " // GogoLoot"
-
-L["MSG_LOOT_ANNOUNCE"] = "Gave %s to %s."
-L["MSG_DESTINATION_SET"] = "%s will be receiving all the %s items."
-L["MSG_DESTINATION_LEFT"] = "%s has left the group. %s will now be receiving all the %s items."
-
-L["MSG_TRADE_GAVE_RECEIVED"] = "Gave %s to %s, received %s."
-L["MSG_TRADE_GAVE"] = "Gave %s to %s."
-L["MSG_TRADE_RECEIVED"] = "Received %s from %s."
+L["CHAT_LOADED"] = "Version %s. Settings (including the option to disable this message) can be found under Options > AddOns > GogoLoot. Enjoying the add-on? Tell a friend about it! (="
+L["MESSAGE_AUTO_LOOT_ENABLED"] = "GogoLoot requires Auto Loot, so it has been enabled."
+L["MESSAGE_NOT_MASTER_LOOTER"] = "You are not currently the Master Looter."
 
 --------------------------------------------------------------------------------
--- Master Loot Distribution Errors (sent to group via GogoLoot:Announce)
+-- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
-L["ERR_BAG_FULL"] = "The player you selected to receive that item has no space in their bags."
-L["ERR_MAX_COUNT"] = "The player you selected to receive that item has too many of that item already."
-L["ERR_OUT_OF_RANGE"] = "The player you selected to receive that item is not in range."
-L["ERR_NOT_IN_GROUP"] = "The player you selected to receive that item is no longer in the party or raid."
+L["MESSAGE_LOOT_ANNOUNCE"] = "Gave %s to %s."
+L["MESSAGE_DESTINATION_SET"] = "%s will be holding %s items for the group."
+L["MESSAGE_DESTINATION_LEFT"] = "%s has left the group. %s will now be holding %s items for the group."
+
+L["MESSAGE_TRADE_GAVE_RECEIVED"] = "Gave %s to %s, received %s."
+L["MESSAGE_TRADE_GAVE"] = "Gave %s to %s."
+L["MESSAGE_TRADE_RECEIVED"] = "Received %s from %s."
 
 --------------------------------------------------------------------------------
--- Options Panel Tab Names
+-- Master Loot Distribution Errors
 --------------------------------------------------------------------------------
 
-L["TAB_GENERAL"] = "GogoLoot"
-L["TAB_AUTOMATED_ROLLS"] = "Automated Rolls"
+L["ERROR_BAG_FULL"] = "%s's bags are full."
+L["ERROR_MAX_COUNT"] = "%s already has too many of that item."
+L["ERROR_OUT_OF_RANGE"] = "%s is out of range."
+L["ERROR_NOT_IN_GROUP"] = "%s is no longer in the party or raid."
+
+--------------------------------------------------------------------------------
+-- Options Tab Names
+--------------------------------------------------------------------------------
+
 L["TAB_MASTER_LOOTER"] = "Master Looter"
-L["TAB_TRADE_ANNOUNCEMENTS"] = "Announcements"
+L["TAB_AUTOMATED_ROLLS"] = "Automated Rolls"
+L["TAB_ANNOUNCEMENTS"] = "Announcements"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------
 
+-- GogoLoot is a proper noun; keep it untranslated.
 L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Enabled"
 L["STATUS_DISABLED"] = "Disabled"
 
 L["MINIMAP_AUTO_GREED"] = "Auto-Greed"
-L["MINIMAP_AUTO_GREED_DESC"] = "Automatically rolls Greed on eligible items at or below the selected quality threshold."
+L["MINIMAP_AUTO_GREED_DESCRIPTION"] = "Rolls Greed on eligible items up to your chosen quality."
 L["MINIMAP_SPEEDY_LOOT"] = "Speedy Loot"
-L["MINIMAP_SPEEDY_LOOT_DESC"] = "Instantly picks up loot without showing the loot window."
+L["MINIMAP_SPEEDY_LOOT_DESCRIPTION"] = "Hides the loot window for near-instant looting."
 
 L["MINIMAP_LEFT_CLICK"] = "Left-Click"
 L["MINIMAP_RIGHT_CLICK"] = "Right-Click"
 L["MINIMAP_TOGGLE"] = "Toggle"
-L["MINIMAP_HINT"] = "Additional settings can be found under Options > AddOns > GogoLoot."
+L["MINIMAP_OPTIONS"] = "GogoLoot Options"
+L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + Middle-Click"
 
 --------------------------------------------------------------------------------
+-- Shared Labels
+--------------------------------------------------------------------------------
+
 -- Quality Labels
---------------------------------------------------------------------------------
-
 L["QUALITY_POOR"] = "Poor"
 L["QUALITY_COMMON"] = "Common"
 L["QUALITY_UNCOMMON"] = "Uncommon"
 L["QUALITY_RARE"] = "Rare"
 L["QUALITY_EPIC"] = "Epic"
 
---------------------------------------------------------------------------------
 -- Roll Action Labels
---------------------------------------------------------------------------------
-
 L["ROLL_MANUAL"] = "Manual Roll"
 L["ROLL_GREED"] = "Greed"
 L["ROLL_NEED"] = "Need"
 L["ROLL_PASS"] = "Pass"
 
---------------------------------------------------------------------------------
 -- Loot Method Labels
---------------------------------------------------------------------------------
-
-L["LOOT_METHOD_FFA"] = "Free for All"
+L["LOOT_METHOD_FREE_FOR_ALL"] = "Free for All"
 L["LOOT_METHOD_ROUND_ROBIN"] = "Round Robin"
 L["LOOT_METHOD_MASTER"] = "Master Looter"
 L["LOOT_METHOD_GROUP"] = "Group Loot"
-L["LOOT_METHOD_NBG"] = "Need Before Greed"
+L["LOOT_METHOD_NEED_BEFORE_GREED"] = "Need Before Greed"
 
---------------------------------------------------------------------------------
 -- Threshold Labels
---------------------------------------------------------------------------------
-
 L["THRESHOLD_POOR_ONLY"] = "Poor Only"
 L["THRESHOLD_COMMON_LOWER"] = "Common & Lower"
 L["THRESHOLD_UNCOMMON_LOWER"] = "Uncommon & Lower"
 L["THRESHOLD_RARE_LOWER"] = "Rare & Lower"
 L["THRESHOLD_EPIC_LOWER"] = "Epic & Lower"
 
+-- Placeholder shown in both item lists until the client caches an item's info
+L["ITEM_LOADING"] = "Loading... (ID: %d)"
+
+-- Version prefix in the options panel and minimap tooltip
+L["VERSION_LABEL"] = "Version"
+
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
-L["GENERAL"] = "General"
-L["GENERAL_DESC"] = "Core settings that apply whenever GogoLoot is active."
-L["SPEEDY_LOOT"] = "Enable Speedy Loot"
-L["SPEEDY_LOOT_DESC"] = "Instantly picks up loot without showing the loot window, saving time between kills."
+L["GENERAL_DESCRIPTION"] = "Automate master looting, auto-roll greed or need on non-BoP drops, loot faster with the loot window hidden, and announce every trade to chat. Quest items, recipes, mounts, pets, and legendaries always stay safe. Don't let loot slow down your zug!"
+L["WELCOME_MESSAGE"] = "Enable Welcome Message"
+L["MINIMAP_BUTTON_ENABLE"] = "Enable Minimap Button"
 
 L["COMMANDS"] = "/Commands"
-L["COMMANDS_DESC"] = "Opens the GogoLoot options interface."
+L["COMMANDS_DESCRIPTION"] = "Opens the GogoLoot options interface."
 
-L["RESET"] = "Reset"
-L["RESET_DESC"] = "Clears all GogoLoot settings and restores every option to its default value."
-L["RESET_ALL"] = "Reset All GogoLoot Options"
-L["RESET_CONFIRM"] = "This will reset ALL GogoLoot settings to their defaults. This cannot be undone. Continue?"
+L["SPEEDY_LOOT_HEADER"] = "Speedy Loot"
+L["SPEEDY_LOOT_DESCRIPTION"] = "Hides the loot window for near-instant looting."
+L["SPEEDY_LOOT_ENABLE"] = "Enable Speedy Loot"
 
 L["FEEDBACK_SUPPORT"] = "Feedback & Support"
+
+-- CurseForge / GitHub / Discord are proper nouns — do not translate.
 L["CURSEFORGE"] = "CurseForge"
 L["GITHUB"] = "GitHub"
 L["DISCORD"] = "Discord"
 
-L["ITEM_LOADING"] = "Loading... (ID: %d)"
+--------------------------------------------------------------------------------
+-- Options: Profiles
+--------------------------------------------------------------------------------
+
+L["OPTIONS_RESET_ALL_PROFILES"] = "Reset All Profiles"
+L["OPTIONS_RESET_ALL_PROFILES_DESCRIPTION"] = "Reset every profile on this account back to default settings."
+L["OPTIONS_RESET_ALL_PROFILES_CONFIRM"] = "This will reset ALL profiles on your account back to default settings — every character. There is no undo. Continue?"
+
+--------------------------------------------------------------------------------
+-- Options: Master Looter
+--------------------------------------------------------------------------------
+
+L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "Your group's current loot method and loot threshold."
+L["MASTER_LOOTER_LOOT_TYPE"] = "Loot Method"
+L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Loot Threshold"
+L["MASTER_LOOTER_SET_BY"] = "(Set by %s)"
+L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Only the group leader can change the loot method and threshold."
+
+L["MASTER_LOOTER_AUTO_HEADER"] = "Automated Master Looting"
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distributes loot to your designated players while you're Master Looter. Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Enable Automated Master Looting in Instances"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Enable Automated Master Looting Outside of Instances"
+L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] = "Caution: world boss loot isn't tradable, so this isn't advised."
+
+L["MASTER_LOOTER_DESTINATION_HEADER"] = "Loot Destinations"
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Assign a group member to receive items of each quality tier."
+L["MASTER_LOOTER_DESTINATION_SELF"] = "Self"
+L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Choose who receives %s items."
+
+L["MASTER_LOOTER_IGNORE_HEADER"] = "Ignore List"
+L["MASTER_LOOTER_IGNORE_DESCRIPTION"] = "Listed items skip auto-distribution and are left for manual assignment."
+L["MASTER_LOOTER_IGNORE_RESTORE"] = "Restore Default Ignore List"
+L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] = "This will replace your master loot ignore list with the default items for your expansion. Continue?"
+L["MASTER_LOOTER_IGNORE_ADD_DESCRIPTION"] = "Enter Item ID or drag an item here to add it to the list."
+L["MASTER_LOOTER_IGNORE_ADD"] = "Add Item"
+L["MASTER_LOOTER_IGNORE_REMOVE"] = "Remove"
+L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Remove this item from the ignore list."
+
+--------------------------------------------------------------------------------
+-- Options: Automated Rolls
+--------------------------------------------------------------------------------
+
+L["ROLLS_DESCRIPTION"] = "Auto-rolls Greed on non-BoP items up to your chosen quality. Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+L["ROLLS_ENABLE"] = "Enable Automated Rolls"
+L["ROLLS_THRESHOLD"] = "Automated Greed Threshold"
+
+L["ROLLS_CUSTOM_LIST"] = "Custom Roll List"
+L["ROLLS_CUSTOM_LIST_DESCRIPTION"] = "Give specific items their own roll action, overriding the threshold."
+L["ROLLS_CUSTOM_LIST_ENABLE"] = "Enable Custom Roll List"
+L["ROLLS_RESTORE_DEFAULTS"] = "Restore Default Custom Roll List"
+L["ROLLS_RESTORE_CONFIRM"] = "This will replace your custom roll list with the default items for your expansion. Continue?"
+L["ROLLS_ADD_ITEM_DESCRIPTION"] = "Enter Item ID or drag an item here to add it to the list."
+L["ROLLS_ADD_ITEM"] = "Add Item"
+L["ROLLS_CHOOSE_ACTION"] = "Choose the automatic roll action for this item."
+L["ROLLS_REMOVE"] = "Remove"
+L["ROLLS_REMOVE_DESCRIPTION"] = "Remove this item from the custom roll list."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
 --------------------------------------------------------------------------------
 
 -- Trade Announcements
-
 L["TRADE_HEADER"] = "Trade Announcements"
-L["TRADE_DESC"] = "Automatically posts a summary of completed trades to chat, including items, enchants, and gold exchanged."
+L["TRADE_DESCRIPTION"] = "Posts a summary of each completed trade — items, enchants, and gold."
 L["TRADE_ENABLE"] = "Enable Trade Announcements"
-L["TRADE_ENABLE_DESC"] = "Posts a trade summary when a trade completes."
 L["TRADE_CONDITION"] = "When"
-L["TRADE_CONDITION_DESC"] = "Controls when trade announcements are active."
 L["TRADE_CONDITION_ALWAYS"] = "Always"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "Only in Party or Raid"
 L["TRADE_CONDITION_RAID_ONLY"] = "Only in Raid"
 L["TRADE_OUTPUT"] = "Message Output"
-L["TRADE_OUTPUT_DESC"] = "Where the trade summary is sent."
 L["TRADE_OUTPUT_WHISPER"] = "Whisper"
-L["TRADE_OUTPUT_GROUP"] = "Party Chat"
-L["TRADE_OUTPUT_RAID"] = "Raid Chat"
-L["TRADE_EXAMPLE"] = "Example: {rt4} Gave [Item X] x2, [Item Y] to Fathom. // GogoLoot"
-
-L["TRADE_TOOLTIP_TITLE"] = "Trade Announcements"
-L["TRADE_TOOLTIP_DESC"] = "Posts a trade summary to chat when this trade completes."
+L["TRADE_OUTPUT_GROUP"] = "Group Chat"
+L["TRADE_EXAMPLE"] = "Example: {rt4} GogoLoot // Gave [Item X] x2, [Item Y] to Fathom."
+L["TRADE_TOOLTIP_DESCRIPTION"] = "Posts a trade summary to chat when this trade completes."
 L["TRADE_TOOLTIP_OUTPUT"] = "Current Output"
 L["TRADE_CHECKBOX_LABEL"] = "Announce"
 
 -- Master Looter Announcements
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Posts master loot activity to group chat. Automated distributions use a quality threshold to avoid spam; manual distributions are always announced."
 
-L["ML_ANNOUNCE_HEADER"] = "Master Looter Announcements"
-L["ML_ANNOUNCE_DESC"] = "Posts master loot activity to group chat for transparency. Configure separate thresholds for automated and manual distributions so routine auto-loot doesn't spam chat while manual deviations stay visible."
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Enable Messages when Master Looter is Set"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] = "Example: {rt4} GogoLoot // Aevala will be holding Epic items for the group."
 
-L["ML_ANNOUNCE_DESTINATION"] = "Enable Messages when Master Looter is Set"
-L["ML_ANNOUNCE_DESTINATION_DESC"] = "Announces when loot destinations are configured, and when a destination player leaves the group."
-L["ML_ANNOUNCE_DESTINATION_EXAMPLE"] = "Example: {rt4} Aevala will be receiving all the Epic items. // GogoLoot"
+L["MASTER_LOOTER_ANNOUNCE_AUTO"] = "Enable Automated Master Looting Announcements"
+L["MASTER_LOOTER_ANNOUNCE_AUTO_THRESHOLD"] = "Auto Announce Threshold"
+L["MASTER_LOOTER_ANNOUNCE_AUTO_EXAMPLE"] = "Example: {rt4} GogoLoot // Gave [Item X] to Fathom."
 
-L["ML_ANNOUNCE_AUTO"] = "Enable Automated Master Looting Announcements"
-L["ML_ANNOUNCE_AUTO_DESC"] = "Announces items distributed automatically by GogoLoot."
-L["ML_ANNOUNCE_AUTO_THRESHOLD"] = "Auto Announce Threshold"
-L["ML_ANNOUNCE_AUTO_THRESHOLD_DESC"] = "Only announce automated distributions at or above this quality."
-
-L["ML_ANNOUNCE_MANUAL"] = "Enable Manual Master Looting Announcements"
-L["ML_ANNOUNCE_MANUAL_DESC"] = "Announces items distributed manually via the candidate dropdown. Defaulted lower than auto so deviations from the configured rules are visible to the group."
-L["ML_ANNOUNCE_MANUAL_THRESHOLD"] = "Manual Announce Threshold"
-L["ML_ANNOUNCE_MANUAL_THRESHOLD_DESC"] = "Only announce manual distributions at or above this quality."
-
-L["ML_ANNOUNCE_EXAMPLE"] = "Example: {rt4} Gave [Item X] to Gogowarrior. // GogoLoot"
-
---------------------------------------------------------------------------------
--- Options: Automated Rolls
---------------------------------------------------------------------------------
-
-L["ROLLS_DESC"] = "Automatically rolls Greed on non-BoP items at or below the selected quality. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped. BoP items are never auto-greeded by the threshold, but can be automated via the Custom Roll List below."
-L["ROLLS_ENABLE"] = "Enable Automated Rolls"
-L["ROLLS_ENABLE_DESC"] = "Automatically rolls Greed on eligible items at or below the threshold."
-L["ROLLS_THRESHOLD"] = "Automated Greed Threshold"
-L["ROLLS_THRESHOLD_DESC"] = "Items at or below this quality will be automatically greeded."
-
-L["ROLLS_CUSTOM_LIST"] = "Custom Roll List"
-L["ROLLS_CUSTOM_LIST_DESC"] = "Items on this list have their own roll rule that overrides the threshold. This is the only way to automate BoP items like Scourgestones or Demonic Runes. Set each item to Manual Roll, Greed, Need, or Pass. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped regardless of setting."
-L["ROLLS_RESTORE_DEFAULTS"] = "Restore Default Custom Roll List"
-L["ROLLS_RESTORE_CONFIRM"] = "This will replace your custom roll list with the default items for your expansion. Continue?"
-L["ROLLS_ADD_ITEM_DESC"] = "Enter Item ID or drag an item here to add it to the list."
-L["ROLLS_ADD_ITEM"] = "Add Item"
-L["ROLLS_ADD_ITEM_TOOLTIP"] = "Enter Item ID or drag an item link here."
-L["ROLLS_CHOOSE_ACTION"] = "Choose the automatic roll action for this item."
-L["ROLLS_REMOVE"] = "Remove"
-L["ROLLS_REMOVE_DESC"] = "Remove this item from the custom roll list."
-
---------------------------------------------------------------------------------
--- Options: Master Looter
---------------------------------------------------------------------------------
-
-L["ML_LOOT_TYPE"] = "Loot Type (read-only, change via Game Menu)"
-L["ML_LOOT_THRESHOLD"] = "Loot Threshold (read-only, change via Game Menu)"
-
-L["ML_AUTO_HEADER"] = "Automated Master Looting"
-L["ML_AUTO_DESC"] = "Automatically distributes loot to designated players when you are the Master Looter. Quest Items, Books, Recipes, Mounts, Pets, and Legendaries are always skipped and will appear in a standard loot window."
-L["ML_AUTO_ENABLE"] = "Enable Automated Master Looting In Instances"
-L["ML_AUTO_ENABLE_DESC"] = "Distributes loot to configured destinations automatically."
-L["ML_AUTO_OUTSIDE"] = "Enable Automated Master Looting Outside of Instances"
-L["ML_AUTO_OUTSIDE_CAUTION"] = "Caution : Due to world boss loot not being tradable, this is not advised!"
-
-L["ML_DEST_HEADER"] = "Loot Destinations"
-L["ML_DEST_DESC"] = "Assign a group member to receive items of each quality tier."
-L["ML_DEST_SELF"] = "Self"
-L["ML_DEST_CHOOSE"] = "Choose who receives %s items."
-
-L["ML_IGNORE_HEADER"] = "Ignore List"
-L["ML_IGNORE_DESC"] = "Items on this list will not be automatically distributed and will appear in a standard loot window for manual assignment."
-L["ML_IGNORE_RESTORE"] = "Restore Default Ignore List"
-L["ML_IGNORE_RESTORE_CONFIRM"] = "This will replace your master loot ignore list with the default items for your expansion. Continue?"
-L["ML_IGNORE_ADD_DESC"] = "Enter an Item ID or paste an item link to add it to the ignore list."
-L["ML_IGNORE_ADD"] = "Add Item"
-L["ML_IGNORE_ADD_TOOLTIP"] = "Enter Item ID or drag an item here to add it to the list."
-L["ML_IGNORE_REMOVE"] = "Remove"
-L["ML_IGNORE_REMOVE_DESC"] = "Remove this item from the ignore list."
+L["MASTER_LOOTER_ANNOUNCE_MANUAL_NOTE"] = "Note: Every item distributed manually is always announced, regardless of quality."
