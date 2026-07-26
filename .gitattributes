@@ -1,0 +1,19 @@
+# Normalize all text files to LF in the repo; auto-detect what's text.
+* text=auto eol=lf
+
+# Explicit text types
+*.lua       text
+*.toc       text
+*.xml       text
+*.md        text
+*.pkgmeta   text
+*.yml       text
+*.yaml      text
+LICENSE     text
+
+# Binary assets — never normalize or diff these
+*.tga       binary
+*.blp       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
