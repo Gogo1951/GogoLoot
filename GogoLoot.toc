@@ -1,8 +1,6 @@
 ## Title: GogoLoot
-## Notes: Automate master looting, auto-roll greed or need on non-BoP drops, loot faster with the loot window hidden, and announce every trade to chat. Quest items, recipes, mounts, pets, and legendaries always stay safe. Don't let loot slow down your zug!
+## Notes: Vacuum up gear with Automated Master Looting, Automated Rolls, and transparent Distribution Announcements. Quest items, recipes, mounts, pets, and legendaries stay safe. Don't let loot slow down your zug!
 ## Author: Gogo1951
-## IconTexture: Interface/AddOns/GogoLoot/Includes/Images/GogoLoot.tga
-## X-License: MIT
 
 ## Category-enUS: Loot
 ## Category-deDE: Beute
@@ -16,7 +14,10 @@
 ## Category-zhCN: 战利品
 ## Category-zhTW: 戰利品
 
-## Interface: 11508, 20506
+## IconTexture: Interface/AddOns/GogoLoot/Includes/Images/GogoLoot.tga
+## X-License: MIT
+
+## Interface: 11509, 20506
 ## Version: @project-version@
 ## X-Curse-Project-ID: 423347
 ## X-Wago-ID: qGYZ3ONg
@@ -68,6 +69,7 @@ Features/Minimap-Button.lua
 Options/Options-Utilities.lua
 Options/Options-General.lua
 Options/Options-Master-Looter.lua
+Options/Options-Master-Looter-Popup.lua
 Options/Options-Automated-Rolls.lua
 Options/Options-Announcements.lua
 Options/Options-Profiles.lua
@@ -75,6 +77,5 @@ Options/Options-Diagnostics.lua
 Options/Options.lua
 
 # Feedback Welcome! (=
-# GogoLoot on CurseForge // https://www.curseforge.com/wow/addons/gogoloot
 # GogoLoot on GitHub // https://github.com/Gogo1951/GogoLoot
 # GogoLoot on Discord // https://discord.gg/eh8hKq992Q

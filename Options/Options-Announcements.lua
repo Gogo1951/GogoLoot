@@ -44,157 +44,165 @@ local GetQualityColor = ns.GetQualityColor
 ]]
 
 local function BuildAnnouncementThresholdOptions()
-    local options = {}
-    for quality = 1, 4 do
-        local rarityKey = ns.rarityToConfigurationKey[quality]
-        local localizedName = ns.QUALITY_DISPLAY_NAMES[rarityKey] or ns:CapitalizeFirstLetter(rarityKey)
-        options[quality] = GetQualityColor(quality) .. localizedName .. "+|r"
-    end
-    return options
+	local options = {}
+	for quality = 1, 4 do
+		local rarityKey = ns.rarityToConfigurationKey[quality]
+		local localizedName = ns.QUALITY_DISPLAY_NAMES[rarityKey] or ns:CapitalizeFirstLetter(rarityKey)
+		options[quality] = GetQualityColor(quality) .. localizedName .. "+|r"
+	end
+	return options
 end
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
+---@return table
 function ns.BuildAnnouncementOptions()
-    local thresholdOptions = BuildAnnouncementThresholdOptions()
+	local thresholdOptions = BuildAnnouncementThresholdOptions()
 
-    return {
-        type = "group",
-        name = L["TAB_ANNOUNCEMENTS"],
-        args = {
-            ----------------------------------------------------------------
-            -- Master Looter Announcements (first section — the panel title
-            -- "Announcements" already labels it, so it opens on the
-            -- description with no sub-header, like the other panels)
-            ----------------------------------------------------------------
-            mlDesc = ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 13),
-            spacerAfterMLDesc = ns.OptionsSpacer(14),
+	return {
+		type = "group",
+		name = L["TAB_ANNOUNCEMENTS"],
+		args = {
+			----------------------------------------------------------------
+			-- Master Looter Announcements
+			----------------------------------------------------------------
 
-            -- Destinations toggle (gates MESSAGE_DESTINATION_SET / MESSAGE_DESTINATION_LEFT)
-            announceDestinations = {
-                type = "toggle",
-                name = L["MASTER_LOOTER_ANNOUNCE_DESTINATION"],
-                width = "full",
-                order = 15,
-                get = function()
-                    return ns.db.profile.announceDestinations
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceDestinations = value
-                end
-            },
-            spacerAfterDestToggle = ns.OptionsSpacer(16),
-            destExample = ns.OptionsDesc(
-                GetColor("MUTED") .. L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] .. "|r",
-                17
-            ),
+			--[[
+			    The panel title already reads "Announcements", so the first
+			    section opens straight on its description with no header of its
+			    own, matching the other panels.
+			]]
+			mlDesc = ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 13),
+			spacerAfterMLDesc = ns.OptionsSpacer(14),
 
-            -- Auto distribution toggle + threshold
-            spacerBeforeAuto = ns.OptionsSpacer(18),
-            announceMasterLootAuto = {
-                type = "toggle",
-                name = L["MASTER_LOOTER_ANNOUNCE_AUTO"],
-                width = "full",
-                order = 19,
-                get = function()
-                    return ns.db.profile.announceMasterLootAuto
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceMasterLootAuto = value
-                end
-            },
-            spacerAfterAutoToggle = ns.OptionsSpacer(20),
-            announceMasterLootAutoThreshold = {
-                type = "select",
-                name = L["MASTER_LOOTER_ANNOUNCE_AUTO_THRESHOLD"],
-                style = "dropdown",
-                width = "double",
-                values = thresholdOptions,
-                order = 21,
-                disabled = function()
-                    return not ns.db.profile.announceMasterLootAuto
-                end,
-                get = function()
-                    return ns.db.profile.announceMasterLootAutoThreshold
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceMasterLootAutoThreshold = value
-                end
-            },
-            spacerBeforeAutoExample = ns.OptionsSpacer(22),
-            autoExample = ns.OptionsDesc(GetColor("MUTED") .. L["MASTER_LOOTER_ANNOUNCE_AUTO_EXAMPLE"] .. "|r", 23),
+			-- Destinations toggle (gates MESSAGE_DESTINATION_SET / MESSAGE_DESTINATION_LEFT)
+			announceDestinations = {
+				type = "toggle",
+				name = L["MASTER_LOOTER_ANNOUNCE_DESTINATION"],
+				width = "full",
+				order = 15,
+				get = function()
+					return ns.db.profile.announceDestinations
+				end,
+				set = function(_, value)
+					ns.db.profile.announceDestinations = value
+				end,
+			},
+			spacerAfterDestToggle = ns.OptionsSpacer(16),
+			destExample = ns.OptionsDesc(
+				GetColor("MUTED") .. L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] .. "|r",
+				17
+			),
 
-            -- Manual distributions have no toggle — they're always announced (see note).
-            spacerBeforeManual = ns.OptionsSpacer(24),
-            manualNote = ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_MANUAL_NOTE"], 25),
+			-- Auto distribution toggle + threshold
+			spacerBeforeAuto = ns.OptionsSpacer(18),
+			announceMasterLootAuto = {
+				type = "toggle",
+				name = L["MASTER_LOOTER_ANNOUNCE_AUTO"],
+				width = "full",
+				order = 19,
+				get = function()
+					return ns.db.profile.announceMasterLootAuto
+				end,
+				set = function(_, value)
+					ns.db.profile.announceMasterLootAuto = value
+				end,
+			},
+			spacerAfterAutoToggle = ns.OptionsSpacer(20),
+			autoThresholdLabel = ns.OptionsRowLabel(L["MASTER_LOOTER_ANNOUNCE_AUTO_THRESHOLD"], 21),
+			announceMasterLootAutoThreshold = {
+				type = "select",
+				name = "",
+				style = "dropdown",
+				width = ns.OPTIONS_CONTROL_WIDTH,
+				values = thresholdOptions,
+				order = 22,
+				disabled = function()
+					return not ns.db.profile.announceMasterLootAuto
+				end,
+				get = function()
+					return ns.db.profile.announceMasterLootAutoThreshold
+				end,
+				set = function(_, value)
+					ns.db.profile.announceMasterLootAutoThreshold = value
+				end,
+			},
+			spacerBeforeAutoExample = ns.OptionsSpacer(23),
+			autoExample = ns.OptionsDesc(GetColor("MUTED") .. L["MASTER_LOOTER_ANNOUNCE_AUTO_EXAMPLE"] .. "|r", 24),
 
-            ----------------------------------------------------------------
-            -- Trade Announcements
-            ----------------------------------------------------------------
-            spacerBeforeTrade = ns.OptionsSpacer(40),
-            tradeHeader = ns.OptionsHeader(L["TRADE_HEADER"], 41),
-            spacerAfterTradeHeader = ns.OptionsSpacer(42),
-            tradeDesc = ns.OptionsDesc(L["TRADE_DESCRIPTION"], 43),
-            spacerAfterTradeDesc = ns.OptionsSpacer(44),
-            announceTrade = {
-                type = "toggle",
-                name = L["TRADE_ENABLE"],
-                width = "full",
-                order = 45,
-                get = function()
-                    return ns.db.profile.announceTrade
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceTrade = value
-                    ns:SyncTradeCheckbox()
-                end
-            },
-            spacerAfterTradeToggle = ns.OptionsSpacer(46),
-            announceTradeCondition = {
-                type = "select",
-                name = L["TRADE_CONDITION"],
-                style = "dropdown",
-                width = "double",
-                order = 47,
-                disabled = function()
-                    return not ns.db.profile.announceTrade
-                end,
-                values = {
-                    ["always"] = L["TRADE_CONDITION_ALWAYS"],
-                    ["party_or_raid"] = L["TRADE_CONDITION_PARTY_OR_RAID"],
-                    ["raid_only"] = L["TRADE_CONDITION_RAID_ONLY"]
-                },
-                sorting = {"always", "party_or_raid", "raid_only"},
-                get = function()
-                    return ns.db.profile.announceTradeCondition
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceTradeCondition = value
-                end
-            },
-            spacerBetweenTradeDropdowns = ns.OptionsSpacer(48),
-            announceTradeOutput = {
-                type = "select",
-                name = L["TRADE_OUTPUT"],
-                style = "dropdown",
-                width = "double",
-                order = 49,
-                disabled = function()
-                    return not ns.db.profile.announceTrade
-                end,
-                values = ns.TRADE_OUTPUT_LABELS,
-                sorting = {"whisper", "group"},
-                get = function()
-                    return ns.db.profile.announceTradeOutput
-                end,
-                set = function(_, value)
-                    ns.db.profile.announceTradeOutput = value
-                end
-            },
-            spacerBeforeTradeExample = ns.OptionsSpacer(50),
-            tradeExample = ns.OptionsDesc(GetColor("MUTED") .. L["TRADE_EXAMPLE"] .. "|r", 51)
-        }
-    }
+			-- Manual distributions have no toggle — they're always announced (see note).
+			spacerBeforeManual = ns.OptionsSpacer(25),
+			manualNote = ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_MANUAL_NOTE"], 26),
+
+			----------------------------------------------------------------
+			-- Trade Announcements
+			----------------------------------------------------------------
+			spacerBeforeTrade = ns.OptionsSpacer(40),
+			tradeHeader = ns.OptionsHeader(L["TRADE_HEADER"], 41),
+			spacerAfterTradeHeader = ns.OptionsSpacer(42),
+			tradeDesc = ns.OptionsDesc(L["TRADE_DESCRIPTION"], 43),
+			spacerAfterTradeDesc = ns.OptionsSpacer(44),
+			announceTrade = {
+				type = "toggle",
+				name = L["TRADE_ENABLE"],
+				width = "full",
+				order = 45,
+				get = function()
+					return ns.db.profile.announceTrade
+				end,
+				set = function(_, value)
+					ns.db.profile.announceTrade = value
+					ns:SyncTradeCheckbox()
+				end,
+			},
+			spacerAfterTradeToggle = ns.OptionsSpacer(46),
+			tradeConditionLabel = ns.OptionsRowLabel(L["TRADE_CONDITION"], 47),
+			announceTradeCondition = {
+				type = "select",
+				name = "",
+				style = "dropdown",
+				width = ns.OPTIONS_CONTROL_WIDTH,
+				order = 48,
+				disabled = function()
+					return not ns.db.profile.announceTrade
+				end,
+				values = {
+					["always"] = L["TRADE_CONDITION_ALWAYS"],
+					["party_or_raid"] = L["TRADE_CONDITION_PARTY_OR_RAID"],
+					["raid_only"] = L["TRADE_CONDITION_RAID_ONLY"],
+				},
+				sorting = { "always", "party_or_raid", "raid_only" },
+				get = function()
+					return ns.db.profile.announceTradeCondition
+				end,
+				set = function(_, value)
+					ns.db.profile.announceTradeCondition = value
+				end,
+			},
+			spacerBetweenTradeDropdowns = ns.OptionsSpacer(49),
+			tradeOutputLabel = ns.OptionsRowLabel(L["TRADE_OUTPUT"], 50),
+			announceTradeOutput = {
+				type = "select",
+				name = "",
+				style = "dropdown",
+				width = ns.OPTIONS_CONTROL_WIDTH,
+				order = 51,
+				disabled = function()
+					return not ns.db.profile.announceTrade
+				end,
+				values = ns.TRADE_OUTPUT_LABELS,
+				sorting = { "whisper", "group" },
+				get = function()
+					return ns.db.profile.announceTradeOutput
+				end,
+				set = function(_, value)
+					ns.db.profile.announceTradeOutput = value
+				end,
+			},
+			spacerBeforeTradeExample = ns.OptionsSpacer(52),
+			tradeExample = ns.OptionsDesc(GetColor("MUTED") .. L["TRADE_EXAMPLE"] .. "|r", 53),
+		},
+	}
 end

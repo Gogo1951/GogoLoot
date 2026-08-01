@@ -24,98 +24,120 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
     rather than by name.
 ]]
 
-function ns:InitializeOptions()
-    AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.General, ns.BuildGeneralOptions)
+---@return nil
+function ns.RegisterOptionsPanels()
+	AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.General, ns.BuildGeneralOptions)
 
-    if ns.BuildAnnouncementOptions then
-        AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Announcements, ns.BuildAnnouncementOptions)
-    end
+	if ns.BuildAnnouncementOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Announcements, ns.BuildAnnouncementOptions)
+	end
 
-    if ns.BuildAutomatedRollOptions then
-        AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.AutomatedRolls, ns.BuildAutomatedRollOptions)
-    end
+	if ns.BuildAutomatedRollOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.AutomatedRolls, ns.BuildAutomatedRollOptions)
+	end
 
-    if ns.BuildMasterLooterOptions then
-        AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.MasterLooter, ns.BuildMasterLooterOptions)
-    end
+	if ns.BuildMasterLooterOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.MasterLooter, ns.BuildMasterLooterOptions)
+	end
 
-    if ns.BuildDiagnosticsOptions then
-        AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Diagnostics, ns.BuildDiagnosticsOptions)
-    end
+	if ns.BuildDiagnosticsOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Diagnostics, ns.BuildDiagnosticsOptions)
+	end
 
-    -- The Profiles panel is the stock AceDBOptions table plus Reset All Profiles (Options-Profiles.lua).
-    if ns.BuildProfilesOptions then
-        AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Profiles, ns.BuildProfilesOptions)
-    end
+	--[[
+        Registered only, never added to the Blizzard tree: the master looter
+        pop-up opens as its own AceConfigDialog window (Options-Master-Looter-Popup.lua).
+    ]]
+	if ns.BuildMasterLooterPopupOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.MasterLooterPopup, ns.BuildMasterLooterPopupOptions)
+	end
 
-    --[[
+	-- The Profiles panel is the stock AceDBOptions table, returned unmodified (Options-Profiles.lua).
+	if ns.BuildProfilesOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Profiles, ns.BuildProfilesOptions)
+	end
+
+	--[[
         On clients with the Settings API, AddToBlizOptions returns the panel
         frame and, as a second value, the Settings category ID. Capture it so
         OpenOptionsPanel can route directly to this category without a
         name-based lookup.
     ]]
-    local mainPanel, mainCategoryID = AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.General, L["ADDON_TITLE"])
-    ns.optionsFrames = {main = mainPanel, categoryID = mainCategoryID}
+	local mainPanel, mainCategoryID = AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.General, L["ADDON_TITLE"])
+	ns.optionsFrames = { main = mainPanel, categoryID = mainCategoryID }
 
-    --[[
+	--[[
         Child-panel display order in Blizzard's settings UI is the order of
         AddToBlizOptions calls: Master Looter, Automated Rolls, Announcements,
         Profiles — with Diagnostics registered last so it sits at the bottom.
     ]]
-    if ns.BuildMasterLooterOptions then
-        ns.optionsFrames.ml =
-            AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.MasterLooter, L["TAB_MASTER_LOOTER"], L["ADDON_TITLE"])
-    end
+	if ns.BuildMasterLooterOptions then
+		ns.optionsFrames.ml =
+			AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.MasterLooter, L["TAB_MASTER_LOOTER"], L["ADDON_TITLE"])
+	end
 
-    if ns.BuildAutomatedRollOptions then
-        ns.optionsFrames.rolls =
-            AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.AutomatedRolls, L["TAB_AUTOMATED_ROLLS"], L["ADDON_TITLE"])
-    end
+	if ns.BuildAutomatedRollOptions then
+		ns.optionsFrames.rolls = AceConfigDialog:AddToBlizOptions(
+			ns.OPTIONS_REGISTRY.AutomatedRolls,
+			L["TAB_AUTOMATED_ROLLS"],
+			L["ADDON_TITLE"]
+		)
+	end
 
-    if ns.BuildAnnouncementOptions then
-        ns.optionsFrames.trade =
-            AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Announcements, L["TAB_ANNOUNCEMENTS"], L["ADDON_TITLE"])
-    end
+	if ns.BuildAnnouncementOptions then
+		ns.optionsFrames.trade = AceConfigDialog:AddToBlizOptions(
+			ns.OPTIONS_REGISTRY.Announcements,
+			L["TAB_ANNOUNCEMENTS"],
+			L["ADDON_TITLE"]
+		)
+	end
 
-    if ns.BuildProfilesOptions then
-        -- The panel's display name comes already-localized from AceDBOptions-3.0; read it from the built table.
-        local profilesDisplayName = ns.BuildProfilesOptions().name
-        ns.optionsFrames.profiles =
-            AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Profiles, profilesDisplayName, L["ADDON_TITLE"])
-    end
+	if ns.BuildProfilesOptions then
+		-- The panel's display name comes already-localized from AceDBOptions-3.0; read it from the built table.
+		local profilesDisplayName = ns.BuildProfilesOptions().name
+		ns.optionsFrames.profiles =
+			AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Profiles, profilesDisplayName, L["ADDON_TITLE"])
+	end
 
-    -- Diagnostics added last so it sits at the bottom of the settings tree.
-    -- Its display name is a developer-facing string (never localized) from ns.DiagnosticsStrings.
-    if ns.BuildDiagnosticsOptions then
-        ns.optionsFrames.diagnostics =
-            AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Diagnostics, ns.DiagnosticsStrings.TAB, L["ADDON_TITLE"])
-    end
+	--[[
+	    Diagnostics added last so it sits at the bottom of the settings tree. Its
+	    display name is a developer-facing string (never localized) from
+	    ns.DiagnosticsStrings.
+	]]
+	if ns.BuildDiagnosticsOptions then
+		ns.optionsFrames.diagnostics = AceConfigDialog:AddToBlizOptions(
+			ns.OPTIONS_REGISTRY.Diagnostics,
+			ns.DiagnosticsStrings.TAB,
+			L["ADDON_TITLE"]
+		)
+	end
 
-    ns:WarmItemCache()
+	ns:WarmItemCache()
 end
 
 --------------------------------------------------------------------------------
 -- Panel Navigation
 --------------------------------------------------------------------------------
 
+---@return nil
 function ns:OpenOptionsPanel()
-    if not ns.optionsFrames then
-        return
-    end
+	if not ns.optionsFrames then
+		return
+	end
 
-    if Settings and Settings.OpenToCategory and ns.optionsFrames.categoryID then
-        Settings.OpenToCategory(ns.optionsFrames.categoryID)
-        return
-    end
+	if Settings and Settings.OpenToCategory and ns.optionsFrames.categoryID then
+		Settings.OpenToCategory(ns.optionsFrames.categoryID)
+		return
+	end
 
-    if InterfaceOptionsFrame_OpenToCategory then
-        InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
-        -- Called twice for Classic compatibility
-        InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
-        return
-    end
+	if InterfaceOptionsFrame_OpenToCategory then
+		InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
+		-- Called twice for Classic compatibility
+		InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
+		return
+	end
 
-    AceConfigDialog:Open(ns.OPTIONS_REGISTRY.General)
+	AceConfigDialog:Open(ns.OPTIONS_REGISTRY.General)
 end
 
 --------------------------------------------------------------------------------
@@ -125,5 +147,5 @@ end
 SLASH_GOGOLOOT1 = "/gl"
 SLASH_GOGOLOOT2 = "/gogoloot"
 SlashCmdList["GOGOLOOT"] = function()
-    ns:OpenOptionsPanel()
+	ns:OpenOptionsPanel()
 end

@@ -30,7 +30,7 @@ local GetColor = ns.GetColor
     Announce signature:
       channel - "PARTY", "RAID", "SAY", "WHISPER", etc.
       target - whisper target name (or nil for non-whisper channels)
-      formatKey - L[] key for the format string (e.g. "MESSAGE_LOOT_ANNOUNCE")
+      formatKey - L[] key for the format string (e.g. "MESSAGE_GAVE")
       ... - format arguments substituted via string.format
 
     BuildAnnounceMessage builds the same decorated message without sending,
@@ -39,33 +39,49 @@ local GetColor = ns.GetColor
     It takes no channel — the format is identical for every channel.
 ]]
 
+---@param text string
+---@return nil
 function ns:PrintMessage(text)
-    print(
-        GetColor("INFO") ..
-            L["ADDON_TITLE"] ..
-                "|r " .. GetColor("SEPARATOR") .. "//" .. "|r " .. GetColor("TEXT") .. text .. "|r"
-    )
+	print(
+		GetColor("INFO")
+			.. L["ADDON_TITLE"]
+			.. "|r "
+			.. GetColor("SEPARATOR")
+			.. "//"
+			.. "|r "
+			.. GetColor("TEXT")
+			.. text
+			.. "|r"
+	)
 end
 
+---@param formatKey string
+---@param ... any
+---@return string|nil
 function ns:BuildAnnounceMessage(formatKey, ...)
-    local template = L[formatKey]
-    if not template then
-        return nil
-    end
-    local body = string.format(template, ...)
-    -- Deviation from the guide's helpers: no gsub("|", "") pipe-stripping — bodies legitimately carry item links (|Hitem...), which are legal in outbound chat.
-    return ns.TARGET_MARKER .. " " .. L["ADDON_TITLE"] .. " // " .. body
+	local template = L[formatKey]
+	if not template then
+		return nil
+	end
+	local body = string.format(template, ...)
+	-- Deviation from the guide's helpers: no gsub("|", "") pipe-stripping — bodies legitimately carry item links (|Hitem...), which are legal in outbound chat.
+	return ns.TARGET_MARKER .. " " .. L["ADDON_TITLE"] .. " // " .. body
 end
 
+---@param channel string|nil
+---@param target string|nil
+---@param formatKey string
+---@param ... any
+---@return nil
 function ns:Announce(channel, target, formatKey, ...)
-    if not channel then
-        return
-    end
-    local message = ns:BuildAnnounceMessage(formatKey, ...)
-    if not message then
-        return
-    end
-    SendChatMessage(message, channel, nil, target)
+	if not channel then
+		return
+	end
+	local message = ns:BuildAnnounceMessage(formatKey, ...)
+	if not message then
+		return
+	end
+	SendChatMessage(message, channel, nil, target)
 end
 
 --[[
@@ -73,15 +89,16 @@ end
     (the trade announcement path in Announcements-Trade.lua whispers the
     trade partner instead).
 ]]
+---@return string|nil
 function ns:GetGroupChatChannel()
-    if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-        return "INSTANCE_CHAT"
-    elseif IsInRaid() then
-        return "RAID"
-    elseif IsInGroup() then
-        return "PARTY"
-    end
-    return nil
+	if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+		return "INSTANCE_CHAT"
+	elseif IsInRaid() then
+		return "RAID"
+	elseif IsInGroup() then
+		return "PARTY"
+	end
+	return nil
 end
 
 --------------------------------------------------------------------------------
@@ -89,10 +106,10 @@ end
 --------------------------------------------------------------------------------
 
 local function PrintWelcome()
-    if not ns.db or not ns.db.profile.showWelcome then
-        return
-    end
-    ns:PrintMessage(L["CHAT_LOADED"]:format(ns.Version))
+	if not ns.db or not ns.db.global.showWelcome then
+		return
+	end
+	ns:PrintMessage(L["CHAT_LOADED"]:format(ns.Version))
 end
 
 ns:RegisterModuleEvent("PLAYER_LOGIN", PrintWelcome)
