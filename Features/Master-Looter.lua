@@ -30,55 +30,61 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 -- API Wrappers (Classic Compatibility)
 --------------------------------------------------------------------------------
 
-function ns:SafeGetLootMethod()
-    if type(GetLootMethod) == "function" then
-        return GetLootMethod()
-    elseif C_PartyInfo and type(C_PartyInfo.GetLootMethod) == "function" then
-        local method = C_PartyInfo.GetLootMethod()
-        if Enum and Enum.LootMethod then
-            if method == Enum.LootMethod.FreeForAll then
-                return "freeforall"
-            end
-            if method == Enum.LootMethod.RoundRobin then
-                return "roundrobin"
-            end
-            if method == Enum.LootMethod.MasterLoot then
-                return "master"
-            end
-            if method == Enum.LootMethod.GroupLoot then
-                return "group"
-            end
-            if method == Enum.LootMethod.NeedBeforeGreed then
-                return "needbeforegreed"
-            end
-        end
-        if method == 0 then
-            return "freeforall"
-        end
-        if method == 1 then
-            return "roundrobin"
-        end
-        if method == 2 then
-            return "master"
-        end
-        if method == 3 then
-            return "group"
-        end
-        if method == 4 then
-            return "needbeforegreed"
-        end
-    end
-    return "group"
+--[[
+    The loot method crosses the API boundary as a number on modern clients and
+    as a string on legacy ones, so one table owns the mapping in both
+    directions. Enum.LootMethod does not exist on Classic Era, which makes these
+    numbers the live values there rather than a fallback — see README-Technical.
+]]
+local LOOT_METHOD_BY_ENUM = {
+	[0] = "freeforall",
+	[1] = "roundrobin",
+	[2] = "master",
+	[3] = "group",
+	[4] = "needbeforegreed",
+}
+
+local LOOT_METHOD_TO_ENUM = {}
+for enumValue, methodName in pairs(LOOT_METHOD_BY_ENUM) do
+	LOOT_METHOD_TO_ENUM[methodName] = enumValue
 end
 
+local ENUM_KEY_BY_METHOD = {
+	freeforall = "FreeForAll",
+	roundrobin = "RoundRobin",
+	master = "MasterLoot",
+	group = "GroupLoot",
+	needbeforegreed = "NeedBeforeGreed",
+}
+
+---@return string # one of freeforall / roundrobin / master / group / needbeforegreed
+function ns:SafeGetLootMethod()
+	local method = ns:SafeCallLootMethod()
+	if type(method) == "string" then
+		return method
+	end
+	if type(method) == "number" then
+		if Enum and Enum.LootMethod then
+			for methodName, enumKey in pairs(ENUM_KEY_BY_METHOD) do
+				if method == Enum.LootMethod[enumKey] then
+					return methodName
+				end
+			end
+		end
+		return LOOT_METHOD_BY_ENUM[method] or "group"
+	end
+	return "group"
+end
+
+---@return number
 function ns:SafeGetLootThreshold()
-    if type(GetLootThreshold) == "function" then
-        return GetLootThreshold()
-    end
-    if C_PartyInfo and type(C_PartyInfo.GetLootThreshold) == "function" then
-        return C_PartyInfo.GetLootThreshold()
-    end
-    return 2
+	if type(GetLootThreshold) == "function" then
+		return GetLootThreshold()
+	end
+	if C_PartyInfo and type(C_PartyInfo.GetLootThreshold) == "function" then
+		return C_PartyInfo.GetLootThreshold()
+	end
+	return 2
 end
 
 --[[
@@ -86,38 +92,40 @@ end
     options dropdowns are editable only for them. UnitIsGroupLeader is the
     Classic surface; guard it in case a build lacks it.
 ]]
+---@return boolean
 function ns:IsGroupLeader()
-    if not IsInGroup() then
-        return false
-    end
-    if type(UnitIsGroupLeader) == "function" then
-        return UnitIsGroupLeader("player") and true or false
-    end
-    return false
+	if not IsInGroup() then
+		return false
+	end
+	if type(UnitIsGroupLeader) == "function" then
+		return UnitIsGroupLeader("player") and true or false
+	end
+	return false
 end
 
 -- Display name of the group leader, or nil when solo or when the player leads.
+---@return string|nil
 function ns:GetGroupLeaderName()
-    if not IsInGroup() or type(UnitIsGroupLeader) ~= "function" then
-        return nil
-    end
-    local memberCount = GetNumGroupMembers()
-    if IsInRaid() then
-        for memberIndex = 1, memberCount do
-            local unitIdentifier = "raid" .. memberIndex
-            if UnitIsGroupLeader(unitIdentifier) then
-                return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
-            end
-        end
-        return nil
-    end
-    for memberIndex = 1, memberCount - 1 do
-        local unitIdentifier = "party" .. memberIndex
-        if UnitIsGroupLeader(unitIdentifier) then
-            return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
-        end
-    end
-    return nil
+	if not IsInGroup() or type(UnitIsGroupLeader) ~= "function" then
+		return nil
+	end
+	local memberCount = GetNumGroupMembers()
+	if IsInRaid() then
+		for memberIndex = 1, memberCount do
+			local unitIdentifier = "raid" .. memberIndex
+			if UnitIsGroupLeader(unitIdentifier) then
+				return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
+			end
+		end
+		return nil
+	end
+	for memberIndex = 1, memberCount - 1 do
+		local unitIdentifier = "party" .. memberIndex
+		if UnitIsGroupLeader(unitIdentifier) then
+			return ns:CapitalizeFirstLetter(ns:GetCleanUnitName(unitIdentifier))
+		end
+	end
+	return nil
 end
 
 --[[
@@ -126,21 +134,54 @@ end
     change; they can reassign from the standard ML window. Classic/TBC expose
     the legacy globals; guard in case a build lacks them.
 ]]
+--[[
+    The legacy SetLootMethod global follows GetLootMethod off the client: gone on
+    1.15.9 while the threshold pair survives. Without the C_PartyInfo branch the
+    guard returned silently and the dropdown looked broken — the method never
+    changed and nothing said why.
+
+    The modern call takes the numeric enum, not the string, so the value is
+    mapped on the way out.
+]]
+---@param method string
+---@return nil
 function ns:SafeSetLootMethod(method)
-    if type(SetLootMethod) ~= "function" then
-        return
-    end
-    if method == "master" then
-        SetLootMethod("master", UnitName("player"))
-    else
-        SetLootMethod(method)
-    end
+	local masterLooterName = UnitName("player")
+
+	if type(SetLootMethod) == "function" then
+		if method == "master" then
+			SetLootMethod("master", masterLooterName)
+		else
+			SetLootMethod(method)
+		end
+		return
+	end
+
+	if C_PartyInfo and type(C_PartyInfo.SetLootMethod) == "function" then
+		local enumKey = ENUM_KEY_BY_METHOD[method]
+		local enumValue = (Enum and Enum.LootMethod and enumKey and Enum.LootMethod[enumKey])
+			or LOOT_METHOD_TO_ENUM[method]
+		if not enumValue then
+			return
+		end
+		if method == "master" then
+			C_PartyInfo.SetLootMethod(enumValue, masterLooterName)
+		else
+			C_PartyInfo.SetLootMethod(enumValue)
+		end
+	end
 end
 
+---@param threshold number
+---@return nil
 function ns:SafeSetLootThreshold(threshold)
-    if type(SetLootThreshold) == "function" then
-        SetLootThreshold(threshold)
-    end
+	if type(SetLootThreshold) == "function" then
+		SetLootThreshold(threshold)
+		return
+	end
+	if C_PartyInfo and type(C_PartyInfo.SetLootThreshold) == "function" then
+		C_PartyInfo.SetLootThreshold(threshold)
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -154,125 +195,241 @@ end
     next loot session.
 ]]
 
+---@return boolean
 function ns:WillAutoMasterLoot()
-    if not ns:AreWeMasterLooter() then
-        return false
-    end
-    if not ns.db or not ns.db.profile.autoMasterLoot then
-        return false
-    end
+	if not ns:AreWeMasterLooter() then
+		return false
+	end
+	if not ns.db or not ns.db.profile.autoMasterLoot then
+		return false
+	end
 
-    local _, instanceType = GetInstanceInfo()
-    local isInsideInstance = (instanceType == "raid" or instanceType == "party")
+	local _, instanceType = GetInstanceInfo()
+	local isInsideInstance = (instanceType == "raid" or instanceType == "party")
 
-    if isInsideInstance then
-        return true
-    end
-    return ns.db.profile.autoMasterLootOutsideInstances == true
+	if isInsideInstance then
+		return true
+	end
+	return ns.db.profile.autoMasterLootOutsideInstances == true
 end
 
 --------------------------------------------------------------------------------
 -- Destination Management
 --------------------------------------------------------------------------------
 
+---@return table
 function ns:GetGroupMemberNames()
-    local memberNames = {["self"] = L["MASTER_LOOTER_DESTINATION_SELF"]}
-    local playerName = ns:GetLowercaseUnitName("player")
+	local memberNames = { ["self"] = L["MASTER_LOOTER_DESTINATION_SELF"] }
+	local playerName = ns:GetLowercaseUnitName("player")
 
-    for memberIndex = 1, GetNumGroupMembers() do
-        local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
-        local memberName = ns:GetLowercaseUnitName(unitIdentifier)
-        if memberName and memberName ~= playerName then
-            memberNames[memberName] = ns:CapitalizeFirstLetter(memberName)
-        end
-    end
+	for memberIndex = 1, GetNumGroupMembers() do
+		local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
+		local memberName = ns:GetLowercaseUnitName(unitIdentifier)
+		if memberName and memberName ~= playerName then
+			memberNames[memberName] = ns:CapitalizeFirstLetter(memberName)
+		end
+	end
 
-    return memberNames
+	return memberNames
 end
 
+--[[
+    Display order for the destination dropdowns: Self first, then group members
+    alphabetically. AceConfig sorts a values table by its labels otherwise, which
+    would bury Self somewhere in the middle of the roster.
+]]
+---@return table
+function ns:GetGroupMemberSorting()
+	local sorting = { "self" }
+	local playerName = ns:GetLowercaseUnitName("player")
+
+	for memberIndex = 1, GetNumGroupMembers() do
+		local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
+		local memberName = ns:GetLowercaseUnitName(unitIdentifier)
+		if memberName and memberName ~= playerName then
+			sorting[#sorting + 1] = memberName
+		end
+	end
+
+	table.sort(sorting, function(a, b)
+		if a == "self" or b == "self" then
+			return a == "self"
+		end
+		return a < b
+	end)
+	return sorting
+end
+
+--[[
+    The destination shared by every quality tier, or nil when they disagree.
+    Backs the Send All Loot To dropdown, which shows blank rather than picking
+    one tier's answer to stand for all of them.
+]]
+---@return string|nil
+function ns:GetSharedDestination()
+	local shared
+	local sawTier = false
+
+	for quality = 0, 4 do
+		local qualityKey = ns.rarityToConfigurationKey[quality]
+		if qualityKey then
+			local destination = ns.db.profile.destinations[qualityKey]
+			--[[
+                An explicit "no destination" is a value in its own right, so the
+                comparison tracks whether a tier has been seen rather than
+                whether `shared` is still nil. Otherwise an unset tier followed
+                by an assigned one would report the assigned player as the
+                answer for all five.
+            ]]
+			if not sawTier then
+				shared = destination
+				sawTier = true
+			elseif shared ~= destination then
+				return nil
+			end
+		end
+	end
+
+	return shared
+end
+
+--[[
+    Writes one destination to every tier and announces once, not once per tier.
+]]
+---@param targetPlayerName string
+---@return nil
+function ns:SetAllDestinations(targetPlayerName)
+	for quality = 0, 4 do
+		local qualityKey = ns.rarityToConfigurationKey[quality]
+		if qualityKey then
+			ns.db.profile.destinations[qualityKey] = targetPlayerName
+		end
+	end
+
+	if not IsInGroup() then
+		return
+	end
+	if not ns.db.profile.announceDestinations then
+		return
+	end
+	ns:Announce(
+		ns:GetGroupChatChannel(),
+		nil,
+		"MESSAGE_DESTINATION_SET_ALL",
+		ns:GetDestinationDisplayName(targetPlayerName)
+	)
+end
+
+---@param targetPlayerName string
+---@return boolean
 function ns:IsNonSelfDestination(targetPlayerName)
-    if not targetPlayerName then
-        return false
-    end
-    local targetLower = strlower(targetPlayerName)
-    return targetLower ~= "self" and targetLower ~= "player"
+	if not targetPlayerName then
+		return false
+	end
+	local targetLower = strlower(targetPlayerName)
+	return targetLower ~= "self" and targetLower ~= "player"
 end
 
+--[[
+    "self" is stored as a literal, so announcing it verbatim would tell the group
+    that "Self" is holding the loot. Resolve it to the player's own name — which
+    is also what makes switching BACK to yourself announceable at all: the group
+    has already been told somebody else is holding loot, and silence would leave
+    that standing.
+]]
+---@param targetPlayerName string
+---@return string
+function ns:GetDestinationDisplayName(targetPlayerName)
+	if not ns:IsNonSelfDestination(targetPlayerName) then
+		return ns:FormatPlayerName(ns:GetCleanUnitName("player"))
+	end
+	return ns:FormatPlayerName(targetPlayerName)
+end
+
+---@param targetPlayerName string
+---@param qualityKey string
+---@return nil
 function ns:AnnounceDestinationSet(targetPlayerName, qualityKey)
-    if not IsInGroup() then
-        return
-    end
-    if not ns.db.profile.announceDestinations then
-        return
-    end
-    local displayName = ns:CapitalizeFirstLetter(targetPlayerName)
-    local qualityLabel = ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
-    ns:Announce(ns:GetGroupChatChannel(), nil, "MESSAGE_DESTINATION_SET", displayName, qualityLabel)
+	if not IsInGroup() then
+		return
+	end
+	if not ns.db.profile.announceDestinations then
+		return
+	end
+	local displayName = ns:GetDestinationDisplayName(targetPlayerName)
+	local qualityLabel = ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
+	ns:Announce(ns:GetGroupChatChannel(), nil, "MESSAGE_DESTINATION_SET", displayName, qualityLabel)
 end
 
+--[[
+    Clears every tier to unset, not to Self. "Self" is a deliberate choice the
+    master looter makes; leaving it behind after a setup ends reads as a live
+    instruction to vacuum everything, and hides that nothing was actually chosen.
+    An unset tier auto-distributes nothing and shows an empty dropdown, so the
+    next setup starts from a blank slate.
+]]
 local function ResetAllDestinations()
-    for quality = 0, 4 do
-        local qualityKey = ns.rarityToConfigurationKey[quality]
-        if qualityKey then
-            ns.db.profile.destinations[qualityKey] = "self"
-        end
-    end
+	for quality = 0, 4 do
+		local qualityKey = ns.rarityToConfigurationKey[quality]
+		if qualityKey then
+			ns.db.profile.destinations[qualityKey] = nil
+		end
+	end
 end
 
 local function GetCurrentGroupMemberLookup()
-    local groupMembers = {}
-    local myName = ns:GetLowercaseUnitName("player")
-    if myName then
-        groupMembers[myName] = true
-    end
-    for memberIndex = 1, GetNumGroupMembers() do
-        local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
-        local memberName = ns:GetLowercaseUnitName(unitIdentifier)
-        if memberName then
-            groupMembers[memberName] = true
-        end
-    end
-    return groupMembers
+	local groupMembers = {}
+	local myName = ns:GetLowercaseUnitName("player")
+	if myName then
+		groupMembers[myName] = true
+	end
+	for memberIndex = 1, GetNumGroupMembers() do
+		local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
+		local memberName = ns:GetLowercaseUnitName(unitIdentifier)
+		if memberName then
+			groupMembers[memberName] = true
+		end
+	end
+	return groupMembers
 end
 
 local function CheckDestinationsForLeavers()
-    if not IsInGroup() then
-        return
-    end
-    if not ns:AreWeMasterLooter() then
-        return
-    end
+	if not IsInGroup() then
+		return
+	end
+	if not ns:AreWeMasterLooter() then
+		return
+	end
 
-    local groupMembers = GetCurrentGroupMemberLookup()
-    local myName = ns:GetCleanUnitName("player")
-    local masterLooterDisplayName = ns:CapitalizeFirstLetter(myName)
-    local chatChannel = ns:GetGroupChatChannel()
+	local groupMembers = GetCurrentGroupMemberLookup()
+	local myName = ns:GetCleanUnitName("player")
+	local masterLooterDisplayName = ns:FormatPlayerName(myName)
+	local chatChannel = ns:GetGroupChatChannel()
 
-    for quality = 0, 4 do
-        local qualityKey = ns.rarityToConfigurationKey[quality]
-        if qualityKey then
-            local targetPlayerName = ns.db.profile.destinations[qualityKey]
-            if ns:IsNonSelfDestination(targetPlayerName) then
-                local targetLower = strlower(targetPlayerName)
-                if not groupMembers[targetLower] then
-                    local leaverDisplayName = ns:CapitalizeFirstLetter(targetPlayerName)
-                    local qualityLabel =
-                        ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
-                    ns.db.profile.destinations[qualityKey] = "self"
-                    if ns.db.profile.announceDestinations then
-                        ns:Announce(
-                            chatChannel,
-                            nil,
-                            "MESSAGE_DESTINATION_LEFT",
-                            leaverDisplayName,
-                            masterLooterDisplayName,
-                            qualityLabel
-                        )
-                    end
-                end
-            end
-        end
-    end
+	for quality = 0, 4 do
+		local qualityKey = ns.rarityToConfigurationKey[quality]
+		if qualityKey then
+			local targetPlayerName = ns.db.profile.destinations[qualityKey]
+			if ns:IsNonSelfDestination(targetPlayerName) then
+				local targetLower = strlower(targetPlayerName)
+				if not groupMembers[targetLower] then
+					local leaverDisplayName = ns:FormatPlayerName(targetPlayerName)
+					local qualityLabel = ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
+					ns.db.profile.destinations[qualityKey] = "self"
+					if ns.db.profile.announceDestinations then
+						ns:Announce(
+							chatChannel,
+							nil,
+							"MESSAGE_DESTINATION_LEFT",
+							leaverDisplayName,
+							masterLooterDisplayName,
+							qualityLabel
+						)
+					end
+				end
+			end
+		end
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -281,26 +438,92 @@ end
 
 local wasInGroup = IsInGroup()
 
-local function RefreshMasterLooterPanel()
-    AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooter)
+--[[
+    The panel and the pop-up render the same rows, so a change made in either
+    has to repaint both or the other keeps showing the stale value.
+]]
+---@return nil
+function ns:RefreshMasterLooterPanels()
+	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooter)
+	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooterPopup)
+end
+
+--[[
+    Pop the master looter window on every false-to-true transition, tracked from
+    a starting assumption of false so logging in already master looter counts as
+    becoming one. Both events that can change the answer route through here, and
+    the flag makes repeat fires of the same state a no-op.
+]]
+local wasMasterLooter = false
+
+local function CheckMasterLooterPopup()
+	local isMasterLooter = ns.db and ns:AreWeMasterLooter() or false
+	if isMasterLooter and not wasMasterLooter and ns.db.profile.masterLooterPopup then
+		ns:ShowMasterLooterPopup()
+	end
+	wasMasterLooter = isMasterLooter
+end
+
+--[[
+    Destinations are scoped to one master-loot setup, so any change to the
+    group's loot type drops them back to Self. Carrying them across would leave
+    a stale "everything goes to Bob" armed and invisible, ready to route the next
+    session's loot at whoever was named for the last one.
+
+    The comparison is against the last method GogoLoot OBSERVED, and every event
+    that could coincide with a change refreshes that observation — not just
+    PARTY_LOOT_METHOD_CHANGED. Hanging the reset off that one event was not
+    enough in practice: it is the leader's action, so it need not reach every
+    member, and where it does fire the loot API has not necessarily caught up by
+    the time the handler runs. GROUP_ROSTER_UPDATE fires far more freely, so
+    whichever arrives first notices the new method and clears.
+
+    Tracking the method rather than resetting on every fire is what keeps a
+    master-looter reassignment — which changes no method — from wiping a setup
+    mid-run. It starts nil so the first reading after login records state instead
+    of counting as a change.
+]]
+local lastObservedLootMethod = nil
+
+---@return nil
+local function ClearDestinationsOnLootMethodChange()
+	if not ns.db then
+		return
+	end
+
+	local currentMethod = ns:SafeGetLootMethod()
+	if lastObservedLootMethod ~= nil and currentMethod ~= lastObservedLootMethod then
+		ResetAllDestinations()
+	end
+	lastObservedLootMethod = currentMethod
+end
+
+local function HandleLootMethodChanged()
+	ClearDestinationsOnLootMethodChange()
+	ns:RefreshMasterLooterPanels()
+	CheckMasterLooterPopup()
 end
 
 local function HandleGroupRosterUpdate()
-    local isCurrentlyInGroup = IsInGroup()
+	local isCurrentlyInGroup = IsInGroup()
 
-    -- Reset all destinations when leaving a group
-    if wasInGroup and not isCurrentlyInGroup then
-        ResetAllDestinations()
-        RefreshMasterLooterPanel()
-        wasInGroup = false
-        return
-    end
+	-- Leaving a group ends the setup too, so the destinations go with it.
+	if wasInGroup and not isCurrentlyInGroup then
+		ResetAllDestinations()
+		ns:RefreshMasterLooterPanels()
+		wasInGroup = false
+		wasMasterLooter = false
+		lastObservedLootMethod = nil
+		return
+	end
 
-    wasInGroup = isCurrentlyInGroup
+	wasInGroup = isCurrentlyInGroup
 
-    CheckDestinationsForLeavers()
-    RefreshMasterLooterPanel()
+	ClearDestinationsOnLootMethodChange()
+	CheckDestinationsForLeavers()
+	ns:RefreshMasterLooterPanels()
+	CheckMasterLooterPopup()
 end
 
-ns:RegisterModuleEvent("PARTY_LOOT_METHOD_CHANGED", RefreshMasterLooterPanel)
+ns:RegisterModuleEvent("PARTY_LOOT_METHOD_CHANGED", HandleLootMethodChanged)
 ns:RegisterModuleEvent("GROUP_ROSTER_UPDATE", HandleGroupRosterUpdate)

@@ -9,112 +9,187 @@ local GetQualityColor = ns.GetQualityColor
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
+---@return table
 function ns.BuildAutomatedRollOptions()
-    local greedThresholdValues = {
-        [0] = GetQualityColor(0) .. L["THRESHOLD_POOR_ONLY"] .. "|r",
-        [1] = GetQualityColor(1) .. L["THRESHOLD_COMMON_LOWER"] .. "|r",
-        [2] = GetQualityColor(2) .. L["THRESHOLD_UNCOMMON_LOWER"] .. "|r",
-        [3] = GetQualityColor(3) .. L["THRESHOLD_RARE_LOWER"] .. "|r",
-        [4] = GetQualityColor(4) .. L["THRESHOLD_EPIC_LOWER"] .. "|r"
-    }
+	local rollThresholdValues = {
+		[0] = GetQualityColor(0) .. L["THRESHOLD_POOR_ONLY"] .. "|r",
+		[1] = GetQualityColor(1) .. L["THRESHOLD_COMMON_LOWER"] .. "|r",
+		[2] = GetQualityColor(2) .. L["THRESHOLD_UNCOMMON_LOWER"] .. "|r",
+		[3] = GetQualityColor(3) .. L["THRESHOLD_RARE_LOWER"] .. "|r",
+		[4] = GetQualityColor(4) .. L["THRESHOLD_EPIC_LOWER"] .. "|r",
+	}
 
-    local customListArgs =
-        ns:BuildItemListOptions(
-        {
-            getSourceTable = function()
-                return ns.db.profile.ignoredItemsSolo
-            end,
-            onRestore = function()
-                ns.db.profile.ignoredItemsSolo = ns:BuildDefaultIgnoreListSolo()
-            end,
-            onAdd = function(itemIdentifier)
-                ns.db.profile.ignoredItemsSolo[itemIdentifier] = ns.MANUAL
-            end,
-            onRemove = function(itemIdentifier)
-                ns.db.profile.ignoredItemsSolo[itemIdentifier] = nil
-            end,
-            notifyKey = ns.OPTIONS_REGISTRY.AutomatedRolls,
-            labels = {
-                restore = L["ROLLS_RESTORE_DEFAULTS"],
-                restoreConfirm = L["ROLLS_RESTORE_CONFIRM"],
-                addDesc = L["ROLLS_ADD_ITEM_DESCRIPTION"],
-                addName = L["ROLLS_ADD_ITEM"],
-                removeName = L["ROLLS_REMOVE"],
-                removeDesc = L["ROLLS_REMOVE_DESCRIPTION"]
-            },
-            actionColumn = {
-                desc = L["ROLLS_CHOOSE_ACTION"],
-                values = ns.ROLL_OVERRIDE_LABELS,
-                get = function(itemIdentifier)
-                    return ns.db.profile.ignoredItemsSolo[itemIdentifier]
-                end,
-                set = function(itemIdentifier, value)
-                    ns.db.profile.ignoredItemsSolo[itemIdentifier] = value
-                end
-            }
-        }
-    )
+	local customListArgs = ns:BuildItemListOptions({
+		getSourceTable = function()
+			return ns.db.profile.ignoredItemsSolo
+		end,
+		onRestore = function()
+			ns.db.profile.ignoredItemsSolo = ns:BuildDefaultIgnoreListSolo()
+		end,
+		onAdd = function(itemIdentifier)
+			ns.db.profile.ignoredItemsSolo[itemIdentifier] = ns.MANUAL
+		end,
+		onRemove = function(itemIdentifier)
+			ns.db.profile.ignoredItemsSolo[itemIdentifier] = nil
+		end,
+		notifyKey = ns.OPTIONS_REGISTRY.AutomatedRolls,
+		labels = {
+			restore = L["ROLLS_RESTORE_DEFAULTS"],
+			restoreConfirm = L["ROLLS_RESTORE_CONFIRM"],
+			addDesc = L["ITEM_LIST_ADD_DESCRIPTION"],
+			addName = L["ITEM_LIST_ADD"],
+			removeDesc = L["ROLLS_REMOVE_DESCRIPTION"],
+		},
+		actionColumn = {
+			desc = L["ROLLS_CHOOSE_ACTION"],
+			values = ns.ROLL_OVERRIDE_LABELS,
+			sorting = ns.ROLL_OVERRIDE_ORDER,
+			get = function(itemIdentifier)
+				return ns.db.profile.ignoredItemsSolo[itemIdentifier]
+			end,
+			set = function(itemIdentifier, value)
+				ns.db.profile.ignoredItemsSolo[itemIdentifier] = value
+			end,
+		},
+	})
 
-    return {
-        type = "group",
-        name = L["TAB_AUTOMATED_ROLLS"],
-        args = {
-            description = ns.OptionsDesc(L["ROLLS_DESCRIPTION"], 2),
-            spacerAfterDesc = ns.OptionsSpacer(3),
-            autoGreed = {
-                type = "toggle",
-                name = L["ROLLS_ENABLE"],
-                width = "full",
-                order = 4,
-                get = function()
-                    return ns.db.profile.autoGreed
-                end,
-                set = function(_, value)
-                    ns.db.profile.autoGreed = value
-                    if ns.UpdateMinimapIcon then
-                        ns:UpdateMinimapIcon()
-                    end
-                end
-            },
-            spacerAfterToggle = ns.OptionsSpacer(5),
-            autoGreedThreshold = {
-                type = "select",
-                name = L["ROLLS_THRESHOLD"],
-                style = "dropdown",
-                width = "double",
-                values = greedThresholdValues,
-                order = 6,
-                get = function()
-                    return ns.db.profile.autoGreedThreshold
-                end,
-                set = function(_, value)
-                    ns.db.profile.autoGreedThreshold = value
-                end
-            },
-            spacerBeforeCustom = ns.OptionsSpacer(9),
-            customListHeader = ns.OptionsHeader(L["ROLLS_CUSTOM_LIST"], 10),
-            spacerAfterCustomHeader = ns.OptionsSpacer(11),
-            customListDesc = ns.OptionsDesc(L["ROLLS_CUSTOM_LIST_DESCRIPTION"], 12),
-            spacerAfterCustomDesc = ns.OptionsSpacer(13),
-            customListEnable = {
-                type = "toggle",
-                name = L["ROLLS_CUSTOM_LIST_ENABLE"],
-                width = "full",
-                order = 14,
-                get = function()
-                    return ns.db.profile.customRollList
-                end,
-                set = function(_, value)
-                    ns.db.profile.customRollList = value
-                end
-            },
-            customList = {
-                type = "group",
-                name = "",
-                inline = true,
-                order = 15,
-                args = customListArgs
-            }
-        }
-    }
+	local args = {}
+	local order = 1
+
+	args.description = ns.OptionsDesc(L["ROLLS_DESCRIPTION"], order)
+	order = order + 1
+	args.spacerAfterDesc = ns.OptionsSpacer(order)
+	order = order + 1
+	args.autoGreed = {
+		type = "toggle",
+		name = L["ROLLS_ENABLE"],
+		width = "full",
+		order = order,
+		get = function()
+			return ns.db.profile.autoGreed
+		end,
+		set = function(_, value)
+			ns.db.profile.autoGreed = value
+			if ns.UpdateMinimapIcon then
+				ns:UpdateMinimapIcon()
+			end
+		end,
+	}
+	order = order + 1
+	args.spacerAfterToggle = ns.OptionsSpacer(order)
+	order = order + 1
+	args.thresholdHeader = ns.OptionsHeader(L["ROLLS_THRESHOLD_HEADER"], order)
+	order = order + 1
+	args.spacerAfterThresholdHeader = ns.OptionsSpacer(order)
+	order = order + 1
+	args.thresholdDesc = ns.OptionsDesc(L["ROLLS_THRESHOLD_DESCRIPTION"], order)
+	order = order + 1
+	args.spacerAfterThresholdDesc = ns.OptionsSpacer(order)
+	order = order + 1
+
+	--[[
+        One row per group context — the label, the quality ceiling, and the
+        action taken at or below it — flowing onto a single line, the same
+        label-plus-dropdown idiom the Master Looter destination rows use. The
+        row's trailing spacer separates it from the next; the last one also
+        separates the section from the Custom Roll List header.
+
+        This is the one row carrying two controls, so it sets its own column
+        widths rather than taking ns.OPTIONS_LABEL_WIDTH / OPTIONS_CONTROL_WIDTH
+        — but they still total ns.OPTIONS_ROW_WIDTH, and the action dropdown
+        takes the same width the Custom Roll List column does, so the two stacks
+        of Greed/Need/Pass dropdowns read as one column rather than two sizes.
+
+        Setting a row's action to Manual turns automation off for that context
+        alone, so Automated Rolls can run in raids but not parties (or the
+        reverse) without touching the master toggle above.
+    ]]
+	local rollContexts = {
+		{ configurationSuffix = "Party", label = L["ROLLS_IN_PARTY"] },
+		{ configurationSuffix = "Raid", label = L["ROLLS_IN_RAID"] },
+	}
+
+	for _, entry in ipairs(rollContexts) do
+		local thresholdKey = "autoRollThreshold" .. entry.configurationSuffix
+		local actionKey = "autoRollAction" .. entry.configurationSuffix
+
+		args["rollLabel_" .. thresholdKey] = {
+			type = "description",
+			name = entry.label,
+			fontSize = "medium",
+			width = 0.7,
+			order = order,
+		}
+		order = order + 1
+		args[thresholdKey] = {
+			type = "select",
+			name = "",
+			desc = string.format(L["ROLLS_THRESHOLD_CHOOSE"], entry.label),
+			style = "dropdown",
+			width = 1.2,
+			values = rollThresholdValues,
+			order = order,
+			get = function()
+				return ns.db.profile[thresholdKey]
+			end,
+			set = function(_, value)
+				ns.db.profile[thresholdKey] = value
+			end,
+		}
+		order = order + 1
+		args[actionKey] = {
+			type = "select",
+			name = "",
+			desc = string.format(L["ROLLS_ACTION_CHOOSE"], entry.label),
+			style = "dropdown",
+			width = ns.ROLL_ACTION_DROPDOWN_WIDTH,
+			values = ns.ROLL_OVERRIDE_LABELS,
+			sorting = ns.ROLL_OVERRIDE_ORDER,
+			order = order,
+			get = function()
+				return ns.db.profile[actionKey]
+			end,
+			set = function(_, value)
+				ns.db.profile[actionKey] = value
+			end,
+		}
+		order = order + 1
+		args["spacerAfter_" .. thresholdKey] = ns.OptionsSpacer(order)
+		order = order + 1
+	end
+
+	args.customListHeader = ns.OptionsHeader(L["ROLLS_CUSTOM_LIST"], order)
+	order = order + 1
+	args.spacerAfterCustomHeader = ns.OptionsSpacer(order)
+	order = order + 1
+	args.customListDesc = ns.OptionsDesc(L["ROLLS_CUSTOM_LIST_DESCRIPTION"], order)
+	order = order + 1
+	args.spacerAfterCustomDesc = ns.OptionsSpacer(order)
+	order = order + 1
+	args.customListEnable = {
+		type = "toggle",
+		name = L["ROLLS_CUSTOM_LIST_ENABLE"],
+		width = "full",
+		order = order,
+		get = function()
+			return ns.db.profile.customRollList
+		end,
+		set = function(_, value)
+			ns.db.profile.customRollList = value
+		end,
+	}
+	order = order + 1
+	args.customList = {
+		type = "group",
+		name = "",
+		inline = true,
+		order = order,
+		args = customListArgs,
+	}
+
+	return {
+		type = "group",
+		name = L["TAB_AUTOMATED_ROLLS"],
+		args = args,
+	}
 end
