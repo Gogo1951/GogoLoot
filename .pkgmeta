@@ -8,12 +8,12 @@ externals:
     url: https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0/
   Includes/Libraries/AceLocale-3.0:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceLocale-3.0/
+  Includes/Libraries/AceDB-3.0:
+    url: https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0/
   Includes/Libraries/AceGUI-3.0:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0/
   Includes/Libraries/AceConfig-3.0:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0/
-  Includes/Libraries/AceDB-3.0:
-    url: https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0/
   Includes/Libraries/AceDBOptions-3.0:
     url: https://repos.curseforge.com/wow/ace3/trunk/AceDBOptions-3.0/
   Includes/Libraries/LibDataBroker-1.1:
@@ -24,6 +24,7 @@ externals:
 ignore:
   - .DS_Store
   - .git
+  - .gitattributes
   - .github
   - .gitignore
   - .idea
