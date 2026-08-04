@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Versão %s. As configurações (incluindo a opção de desativar esta mensagem) podem ser encontradas em Opções > AddOns > GogoLoot. Gostando do add-on? Conte para um amigo! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "Por precaução, a interface de opções não pode ser aberta durante o combate."
 L["MESSAGE_AUTO_LOOT_ENABLED"] = "O Saque Automático foi ativado. O Saque Rápido precisa dele para funcionar."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "Você não é o Mestre Saqueador no momento."
 
@@ -22,6 +30,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "Você não é o Mestre Saqueador no momento."
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "Deu %s para %s."
 L["MESSAGE_DESTINATION_SET"] = "%s receberá todos os itens %s."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s vai guardar todo o saque para o grupo."
@@ -52,8 +61,6 @@ L["TAB_ANNOUNCEMENTS"] = "Anúncios"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Ativado"
 L["STATUS_DISABLED"] = "Desativado"
 
@@ -110,7 +117,10 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Insira um ID de item ou arraste um item aqui p
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Carregando... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] = "Itens de missão, receitas, livros, montarias, mascotes e lendários são sempre ignorados."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Versão"
 
 --------------------------------------------------------------------------------
@@ -122,8 +132,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Ativar Mensagem de Boas-vindas"
 L["MINIMAP_BUTTON_ENABLE"] = "Ativar Botão do Minimapa"
 
-L["COMMANDS"] = "/Comandos"
-L["COMMANDS_DESCRIPTION"] = "Abre a interface de opções do GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Comandos"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Abre a interface de opções deste add-on."
 
 L["SPEEDY_LOOT_HEADER"] = "Saque Rápido"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Oculta a janela de saque para saquear quase instantaneamente."
@@ -148,8 +160,7 @@ L["MASTER_LOOTER_SET_BY"] = "(Definido por %s)"
 L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Apenas o líder do grupo pode alterar o método e o limite de saque."
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Mestre Saqueador Automático"
-L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Distribui o saque aos jogadores designados enquanto você é o Mestre Saqueador. Itens de missão, receitas, livros, montarias, mascotes e lendários são sempre ignorados."
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distribui o saque aos jogadores designados enquanto você é o Mestre Saqueador."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Ativar Mestre Saqueador Automático em Instâncias"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Ativar Mestre Saqueador Automático Fora de Instâncias"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -182,7 +193,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Remover este item da lista de ig
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Rola por você em itens não Vinculados ao Recolher até a qualidade escolhida, tanto em grupo quanto em raide. Itens de missão, receitas, livros, montarias, mascotes e lendários são sempre ignorados."
+	"Rola por você em itens não Vinculados ao Recolher até a qualidade escolhida, tanto em grupo quanto em raide."
 L["ROLLS_ENABLE"] = "Ativar Rolagens Automáticas"
 L["ROLLS_THRESHOLD_HEADER"] = "Limites"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

@@ -202,75 +202,8 @@ end
 local GetColorRGB = ns.GetColorRGB
 
 --------------------------------------------------------------------------------
--- Item Input Parsing
+-- Auto Loot CVar
 --------------------------------------------------------------------------------
-
---[[
-    Accepts a numeric item ID string or a full item link; returns the numeric
-    item ID or nil. Shared by the Options panels that let users add items.
-]]
-
----@param rawInput any
----@return number|nil
-function ns:ParseItemInput(rawInput)
-	if not rawInput or rawInput == "" then
-		return nil
-	end
-
-	local numericIdentifier = tonumber(rawInput)
-	if numericIdentifier then
-		return numericIdentifier
-	end
-
-	local fromLink = string.match(rawInput, "item:(%d+)")
-	if fromLink then
-		return tonumber(fromLink)
-	end
-
-	return nil
-end
-
---------------------------------------------------------------------------------
--- Item Identifier Sort
---------------------------------------------------------------------------------
-
---[[
-    Sorts in place alphabetically by name, one flat A-Z list — quality is not a
-    sort key. Each row still shows its item link, so the quality colour reads at
-    a glance without also driving the order.
-
-    Items whose info hasn't been cached yet have no name to sort on, so they
-    fall to the bottom rather than clustering under an empty string at the top;
-    they re-sort into place as GET_ITEM_INFO_RECEIVED repaints the list.
-
-    Equal names tie-break on item ID, which makes the comparator a total order.
-    Without it the nine identically-named Punctured Voodoo Dolls in the default
-    roll list compare equal, and their rows reshuffle on every repaint.
-]]
-
----@param identifiers number[]
----@return nil
-function ns:SortItemIdentifiersByName(identifiers)
-	table.sort(identifiers, function(a, b)
-		local infoA = ns:SafeGetItemInfo(a)
-		local infoB = ns:SafeGetItemInfo(b)
-		local nameA = infoA and infoA.name or ""
-		local nameB = infoB and infoB.name or ""
-		if nameA == "" and nameB == "" then
-			return a < b
-		end
-		if nameA == "" then
-			return false
-		end
-		if nameB == "" then
-			return true
-		end
-		if nameA == nameB then
-			return a < b
-		end
-		return nameA < nameB
-	end)
-end
 
 --[[
     Pick the API by availability, not by truthy result: a
@@ -455,38 +388,20 @@ function ns:AreWeMasterLooter()
 	return isMasterLoot and masterLooterPartyIndex == 0
 end
 
----@return boolean
-function ns:IsInBindOnPickupTradeInstance()
-	local _, instanceType = GetInstanceInfo()
-	return (instanceType == "raid" or instanceType == "party")
-end
-
----@param itemIdentifier number
----@return string|nil
-function ns:GetItemRollOverride(itemIdentifier)
-	if not itemIdentifier then
-		return nil
-	end
-	local override = ns.db.profile.ignoredItemsSolo[itemIdentifier]
-	if not override then
-		return nil
-	end
-	return override
-end
-
+--[[
+    The absolute skips. Nothing automates a legendary, a recipe, a mount or a
+    pet, and no Custom Roll List entry can opt back in — listing one of these
+    by item id still leaves it to the player.
+]]
 ---@param itemInformation table
 ---@return boolean
-function ns:ShouldSkipItemByType(itemInformation)
+function ns:IsNeverAutomatedItem(itemInformation)
 	if not itemInformation then
 		return true
 	end
 
 	-- Legendaries
 	if itemInformation.quality == 5 then
-		return true
-	end
-	-- Quest Items
-	if itemInformation.classId == ns.ITEM_CLASS_QUEST or itemInformation.bindType == ns.BIND_QUEST_ITEM then
 		return true
 	end
 	-- Recipes, Books, Patterns, Plans, Schematics, Formulas (all classId 9)
@@ -505,4 +420,41 @@ function ns:ShouldSkipItemByType(itemInformation)
 	end
 
 	return false
+end
+
+--[[
+    Quest-class items are skipped by every path that picks items on its own —
+    the roll threshold and master-loot distribution — but NOT by the Custom
+    Roll List, which is an explicit per-item instruction from the player.
+
+    That distinction is load-bearing rather than theoretical. The AQ and ZG
+    war-effort tokens all report classId 12 with an ordinary bind type: scarabs
+    (20858-20865), AQ20 idols (20866-20873), AQ40 idols (20874-20882), ZG coins
+    (19698-19706), ZG bijous (19707-19715) and Wartorn scraps (22373-22376).
+    While this test ran ahead of the list, every one of those default entries
+    was unreachable — correct ids, correct saved action, and no roll.
+]]
+---@param itemInformation table
+---@return boolean
+function ns:IsQuestClassItem(itemInformation)
+	if not itemInformation then
+		return true
+	end
+	return itemInformation.classId == ns.ITEM_CLASS_QUEST or itemInformation.bindType == ns.BIND_QUEST_ITEM
+end
+
+--[[
+    The full automatic skip: never-automated types plus quest-class items.
+    Master-loot distribution takes the whole set, having no per-item roll
+    instruction to honour; the roll path calls the two halves separately so the
+    Custom Roll List can sit between them.
+]]
+---@param itemInformation table
+---@return boolean
+function ns:ShouldSkipItemByType(itemInformation)
+	if not itemInformation then
+		return true
+	end
+
+	return ns:IsNeverAutomatedItem(itemInformation) or ns:IsQuestClassItem(itemInformation)
 end

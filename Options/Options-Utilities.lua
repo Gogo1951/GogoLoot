@@ -4,9 +4,9 @@
 
 --[[
     Shared infrastructure consumed by every Options panel: the AceConfig
-    widget helper constructors, item-cache warming for the item lists, the
-    shared item list builder, the item display helper, and the
-    GogoLoot_ItemLink AceGUI widget.
+    widget helper constructors, item-cache warming for the item lists,
+    item-input parsing and item-name sorting, the shared item list builder,
+    the item display helper, and the GogoLoot_ItemLink AceGUI widget.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -160,6 +160,77 @@ function ns:WarmItemCache()
 
 	C_Timer.After(1, RefreshOptionsAfterDelay)
 	EnsureItemRefreshWatcher()
+end
+
+--------------------------------------------------------------------------------
+-- Item Input Parsing
+--------------------------------------------------------------------------------
+
+--[[
+    Accepts a numeric item ID string or a full item link; returns the numeric
+    item ID or nil. Shared by the Options panels that let users add items.
+]]
+
+---@param rawInput any
+---@return number|nil
+function ns:ParseItemInput(rawInput)
+	if not rawInput or rawInput == "" then
+		return nil
+	end
+
+	local numericIdentifier = tonumber(rawInput)
+	if numericIdentifier then
+		return numericIdentifier
+	end
+
+	local fromLink = string.match(rawInput, "item:(%d+)")
+	if fromLink then
+		return tonumber(fromLink)
+	end
+
+	return nil
+end
+
+--------------------------------------------------------------------------------
+-- Item Identifier Sort
+--------------------------------------------------------------------------------
+
+--[[
+    Sorts in place alphabetically by name, one flat A-Z list — quality is not a
+    sort key. Each row still shows its item link, so the quality colour reads at
+    a glance without also driving the order.
+
+    Items whose info hasn't been cached yet have no name to sort on, so they
+    fall to the bottom rather than clustering under an empty string at the top;
+    they re-sort into place as GET_ITEM_INFO_RECEIVED repaints the list.
+
+    Equal names tie-break on item ID, which makes the comparator a total order.
+    Without it the nine identically-named Punctured Voodoo Dolls in the default
+    roll list compare equal, and their rows reshuffle on every repaint.
+]]
+
+---@param identifiers number[]
+---@return nil
+function ns:SortItemIdentifiersByName(identifiers)
+	table.sort(identifiers, function(a, b)
+		local infoA = ns:SafeGetItemInfo(a)
+		local infoB = ns:SafeGetItemInfo(b)
+		local nameA = infoA and infoA.name or ""
+		local nameB = infoB and infoB.name or ""
+		if nameA == "" and nameB == "" then
+			return a < b
+		end
+		if nameA == "" then
+			return false
+		end
+		if nameB == "" then
+			return true
+		end
+		if nameA == nameB then
+			return a < b
+		end
+		return nameA < nameB
+	end)
 end
 
 --------------------------------------------------------------------------------

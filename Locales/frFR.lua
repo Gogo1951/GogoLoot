@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Version %s. Les paramètres (y compris l'option pour désactiver ce message) se trouvent sous Options > AddOns > GogoLoot. Vous aimez l'add-on ? Parlez-en à un ami ! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "Par précaution, l'interface des options ne peut pas être ouverte en combat."
 L["MESSAGE_AUTO_LOOT_ENABLED"] =
 	"La fouille automatique a été activée. Le Butin Rapide en a besoin pour fonctionner."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "Vous n'êtes actuellement pas le Maître du butin."
@@ -23,6 +31,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "Vous n'êtes actuellement pas le Maître du bu
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "A donné %s à %s."
 L["MESSAGE_DESTINATION_SET"] = "%s recevra tous les objets %s."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s gardera tout le butin pour le groupe."
@@ -53,8 +62,6 @@ L["TAB_ANNOUNCEMENTS"] = "Annonces"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Activé"
 L["STATUS_DISABLED"] = "Désactivé"
 
@@ -112,7 +119,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Entrez l'ID d'un objet ou faites glisser un ob
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Chargement... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] =
+	"Les objets de quête, recettes, livres, montures, mascottes et objets légendaires sont toujours ignorés."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
 
 --------------------------------------------------------------------------------
@@ -124,8 +135,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Activer le message de bienvenue"
 L["MINIMAP_BUTTON_ENABLE"] = "Activer le bouton de la minicarte"
 
-L["COMMANDS"] = "/Commandes"
-L["COMMANDS_DESCRIPTION"] = "Ouvre l'interface des options de GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Commandes"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Ouvre l'interface des options de cet add-on."
 
 L["SPEEDY_LOOT_HEADER"] = "Butin Rapide"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Masque la fenêtre de butin pour un ramassage quasi instantané."
@@ -151,7 +164,7 @@ L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Seul le chef de groupe peut modifier la
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Maître du Butin Automatisé"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Distribue le butin aux joueurs que vous désignez lorsque vous êtes Maître du butin. Les objets de quête, recettes, livres, montures, mascottes et légendaires sont toujours ignorés."
+	"Distribue le butin aux joueurs que vous désignez lorsque vous êtes Maître du butin."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Activer le Maître du Butin Automatique en Instance"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Activer le Maître du Butin Automatique hors des Instances"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -184,7 +197,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Retirer cet objet de la liste d'
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Lance les dés à ta place sur les objets non liés quand ramassés jusqu'à la qualité choisie, en groupe comme en raid. Les objets de quête, recettes, livres, montures, mascottes et objets légendaires sont toujours ignorés."
+	"Lance les dés à votre place sur les objets non liés quand ramassés jusqu'à la qualité choisie, en groupe comme en raid."
 L["ROLLS_ENABLE"] = "Activer les Jets Automatiques"
 L["ROLLS_THRESHOLD_HEADER"] = "Seuils"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

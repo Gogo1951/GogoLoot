@@ -14,7 +14,7 @@
 
     The manual distribution hook and the automated LOOT_OPENED → GiveMasterLoot
     distribution engine (with its UI_ERROR_MESSAGE correlation and Pending
-    Announcement Registry) live in Master-Looter-Distribution.lua, which loads
+    Hand-out Registry) live in Master-Looter-Distribution.lua, which loads
     immediately after this file.
 
     All chat output to the group routes through ns:Announce, which

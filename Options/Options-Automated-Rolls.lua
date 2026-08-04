@@ -56,7 +56,7 @@ function ns.BuildAutomatedRollOptions()
 	local args = {}
 	local order = 1
 
-	args.description = ns.OptionsDesc(L["ROLLS_DESCRIPTION"], order)
+	args.description = ns.OptionsDesc(L["ROLLS_DESCRIPTION"] .. " " .. L["SAFETY_SKIP_NOTE"], order)
 	order = order + 1
 	args.spacerAfterDesc = ns.OptionsSpacer(order)
 	order = order + 1

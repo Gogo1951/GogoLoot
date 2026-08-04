@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"버전 %s. 설정(이 메시지를 비활성화하는 옵션 포함)은 설정 > 애드온 > GogoLoot에서 찾을 수 있습니다. 애드온이 마음에 드시나요? 친구들에게 알려주세요! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "안전을 위해 전투 중에는 설정 창을 열 수 없습니다."
 L["MESSAGE_AUTO_LOOT_ENABLED"] =
 	"자동 획득이 활성화되었습니다. 빠른 획득이 작동하려면 필요합니다."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "현재 전리품 담당자가 아닙니다."
@@ -23,6 +31,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "현재 전리품 담당자가 아닙니다."
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "%s을(를) %s에게 주었습니다."
 L["MESSAGE_DESTINATION_SET"] = "%s님이 모든 %s 아이템을 받습니다."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s님이 파티의 모든 전리품을 보관합니다."
@@ -54,8 +63,6 @@ L["TAB_ANNOUNCEMENTS"] = "알림"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "활성화됨"
 L["STATUS_DISABLED"] = "비활성화됨"
 
@@ -114,7 +121,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "불러오는 중... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] =
+	"퀘스트 아이템, 도안, 책, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "버전"
 
 --------------------------------------------------------------------------------
@@ -126,8 +137,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "환영 메시지 활성화"
 L["MINIMAP_BUTTON_ENABLE"] = "미니맵 버튼 활성화"
 
-L["COMMANDS"] = "/명령어"
-L["COMMANDS_DESCRIPTION"] = "GogoLoot 옵션 인터페이스를 엽니다."
+L["OPTIONS_COMMANDS_HEADER"] = "/명령어"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "이 애드온의 설정 창을 엽니다."
 
 L["SPEEDY_LOOT_HEADER"] = "빠른 획득"
 L["SPEEDY_LOOT_DESCRIPTION"] = "전리품 창을 숨겨 거의 즉시 획득합니다."
@@ -153,7 +166,7 @@ L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "파티장만 전리품 방식과 품질
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "자동 전리품 담당자"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"전리품 담당자일 때 지정한 플레이어에게 전리품을 분배합니다. 퀘스트 아이템, 도안, 책, 탈것, 애완동물, 전설 아이템은 항상 제외됩니다."
+	"전리품 담당자일 때 지정한 플레이어에게 전리품을 분배합니다."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "인스턴스에서 자동 전리품 담당자 활성화"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "인스턴스 외부에서 자동 전리품 담당자 활성화"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -184,7 +197,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "무시 목록에서 이 아이�
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"파티와 공격대 모두에서 선택한 품질 이하의 획득 시 귀속이 아닌 아이템에 대해 대신 주사위를 굴립니다. 퀘스트 아이템, 도안, 책, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다."
+	"파티와 공격대 모두에서 선택한 품질 이하의 획득 시 귀속이 아닌 아이템에 대해 대신 주사위를 굴립니다."
 L["ROLLS_ENABLE"] = "자동 주사위 활성화"
 L["ROLLS_THRESHOLD_HEADER"] = "임계값"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

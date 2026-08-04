@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Version %s. Settings (including the option to disable this message) can be found under Options > AddOns > GogoLoot. Enjoying the add-on? Tell a friend about it! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "As a safety precaution, the Options Interface cannot be opened during combat."
 L["MESSAGE_AUTO_LOOT_ENABLED"] = "Auto Loot has been enabled. Speedy Loot requires it to function."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "You are not currently the Master Looter."
 
@@ -53,8 +61,6 @@ L["TAB_ANNOUNCEMENTS"] = "Announcements"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Enabled"
 L["STATUS_DISABLED"] = "Disabled"
 
@@ -111,7 +117,10 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Enter Item ID or drag an item here to add it t
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Loading... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] = "Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
 
 --------------------------------------------------------------------------------
@@ -123,8 +132,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Enable Welcome Message"
 L["MINIMAP_BUTTON_ENABLE"] = "Enable Mini-map Button"
 
-L["COMMANDS"] = "/Commands"
-L["COMMANDS_DESCRIPTION"] = "Opens the GogoLoot options interface."
+L["OPTIONS_COMMANDS_HEADER"] = "/Commands"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Opens the Options Interface for this add-on."
 
 L["SPEEDY_LOOT_HEADER"] = "Speedy Loot"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Hides the loot window for near-instant looting."
@@ -149,8 +160,7 @@ L["MASTER_LOOTER_SET_BY"] = "(Set by %s)"
 L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Only the group leader can change the loot method and threshold."
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Automated Master Looting"
-L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Distributes loot to your designated players while you're Master Looter. Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distributes loot to your designated players while you're Master Looter."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Enable Automated Master Looting in Instances"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Enable Automated Master Looting Outside of Instances"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] = "Caution: world boss loot isn't tradable, so this isn't advised."
@@ -178,8 +188,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Remove this item from the ignore
 -- Options: Automated Rolls
 --------------------------------------------------------------------------------
 
-L["ROLLS_DESCRIPTION"] =
-	"Rolls for you on non-BoP items up to your chosen quality, in parties and raids alike. Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+L["ROLLS_DESCRIPTION"] = "Rolls for you on non-BoP items up to your chosen quality, in parties and raids alike."
 L["ROLLS_ENABLE"] = "Enable Automated Rolls"
 L["ROLLS_THRESHOLD_HEADER"] = "Thresholds"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

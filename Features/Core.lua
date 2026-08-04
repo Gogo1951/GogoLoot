@@ -106,6 +106,13 @@ local function MigrateFlatSettingsToProfile()
 	end
 end
 
+-- MIGRATION (remove after 2026-08-15): collapse announceTradeOutput "raid" into "group"
+local function MigrateTradeOutputRaidToGroup()
+	if ns.db.profile.announceTradeOutput == "raid" then
+		ns.db.profile.announceTradeOutput = "group"
+	end
+end
+
 --[[
     MIGRATION (remove after 2026-08-15): the minimap position moved from the
     profile into account-wide global scope so switching, resetting, or deleting
@@ -186,6 +193,87 @@ local function MigrateSettingsToGlobal(adoptProfileValue)
 end
 
 --[[
+    MIGRATION (remove after 2026-08-15): the Ahn'Qiraj war-effort tokens joined
+    the Custom Roll List, and the AQ40 idols moved from Manual to Need. An
+    established profile sees neither change on its own — RebuildEmptyItemLists
+    re-seeds only a list that is entirely empty — so it is applied here.
+
+    Two rules, because the halves mean different things:
+
+      * ADDED_ITEM_IDENTIFIERS are ids the list never carried, so any entry
+        already present can only be one the player typed in and is left alone.
+      * REPOINTED_ITEM_IDENTIFIERS were already listed, at Manual. They move
+        only while they still read Manual, so a player who had picked Greed,
+        Need or Pass for an idol keeps that choice.
+
+    Both read their target action from ns.DEFAULT_IGNORE_LIST_SOLO rather than
+    repeating it, so the data file stays the single source of truth and the
+    expansion filter is honoured exactly as the seeding path applies it.
+
+    Runs once per profile, and always after RebuildEmptyItemLists so a freshly
+    seeded list is never mistaken for a stale one. The marker is a profile key
+    deliberately absent from the defaults table, so rawget reads only a
+    genuinely stored value — the same idiom the migrations above use. Deleting
+    this migration leaves that key inert in saved variables.
+]]
+local TOKEN_MIGRATION_MARKER_KEY = "ahnQirajTokenRollDefaultsApplied"
+
+-- AQ20 idols, Scarab Bag, both coffer keys, and the four Wartorn scraps.
+local ADDED_ITEM_IDENTIFIERS = {
+	20866,
+	20867,
+	20868,
+	20869,
+	20870,
+	20871,
+	20872,
+	20873,
+	21156,
+	21761,
+	21762,
+	22373,
+	22374,
+	22375,
+	22376,
+}
+
+-- The eight AQ40 idols. 20880 is deliberately absent: it is not a live item id.
+local REPOINTED_ITEM_IDENTIFIERS = { 20874, 20875, 20876, 20877, 20878, 20879, 20881, 20882 }
+
+---@param itemIdentifier number
+---@return string|nil
+local function DefaultRollActionFor(itemIdentifier)
+	local defaultEntry = ns.DEFAULT_IGNORE_LIST_SOLO[itemIdentifier]
+	if not defaultEntry or defaultEntry[1] > ns.currentExpansion then
+		return nil
+	end
+	return ns.ROLL_OVERRIDE_FROM_INDEX[defaultEntry[2]]
+end
+
+local function MigrateAhnQirajTokenRollDefaults()
+	if rawget(ns.db.profile, TOKEN_MIGRATION_MARKER_KEY) then
+		return
+	end
+	ns.db.profile[TOKEN_MIGRATION_MARKER_KEY] = true
+
+	local rollList = ns.db.profile.ignoredItemsSolo
+
+	for _, itemIdentifier in ipairs(ADDED_ITEM_IDENTIFIERS) do
+		local rollAction = DefaultRollActionFor(itemIdentifier)
+		if rollAction and rollList[itemIdentifier] == nil then
+			rollList[itemIdentifier] = rollAction
+		end
+	end
+
+	for _, itemIdentifier in ipairs(REPOINTED_ITEM_IDENTIFIERS) do
+		local rollAction = DefaultRollActionFor(itemIdentifier)
+		if rollAction and rollList[itemIdentifier] == ns.MANUAL then
+			rollList[itemIdentifier] = rollAction
+		end
+	end
+end
+
+--[[
     Fired on OnProfileChanged / OnProfileCopied / OnProfileReset. The new
     profile's tables replace the old ones wholesale, so everything that
     caches or displays profile state is repainted here: the item lists re-seed
@@ -195,10 +283,12 @@ end
     switch — the icon refresh only reflects the new profile's autoGreed state.
 ]]
 local function HandleProfileChanged()
+	MigrateTradeOutputRaidToGroup()
 	MigrateMinimapToGlobal()
 	MigrateSettingsToGlobal(false)
 	MigrateGreedThresholdToPerContext()
 	RebuildEmptyItemLists()
+	MigrateAhnQirajTokenRollDefaults()
 	if ns.UpdateMinimapIcon then
 		ns:UpdateMinimapIcon()
 	end
@@ -211,7 +301,7 @@ local function HandleProfileChanged()
 end
 
 --------------------------------------------------------------------------------
--- Initialization & Addon Setup
+-- Initialization & Add-on Setup
 --------------------------------------------------------------------------------
 
 --[[
@@ -348,14 +438,12 @@ local function OnAddonLoaded(loadedAddonName)
 
 	ns.db = LibStub("AceDB-3.0"):New("GogoLootDB", ns.DATABASE_DEFAULTS, true)
 	MigrateFlatSettingsToProfile()
-	-- MIGRATION (remove after 2026-08-15): collapse announceTradeOutput "raid" into "group"
-	if ns.db.profile.announceTradeOutput == "raid" then
-		ns.db.profile.announceTradeOutput = "group"
-	end
+	MigrateTradeOutputRaidToGroup()
 	MigrateMinimapToGlobal()
 	MigrateSettingsToGlobal(true)
 	MigrateGreedThresholdToPerContext()
 	RebuildEmptyItemLists()
+	MigrateAhnQirajTokenRollDefaults()
 	ns.db.RegisterCallback(ns, "OnProfileChanged", HandleProfileChanged)
 	ns.db.RegisterCallback(ns, "OnProfileCopied", HandleProfileChanged)
 	ns.db.RegisterCallback(ns, "OnProfileReset", HandleProfileChanged)
