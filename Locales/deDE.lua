@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Version %s. Einstellungen (einschließlich der Option, diese Nachricht zu deaktivieren) findest du unter Optionen > AddOns > GogoLoot. Gefällt dir das Add-on? Erzähl einem Freund davon! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "Aus Sicherheitsgründen kann das Optionsmenü im Kampf nicht geöffnet werden."
 L["MESSAGE_AUTO_LOOT_ENABLED"] =
 	"Automatisches Plündern wurde aktiviert. Schnelles Plündern benötigt es, um zu funktionieren."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "Du bist derzeit nicht der Plündermeister."
@@ -23,6 +31,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "Du bist derzeit nicht der Plündermeister."
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "%s an %s gegeben."
 L["MESSAGE_DESTINATION_SET"] = "%s erhält nun alle %s Gegenstände."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s wird die gesamte Beute für die Gruppe aufbewahren."
@@ -53,8 +62,6 @@ L["TAB_ANNOUNCEMENTS"] = "Ankündigungen"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Aktiviert"
 L["STATUS_DISABLED"] = "Deaktiviert"
 
@@ -113,7 +120,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Laden... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] =
+	"Questgegenstände, Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
 
 --------------------------------------------------------------------------------
@@ -125,8 +136,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Willkommensnachricht aktivieren"
 L["MINIMAP_BUTTON_ENABLE"] = "Minikarten-Button aktivieren"
 
-L["COMMANDS"] = "/Befehle"
-L["COMMANDS_DESCRIPTION"] = "Öffnet das Optionsmenü von GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Befehle"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Öffnet das Optionsmenü dieses Add-ons."
 
 L["SPEEDY_LOOT_HEADER"] = "Schnelles Plündern"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Blendet das Beutefenster aus, um fast sofort zu plündern."
@@ -151,8 +164,7 @@ L["MASTER_LOOTER_SET_BY"] = "(Eingestellt von %s)"
 L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Nur der Gruppenanführer kann die Beuteart und den Schwellenwert ändern."
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Automatischer Plündermeister"
-L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Verteilt Beute an deine festgelegten Spieler, während du Plündermeister bist. Questgegenstände, Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen."
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Verteilt Beute an deine festgelegten Spieler, während du Plündermeister bist."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Automatischen Plündermeister in Instanzen aktivieren"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Automatischen Plündermeister außerhalb von Instanzen aktivieren"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -184,7 +196,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Diesen Gegenstand aus der Ignori
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Würfelt für dich auf nicht beim Aufheben gebundene Gegenstände bis zu der von dir gewählten Qualität, in Gruppen wie in Schlachtzügen. Questgegenstände, Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen."
+	"Würfelt für dich auf nicht beim Aufheben gebundene Gegenstände bis zu der von dir gewählten Qualität, in Gruppen wie in Schlachtzügen."
 L["ROLLS_ENABLE"] = "Automatisches Würfeln aktivieren"
 L["ROLLS_THRESHOLD_HEADER"] = "Schwellenwerte"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =
@@ -213,7 +225,7 @@ L["TRADE_HEADER"] = "Handelsankündigungen"
 L["TRADE_DESCRIPTION"] =
 	"Postet eine Zusammenfassung jedes abgeschlossenen Handels: Gegenstände, Verzauberungen und Gold."
 L["TRADE_ENABLE"] = "Handelsankündigungen aktivieren"
-L["TRADE_CONDITION"] = "Wenn"
+L["TRADE_CONDITION"] = "Wann"
 L["TRADE_CONDITION_ALWAYS"] = "Immer"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "Nur in Gruppe oder Schlachtzug"
 L["TRADE_CONDITION_RAID_ONLY"] = "Nur im Schlachtzug"

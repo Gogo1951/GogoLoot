@@ -4,7 +4,7 @@
 local _, ns = ...
 
 --------------------------------------------------------------------------------
--- Addon-Initiated Roll Tracking
+-- Add-on-Initiated Roll Tracking
 --------------------------------------------------------------------------------
 
 --[[
@@ -19,14 +19,21 @@ local rollsInitiatedByAddon = {}
 
 --[[
     Rolls whose item info wasn't cached when START_LOOT_ROLL fired are polled by
-    a named timer until the info resolves, the roll expires, or the attempt cap
-    is reached. The timer identifier carries the roll id, so ns:IsTimerPending
-    is the duplicate-ticker guard and CANCEL_LOOT_ROLL cancels outright — no
-    hand-rolled flag doubling as a self-cancel token.
+    a named timer until the info resolves or the roll ends — CANCEL_LOOT_ROLL
+    cancelling the timer is the real teardown. The timer identifier carries the
+    roll id, so ns:IsTimerPending is the duplicate-ticker guard — no hand-rolled
+    flag doubling as a self-cancel token.
+
+    The attempt cap only backstops a cancel that never arrives, so it is sized
+    past the 60-second roll window rather than acting as the give-up point. It
+    used to be the give-up point — 10 attempts, five seconds — and that was a
+    live bug: a war-effort token's first drop of the night can keep its item
+    query in flight past any short cap while the roll still has most of its
+    minute left, and the give-up meant no roll, no error.
 ]]
 local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
 local ROLL_RETRY_INTERVAL = 0.5
-local ROLL_RETRY_MAX_ATTEMPTS = 10
+local ROLL_RETRY_MAX_ATTEMPTS = 150
 
 local function ExecuteTrackedRoll(rollIdentifier, rollAction)
 	rollsInitiatedByAddon[rollIdentifier] = true
@@ -73,12 +80,26 @@ end
     START_LOOT_ROLL or from a later retry tick.
 
     Returns true when the decision was reached — whether or not it produced a
-    roll, and including the cases where the roll is no longer live or the item
-    is skipped — meaning no retry is needed. Returns false only when the item's
-    full info isn't cached yet, so the caller should retry: the class/subclass
+    roll, and including the case where the item is skipped — meaning no retry
+    is needed. Returns false while the item is still unresolved, so the caller
+    should retry: an uncached item reads as a nil GetLootRollItemLink and a nil
+    GetItemInfo until the client's item query answers, and the class/subclass
     hard skips need the full item info, so the roll is never decided from
     GetLootRollItemInfo's quality/BoP arguments alone.
 ]]
+---@param itemIdentifier number
+---@return string|nil
+function ns:GetItemRollOverride(itemIdentifier)
+	if not itemIdentifier then
+		return nil
+	end
+	local override = ns.db.profile.ignoredItemsSolo[itemIdentifier]
+	if not override then
+		return nil
+	end
+	return override
+end
+
 local function EvaluateRoll(rollIdentifier)
 	if not ns.db then
 		return true
@@ -89,9 +110,20 @@ local function EvaluateRoll(rollIdentifier)
         bindOnPickUp, canNeed, canGreed, canDisenchant, ...
     ]]
 	local _, _, _, rollQuality, _, rollNeedAllowed, rollGreedAllowed = GetLootRollItemInfo(rollIdentifier)
+
+	--[[
+        A nil link is an unresolved item, not a dead roll. The client returns
+        nil here until its item query answers — Blizzard's own
+        GroupLootFrame_OnShow reads nil item info in the same state and bails —
+        which is the normal condition of a war-effort token's first drop of the
+        session. Treating it as "roll no longer live" is exactly what silently
+        dropped Custom Roll List tokens whose drop raced the item cache: no
+        retry was scheduled, no roll went out, no error. Dead rolls don't reach
+        this read, because CANCEL_LOOT_ROLL cancels the retry timer outright.
+    ]]
 	local rollItemLink = GetLootRollItemLink(rollIdentifier)
 	if not rollItemLink then
-		return true
+		return false
 	end
 
 	local parsedItemLink = ns:ParseItemLink(rollItemLink)
@@ -104,8 +136,8 @@ local function EvaluateRoll(rollIdentifier)
 		return false
 	end
 
-	-- Hard safety: legendaries, quest items, recipes/books, mounts, pets are never automated
-	if ns:ShouldSkipItemByType(itemInformation) then
+	-- Hard safety: legendaries, recipes/books, mounts, pets are never automated
+	if ns:IsNeverAutomatedItem(itemInformation) then
 		return true
 	end
 
@@ -117,7 +149,14 @@ local function EvaluateRoll(rollIdentifier)
 		return true
 	end
 
-	-- Custom List: per-item overrides bypass threshold AND allow BoP items
+	--[[
+        Custom List: a per-item override is an explicit instruction, so it
+        bypasses the threshold, the BoP guard, and the quest-class skip below.
+        It runs ahead of that skip deliberately — the AQ and ZG tokens the
+        default list exists to roll on are all quest-class (see
+        ns:IsQuestClassItem), so checking the skip first would make the whole
+        feature a no-op for them.
+    ]]
 	if ns.db.profile.customRollList then
 		local rollOverride = ns:GetItemRollOverride(parsedItemLink.itemIdentifier)
 		if rollOverride then
@@ -127,6 +166,11 @@ local function EvaluateRoll(rollIdentifier)
 			ExecuteRollOverride(rollIdentifier, rollOverride, rollGreedAllowed, rollNeedAllowed)
 			return true
 		end
+	end
+
+	-- Unlisted quest items are never picked up by the threshold path on their own
+	if ns:IsQuestClassItem(itemInformation) then
+		return true
 	end
 
 	-- The threshold path NEVER touches BoP items
@@ -148,9 +192,13 @@ end
 
 --[[
     Polls a roll whose item info wasn't cached at START_LOOT_ROLL time. Runs
-    every ROLL_RETRY_INTERVAL up to ROLL_RETRY_MAX_ATTEMPTS, bailing early once
-    the roll is no longer live. Each tick re-arms the same named timer, so
-    CANCEL_LOOT_ROLL cancelling that name is all it takes to tear the poll down.
+    every ROLL_RETRY_INTERVAL until the info resolves and the roll is decided.
+    Each tick re-arms the same named timer, so CANCEL_LOOT_ROLL cancelling that
+    name is all it takes to tear the poll down when the roll ends; the attempt
+    cap only bounds a cancel that never arrives. There is deliberately no
+    "still live?" probe inside the tick — the one read that could answer it,
+    GetLootRollItemLink, is nil for unresolved items too, and bailing on it is
+    the bug the retry exists to fix.
 ]]
 ---@param rollIdentifier number
 ---@return nil
@@ -162,9 +210,6 @@ local function ScheduleRollRetry(rollIdentifier)
 
 	local attempts = 0
 	local function Retry()
-		if not GetLootRollItemLink(rollIdentifier) then
-			return
-		end
 		attempts = attempts + 1
 		if EvaluateRoll(rollIdentifier) or attempts >= ROLL_RETRY_MAX_ATTEMPTS then
 			return

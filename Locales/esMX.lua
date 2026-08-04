@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Versión %s. Los ajustes (incluyendo la opción de desactivar este mensaje) se encuentran en Opciones > AddOns > GogoLoot. ¿Disfrutando del add-on? ¡Cuéntaselo a un amigo! (="
+L["CHAT_OPTIONS_IN_COMBAT"] = "Por precaución, la interfaz de opciones no se puede abrir durante el combate."
 L["MESSAGE_AUTO_LOOT_ENABLED"] = "Se ha activado el despojo automático. Despojo Rápido lo necesita para funcionar."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "Actualmente no eres el Maestro Despojador."
 
@@ -22,6 +30,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "Actualmente no eres el Maestro Despojador."
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "Entregó %s a %s."
 L["MESSAGE_DESTINATION_SET"] = "%s recibirá todos los objetos de calidad %s."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s guardará todo el botín para el grupo."
@@ -52,8 +61,6 @@ L["TAB_ANNOUNCEMENTS"] = "Anuncios"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Activado"
 L["STATUS_DISABLED"] = "Desactivado"
 
@@ -110,7 +117,10 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Introduce el ID de un objeto o arrastra un obj
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Cargando... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] = "Los objetos de misión, recetas, libros, monturas, mascotas y legendarios siempre se omiten."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Versión"
 
 --------------------------------------------------------------------------------
@@ -122,8 +132,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Activar Mensaje de Bienvenida"
 L["MINIMAP_BUTTON_ENABLE"] = "Activar Botón del Minimapa"
 
-L["COMMANDS"] = "/Comandos"
-L["COMMANDS_DESCRIPTION"] = "Abre la interfaz de opciones de GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Comandos"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Abre la interfaz de opciones de este add-on."
 
 L["SPEEDY_LOOT_HEADER"] = "Despojo Rápido"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Oculta la ventana de botín para saquear casi al instante."
@@ -149,7 +161,7 @@ L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Solo el líder del grupo puede cambiar 
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Maestro Despojador Automático"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Distribuye el botín a los jugadores que designes mientras eres Maestro Despojador. Los objetos de misión, recetas, libros, monturas, mascotas y legendarios siempre se omiten."
+	"Distribuye el botín a los jugadores que designes mientras eres Maestro Despojador."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Activar Maestro Despojador Automático en Estancias"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Activar Maestro Despojador Automático fuera de Estancias"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -182,7 +194,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Elimina este objeto de la lista 
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Tira por ti por los objetos que no se ligan al recogerlos hasta la calidad que elijas, tanto en grupo como en banda. Los objetos de misión, recetas, libros, monturas, mascotas y legendarios siempre se omiten."
+	"Tira por ti por los objetos que no se ligan al recogerlos hasta la calidad que elijas, tanto en grupo como en banda."
 L["ROLLS_ENABLE"] = "Activar Tiradas Automáticas"
 L["ROLLS_THRESHOLD_HEADER"] = "Umbrales"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

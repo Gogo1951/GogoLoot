@@ -10,11 +10,20 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Версия %s. Настройки (включая возможность отключения этого сообщения) находятся в меню Настройки > Модификации > GogoLoot. Нравится аддон? Расскажите о нем друзьям! (="
+L["CHAT_OPTIONS_IN_COMBAT"] =
+	"В целях безопасности меню настроек нельзя открыть в бою."
 L["MESSAGE_AUTO_LOOT_ENABLED"] =
 	"Автосбор включен. Он необходим для работы Быстрого сбора."
 L["MESSAGE_NOT_MASTER_LOOTER"] =
@@ -24,6 +33,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] =
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "Передал %s игроку %s."
 L["MESSAGE_DESTINATION_SET"] = "%s будет получать все предметы качества: %s."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s будет хранить всю добычу для группы."
@@ -55,8 +65,6 @@ L["TAB_ANNOUNCEMENTS"] = "Оповещения"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Включено"
 L["STATUS_DISABLED"] = "Отключено"
 
@@ -115,7 +123,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Загрузка... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] =
+	"Задания, рецепты, книги, транспорт, питомцы и легендарные предметы всегда пропускаются."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Версия"
 
 --------------------------------------------------------------------------------
@@ -127,8 +139,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Включить приветственное сообщение"
 L["MINIMAP_BUTTON_ENABLE"] = "Включить кнопку на миникарте"
 
-L["COMMANDS"] = "/Команды"
-L["COMMANDS_DESCRIPTION"] = "Открывает меню настроек GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Команды"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Открывает меню настроек этого аддона."
 
 L["SPEEDY_LOOT_HEADER"] = "Быстрый сбор"
 L["SPEEDY_LOOT_DESCRIPTION"] =
@@ -157,7 +171,7 @@ L["MASTER_LOOTER_NOT_LEADER_WARNING"] =
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Автоматический ответственный за добычу"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Распределяет добычу назначенным игрокам, пока вы ответственный за добычу. Задания, рецепты, книги, транспорт, питомцы и легендарные предметы всегда пропускаются."
+	"Распределяет добычу назначенным игрокам, пока вы ответственный за добычу."
 L["MASTER_LOOTER_AUTO_ENABLE"] =
 	"Включить автоматическое распределение добычи в инстансах"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] =
@@ -193,7 +207,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] =
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Бросает кубик за вас на предметы, не персональные при получении, вплоть до выбранного качества, как в подземельях, так и в рейдах. Задания, рецепты, книги, транспорт, питомцы и легендарные предметы всегда пропускаются."
+	"Бросает кубик за вас на предметы, не персональные при получении, вплоть до выбранного качества, как в подземельях, так и в рейдах."
 L["ROLLS_ENABLE"] = "Включить автоматические броски"
 L["ROLLS_THRESHOLD_HEADER"] = "Пороги"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

@@ -15,7 +15,7 @@
       announceDestinations
         - gates MESSAGE_DESTINATION_SET / MESSAGE_DESTINATION_LEFT
       announceMasterLootAuto + announceMasterLootAutoThreshold
-        - gates the announce inside Master-Looter.lua's
+        - gates the announce inside Master-Looter-Distribution.lua's
           TryDistributeSlot (items handed out by the auto path)
 
     The auto path is threshold-gated (default Blue+) so routine auto-loot

@@ -59,12 +59,15 @@ function ns.BuildGeneralOptions()
 				end,
 			},
 			spacerCommands0 = ns.OptionsSpacer(6),
-			headerCommands = ns.OptionsHeader(L["COMMANDS"], 7),
+			headerCommands = ns.OptionsHeader(L["OPTIONS_COMMANDS_HEADER"], 7),
 			spacerCommands1 = ns.OptionsSpacer(8),
-			descCommandGl = ns.OptionsDesc(GetColor("INFO") .. "/gl|r" .. "  " .. L["COMMANDS_DESCRIPTION"], 9),
+			descCommands = ns.OptionsDesc(
+				GetColor("INFO") .. L["OPTIONS_COMMAND"] .. "|r" .. "  " .. L["OPTIONS_COMMAND_DESCRIPTION"],
+				9
+			),
 			spacerBetweenCommands = ns.OptionsSpacer(10),
-			descCommandGogoloot = ns.OptionsDesc(
-				GetColor("INFO") .. "/gogoloot|r" .. "  " .. L["COMMANDS_DESCRIPTION"],
+			descCommandsAlternate = ns.OptionsDesc(
+				GetColor("INFO") .. L["OPTIONS_COMMAND_ALTERNATE"] .. "|r" .. "  " .. L["OPTIONS_COMMAND_DESCRIPTION"],
 				11
 			),
 			spacerSpeedyLootSection = ns.OptionsSpacer(20),

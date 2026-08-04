@@ -10,11 +10,19 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"版本 %s。设置（包括禁用此消息的选项）可以在 选项 > 插件 > GogoLoot 中找到。喜欢这个插件吗？告诉你的朋友吧！(="
+L["CHAT_OPTIONS_IN_COMBAT"] = "出于安全考虑，战斗中无法打开选项界面。"
 L["MESSAGE_AUTO_LOOT_ENABLED"] = "自动拾取已启用。快速拾取需要它才能运作。"
 L["MESSAGE_NOT_MASTER_LOOTER"] = "您当前不是队长分配者。"
 
@@ -22,6 +30,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "您当前不是队长分配者。"
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "将 %s 交给了 %s。"
 L["MESSAGE_DESTINATION_SET"] = "%s 将接收所有的 %s 物品。"
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s 将为队伍保管所有战利品。"
@@ -52,8 +61,6 @@ L["TAB_ANNOUNCEMENTS"] = "通报"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "已启用"
 L["STATUS_DISABLED"] = "已禁用"
 
@@ -110,7 +117,10 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "输入物品 ID 或将物品拖到此处以将
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "加载中... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] = "任务物品、配方、书籍、坐骑、宠物和传说物品总是被跳过。"
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "版本"
 
 --------------------------------------------------------------------------------
@@ -122,8 +132,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "启用欢迎消息"
 L["MINIMAP_BUTTON_ENABLE"] = "启用小地图按钮"
 
-L["COMMANDS"] = "/命令"
-L["COMMANDS_DESCRIPTION"] = "打开 GogoLoot 选项界面。"
+L["OPTIONS_COMMANDS_HEADER"] = "/命令"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "打开此插件的选项界面。"
 
 L["SPEEDY_LOOT_HEADER"] = "快速拾取"
 L["SPEEDY_LOOT_DESCRIPTION"] = "隐藏拾取窗口，实现近乎瞬间的拾取。"
@@ -148,8 +160,7 @@ L["MASTER_LOOTER_SET_BY"] = "(由 %s 设置)"
 L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "只有队长可以更改拾取方式和品质门限。"
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "自动队长分配"
-L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"当您是队长分配者时，将战利品分配给您指定的玩家。任务物品、配方、书籍、坐骑、宠物和传说物品总是被跳过。"
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "当您是队长分配者时，将战利品分配给您指定的玩家。"
 L["MASTER_LOOTER_AUTO_ENABLE"] = "在副本中启用自动队长分配"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "在副本外启用自动队长分配"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] = "警告：由于世界首领掉落无法交易，不建议使用此功能！"
@@ -178,7 +189,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "从忽略列表中移除此物�
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"在小队和团队中，都会替你对不高于所选品质的非拾取绑定物品自动掷骰。任务物品、配方、书籍、坐骑、宠物和传说物品总是被跳过。"
+	"在小队和团队中，都会替你对不高于所选品质的非拾取绑定物品自动掷骰。"
 L["ROLLS_ENABLE"] = "启用自动掷骰"
 L["ROLLS_THRESHOLD_HEADER"] = "阈值"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =
@@ -205,7 +216,7 @@ L["ROLLS_REMOVE_DESCRIPTION"] = "从自定义掷骰列表中移除此物品。"
 L["TRADE_HEADER"] = "交易通报"
 L["TRADE_DESCRIPTION"] = "发布每笔完成交易的摘要：物品、附魔和金币。"
 L["TRADE_ENABLE"] = "启用交易通报"
-L["TRADE_CONDITION"] = "时间"
+L["TRADE_CONDITION"] = "条件"
 L["TRADE_CONDITION_ALWAYS"] = "始终"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "仅在小队或团队中"
 L["TRADE_CONDITION_RAID_ONLY"] = "仅在团队中"

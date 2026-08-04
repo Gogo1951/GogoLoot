@@ -6,45 +6,45 @@ This document combines architecture notes and contribution guidance for develope
 
 ```
 GogoLoot/
-├── .github/workflows/package.yml   — CurseForge + Wago release, library vendoring (repo only)
-├── .gitattributes                  — LF normalization (repo only)
-├── .pkgmeta                        — externals and ignore list; externals check out into Includes/Libraries/ (repo only)
-├── LICENSE                         — MIT (repo only)
-├── GogoLoot.toc                    — load order: Includes → Locales → Data → Features → Options
+├── .github/workflows/package.yml        CurseForge + Wago release, library vendoring (repo only)
+├── .gitattributes                       LF normalization (repo only)
+├── .pkgmeta                             Externals and ignore list; externals check out into Includes/Libraries/ (repo only)
+├── LICENSE                              MIT (repo only)
+├── GogoLoot.toc                         Load order: Includes → Locales → Data → Features → Options
 ├── Data/
-│   ├── Data.lua                    — constants only (expansion, item/roll/quality, colors, target marker, options widths, registry names, label maps); no logic beyond WOW_PROJECT_ID
-│   └── Default-Settings.lua        — ns.DATABASE_DEFAULTS plus the default custom-roll and ML-ignore item lists
+│   ├── Data.lua                         Constants only (expansion, item class/bind, roll, quality, colors, target marker, options widths, registry names, label maps); no logic beyond WOW_PROJECT_ID
+│   └── Default-Settings.lua             ns.DATABASE_DEFAULTS plus the default custom-roll and ML-ignore item lists
 ├── Features/
-│   ├── Core.lua                    — version, saved-variable lifecycle + migrations, the event dispatcher, ns.EVENT_NAMES, the Auto Loot CVar enforcement
-│   ├── Utilities.lua               — API compatibility shims, game-message id resolution, named timers, colors, tooltips, name/item parsing, game-state predicates
-│   ├── Announcements.lua           — PrintMessage / Announce / BuildAnnounceMessage, group-channel resolution, welcome message
-│   ├── Announcements-Trade.lua     — trade snapshotting, summary building and chunking, trade-result detection, trade-window checkbox
-│   ├── Speedy-Loot.lua             — LOOT_READY fast-looting with a free-bag-slot budget
-│   ├── Master-Looter.lua           — ML API wrappers, eligibility check (WillAutoMasterLoot), destination lifecycle, pop-up trigger
-│   ├── Master-Looter-Distribution.lua — manual-distribution hook, the LOOT_OPENED distribution engine, and the Pending Hand-out Registry
-│   ├── Automated-Rolls.lua         — START_LOOT_ROLL threshold + custom roll list, with async retry for cold item info
-│   ├── Diagnostics.lua             — read-only environment probes and report builders for bug reports (runtime-only state, never a SavedVariable)
-│   └── Minimap-Button.lua          — LibDataBroker launcher, minimap icon state, tooltip
+│   ├── Core.lua                         Version, saved-variable lifecycle + migrations, the event dispatcher, ns.EVENT_NAMES, the Auto Loot CVar enforcement
+│   ├── Utilities.lua                    API compatibility shims, game-message id resolution, named timers, colors, tooltips, name/item parsing, the item-skip predicates, game-state predicates
+│   ├── Announcements.lua                PrintMessage / Announce / BuildAnnounceMessage, group-channel resolution, welcome message
+│   ├── Announcements-Trade.lua          Trade snapshotting, summary building and chunking, trade-result detection, trade-window checkbox
+│   ├── Speedy-Loot.lua                  LOOT_READY fast-looting with a free-bag-slot budget
+│   ├── Master-Looter.lua                ML API wrappers, eligibility check (WillAutoMasterLoot), destination lifecycle, pop-up trigger
+│   ├── Master-Looter-Distribution.lua   Manual-distribution hook, the LOOT_OPENED distribution engine, and the Pending Hand-out Registry
+│   ├── Automated-Rolls.lua              START_LOOT_ROLL threshold + custom roll list, with a named-timer retry for cold item info
+│   ├── Diagnostics.lua                  Read-only environment probes and report builders for bug reports (runtime-only state, never a SavedVariable)
+│   └── Minimap-Button.lua               LibDataBroker launcher, minimap icon state, tooltip
 ├── Includes/
-│   ├── Images/GogoLoot.tga         — add-on-list icon (## IconTexture)
-│   └── Libraries/                  — bundled libraries (packager externals; never edit by hand)
-├── Locales/                        — AceLocale files, 11 locales; enUS.lua is the source of truth
+│   ├── Images/GogoLoot.tga              Add-on-list icon (## IconTexture)
+│   └── Libraries/                       Bundled libraries (packager externals; never edit by hand)
+├── Locales/                             AceLocale files, 11 locales; enUS.lua is the source of truth
 ├── Options/
-│   ├── Options-Utilities.lua       — widget helper constructors, item-cache warming, shared item-list builder, GogoLoot_ItemLink widget
-│   ├── Options-General.lua         — root General panel (welcome, minimap toggle, Speedy Loot, links)
-│   ├── Options-Master-Looter.lua   — Master Looter panel + the shared loot method/threshold/Send All row builders
-│   ├── Options-Master-Looter-Popup.lua — the window that opens on becoming master looter (registered, never added to the Blizzard tree)
-│   ├── Options-Automated-Rolls.lua — Automated Rolls panel (per-context thresholds + custom roll list)
-│   ├── Options-Announcements.lua   — Announcements panel (master looter + trade sections)
-│   ├── Options-Profiles.lua        — stock AceDBOptions panel, returned unmodified
-│   ├── Options-Diagnostics.lua     — Diagnostic Tools panel (single runtime toggle gates the whole panel)
-│   └── Options.lua                 — AceConfig registration, Blizzard panel wiring, slash commands
-├── Tests/                          — dev-only suite, absent from the TOC; `lua Tests/Run.lua`
-│   ├── Fakes/WoW.lua               — the WoW and Ace surface the suite runs against
-│   └── Run.lua                     — loader and assertions
-├── README.md                       — end-user documentation
-├── README-Technical.md             — this document
-└── README-Testing.md               — manual test plan, run before a release is tagged
+│   ├── Options-Utilities.lua            Widget helper constructors, item-cache warming, shared item-list builder, GogoLoot_ItemLink widget
+│   ├── Options-General.lua              Root General panel (welcome, minimap toggle, Speedy Loot, links)
+│   ├── Options-Master-Looter.lua        Master Looter panel + the shared loot method/threshold/Send All row builders
+│   ├── Options-Master-Looter-Popup.lua  The window that opens on becoming master looter (registered, never added to the Blizzard tree)
+│   ├── Options-Automated-Rolls.lua      Automated Rolls panel (per-context thresholds + custom roll list)
+│   ├── Options-Announcements.lua        Announcements panel (master looter + trade sections)
+│   ├── Options-Profiles.lua             Stock AceDBOptions panel, returned unmodified
+│   ├── Options-Diagnostics.lua          Diagnostic Tools panel (single runtime toggle gates the whole panel)
+│   └── Options.lua                      AceConfig registration, Blizzard panel wiring, slash commands
+├── Tests/                               Dev-only suite, absent from the TOC; `lua Tests/Run.lua`
+│   ├── Fakes/WoW.lua                    The WoW and Ace surface the suite runs against
+│   └── Run.lua                          Loader and assertions
+├── README.md                            End-user documentation
+├── README-Technical.md                  This document
+└── README-Testing.md                    Manual test plan, run before a release is tagged
 ```
 
 Everything lives on the addon namespace table (`local ADDON_NAME, ns = ...`); the only globals are `GogoLootDB` (SavedVariables), the slash commands (`SLASH_GOGOLOOT1/2`, `SlashCmdList["GOGOLOOT"]`), and two named frames (`GogoLootEventFrame`, `GogoLootTradeAnnounceCheckbox`). The minimap button's frame is created inside LibDBIcon, not by GogoLoot.
@@ -60,7 +60,7 @@ Two things wrap the fan-out:
 - **Drift guard.** `ns.EVENT_NAMES` (Core.lua, kept sorted alphabetically) is the exported single source of truth for every event the add-on registers. `RegisterModuleEvent` prints a one-time developer warning if handed an event missing from that list. The list exists so the Diagnostics Event Registration probe can enumerate events without reading the live handler table — which would miss on-demand, self-unregistering registrations like Options-Utilities' `GET_ITEM_INFO_RECEIVED` watcher.
 - **Diagnostics tap.** When `ns.diagnostics.logging` is true, `OnEvent` hands each event to `ns:LogEvent` before dispatching. Boolean checks gate it, so it costs nothing when logging is off.
 
-`ns:UnregisterModuleEvent` exists but is **not** safe to call from inside an event handler — `OnEvent` iterates the live handler list. Defer to a timer or user-driven path; the roll retry ticker and the item-cache watcher both self-cancel via a flag rather than unregistering mid-dispatch.
+`ns:UnregisterModuleEvent` exists but is **not** safe to call from inside an event handler — `OnEvent` iterates the live handler list. Defer to a timer or user-driven path: the item-cache watcher is the only caller, and it unregisters from inside its debounced repaint timer rather than from the `GET_ITEM_INFO_RECEIVED` handler itself. The roll retry never unregisters anything — it is a named timer, torn down with `ns:CancelTimer`.
 
 Who listens to what:
 
@@ -74,13 +74,19 @@ Who listens to what:
 - `Options/Options-Utilities.lua` — `GET_ITEM_INFO_RECEIVED`, registered on demand and self-unregistering (see Item Data Caching).
 - `Features/Diagnostics.lua` — none at runtime; its Event Registration probe registers then immediately unregisters each `ns.EVENT_NAMES` entry on a **separate** frame, with no handler attached, so probing never disturbs the live dispatcher.
 
+### Combat Lockdown
+
+`ns:OpenOptionsPanel` (`Options/Options.lua`) is the one combat guard in the add-on, and it **refuses outright rather than deferring**: `InCombatLockdown()` is the first thing the function does, it prints `CHAT_OPTIONS_IN_COMBAT` through `ns:PrintMessage`, and it returns. Nothing is queued for later — Blizzard's Settings panel is protected in combat, and a queued open would land at a moment the player never asked for. Because the gate sits at the single entry point, in front of the whole routing chain, the slash commands and the mini-map button's Shift + Middle-Click all answer identically on every flavor.
+
+Nothing else in GogoLoot needs a guard. The loot, roll, and trade paths call no protected APIs — `GiveMasterLoot`, `RollOnLoot`, and `LootSlot` are all callable in combat, which is exactly where a raid uses them. The master looter pop-up is an AceConfigDialog window rather than part of the Blizzard settings tree, so it is unprotected and safe to open mid-fight.
+
 ### Master Loot Pipeline
 
 The distribution engine in `Features/Master-Looter-Distribution.lua` runs Scan → Resolve → Distribute → Confirm:
 
 1. **Scan** — `LOOT_OPENED` fires `RunDistributionPass` when `ns:WillAutoMasterLoot()` is true (master looter + `autoMasterLoot`, inside a raid/party instance unless `autoMasterLootOutsideInstances`).
 2. **Resolve** — `BuildCandidateMap` maps lowercased candidate names per slot, adding a realm-stripped alias only when exactly one candidate normalizes to it; ambiguous duplicates (e.g. `Bob` and `Bob-OtherRealm`) create no alias and fall back to manual handling rather than guessing.
-3. **Distribute** — `TryDistributeSlot` gates each slot (hard item-type skips, ignore list, BoP outside trade-eligible instances, quality→destination mapping) and calls `GiveMasterLoot(slot, candidate, true)` — the `true` lets the manual hook distinguish automated calls.
+3. **Distribute** — `TryDistributeSlot` gates each slot (`ns:ShouldSkipItemByType`, ignore list, BoP outside trade-eligible instances, quality→destination mapping) and calls `GiveMasterLoot(slot, candidate, true)` — the `true` lets the manual hook distinguish automated calls. Distribution takes the **whole** skip set, quest items included: it has no per-item instruction to honour, so there is nothing to weigh against the skip (see Item-Type Skips).
 4. **Confirm** — announcements are never sent inline; see the Pending Hand-out Registry deep-dive. A 0.1 s retry ticker (`DISTRIBUTION_RETRY_INTERVAL`) re-runs the pass up to 20 times (`DISTRIBUTION_MAX_RETRIES`) until nothing is left or `DISTRIBUTION_QUIET_TICKS` consecutive ticks make no progress, covering late candidate data and cold item caches.
 
 ### Detecting the Master Looter (verified on Classic Era 1.15.9)
@@ -93,12 +99,22 @@ The distribution engine in `Features/Master-Looter-Distribution.lua` runs Scan �
 
 The raid case is not yet verified: `masterLooterRaidIndex` was `nil` in the party test, and the `== 0` party check is what carries the decision. If master looting ever misbehaves in a 40-player raid, re-run the Loot Method probe there first.
 
+### Item-Type Skips
+
+`Features/Utilities.lua` exposes the skip rule as **two halves plus a composite**, and which one a caller takes is the whole reason the Custom Roll List works:
+
+- `ns:IsNeverAutomatedItem` — legendaries (quality 5), recipes/books/patterns (`classId` 9), mounts and companion pets. Absolute. No list entry can opt back in.
+- `ns:IsQuestClassItem` — `classId == ns.ITEM_CLASS_QUEST` (12) or `bindType == ns.BIND_QUEST_ITEM`. Skipped by every path that picks items **on its own**, and only those.
+- `ns:ShouldSkipItemByType` — the union of the two. Master-loot distribution takes this one.
+
+The split is load-bearing rather than tidy. **The AQ and ZG war-effort tokens the default roll list exists to roll on all report `classId` 12**: the scarabs (20858–20865), AQ20 idols (20866–20873), AQ40 idols (20874–20882), ZG coins (19698–19706), ZG bijous (19707–19715), and the Wartorn scraps (22373–22376). While a single quest-class test ran ahead of the list, every one of those default entries was unreachable — correct ids, correct saved action, and no roll ever went out. So the roll path calls the two halves separately and sits the list between them; distribution, having no per-item instruction to weigh, keeps the composite.
+
 ### Item Data Caching
 
 `Features/Utilities.lua` exposes `ns.GetItemInfo` / `ns.GetItemInfoInstant` (C_Item on modern clients, legacy globals otherwise). `ns:SafeGetItemInfo` returns nil for uncached items; callers treat nil as "retry later", not an error:
 
 - The distribution engine's retry ticker re-attempts slots whose item info was cold.
-- `Features/Automated-Rolls.lua` returns `false` from `EvaluateRoll` when item info is uncached and polls the roll every 0.5 s (`ScheduleRollRetry`) until it resolves, the roll expires, or the attempt cap is hit — the class/subclass hard skips need full item info, so a roll is never decided from `GetLootRollItemInfo`'s arguments alone.
+- `Features/Automated-Rolls.lua` returns `false` from `EvaluateRoll` while the item is unresolved — a nil `GetLootRollItemLink` included, which is how an uncached item reads until the client's query answers, and is the normal state of a war-effort token's first drop of the session — and polls the roll every 0.5 s (`ScheduleRollRetry`, which re-arms a single named timer keyed by roll id, so `ns:IsTimerPending` is the duplicate-ticker guard) until the info resolves or `CANCEL_LOOT_ROLL` cancels that timer. The attempt cap (150 ticks, 75 s — past the 60 s roll window) only backstops a cancel that never arrives; it was the give-up point once, at five seconds, and that was the bug. There is deliberately no "is this roll still live?" probe inside the tick: the one read that could answer it, `GetLootRollItemLink`, is nil for unresolved items too. The class/subclass skips need full item info, so a roll is never decided from `GetLootRollItemInfo`'s arguments alone.
 - The options item lists render a `Loading... (ID: %d)` row, and `ns:WarmItemCache` (`Options/Options-Utilities.lua`) queries every listed item, registering a `GET_ITEM_INFO_RECEIVED` watcher that repaints via a debounced 0.3 s `NotifyChange` and unregisters itself once every item has resolved.
 - Uncached items also have no name to sort on, so `ns:SortItemIdentifiersByName` drops them to the bottom of the list and they re-sort into place as answers arrive. It tie-breaks equal names on item ID — without that the nine identically-named Punctured Voodoo Dolls in the default roll list compare equal and reshuffle on every repaint.
 
@@ -199,7 +215,18 @@ Its three rows — loot method, loot threshold, Send All Loot To — are built b
 
 ## Custom Roll List vs. the Automated Rolls Toggle
 
-The `autoGreed` toggle is the **master switch** for every automated roll: when Automated Rolls is off, nothing rolls automatically — the Custom Roll List included. The list also has its own `customRollList` toggle (default on), nested under the master: with rolls on and the list off, only the threshold path runs. In `Features/Automated-Rolls.lua`, the `autoGreed` gate runs before the per-item override check; list items then roll their configured Need/Greed/Pass (Need falls back to Greed when Need isn't offered), and only non-listed items reach the threshold path. The list is also the only way to automate BoP items; the threshold path never touches BoP. Legendaries, quest items, recipes/books, mounts, and pets are skipped unconditionally (`ns:ShouldSkipItemByType`) before either path.
+The `autoGreed` toggle is the **master switch** for every automated roll: when Automated Rolls is off, nothing rolls automatically — the Custom Roll List included. The list also has its own `customRollList` toggle (default on), nested under the master: with rolls on and the list off, only the threshold path runs.
+
+`EvaluateRoll` in `Features/Automated-Rolls.lua` applies its gates in a fixed order, and **the order is the design**:
+
+1. `ns:IsNeverAutomatedItem` — legendaries, recipes, mounts, pets. Nothing gets past this, list entry or not.
+2. `autoGreed` — the master switch, ahead of the per-item override check.
+3. **Custom Roll List** — a per-item override is an explicit instruction from the player, so it bypasses the threshold, the BoP guard, *and* the quest-class skip below. `ns.MANUAL` means "leave it to me" and returns without rolling; anything else rolls its configured Need/Greed/Pass (Need falls back to Greed when the client doesn't offer Need).
+4. `ns:IsQuestClassItem` — unlisted quest items are never picked up by the threshold path on its own.
+5. BoP — the threshold path never touches a bind-on-pickup item. The list is the only way to automate one.
+6. Threshold — per group context; rolls when `quality <= threshold`.
+
+Step 3 sitting ahead of step 4 is the load-bearing bit: the tokens the default list ships for are quest-class (see Item-Type Skips), so checking the skip first makes the whole feature a no-op for them. Steps 1 and 3 are also why the two skip halves exist separately at all.
 
 The threshold path is configured **per group context**: `GetContextRollSettings` reads the raid pair (`autoRollActionRaid` / `autoRollThresholdRaid`) when `IsInRaid()` is true and the party pair otherwise, and both paths share `ExecuteRollOverride`, so a threshold roll honors Need→Greed fallback exactly like a list entry. An action of `ns.MANUAL` disables automation for that context alone — Automated Rolls can run in raids but not parties without touching the master toggle.
 
@@ -225,13 +252,13 @@ Otherwise it respects the Auto Loot CVar (and its modifier-key inversion, so hol
 - **Loot Method report** prints the raw returns of both loot-method APIs, the `Enum.LootMethod` table, GogoLoot's own interpretation (`SafeGetLootMethod`, `SafeGetLootThreshold`, `AreWeMasterLooter`, `WillAutoMasterLoot`), and closes with two `constant -> id on this client` blocks — master-loot errors, then trade results — resolved in a single `ns:ResolveGameMessageIds` walk over both exported tables. It is the only output that shows whether a constant resolved on this flavor: `NOT FOUND` there *is* the failure, and the shared scan count is what separates "resolved nothing" from "no message table to resolve against."
 - **Saved Variables dump** prints every row of `GogoLootDB`, item lists included — the per-item roll overrides and ignore entries *are* the configuration a loot bug report needs, so the full dump is a sanctioned deviation from the guide's summarize-large-arrays advice.
 
-The event log (`ns:LogEvent`) snapshots arguments to strings immediately (never retaining frame/table references), caps 8 args at 255 bytes each, and escapes pipes (`|` → `||`) **after** the length cut so a loot line shows its item link verbatim in the report editbox instead of rendering as a clickable swatch or collapsing to a stray `[Sc`. `ns.DIAGNOSTIC_EVENT_EXCLUDE` is deliberately empty — GogoLoot registers no sustained firehose, and the dispatcher only ever hands the log events GogoLoot itself registered.
+The event log (`ns:LogEvent`) snapshots arguments to strings immediately (never retaining frame/table references), caps 8 args at 255 bytes each, and escapes pipes (`|` → `||`) **after** the length cut so a loot line shows its item link verbatim in the report editbox instead of rendering as a clickable swatch or collapsing to a stray `[Sc`. `ns.DIAGNOSTIC_EVENT_EXCLUDE` is deliberately empty — whole-event drops are the wrong tool for events that are ever signal, and the dispatcher only ever hands the log events GogoLoot itself registered. The two genuine firehoses, `UI_ERROR_MESSAGE` and `UI_INFO_MESSAGE`, are filtered by **message id** instead: the client raises them for every red combat error and yellow info line, which used to bury the 500-entry ring buffer in "Ability is not ready yet." and evict the loot signal. Ids the add-on correlates (the loot-error and trade-result sets, resolved through `ns:ResolveGameMessageIds` exactly like the live handlers) log as normal lines; everything else is counted per id and rendered as a `Suppressed` block at the bottom of the report — id, first-seen text, and count, biggest offender first — so the report still shows what was spamming without listing it. An event carrying no numeric id at all logs verbatim: unclassifiable is signal.
 
 ## Saved Variables
 
 `GogoLootDB` is an AceDB-3.0 database (`ns.db`, created in `Features/Core.lua` on a name-guarded `ADDON_LOADED`). Profiles are stored account-wide in `GogoLootDB.profiles`, each character's active profile choice in `GogoLootDB.profileKeys`, and account-wide profile-independent state in `GogoLootDB.global`.
 
-GogoLoot uses the **Simple** saved-variables model (Style Guide → SAVED VARIABLES → The Two Models): `AceDB:New`'s third argument is `true`, so every character lands on the one shared `"Default"` profile. **Reset Profile therefore clears all of the loot policy below back to install defaults**, while the three presentation keys on `ns.db.global` — the welcome toggle, Speedy Loot, and the mini-map position — survive untouched. Profiles are managed on the Profiles options panel (AceDBOptions-3.0), letting a player keep separate loot rules per context (guild raid vs. PUG) and switch at will.
+GogoLoot uses the **Simple** saved-variables model (Style Guide → SAVED VARIABLES → The Two Models): `AceDB:New`'s third argument is `true`, so every character lands on the one shared `"Default"` profile. **Reset Profile therefore clears all of the loot policy below back to install defaults**, while the three presentation keys on `ns.db.global` — the welcome toggle, Speedy Loot, and the mini-map position — survive untouched. Those three are a recorded per-add-on exception (`References/Exceptions.md` → *GogoLoot — account-wide presentation keys under the Simple model*); the Simple model otherwise leaves `global` unused. Profiles are managed on the Profiles options panel (AceDBOptions-3.0), letting a player keep separate loot rules per context (guild raid vs. PUG) and switch at will.
 
 The split is by kind, not by convenience: **`global` holds how GogoLoot presents itself and what it does to the client, `profile` holds loot policy.** A player who wants different rules per context adds a profile, and nothing in that switch should move their button, re-enable Speedy Loot, or bring the welcome message back. A new setting belongs in `profile` unless it is presentation or client state.
 
@@ -246,6 +273,7 @@ Per-profile keys (`ns.db.profile`):
 - `destinations` — quality key (`poor`…`epic`) → `"self"` or a normalized (realm-stripped, lowercased) player name. Empty by default; see Master Loot Destinations.
 - `ignoredItemsSolo` — itemId → `"manual"` / `"greed"` / `"need"` / `"pass"` (the Custom Roll List).
 - `ignoredItemsMaster` — itemId → `true` (the ML ignore list).
+- `ahnQirajTokenRollDefaultsApplied` — a migration marker, deliberately absent from `ns.DATABASE_DEFAULTS` so `rawget` can tell a stored value from a default. Not a setting; see the Migration Chain.
 
 Account-wide global keys (`ns.db.global`):
 
@@ -263,15 +291,16 @@ Auto Loot is deliberately *not* a saved setting of its own. `ns.EnsureAutoLoot` 
 
 ### Migration Chain
 
-All five run once, in this order, inside `OnAddonLoaded` after `AceDB:New`. Every one is tagged `remove after 2026-08-15` — the Style Guide's single fixed migration cutoff, shared by every migration regardless of when it shipped. Past that date they are deleted on sight; a returning player whose data was never migrated falls back to defaults.
+All six run once, in this order, inside `OnAddonLoaded` after `AceDB:New`. Every one is tagged `remove after 2026-08-15` — the Style Guide's single fixed migration cutoff, shared by every migration regardless of when it shipped. Past that date they are deleted on sight; a returning player whose data was never migrated falls back to defaults.
 
 - `MigrateFlatSettingsToProfile` — folds pre-profile flat `GogoLootDB.<key>` values into the active profile, then nils the old flat keys. Its loop walks `ns.DATABASE_DEFAULTS.profile`, so keys that have since left those defaults (`autoGreedThreshold`, `showWelcome`, `speedyLoot`) are carried up by an explicit list after the loop and left for the migrations below to fold into their new homes.
-- `announceTradeOutput` collapse — an inline rewrite of the retired `"raid"` output value to `"group"` (the two dropdown options are now Whisper and Group Chat).
+- `MigrateTradeOutputRaidToGroup` — rewrites the retired `"raid"` output value to `"group"` (the two dropdown options are now Whisper and Group Chat).
 - `MigrateMinimapToGlobal` — moves the minimap position from `profile.minimap` into `global.minimap`. It `rawget`s past AceDB's defaults metatable so only genuine stored per-profile data migrates, and fills only global keys not already present, so an established global position is never clobbered.
 - `MigrateSettingsToGlobal(adoptProfileValue)` — moves the presentation toggles in `ACCOUNT_WIDE_MIGRATED_KEYS` (`showWelcome`, `speedyLoot`) from the profile into `global`. It takes the flag rather than the "fill only when global is unset" test the minimap migration uses: AceDB's `copyDefaults` **rawsets scalar defaults into the saved table**, so those global keys always read as present and that test can never fire for a scalar. Instead the profile active at login passes `true` and donates its values; profiles visited later through `HandleProfileChanged` pass `false` and only drop their stale keys, so an old profile can't overwrite the values already in force.
 - `MigrateGreedThresholdToPerContext` — seeds both `autoRollThresholdParty` and `autoRollThresholdRaid` from the retired single `autoGreedThreshold`, then nils it, so an upgrading profile keeps rolling exactly as before. The actions stay at their Greed default, which is all the old code ever did. Also `rawget`s past the defaults metatable.
+- `MigrateAhnQirajTokenRollDefaults` — brings an established profile's Custom Roll List up to the shipped defaults: the Ahn'Qiraj war-effort tokens joined that list, and the AQ40 idols moved from Manual to Need. An existing profile sees neither change on its own, because `RebuildEmptyItemLists` re-seeds only a list that is *entirely* empty. Two rules, because the halves mean different things. `ADDED_ITEM_IDENTIFIERS` (the AQ20 idols, Scarab Bag, both coffer keys, and the four Wartorn scraps) are ids the list never carried, so an entry already sitting there can only be one the player typed in and is left alone. `REPOINTED_ITEM_IDENTIFIERS` (the eight AQ40 idols — 20880 is deliberately absent, it is not a live item id) were already listed at Manual, and move **only while they still read Manual**, so a player who had picked Greed, Need, or Pass for an idol keeps that choice. Both read their target action from `ns.DEFAULT_IGNORE_LIST_SOLO` rather than repeating it, so the data file stays the single source of truth and the expansion filter is honoured exactly as the seeding path applies it. It runs once per profile, guarded by the marker key `ahnQirajTokenRollDefaultsApplied` — a profile key deliberately absent from the defaults table, so `rawget` reads only a genuinely stored value, the same idiom the migrations above use — and always runs *after* `RebuildEmptyItemLists`, so a freshly seeded list is never mistaken for a stale one. Deleting this migration leaves the marker key inert in saved variables.
 
-The last three also run per profile from `HandleProfileChanged`, so a profile the player has not logged into since the change is migrated the moment they switch to it.
+Every one except `MigrateFlatSettingsToProfile` also runs per profile from `HandleProfileChanged`, in that same relative order — `MigrateSettingsToGlobal` passed `false` there, and `MigrateAhnQirajTokenRollDefaults` still last, after the `RebuildEmptyItemLists` re-seed — so a profile the player has not logged into since the change is migrated the moment they switch to it. `MigrateFlatSettingsToProfile` is login-only by nature: the flat pre-profile keys it reads sit on the `GogoLootDB` root rather than inside any profile, and it nils them once it has folded them in.
 
 ## Adding a New Announcement
 
@@ -292,13 +321,14 @@ The last three also run per profile from `HandleProfileChanged`, so a profile th
 
 1. Register the handler with `ns:RegisterModuleEvent(eventName, handler)` from the owning module — never `frame:RegisterEvent` directly.
 2. Add the event name to `ns.EVENT_NAMES` in `Features/Core.lua`, keeping the list alphabetical. Skipping this prints a one-time developer warning and leaves the event out of the Diagnostics Event Registration probe.
-3. If the handler must ever unregister, do it from a timer or user path (or self-cancel via a flag) — `ns:UnregisterModuleEvent` is unsafe to call while `OnEvent` is iterating handlers.
+3. If the handler must ever unregister, do it from a timer or user path — `ns:UnregisterModuleEvent` is unsafe to call while `OnEvent` is iterating handlers. Prefer a named timer (`ns:After` / `ns:CancelTimer`) over a guard flag: rescheduling an identifier replaces the pending timer, so the call site needs no self-cancel token of its own.
 
 ## Adding a New Default List Item
 
 1. Add the entry in `Data/Default-Settings.lua`: `[itemId] = {expansion, rollOverride}` for `ns.DEFAULT_IGNORE_LIST_SOLO` (expansion `1`–`3`; override `ROLL_INDEX_MANUAL`/`ROLL_INDEX_GREED`/`ROLL_INDEX_NEED`/`ROLL_INDEX_PASS`), or `[itemId] = {expansion}` for `ns.DEFAULT_IGNORE_LIST_MASTER`.
 2. Entries gate on `ns.currentExpansion`, so TBC items ship safely to Era clients.
-3. Existing users do **not** receive new defaults automatically — saved lists are rebuilt only when empty or via the Restore Defaults button. Mention new defaults in release notes.
+3. Existing users do **not** receive new defaults automatically — saved lists are rebuilt only when empty (`RebuildEmptyItemLists`) or via the Restore Defaults button. Mention new defaults in release notes.
+4. If an established profile genuinely has to pick the entry up, that needs a one-off migration, not a change to the seeding rule. `MigrateAhnQirajTokenRollDefaults` is the pattern: a marker key absent from the defaults table, separate added-versus-repointed lists so a choice the player already made is never overwritten, target actions read back out of `ns.DEFAULT_IGNORE_LIST_SOLO`, and it runs after `RebuildEmptyItemLists`. It carries the same migration cutoff as every other one.
 
 ## Localization
 
@@ -320,6 +350,9 @@ Every user-facing string goes through `L["KEY"]`. `ns.L` is bound once at the to
 - **Using raw `C_Timer.After` for anything cancellable**: use `ns:After(identifier, seconds, callback)`. Scheduling the same identifier replaces the pending one and `ns:CancelTimer` kills it, so no call site needs a hand-rolled guard flag doubling as a self-cancel token.
 - **Adding an API guard outside Utilities' shim block**: every modern-versus-legacy decision belongs in one place. The single exception is Core's `GetAddOnMetadata`, which runs at file scope before Utilities loads.
 - **Letting the Custom Roll List bypass `autoGreed`**: the toggle is the master switch for every automated roll. The override check must stay behind the `autoGreed` gate — the options copy promises that off means off.
+- **Moving the quest-class skip ahead of the Custom Roll List**: the AQ and ZG war-effort tokens the default list ships for are all `classId` 12, so a skip that runs first makes the entire feature a no-op for them — correct ids, correct saved action, no roll, no error. Call the two halves separately (`ns:IsNeverAutomatedItem`, then the list, then `ns:IsQuestClassItem`) and keep `ns:ShouldSkipItemByType` for distribution, which has no override to weigh.
+- **Treating a nil `GetLootRollItemLink` as a dead roll**: it also reads nil while the client's item query is still in flight, which is the normal state of a token's first drop of the session. Return `false` from `EvaluateRoll` and let the retry timer poll; `CANCEL_LOOT_ROLL` is what tears a genuinely dead roll down.
+- **Sizing the roll retry cap as a give-up point**: it isn't one. The cap exists only to bound a cancel that never arrives, so it sits past the 60 s roll window. The old ten-attempt, five-second version dropped rolls whose item query simply took longer than that.
 - **Gating automated rolls on the loot method**: the roll module answers `START_LOOT_ROLL` and nothing else. Adding a `GetLootMethod` check would silently stop the rolls that *do* open during a master-loot session.
 - **Resetting destinations on every `PARTY_LOOT_METHOD_CHANGED`**: that wipes a live setup when the master looter is merely reassigned. Compare against the last *observed* method instead, and refresh that observation from `GROUP_ROSTER_UPDATE` too — the method event is the leader's action and need not reach every member.
 - **Seeding `destinations` with `"self"` for every tier**: AceDB would re-apply it at each login, so a cleared setup could never survive a reload. An absent tier is the correct "nobody chosen yet".
@@ -352,7 +385,18 @@ Two deliberate choices in the fake:
 - **Namespaced APIs are concrete, not catch-all stubs.** A permissive stub returns a table where the client returns a string or nil, which manufactures type errors the real client never raises. A false failure costs more than the unstubbed global it saves.
 - **Timers are collected, not run.** `Fake.advance(env, seconds)` moves a virtual clock and fires what is due, so the suite asserts on timer-driven behaviour (the silent-failure fallback, the batch flush) without sleeping and without flaking. Note that a callback which schedules another timer needs a second `advance` — the fallback arms the batch flush, so a silent-failure test advances twice.
 
-`Tests/Run.lua` loads all 22 files in TOC order, fires `ADDON_LOADED`, and runs 25 tests covering: load and init, saved-variable scoping, Auto Loot enforcement, the hand-out happy path, error attribution to the *oldest* hand-out, failure batching, unmapped errors being ignored, cold item info not stranding later slots, silent-failure detection, silent success staying quiet, manual flush on close, the destination lifecycle (announcing a switch back to self, clearing on a loot-method change from either event, clearing on leaving the group), the Master Looter panel's row visibility and leader gating, trade complete/cancelled resolved from the message id alone, the Loot Method report's resolved-id blocks, named-timer replacement and cancellation, and locale key parity. A `nil`-call regression in `OnAddonLoaded` — the kind that takes the whole add-on down — fails at the first test.
+`Tests/Run.lua` loads all 22 files in TOC order, fires `ADDON_LOADED`, and runs 41 tests covering:
+
+- **Load and saved variables** — init, scoping of `profile` versus `global`, Auto Loot enforcement.
+- **Master-loot hand-outs** — the happy path, error attribution to the *oldest* hand-out, failure batching, unmapped errors being ignored, cold item info not stranding later slots, silent-failure detection, silent success staying quiet, manual flush on close.
+- **Destinations** — announcing a switch back to self, clearing on a loot-method change from either event, clearing on leaving the group.
+- **Options panels** — the Master Looter panel's row visibility, leader gating, and the pop-up's Send All row hiding off master loot.
+- **Rolls** — a quest-class item on the list rolling its saved action, an unlisted quest item staying untouched, a listed legendary and a listed mount still refusing to roll, Manual leaving the roll alone, Need→Greed fallback, the master switch silencing the list, and distribution still taking the whole skip set.
+- **The cold-item roll race** — a listed token uncached at `START_LOOT_ROLL` rolling once its info resolves, the retry outliving a query slower than the old five-second cap, and `CANCEL_LOOT_ROLL` killing the poll for good.
+- **War-effort defaults and their migration** — every token shipping at its intended action, and an established profile picking up the new ids while keeping choices the player had already made.
+- **Plumbing** — trade complete/cancelled resolved from the message id alone, the Loot Method report's resolved-id blocks, the event log's id filtering, named-timer replacement and cancellation, locale key parity.
+
+A `nil`-call regression in `OnAddonLoaded` — the kind that takes the whole add-on down — fails at the first test.
 
 ## Contributing
 

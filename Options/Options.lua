@@ -121,6 +121,12 @@ end
 
 ---@return nil
 function ns:OpenOptionsPanel()
+	-- Combat first: the Settings panel is protected there, so every route below is blocked.
+	if InCombatLockdown() then
+		ns:PrintMessage(L["CHAT_OPTIONS_IN_COMBAT"])
+		return
+	end
+
 	if not ns.optionsFrames then
 		return
 	end

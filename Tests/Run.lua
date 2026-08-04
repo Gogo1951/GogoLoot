@@ -641,6 +641,65 @@ test("the loot method report prints resolved ids for loot errors and trade resul
 	checkEqual(1, select(2, report:gsub("game messages", "")), "the scan count printed once for both blocks")
 end)
 
+--[[
+    The event log's message-id filter. UI_ERROR_MESSAGE and UI_INFO_MESSAGE
+    fire for every combat error and info line, not just loot, so a grinding
+    session used to bury the 500-entry ring buffer in "Ability is not ready
+    yet." and evict the loot signal. Only ids the add-on correlates are logged
+    as lines; the rest are counted per id so the report still shows what was
+    spamming without the wall.
+]]
+test("the event log lists correlated message ids and counts the combat spam", function()
+	local ns, env = loadAddon()
+	local bagsFullId = registerGameMessage(env, "ERR_LOOT_MASTER_INV_FULL")
+	local cooldownId = registerGameMessage(env, "ERR_ABILITY_COOLDOWN")
+
+	ns:StartEventLog()
+	ns:LogEvent("LOOT_OPENED", true)
+	ns:LogEvent("UI_ERROR_MESSAGE", bagsFullId, "Bob's bags are full.")
+	for _ = 1, 40 do
+		ns:LogEvent("UI_ERROR_MESSAGE", cooldownId, "Ability is not ready yet.")
+	end
+	local report = ns:BuildEventLogReport()
+
+	check(report:find("LOOT_OPENED", 1, true) ~= nil, "loot events still logged")
+	check(
+		report:find(("UI_ERROR_MESSAGE(%d,"):format(bagsFullId), 1, true) ~= nil,
+		"a correlated error id logged as a full line"
+	)
+	check(report:find("x40", 1, true) ~= nil, "the spam collapsed to one counted row")
+	local _, spamTextCount = report:gsub("Ability is not ready yet", "")
+	checkEqual(1, spamTextCount, "the spam text appears once, not forty times")
+end)
+
+test("a trade result id is logged while unrelated info spam is counted", function()
+	local ns, env = loadAddon()
+	local completeId = registerGameMessage(env, "ERR_TRADE_COMPLETE")
+	local questId = registerGameMessage(env, "ERR_QUEST_OBJECTIVE_COMPLETE_S")
+
+	ns:StartEventLog()
+	ns:LogEvent("UI_INFO_MESSAGE", completeId, "Trade complete.")
+	ns:LogEvent("UI_INFO_MESSAGE", questId, "Objective Complete.")
+	ns:LogEvent("UI_INFO_MESSAGE", questId, "Objective Complete.")
+	local report = ns:BuildEventLogReport()
+
+	check(
+		report:find(("UI_INFO_MESSAGE(%d,"):format(completeId), 1, true) ~= nil,
+		"the trade result stayed a full line"
+	)
+	check(report:find("x2", 1, true) ~= nil, "the quest spam collapsed to a counted row")
+end)
+
+test("a message event with no numeric id is logged verbatim", function()
+	local ns = loadAddon()
+
+	ns:StartEventLog()
+	ns:LogEvent("UI_ERROR_MESSAGE", "an odd build with no numeric id")
+	local report = ns:BuildEventLogReport()
+
+	check(report:find("an odd build with no numeric id", 1, true) ~= nil, "unclassifiable events stay signal")
+end)
+
 test("named timers replace rather than stack", function()
 	local ns, env = loadAddon()
 	local runs = 0
@@ -701,6 +760,300 @@ test("every locale carries the same keys as enUS", function()
 			check(present[key], ("%s is missing %s"):format(locale, key))
 		end
 	end
+end)
+
+--------------------------------------------------------------------------------
+-- Automated Rolls: Custom Roll List vs the type skips
+--------------------------------------------------------------------------------
+
+--[[
+    Starts one live roll on `itemId` and returns the rolls the add-on issued.
+
+    classId defaults to 12 (Quest) and bindType to 1 (BoP), which is what the
+    Ahn'Qiraj and Zul'Gurub tokens the default list exists for actually report.
+    That combination used to be the silent failure: correct ids, correct saved
+    action, and a blanket type skip ahead of the list meant no roll ever went
+    out. Every test below leans on it, so it is the default rather than
+    something each one has to remember to spell.
+]]
+local function startRoll(ns, env, itemId, description)
+	local state = env.__state
+	description = description or {}
+	state.itemNames[itemId] = {
+		name = description.name or ("Item " .. itemId),
+		quality = description.quality or 2,
+		classId = description.classId or 12,
+		subclassId = description.subclassId or 0,
+		bindType = description.bindType or 1,
+	}
+	state.lootRolls[7] = { itemId = itemId, canNeed = description.canNeed, canGreed = description.canGreed }
+	state.rollsPerformed = {}
+
+	ns.db.profile.autoGreed = true
+	fire(ns, "START_LOOT_ROLL", 7)
+	return state.rollsPerformed
+end
+
+test("a quest-class item on the Custom Roll List rolls the action it was given", function()
+	local ns, env = loadAddon()
+
+	-- Stone Scarab, straight out of the shipped defaults.
+	local rolls = startRoll(ns, env, 20858, { name = "Stone Scarab" })
+
+	checkEqual(1, #rolls, "the scarab produced exactly one roll")
+	checkEqual(ns.ROLL_ACTION_NEED, rolls[1] and rolls[1].action, "it rolled Need")
+end)
+
+test("a quest-class item the list does not mention is left alone by the threshold path", function()
+	local ns, env = loadAddon()
+
+	--[[
+	    Uncommon and BoE, so it clears the threshold and the BoP guard both —
+	    the only thing that can stop it is the quest-class skip, which is the
+	    point. Without it, the list becoming reachable would have quietly
+	    turned every quest token in the game into a Greed.
+	]]
+	local rolls = startRoll(ns, env, 40001, { quality = 2, bindType = 2 })
+
+	checkEqual(0, #rolls, "an unlisted quest item never rolled")
+end)
+
+test("a listed legendary is still never rolled", function()
+	local ns, env = loadAddon()
+	ns.db.profile.ignoredItemsSolo[40002] = ns.NEED
+
+	local rolls = startRoll(ns, env, 40002, { quality = 5 })
+
+	checkEqual(0, #rolls, "the Custom Roll List cannot opt a legendary back in")
+end)
+
+test("a listed mount is still never rolled", function()
+	local ns, env = loadAddon()
+	ns.db.profile.ignoredItemsSolo[40003] = ns.NEED
+
+	local rolls = startRoll(ns, env, 40003, { quality = 4, classId = ns.ITEM_CLASS_MISCELLANEOUS, subclassId = 5 })
+
+	checkEqual(0, #rolls, "the Custom Roll List cannot opt a mount back in")
+end)
+
+test("a listed item set to Manual is left to the player", function()
+	local ns, env = loadAddon()
+
+	-- Wartorn Leather Scrap ships listed, at Manual, on purpose.
+	local rolls = startRoll(ns, env, 22373, { name = "Wartorn Leather Scrap" })
+
+	checkEqual(0, #rolls, "a Manual entry rolled nothing")
+end)
+
+test("Need falls back to Greed when the client will not allow Need", function()
+	local ns, env = loadAddon()
+
+	local rolls = startRoll(ns, env, 20858, { canNeed = false, canGreed = true })
+
+	checkEqual(1, #rolls, "the roll still went out")
+	checkEqual(ns.ROLL_ACTION_GREED, rolls[1] and rolls[1].action, "it fell back to Greed")
+end)
+
+test("the master switch still silences the Custom Roll List", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+
+	state.itemNames[20858] = { name = "Stone Scarab", quality = 2, classId = 12, subclassId = 0, bindType = 1 }
+	state.lootRolls[7] = { itemId = 20858 }
+	state.rollsPerformed = {}
+
+	ns.db.profile.autoGreed = false
+	fire(ns, "START_LOOT_ROLL", 7)
+
+	checkEqual(0, #state.rollsPerformed, "Automated Rolls off means nothing rolls")
+end)
+
+--[[
+    The cache race the war-effort tokens actually hit in AQ20 and Zul'Gurub: a
+    token's first drop of the session starts its roll before the client's item
+    query has answered, so the link and item info both read nil. The old code
+    took the nil link for a dead roll and never retried — no roll, no error —
+    and even the retried path gave up after five seconds while the roll window
+    had most of its minute left.
+]]
+test("a listed token whose item is uncached at roll start still rolls once it resolves", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+
+	-- Stone Scarab drops, entirely cold: no itemNames entry means no link, no info.
+	state.lootRolls[7] = { itemId = 20858 }
+	state.rollsPerformed = {}
+	ns.db.profile.autoGreed = true
+	fire(ns, "START_LOOT_ROLL", 7)
+
+	checkEqual(0, #state.rollsPerformed, "nothing rolled while the item was unresolved")
+
+	-- The item query answers mid-roll; the next retry tick must pick it up.
+	Fake.advance(env, 1)
+	state.itemNames[20858] = { name = "Stone Scarab", quality = 1, classId = 12, subclassId = 0, bindType = 1 }
+	Fake.advance(env, 1)
+
+	checkEqual(1, #state.rollsPerformed, "the roll went out once the info resolved")
+	checkEqual(
+		ns.ROLL_ACTION_NEED,
+		state.rollsPerformed[1] and state.rollsPerformed[1].action,
+		"with the listed action"
+	)
+end)
+
+test("the retry outlives a slow item query instead of giving up at five seconds", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+
+	state.lootRolls[7] = { itemId = 19708 }
+	state.rollsPerformed = {}
+	ns.db.profile.autoGreed = true
+	fire(ns, "START_LOOT_ROLL", 7)
+
+	-- Twelve retry ticks with the info still cold: past the old ten-attempt cap.
+	for _ = 1, 12 do
+		Fake.advance(env, 1)
+	end
+	checkEqual(0, #state.rollsPerformed, "still nothing while the item stays unresolved")
+
+	state.itemNames[19708] = { name = "Blue Hakkari Bijou", quality = 3, classId = 12, subclassId = 0, bindType = 1 }
+	Fake.advance(env, 1)
+
+	checkEqual(1, #state.rollsPerformed, "the roll still went out after the old cap would have quit")
+end)
+
+test("a cancelled roll stops the cold-item poll for good", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+
+	state.lootRolls[7] = { itemId = 20858 }
+	state.rollsPerformed = {}
+	ns.db.profile.autoGreed = true
+	fire(ns, "START_LOOT_ROLL", 7)
+
+	-- The roll ends before the item ever resolves; the poll must die with it.
+	fire(ns, "CANCEL_LOOT_ROLL", 7)
+	state.lootRolls[7] = nil
+	state.itemNames[20858] = { name = "Stone Scarab", quality = 1, classId = 12, subclassId = 0, bindType = 1 }
+	Fake.advance(env, 10)
+
+	checkEqual(0, #state.rollsPerformed, "no roll fired after the roll was cancelled")
+end)
+
+test("master-loot distribution still skips quest items outright", function()
+	local ns = loadAddon()
+
+	local questItem = { quality = 2, classId = 12, subclassId = 0, bindType = 1 }
+	check(ns:ShouldSkipItemByType(questItem), "the full skip still covers quest-class items")
+	check(not ns:IsNeverAutomatedItem(questItem), "but they are not in the never-automated set")
+end)
+
+--------------------------------------------------------------------------------
+-- War-effort token defaults and their migration
+--------------------------------------------------------------------------------
+
+-- Every id the war-effort roll list covers, by the action it should ship with.
+local WAR_EFFORT_NEED_IDENTIFIERS = {
+	-- Zul'Gurub bijous
+	19707,
+	19708,
+	19709,
+	19710,
+	19711,
+	19712,
+	19713,
+	19714,
+	19715,
+	-- Zul'Gurub coins
+	19698,
+	19699,
+	19700,
+	19701,
+	19702,
+	19703,
+	19704,
+	19705,
+	19706,
+	-- Ahn'Qiraj scarabs
+	20858,
+	20859,
+	20860,
+	20861,
+	20862,
+	20863,
+	20864,
+	20865,
+	-- AQ20 idols
+	20866,
+	20867,
+	20868,
+	20869,
+	20870,
+	20871,
+	20872,
+	20873,
+	-- AQ40 idols (20880 is not a live item id)
+	20874,
+	20875,
+	20876,
+	20877,
+	20878,
+	20879,
+	20881,
+	20882,
+	-- Scarab Bag and both coffer keys
+	21156,
+	21761,
+	21762,
+}
+
+local WARTORN_SCRAP_IDENTIFIERS = { 22373, 22374, 22375, 22376 }
+
+test("the shipped defaults cover every war-effort token with the intended action", function()
+	local ns = loadAddon()
+	local rollList = ns.db.profile.ignoredItemsSolo
+
+	for _, itemIdentifier in ipairs(WAR_EFFORT_NEED_IDENTIFIERS) do
+		checkEqual(ns.NEED, rollList[itemIdentifier], ("%d ships at Need"):format(itemIdentifier))
+	end
+	for _, itemIdentifier in ipairs(WARTORN_SCRAP_IDENTIFIERS) do
+		checkEqual(ns.MANUAL, rollList[itemIdentifier], ("%d ships at Manual"):format(itemIdentifier))
+	end
+end)
+
+test("an established profile picks up the new tokens without losing its own choices", function()
+	local ns, env = loadAddon()
+	local rollList = ns.db.profile.ignoredItemsSolo
+
+	--[[
+	    Rewind to a profile seeded before the tokens shipped: the new ids
+	    absent, the AQ40 idols still sitting at the Manual they used to
+	    default to, and the migration marker cleared.
+	]]
+	ns.db.profile.ahnQirajTokenRollDefaultsApplied = nil
+	for _, itemIdentifier in ipairs({ 20866, 20873, 21156, 21761, 21762, 22373, 22374, 22375, 22376 }) do
+		rollList[itemIdentifier] = nil
+	end
+	for _, itemIdentifier in ipairs({ 20874, 20875, 20876, 20877, 20878, 20879, 20881, 20882 }) do
+		rollList[itemIdentifier] = ns.MANUAL
+	end
+	-- ...except one idol the player had already decided about, and one they deleted.
+	rollList[20882] = ns.PASS
+	rollList[20858] = nil
+
+	env.__state.dbCallbacks.OnProfileChanged()
+
+	checkEqual(ns.NEED, rollList[20866], "Azure Idol was added at Need")
+	checkEqual(ns.NEED, rollList[21761], "Scarab Coffer Key was added at Need")
+	checkEqual(ns.MANUAL, rollList[22373], "Wartorn Leather Scrap was added at Manual")
+	checkEqual(ns.NEED, rollList[20874], "Idol of the Sun moved off the old Manual default")
+	checkEqual(ns.PASS, rollList[20882], "an idol the player had already set kept that action")
+	checkEqual(nil, rollList[20858], "a scarab the player deleted stayed deleted")
+
+	-- Second pass changes nothing: the marker makes it a one-shot per profile.
+	rollList[20874] = ns.MANUAL
+	env.__state.dbCallbacks.OnProfileChanged()
+	checkEqual(ns.MANUAL, rollList[20874], "the migration did not fire twice")
 end)
 
 --------------------------------------------------------------------------------

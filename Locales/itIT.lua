@@ -10,11 +10,20 @@ end
 ]]
 
 --------------------------------------------------------------------------------
+-- Add-on Identity
+--------------------------------------------------------------------------------
+
+-- Brands every print, sent message, options panel, and report. A proper noun; keep it untranslated.
+L["ADDON_TITLE"] = "GogoLoot"
+
+--------------------------------------------------------------------------------
 -- Chat Messages
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
 	"Versione %s. Le impostazioni (inclusa l'opzione per disabilitare questo messaggio) si trovano in Opzioni > Addon > GogoLoot. Ti piace l'add-on? Parlane a un amico! (="
+L["CHAT_OPTIONS_IN_COMBAT"] =
+	"Per precauzione, l'interfaccia delle opzioni non può essere aperta durante il combattimento."
 L["MESSAGE_AUTO_LOOT_ENABLED"] =
 	"Il depredamento automatico è stato attivato. Il Depredamento Rapido ne ha bisogno per funzionare."
 L["MESSAGE_NOT_MASTER_LOOTER"] = "Al momento non sei il Maestro del Bottino."
@@ -23,6 +32,7 @@ L["MESSAGE_NOT_MASTER_LOOTER"] = "Al momento non sei il Maestro del Bottino."
 -- Chat Announcement Templates
 --------------------------------------------------------------------------------
 
+-- Shared by master loot hand-outs and trade summaries. Arguments: items, then recipient.
 L["MESSAGE_GAVE"] = "Dato %s a %s."
 L["MESSAGE_DESTINATION_SET"] = "%s riceverà tutti gli oggetti %s."
 L["MESSAGE_DESTINATION_SET_ALL"] = "%s conserverà tutto il bottino per il gruppo."
@@ -53,8 +63,6 @@ L["TAB_ANNOUNCEMENTS"] = "Annunci"
 -- Minimap Button
 --------------------------------------------------------------------------------
 
--- GogoLoot is a proper noun; keep it untranslated.
-L["ADDON_TITLE"] = "GogoLoot"
 L["STATUS_ENABLED"] = "Abilitato"
 L["STATUS_DISABLED"] = "Disabilitato"
 
@@ -111,7 +119,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Inserisci un ID oggetto o trascina un oggetto 
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Caricamento... (ID: %d)"
 
--- Version prefix in the options panel and minimap tooltip
+-- Appended to both the Automated Master Looting and the Automated Rolls description.
+L["SAFETY_SKIP_NOTE"] =
+	"Oggetti di missione, ricette, libri, cavalcature, mascotte e leggendari vengono sempre saltati."
+
+-- Version prefix in the options panel
 L["VERSION_LABEL"] = "Versione"
 
 --------------------------------------------------------------------------------
@@ -123,8 +135,10 @@ L["GENERAL_DESCRIPTION"] =
 L["WELCOME_MESSAGE"] = "Abilita Messaggio di Benvenuto"
 L["MINIMAP_BUTTON_ENABLE"] = "Abilita Pulsante Minimappa"
 
-L["COMMANDS"] = "/Comandi"
-L["COMMANDS_DESCRIPTION"] = "Apre l'interfaccia delle opzioni di GogoLoot."
+L["OPTIONS_COMMANDS_HEADER"] = "/Comandi"
+L["OPTIONS_COMMAND"] = "/gl"
+L["OPTIONS_COMMAND_ALTERNATE"] = "/gogoloot"
+L["OPTIONS_COMMAND_DESCRIPTION"] = "Apre l'interfaccia delle opzioni di questo add-on."
 
 L["SPEEDY_LOOT_HEADER"] = "Depredamento Rapido"
 L["SPEEDY_LOOT_DESCRIPTION"] = "Nasconde la finestra del bottino per un saccheggio quasi istantaneo."
@@ -149,8 +163,7 @@ L["MASTER_LOOTER_SET_BY"] = "(Impostato da %s)"
 L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Solo il capogruppo può cambiare il metodo e la soglia del bottino."
 
 L["MASTER_LOOTER_AUTO_HEADER"] = "Maestro del Bottino Automatico"
-L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
-	"Distribuisce il bottino ai giocatori designati mentre sei Maestro del Bottino. Oggetti di missione, ricette, libri, cavalcature, mascotte e leggendari vengono sempre saltati."
+L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distribuisce il bottino ai giocatori designati mentre sei Maestro del Bottino."
 L["MASTER_LOOTER_AUTO_ENABLE"] = "Abilita Maestro del Bottino Automatico in Istanza"
 L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Abilita Maestro del Bottino Automatico fuori dalle Istanze"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
@@ -183,7 +196,7 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Rimuovi questo oggetto dalla lis
 --------------------------------------------------------------------------------
 
 L["ROLLS_DESCRIPTION"] =
-	"Tira per te sugli oggetti non vincolati alla raccolta fino alla qualità scelta, sia in gruppo che in incursione. Oggetti di missione, ricette, libri, cavalcature, mascotte e leggendari vengono sempre saltati."
+	"Tira per te sugli oggetti non vincolati alla raccolta fino alla qualità scelta, sia in gruppo che in incursione."
 L["ROLLS_ENABLE"] = "Abilita Tiri Automatici"
 L["ROLLS_THRESHOLD_HEADER"] = "Soglie"
 L["ROLLS_THRESHOLD_DESCRIPTION"] =

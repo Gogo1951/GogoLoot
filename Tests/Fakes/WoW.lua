@@ -72,6 +72,12 @@ function Fake.newEnvironment()
 		setLootMethodCalls = {},
 		unitNames = { player = "Tester" },
 		itemNames = {},
+		-- [rollId] = { itemId, canNeed, canGreed }; canNeed/canGreed default true.
+		lootRolls = {},
+		-- Every RollOnLoot the add-on issued, in order.
+		rollsPerformed = {},
+		-- AceDB profile callbacks, by event name, as registered by Core.
+		dbCallbacks = {},
 		-- Trade slots hold { link, count, quality, enchant }; an unset slot reads nil.
 		tradePlayerItems = {},
 		tradeTargetItems = {},
@@ -94,7 +100,15 @@ function Fake.newEnvironment()
 				local db = { profile = {}, global = {} }
 				copyDefaults(db.profile, defaults.profile or {})
 				copyDefaults(db.global, defaults.global or {})
-				db.RegisterCallback = function() end
+				--[[
+				    Callbacks are kept rather than dropped so a test can fire
+				    OnProfileChanged the way AceDB would and exercise the real
+				    handler — the profile migrations only ever run from there
+				    and from login, so a no-op here would leave them untestable.
+				]]
+				db.RegisterCallback = function(_, event, handler)
+					state.dbCallbacks[event] = handler
+				end
 				db.ResetProfile = function() end
 				db.ResetDB = function() end
 				return db
@@ -372,7 +386,7 @@ function Fake.newEnvironment()
 	}
 	env.C_AddOns = {
 		GetAddOnMetadata = function()
-			return "@project-version@"
+			return "2026.08.01.A"
 		end,
 	}
 	env.C_Container = {
@@ -420,6 +434,53 @@ function Fake.newEnvironment()
 		end,
 	}
 
+	--[[
+	    Loot rolls. A roll's quality and BoP flag are read back out of
+	    state.itemNames rather than stored on the roll, so a test describes an
+	    item once and GetLootRollItemInfo and GetItemInfo cannot disagree about
+	    it — EvaluateRoll consults both in turn, and a fake that let them drift
+	    would be testing a client state that cannot occur.
+
+	    A roll whose item has no itemNames entry is an UNCACHED item, and reads
+	    exactly like the real client's: nil link here, nil name from
+	    GetLootRollItemInfo, nil from GetItemInfo. A test models the item query
+	    answering by filling in state.itemNames mid-flight — which is how the
+	    war-effort-token cache race is reproduced.
+	]]
+	env.GetLootRollItemLink = function(rollIdentifier)
+		local roll = state.lootRolls[rollIdentifier]
+		if not roll then
+			return nil
+		end
+		local entry = state.itemNames[roll.itemId]
+		if not entry then
+			return nil
+		end
+		return ("|Hitem:%d|h[%s]|h"):format(roll.itemId, entry.name)
+	end
+
+	env.GetLootRollItemInfo = function(rollIdentifier)
+		local roll = state.lootRolls[rollIdentifier]
+		if not roll then
+			return nil
+		end
+		local entry = state.itemNames[roll.itemId] or {}
+		local canNeed = roll.canNeed
+		if canNeed == nil then
+			canNeed = true
+		end
+		local canGreed = roll.canGreed
+		if canGreed == nil then
+			canGreed = true
+		end
+		-- texture, name, count, quality, bindOnPickUp, canNeed, canGreed, canDisenchant
+		return "texture", entry.name, 1, entry.quality or 2, (entry.bindType or 2) == 1, canNeed, canGreed, false
+	end
+
+	env.RollOnLoot = function(rollIdentifier, rollAction)
+		table.insert(state.rollsPerformed, { rollIdentifier = rollIdentifier, action = rollAction })
+	end
+
 	env.CreateFrame = function()
 		local frame = { scripts = {}, events = {} }
 		function frame:SetScript(key, handler)
@@ -453,9 +514,27 @@ function Fake.newEnvironment()
 		})
 	end
 
+	--[[
+	    Globals Classic Era genuinely does not have, which the catch-all below
+	    must therefore NOT manufacture. A stub is truthy, so it wins the
+	    `LE_ITEM_CLASS_x or Enum.ItemClass.x or <number>` chain in Data.lua and
+	    leaves ns.ITEM_CLASS_QUEST holding a table no classId can ever equal —
+	    which silently disables every class-based skip for the whole suite.
+	    Same reasoning as the header note about namespaced APIs: a permissive
+	    stub in the wrong place buys nothing and hides real failures.
+	]]
+	local absentGlobals = {
+		LE_ITEM_CLASS_RECIPE = true,
+		LE_ITEM_CLASS_QUESTITEM = true,
+		LE_ITEM_CLASS_MISCELLANEOUS = true,
+	}
+
 	-- Anything not named above resolves to a permissive stub.
 	setmetatable(env, {
 		__index = function(_, key)
+			if absentGlobals[key] then
+				return nil
+			end
 			return stub(key)
 		end,
 	})

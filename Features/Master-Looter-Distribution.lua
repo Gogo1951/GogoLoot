@@ -9,7 +9,7 @@
       * Manual distribution hook — GiveMasterLoot from the candidate dropdown
         is announced regardless of the announcement threshold.
       * The LOOT_OPENED -> GiveMasterLoot automated distribution engine, its
-        retry ticker, and the Pending Announcement Registry.
+        retry ticker, and the Pending Hand-out Registry.
       * UI_ERROR_MESSAGE correlation and the LOOT_SLOT_CLEARED success path.
 
     Eligibility (ns:WillAutoMasterLoot) and the destination table it reads live
@@ -32,7 +32,7 @@ local _, ns = ...
     GiveMasterLoot so this hook can tell them apart and skip.
 
     Never announce inline here — register a pending entry instead; the
-    Pending Announcement Registry below documents the timing rules.
+    Pending Hand-out Registry below documents the timing rules.
 ]]
 
 if type(GiveMasterLoot) == "function" then
@@ -430,6 +430,12 @@ end
 --------------------------------------------------------------------------------
 -- Distribution Pass
 --------------------------------------------------------------------------------
+
+---@return boolean
+function ns:IsInBindOnPickupTradeInstance()
+	local _, instanceType = GetInstanceInfo()
+	return (instanceType == "raid" or instanceType == "party")
+end
 
 local function TryDistributeSlot(slotIndex, candidateMap)
 	if distributedSlots[slotIndex] then

@@ -44,7 +44,7 @@ ns.DiagnosticsStrings = {
 	EVENT_LOG_START = "Start Event Log",
 	EVENT_LOG_STOP = "Stop Event Log",
 	EVENT_LOG_SHOW = "Show Captured Events",
-	EVENT_LOG_HINT = "Captures events the add-on registered for, with arguments, in order fired. May include loot chat text — review before sharing.",
+	EVENT_LOG_HINT = "Captures events the add-on registered for, with arguments, in order fired. Combat and UI message spam GogoLoot doesn't act on is counted, not listed. May include loot chat text — review before sharing.",
 	EVENTS_TITLE = "Event Registration",
 	EVENTS_BUTTON = "Test Event Registration",
 	API_TITLE = "API Endpoints",
@@ -114,19 +114,66 @@ local EVENT_LOG_MAX_ARGS = 8
 local EVENT_LOG_MAX_ARG_LENGTH = 255
 
 --[[
-    Events ns:LogEvent drops before recording — deliberately empty. GogoLoot
-    registers no sustained firehose; every event it uses is potential signal in
-    a bug report. GET_ITEM_INFO_RECEIVED is the one candidate to add here if a
-    cache-warm burst (many items resolving at once when an options list opens)
-    ever buries the signal. Generic offenders (COMBAT_LOG_EVENT_UNFILTERED,
-    UNIT_AURA, ...) never reach the log — the dispatcher only hands LogEvent the
-    events GogoLoot actually registers.
+    Events ns:LogEvent drops entirely before recording — deliberately empty.
+    Whole-event drops are the wrong tool for everything GogoLoot registers:
+    every event it uses is potential signal in a bug report.
+    GET_ITEM_INFO_RECEIVED is the one candidate to add here if a cache-warm
+    burst (many items resolving at once when an options list opens) ever buries
+    the signal. Generic offenders (COMBAT_LOG_EVENT_UNFILTERED, UNIT_AURA, ...)
+    never reach the log — the dispatcher only hands LogEvent the events GogoLoot
+    actually registers.
 ]]
 ns.DIAGNOSTIC_EVENT_EXCLUDE = {}
+
+--[[
+    The two registered events that ARE sustained firehoses. The client raises
+    UI_ERROR_MESSAGE for every red error and UI_INFO_MESSAGE for every yellow
+    info line — combat spam included, not just loot — so one grinding session
+    buries the ring buffer in "Ability is not ready yet." and EVICTS the loot
+    signal the report exists to carry (the buffer holds EVENT_LOG_SIZE entries).
+
+    For these two events only, the tap keeps the message ids the add-on
+    actually correlates — the master-loot error set and the trade result set,
+    resolved through the same one-walk helper the live handlers use — and
+    counts everything else per id. The report then shows THAT the noise fired,
+    which ids, and how often, without listing every line. An event carrying no
+    numeric id at all is logged verbatim: unclassifiable is signal.
+]]
+local MESSAGE_ID_FILTERED_EVENTS = {
+	UI_ERROR_MESSAGE = true,
+	UI_INFO_MESSAGE = true,
+}
+
+--[[
+    Built once on first use, not at load, exactly like the live handlers' maps:
+    the walk costs a full scan of the client's message table and nothing needs
+    it until an error fires while logging. Reads the constant tables the two
+    consumer modules export for diagnostics; if either export ever disappears,
+    this errors loud in dev rather than silently suppressing mapped ids.
+]]
+local interestingMessageIds
+
+local function IsCorrelatedMessageId(messageId)
+	if not interestingMessageIds then
+		local wantedConstants = {}
+		for constantName in pairs(ns.LOOT_ERROR_CONSTANTS) do
+			wantedConstants[constantName] = true
+		end
+		for constantName in pairs(ns.TRADE_RESULT_CONSTANTS) do
+			wantedConstants[constantName] = true
+		end
+		interestingMessageIds = {}
+		for resolvedId in pairs(ns:ResolveGameMessageIds(wantedConstants)) do
+			interestingMessageIds[resolvedId] = true
+		end
+	end
+	return interestingMessageIds[messageId]
+end
 
 ---@return nil
 function ns:StartEventLog()
 	ns.diagnostics.log = {}
+	ns.diagnostics.suppressed = {}
 	ns.diagnostics.logging = true
 end
 
@@ -134,6 +181,7 @@ end
 function ns:StopEventLog()
 	ns.diagnostics.logging = false
 	ns.diagnostics.log = nil
+	ns.diagnostics.suppressed = nil
 end
 
 --[[
@@ -149,11 +197,65 @@ end
     collapse to a stray "[Sc". Escaping last also means the cut can never leave a
     dangling pipe that would eat the following ", " separator.
 ]]
+--[[
+    The suppressed side of the message-id filter: one counter per (event, id),
+    holding the first-seen message text so the report stays human-readable.
+    Counts run from StartEventLog, not from the ring buffer's window, and the
+    report says so.
+]]
+---@param event string
+---@param ... any
+---@return boolean suppressed
+local function SuppressUncorrelatedMessage(event, ...)
+	if not MESSAGE_ID_FILTERED_EVENTS[event] then
+		return false
+	end
+
+	-- The id is the first numeric argument, same read as the live handlers.
+	local messageId
+	for index = 1, select("#", ...) do
+		local argValue = select(index, ...)
+		if type(argValue) == "number" then
+			messageId = argValue
+			break
+		end
+	end
+	if not messageId or IsCorrelatedMessageId(messageId) then
+		return false
+	end
+
+	local suppressedForEvent = ns.diagnostics.suppressed[event]
+	if not suppressedForEvent then
+		suppressedForEvent = {}
+		ns.diagnostics.suppressed[event] = suppressedForEvent
+	end
+
+	local entry = suppressedForEvent[messageId]
+	if entry then
+		entry.count = entry.count + 1
+		return true
+	end
+
+	local messageText = ""
+	for index = 1, select("#", ...) do
+		local argValue = select(index, ...)
+		if type(argValue) == "string" then
+			messageText = (string.sub(argValue, 1, EVENT_LOG_MAX_ARG_LENGTH):gsub("|", "||"))
+			break
+		end
+	end
+	suppressedForEvent[messageId] = { text = messageText, count = 1 }
+	return true
+end
+
 ---@param event string
 ---@param ... any
 ---@return nil
 function ns:LogEvent(event, ...)
 	if ns.DIAGNOSTIC_EVENT_EXCLUDE[event] then
+		return
+	end
+	if SuppressUncorrelatedMessage(event, ...) then
 		return
 	end
 	local parts = {}
@@ -182,6 +284,40 @@ function ns:BuildEventLogReport()
 			lines[#lines + 1] = entry
 		end
 	end
+
+	--[[
+        Sorted by count, biggest offender first, so a report reads "what was
+        spamming" at a glance; ties and the event grouping stay deterministic
+        so two captures of the same session diff cleanly.
+    ]]
+	local suppressed = ns.diagnostics.suppressed
+	if suppressed and next(suppressed) then
+		lines[#lines + 1] = ""
+		lines[#lines + 1] = "Suppressed (not a message id GogoLoot correlates; counted since logging started):"
+
+		local eventNames = {}
+		for eventName in pairs(suppressed) do
+			eventNames[#eventNames + 1] = eventName
+		end
+		table.sort(eventNames)
+
+		for _, eventName in ipairs(eventNames) do
+			local rows = {}
+			for messageId, entry in pairs(suppressed[eventName]) do
+				rows[#rows + 1] = { id = messageId, text = entry.text, count = entry.count }
+			end
+			table.sort(rows, function(a, b)
+				if a.count ~= b.count then
+					return a.count > b.count
+				end
+				return a.id < b.id
+			end)
+			for _, row in ipairs(rows) do
+				lines[#lines + 1] = string.format("  %s(%d, %s) x%d", eventName, row.id, row.text, row.count)
+			end
+		end
+	end
+
 	return table.concat(lines, "\n")
 end
 

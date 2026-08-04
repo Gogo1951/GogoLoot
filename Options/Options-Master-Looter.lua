@@ -244,7 +244,7 @@ function ns.BuildMasterLooterOptions()
 	order = order + 1
 	args.spacerAfterAutoHeader = ns.OptionsSpacer(order)
 	order = order + 1
-	args.autoDesc = ns.OptionsDesc(L["MASTER_LOOTER_AUTO_DESCRIPTION"], order)
+	args.autoDesc = ns.OptionsDesc(L["MASTER_LOOTER_AUTO_DESCRIPTION"] .. " " .. L["SAFETY_SKIP_NOTE"], order)
 	order = order + 1
 	args.spacerAfterAutoDesc = ns.OptionsSpacer(order)
 	order = order + 1

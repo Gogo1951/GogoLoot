@@ -76,6 +76,9 @@ ns.DATABASE_DEFAULTS = {
 
 -- TODO: Add SQL Query
 ns.DEFAULT_IGNORE_LIST_SOLO = {
+	[20873] = { 1, 3 }, -- Alabaster Idol
+	[20869] = { 1, 3 }, -- Amber Idol
+	[20866] = { 1, 3 }, -- Azure Idol
 	[19706] = { 1, 3 }, -- Bloodscalp Coin
 	[19708] = { 1, 3 }, -- Blue Hakkari Bijou
 	[20864] = { 1, 3 }, -- Bone Scarab
@@ -90,18 +93,21 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	[22682] = { 1, 1 }, -- Frozen Rune
 	[19715] = { 1, 3 }, -- Gold Hakkari Bijou
 	[20859] = { 1, 3 }, -- Gold Scarab
+	[21762] = { 1, 3 }, -- Greater Scarab Coffer Key
 	[19711] = { 1, 3 }, -- Green Hakkari Bijou
 	[19701] = { 1, 3 }, -- Gurubashi Coin
 	[19700] = { 1, 3 }, -- Hakkari Coin
-	[20876] = { 1, 1 }, -- Idol of Death
-	[20879] = { 1, 1 }, -- Idol of Life
-	[20875] = { 1, 1 }, -- Idol of Night
-	[20878] = { 1, 1 }, -- Idol of Rebirth
-	[20881] = { 1, 1 }, -- Idol of Strife
-	[20877] = { 1, 1 }, -- Idol of the Sage
-	[20874] = { 1, 1 }, -- Idol of the Sun
-	[20882] = { 1, 1 }, -- Idol of War
+	[20876] = { 1, 3 }, -- Idol of Death
+	[20879] = { 1, 3 }, -- Idol of Life
+	[20875] = { 1, 3 }, -- Idol of Night
+	[20878] = { 1, 3 }, -- Idol of Rebirth
+	[20881] = { 1, 3 }, -- Idol of Strife
+	[20877] = { 1, 3 }, -- Idol of the Sage
+	[20874] = { 1, 3 }, -- Idol of the Sun
+	[20882] = { 1, 3 }, -- Idol of War
 	[20865] = { 1, 3 }, -- Ivory Scarab
+	[20870] = { 1, 3 }, -- Jasper Idol
+	[20868] = { 1, 3 }, -- Lambent Idol
 	[17011] = { 1, 3 }, -- Lava Core
 	[11733] = { 1, 1 }, -- Libram of Constitution
 	[18333] = { 1, 1 }, -- Libram of Focus
@@ -111,7 +117,11 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	[11732] = { 1, 1 }, -- Libram of Rumination
 	[11734] = { 1, 1 }, -- Libram of Tenacity
 	[11737] = { 1, 1 }, -- Libram of Voracity
+	[20871] = { 1, 3 }, -- Obsidian Idol
+	[20867] = { 1, 3 }, -- Onyx Idol
+	[17966] = { 1, 1 }, -- Onyxia Hide Backpack
 	[19710] = { 1, 3 }, -- Orange Hakkari Bijou
+	[19914] = { 1, 1 }, -- Panther Hide Sack
 	[19813] = { 1, 1 }, -- Punctured Voodoo Doll
 	[19819] = { 1, 1 }, -- Punctured Voodoo Doll
 	[19820] = { 1, 1 }, -- Punctured Voodoo Doll
@@ -126,12 +136,25 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	[19707] = { 1, 3 }, -- Red Hakkari Bijou
 	[12811] = { 1, 1 }, -- Righteous Orb
 	[19704] = { 1, 3 }, -- Sandfury Coin
+	[21156] = { 1, 3 }, -- Scarab Bag
+	[21761] = { 1, 3 }, -- Scarab Coffer Key
 	[19714] = { 1, 3 }, -- Silver Hakkari Bijou
 	[20860] = { 1, 3 }, -- Silver Scarab
 	[19705] = { 1, 3 }, -- Skullsplitter Coin
 	[20858] = { 1, 3 }, -- Stone Scarab
 	[4500] = { 1, 1 }, -- Traveler's Backpack
+	[20872] = { 1, 3 }, -- Vermillion Idol
 	[19702] = { 1, 3 }, -- Vilebranch Coin
+	--[[
+        The Wartorn scraps are listed at Manual on purpose. They are an AQ40
+        Cenarion Circle turn-in with real value, so auto-needing one in a pug
+        reads as ninja-ing; the entry exists so the row is in the UI ready to
+        change, not so the add-on rolls on it.
+    ]]
+	[22374] = { 1, 1 }, -- Wartorn Chain Scrap
+	[22376] = { 1, 1 }, -- Wartorn Cloth Scrap
+	[22373] = { 1, 1 }, -- Wartorn Leather Scrap
+	[22375] = { 1, 1 }, -- Wartorn Plate Scrap
 	[19703] = { 1, 3 }, -- Witherbark Coin
 	[23055] = { 1, 1 }, -- Word of Thawing
 	[19709] = { 1, 3 }, -- Yellow Hakkari Bijou
