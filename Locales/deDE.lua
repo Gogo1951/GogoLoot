@@ -120,9 +120,13 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Laden... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Questgegenstände, Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
+	"Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände werden immer übersprungen."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
@@ -157,31 +161,65 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "Die aktuelle Beuteart und der Plünderschwellenwert deiner Gruppe."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Aktuelle Beute-Einstellungen"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Beutemethode"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Plünderschwellenwert"
-L["MASTER_LOOTER_SET_BY"] = "(Eingestellt von %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Nur der Gruppenanführer kann die Beuteart und den Schwellenwert ändern."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Diese Einstellungen werden von %s verwaltet."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Automatischer Plündermeister"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Verteilt Beute an deine festgelegten Spieler, während du Plündermeister bist."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "Automatischen Plündermeister in Instanzen aktivieren"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Automatischen Plündermeister außerhalb von Instanzen aktivieren"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Automatischen Plündermeister aktivieren"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Auch außerhalb von Instanzen"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"Vorsicht: Da Beute von Weltbossen nicht handelbar ist, wird dies nicht empfohlen!"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Questgegenstände einbeziehen"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Verteilt auch Questgegenstände, um einen Charakter zu boosten, den du selbst spielst. Verteilt werden können nur Questgegenstände, die einmal für die Gruppe fallen. Was jeder Spieler auf der Quest für sich selbst plündert, etwa der Kopf eines Bosses, geht nie durch den Plündermeister."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"Da die meisten Questgegenstände von gewöhnlicher Qualität sind, funktioniert dies nur, wenn dein Plünderschwellenwert auf Gewöhnlich oder niedriger steht. Und selbst dann ist nicht jeder Questgegenstand für den Plündermeister geeignet."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Vorsicht: Dies ist für Spieler gedacht, die gerne Dual-Boxen, und wird für Schlachtzüge nicht empfohlen."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Schnelleinstellungen"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] = "Öffnet ein Fenster zum Einrichten der Beute, sobald du Plündermeister wirst."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Plündermeister-Fenster aktivieren"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Beuteziele"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
-	"Weise ein Gruppenmitglied zu, um Gegenstände jeder Qualitätsstufe zu erhalten."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Wähle, wer die von GogoLoot verteilte Beute erhält."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Selbst"
 L["MASTER_LOOTER_SEND_ALL"] = "Gesamte Beute senden an"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Sende jede Qualitätsstufe an einen Spieler. Stelle einzelne Stufen unten abweichend ein."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Wähle, wer %s Gegenstände erhält."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Qualitätsstufen einzeln festlegen"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Zeigt eine Zeile pro Qualitätsstufe, damit verschiedene Stufen an verschiedene Spieler gehen können."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "Stufen unterscheiden sich"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Ignorieren-Liste"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -238,10 +276,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Aktuelle Ausgabe"
 L["TRADE_CHECKBOX_LABEL"] = "Ankündigen"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Postet Plündermeister-Aktivitäten in den Gruppenchat. Automatische Verteilungen verwenden einen Qualitätsschwellenwert, um Spam zu vermeiden; manuelle Verteilungen werden immer angekündigt."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Postet Plündermeister-Aktivitäten in den Gruppenchat."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Nachrichten zu Beuteempfängern aktivieren"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Ankündigungen für Beuteempfänger aktivieren"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] =
 	"Beispiel: {rt4} GogoLoot // Aevala erhält nun alle Epischen Gegenstände."
 

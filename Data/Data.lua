@@ -167,6 +167,70 @@ ns.ROLL_ACTION_DROPDOWN_WIDTH = 0.7
 -- The item lists' remove column, sized to its icon rather than a caption.
 ns.OPTIONS_REMOVE_ICON_WIDTH = 0.25
 
+--[[
+    The blank cell a sub-option row leads with. AceConfig pins a checkbox at the
+    left edge of its own widget, so padding the label indents the caption and
+    leaves the box behind, lined up with its parent's; leading the row with this
+    cell instead moves the box itself.
+
+    Sized so the sub-option's box starts where its parent's box visually ends.
+    That lands short of a full checkbox: AceGUI's checkbox is a 24px texture
+    anchored flush left and the flow layout adds no gap between widgets, but
+    UI-CheckBox-Up carries transparent padding, so the gold square the player
+    actually sees is inset a couple of pixels inside that footprint. Matching the
+    footprint (0.14) therefore reads as a step too far; this matches the square.
+    Nudge here if the two edges drift apart on a different UI scale. Shared with
+    MagicEraser, which sizes its Auto-Vend sub-options the same way.
+]]
+ns.OPTIONS_SUB_INDENT_WIDTH = 0.115
+
+--[[
+    The deeper cell, for anything that belongs to a sub-option rather than being
+    one: its notes, and the rows a sub-option reveals. These align under the
+    toggle's CAPTION rather than under its box, so they spend the sub-option
+    indent plus the checkbox the caption sits beside. Expressed in the same units
+    as the indent above rather than as leading spaces, so the two stay aligned
+    without anyone guessing at the width of a space in a proportional font.
+]]
+ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH = ns.OPTIONS_SUB_INDENT_WIDTH + 0.14
+
+--[[
+    What a plain text label owes a checkbox to line up with it.
+
+    AceGUI anchors a checkbox flush at the left edge of its own widget, and a
+    Label draws its text flush at the left edge of its own — so a label under a
+    checkbox starts at the same place and still reads as sticking out, because
+    UI-CheckBox-Up carries transparent padding and the gold square the player
+    sees begins a few pixels inside that edge. This is that gap: give it to any
+    label row sitting beneath a checkbox and the text lands on the square rather
+    than on the invisible corner of its artwork.
+
+    Not needed where a row aligns with a CAPTION instead of a box — the caption
+    indent already counts a whole checkbox, and text lines up with text.
+]]
+ns.OPTIONS_CHECKBOX_INSET_WIDTH = 0.04
+
+--[[
+    The width of a sentence indented under a sub-option — a note, an example —
+    as a FRACTION of the pane rather than in width units.
+
+    The pane is meaningfully wider than ns.OPTIONS_ROW_WIDTH: that constant is
+    the budget the label-beside-control rows agree to spend so they share a right
+    edge, not the room available. A prose line given a unit width therefore wraps
+    a long way short of the space it actually has, while a flush one beside it
+    runs the full width and doesn't. Sizing these against the pane closes that
+    gap without anyone measuring the pane.
+
+    Measured rather than guessed: the pane runs about 3.5 of these units, so the
+    2.2 a note used to take was two thirds of the room it had, and it wrapped
+    three lines deep beside a flush sentence that wrapped once. The deepest
+    indent in use is a little over a fifteenth of the pane, so this sits just
+    inside what is left — close enough to a flush line to read as the same
+    measure, and still clear of the wrap boundary, which is the one thing a
+    sub-row must not sit on (see ns.OptionsSubRow).
+]]
+ns.OPTIONS_SUB_TEXT_REL_WIDTH = 0.9
+
 --------------------------------------------------------------------------------
 -- Quality Constants
 --------------------------------------------------------------------------------

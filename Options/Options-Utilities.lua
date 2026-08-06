@@ -66,8 +66,8 @@ end
     control stacking under its own label.
 
     `text` may be a string or a function, exactly as AceConfig's `name` accepts,
-    so a label that reads live state (the Master Looter panel's "(Set by X)"
-    suffix) works here unchanged.
+    so a label that reads live state (the Master Looter panel's leader note,
+    which names whoever controls the loot settings) works here unchanged.
 
     `width` overrides ns.OPTIONS_LABEL_WIDTH for the rare row whose control
     needs more room than the default split leaves it (the copyable URL boxes).
@@ -86,6 +86,91 @@ function ns.OptionsRowLabel(text, order, width)
 		width = width or ns.OPTIONS_LABEL_WIDTH,
 		order = order,
 	}
+end
+
+--[[
+    A sub-option is a control that only means anything while the toggle above it
+    is on, and it is marked two ways at once.
+
+    The row leads with a blank indent cell, which moves the checkbox itself.
+    Padding the label instead would indent only the caption — AceConfig pins a
+    checkbox at the left edge of its own widget — leaving the box lined up with
+    its parent's and the words drifting away from it.
+
+    ns.OptionsSubLabel then colors the caption HELP silver against the parent's
+    white, so the row reads as subordinate rather than merely shifted. Silver is
+    the palette's secondary-text role and is well clear of the dimmer gray AceGUI
+    paints a genuinely disabled label, so a sub-option that greys out with its
+    parent still reads as disabled rather than as ordinary sub-option text.
+
+    The whole row is wrapped in an inline group with no name, which AceConfig
+    renders as a bare SimpleGroup — no border, no title, no padding — at "fill"
+    width. That wrapper is load-bearing, not decoration. Laid out flat, the
+    indent and its control are just two more widgets in the panel's flow, kept
+    together only by their widths happening to fill the line; the pair after them
+    then packs onto whatever space is left and its indent stops indenting
+    anything. A fill widget always gets a line to itself, so one group per
+    sub-option pins one row per sub-option no matter what the pane is doing.
+
+    Inside the group the controls need slack rather than an exact fit: a row
+    summing to the full pane width sits on the wrap boundary, where a pass that
+    measures a control before its width is applied tips the control onto its own
+    line and strands the indent above it.
+
+    Hiding belongs on the group, never on the controls inside it — hiding only
+    the control would leave its indent cell behind as a blank line.
+]]
+---@param order number
+---@param hidden? boolean|function
+---@param controls table[] # laid out left to right after the indent cell
+---@param indentWidth? number # defaults to one step; notes pass the wider cell
+---@return table
+function ns.OptionsSubRow(order, hidden, controls, indentWidth)
+	local args = {
+		indent = {
+			type = "description",
+			name = " ",
+			width = indentWidth or ns.OPTIONS_SUB_INDENT_WIDTH,
+			order = 1,
+		},
+	}
+
+	for index, control in ipairs(controls) do
+		control.order = index + 1
+		args["control" .. index] = control
+	end
+
+	return {
+		type = "group",
+		name = "",
+		inline = true,
+		order = order,
+		hidden = hidden,
+		args = args,
+	}
+end
+
+---@param text string
+---@return string
+function ns.OptionsSubLabel(text)
+	return GetColor("HELP") .. text .. "|r"
+end
+
+--[[
+    The label width for an indented label-beside-control row: one label column
+    minus whatever cell indents the row. An indented row still owes the panel its
+    shared right edge, so it pays for the indent out of its own label rather than
+    carrying the control column right with it — which is what keeps an indented
+    dropdown in the same column as the un-indented one it sits beneath.
+
+    Derived from the indent rather than pinned to a constant because rows indent
+    to two different depths (ns.OPTIONS_SUB_INDENT_WIDTH for a row inside a
+    sub-option's block, the caption indent for prose) and both owe the same edge.
+]]
+---@param indentWidth number
+---@return number
+function ns.OptionsSubLabelWidth(indentWidth)
+	return ns.OPTIONS_LABEL_WIDTH - indentWidth
 end
 
 --------------------------------------------------------------------------------

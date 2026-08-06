@@ -103,11 +103,22 @@ function ns:IsGroupLeader()
 	return false
 end
 
--- Display name of the group leader, or nil when solo or when the player leads.
+--[[
+    Display name of whoever leads the group, the player included when that is
+    them, or nil when solo.
+
+    Checking "player" first is what makes the party case work at all: a party's
+    unit ids run party1..partyN-1 and never include the player, so a party the
+    player leads resolved to nil, while the raid path — whose raid1..raidN does
+    include them — named them correctly. The two disagreed on the same question.
+]]
 ---@return string|nil
 function ns:GetGroupLeaderName()
 	if not IsInGroup() or type(UnitIsGroupLeader) ~= "function" then
 		return nil
+	end
+	if UnitIsGroupLeader("player") then
+		return ns:CapitalizeFirstLetter(ns:GetCleanUnitName("player"))
 	end
 	local memberCount = GetNumGroupMembers()
 	if IsInRaid() then
@@ -211,6 +222,43 @@ function ns:WillAutoMasterLoot()
 		return true
 	end
 	return ns.db.profile.autoMasterLootOutsideInstances == true
+end
+
+--------------------------------------------------------------------------------
+-- Loading-Screen Guard
+--------------------------------------------------------------------------------
+
+--[[
+    A loading screen re-syncs the party's loot state, so for a moment the loot
+    API answers with the default — or with nothing at all — before the real
+    method lands. A zoning master looter reads as "not the master looter", in a
+    group whose method reads "group", and then as both again.
+
+    Every consumer of that state has to ignore the gap, because each mistakes it
+    for a real event: the pop-up reads it as a promotion, the destination reset
+    reads it as the leader changing the loot method, and the leaver sweep reads a
+    transiently empty roster as the group having emptied.
+
+    Readings taken while the state is unreadable are ignored outright and
+    deliberately NOT recorded. Freezing rather than updating is what keeps a
+    genuine change that lands mid-loading-screen: the first reading afterwards
+    still compares against the state from before it, so the change is noticed a
+    beat late instead of never.
+]]
+local ZONE_SETTLE_SECONDS = 3
+local ZONE_SETTLE_TIMER = "GogoLoot.MasterLooter.ZoneSettle"
+local isZoneChangeSettling = false
+
+local function BeginZoneChangeSettle()
+	isZoneChangeSettling = true
+	ns:After(ZONE_SETTLE_TIMER, ZONE_SETTLE_SECONDS, function()
+		isZoneChangeSettling = false
+	end)
+end
+
+---@return boolean
+local function IsLootStateUnreadable()
+	return isZoneChangeSettling or ns:SafeCallLootMethod() == nil
 end
 
 --------------------------------------------------------------------------------
@@ -394,6 +442,14 @@ local function GetCurrentGroupMemberLookup()
 end
 
 local function CheckDestinationsForLeavers()
+	--[[
+	    A roster read taken while a loading screen settles can come back empty,
+	    which would reassign every tier to Self and announce a group's worth of
+	    leavers who never left.
+	]]
+	if IsLootStateUnreadable() then
+		return
+	end
 	if not IsInGroup() then
 		return
 	end
@@ -453,11 +509,32 @@ end
     a starting assumption of false so logging in already master looter counts as
     becoming one. Both events that can change the answer route through here, and
     the flag makes repeat fires of the same state a no-op.
+
+    There is more than one way to be handed the role and all of them belong
+    here: the leader naming you master looter (PARTY_LOOT_METHOD_CHANGED), and
+    the role falling to you because whoever held it left
+    (GROUP_ROSTER_UPDATE, which no loot-method event accompanies). Narrowing the
+    trigger to the loot-method event would silently drop that second case.
 ]]
 local wasMasterLooter = false
 
+--[[
+    Changing zones is not one of those ways, and used to read as one: a zoning
+    master looter reads as "not the master looter" and then as one again, which
+    is indistinguishable from a promotion, and GROUP_ROSTER_UPDATE fires freely
+    throughout. IsLootStateUnreadable is what keeps that gap out of the flag —
+    see the Loading-Screen Guard above for why the reading is frozen rather than
+    recorded.
+]]
 local function CheckMasterLooterPopup()
-	local isMasterLooter = ns.db and ns:AreWeMasterLooter() or false
+	if not ns.db then
+		return
+	end
+	if IsLootStateUnreadable() then
+		return
+	end
+
+	local isMasterLooter = ns:AreWeMasterLooter()
 	if isMasterLooter and not wasMasterLooter and ns.db.profile.masterLooterPopup then
 		ns:ShowMasterLooterPopup()
 	end
@@ -482,12 +559,22 @@ end
     master-looter reassignment — which changes no method — from wiping a setup
     mid-run. It starts nil so the first reading after login records state instead
     of counting as a change.
+
+    A reading taken while the loot state is unreadable is skipped and not
+    recorded, so a loading screen cannot wipe a live setup: ns:SafeGetLootMethod
+    maps the client's nil answer to "group", which against a stored "master"
+    reads as the leader having changed the method mid-zone. Freezing rather than
+    recording is what keeps a genuine change that lands mid-loading-screen — the
+    first reading afterwards still compares against the pre-zone method.
 ]]
 local lastObservedLootMethod = nil
 
 ---@return nil
 local function ClearDestinationsOnLootMethodChange()
 	if not ns.db then
+		return
+	end
+	if IsLootStateUnreadable() then
 		return
 	end
 
@@ -525,5 +612,21 @@ local function HandleGroupRosterUpdate()
 	CheckMasterLooterPopup()
 end
 
+--[[
+    Login and /reload are the two loading screens the pop-up is meant to answer
+    from a standing start — wasMasterLooter begins false, so already holding the
+    role counts as taking it. PLAYER_ENTERING_WORLD reports which case it is, and
+    every other fire of it is a mid-session loading screen: a zone change.
+]]
+local function HandlePlayerEnteringWorld(isInitialLogin, isReloadingUi)
+	if isInitialLogin or isReloadingUi then
+		return
+	end
+	BeginZoneChangeSettle()
+end
+
 ns:RegisterModuleEvent("PARTY_LOOT_METHOD_CHANGED", HandleLootMethodChanged)
 ns:RegisterModuleEvent("GROUP_ROSTER_UPDATE", HandleGroupRosterUpdate)
+ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", HandlePlayerEnteringWorld)
+-- Crossing a zone border without a loading screen, which PLAYER_ENTERING_WORLD does not report.
+ns:RegisterModuleEvent("ZONE_CHANGED_NEW_AREA", BeginZoneChangeSettle)

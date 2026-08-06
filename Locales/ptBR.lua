@@ -117,8 +117,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Insira um ID de item ou arraste um item aqui p
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Carregando... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] = "Itens de missão, receitas, livros, montarias, mascotes e lendários são sempre ignorados."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Receitas, livros, montarias, mascotes e lendários são sempre ignorados."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Versão"
@@ -153,18 +156,39 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "O método e o limite de saque atuais do seu grupo."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Configurações de Saque Atuais"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Método de Saque"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Limite de Saque"
-L["MASTER_LOOTER_SET_BY"] = "(Definido por %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Apenas o líder do grupo pode alterar o método e o limite de saque."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Estas configurações são controladas por %s."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Mestre Saqueador Automático"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distribui o saque aos jogadores designados enquanto você é o Mestre Saqueador."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "Ativar Mestre Saqueador Automático em Instâncias"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Ativar Mestre Saqueador Automático Fora de Instâncias"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Ativar Mestre Saqueador Automático"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Também Fora de Instâncias"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"Cuidado: Como o saque de chefes mundiais não é trocável, isso não é aconselhável!"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Incluir Itens de Missão"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Também distribui itens de missão, para impulsionar um personagem que você mesmo joga. Só podem ser distribuídos os itens de missão que caem como um único item para o grupo. O que cada jogador em missão saqueia por conta própria, como a cabeça de um chefe, nunca passa pelo Mestre Saqueador."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"Como a maioria dos itens de missão é de qualidade Comum, isso só funciona com o seu limite de saque definido como Comum ou inferior. E mesmo assim, nem todos os itens de missão são elegíveis para o Mestre Saqueador."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Cuidado: Isto é voltado para quem joga com vários personagens ao mesmo tempo, e não é recomendado em raides."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Configurações rápidas"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
@@ -172,13 +196,26 @@ L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Ativar janela do Saqueador Mestre"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Destinos do Saque"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
-	"Designe um membro do grupo para receber itens de cada nível de qualidade."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Escolha quem recebe o saque distribuído pelo GogoLoot."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "A si mesmo"
 L["MASTER_LOOTER_SEND_ALL"] = "Enviar todo o saque para"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Envia todas as qualidades para um jogador. Ajuste as qualidades individuais abaixo para substituir."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Escolha quem recebe itens %s."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Definir Níveis de Qualidade Individualmente"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Mostra uma linha para cada nível de qualidade, para que níveis diferentes vão para jogadores diferentes."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "os níveis diferem"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Lista de Ignorados"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -233,10 +270,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Saída Atual"
 L["TRADE_CHECKBOX_LABEL"] = "Anunciar"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Posta a atividade do mestre saqueador no chat do grupo. As distribuições automáticas usam um limite de qualidade para evitar spam; as distribuições manuais são sempre anunciadas."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Posta a atividade do mestre saqueador no chat do grupo."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Ativar mensagens de destino do saque"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Ativar anúncios de destino do saque"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] = "Exemplo: {rt4} GogoLoot // Aevala receberá todos os itens Épicos."
 
 L["MASTER_LOOTER_ANNOUNCE_AUTO"] = "Ativar Anúncios de Saque Automático"

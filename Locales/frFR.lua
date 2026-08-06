@@ -119,9 +119,13 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Entrez l'ID d'un objet ou faites glisser un ob
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Chargement... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Les objets de quête, recettes, livres, montures, mascottes et objets légendaires sont toujours ignorés."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
+	"Les recettes, livres, montures, mascottes et objets légendaires sont toujours ignorés."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
@@ -156,19 +160,40 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "La méthode et le seuil de butin actuels de votre groupe."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Réglages de Butin Actuels"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Méthode de Butin"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Seuil de Butin"
-L["MASTER_LOOTER_SET_BY"] = "(Défini par %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Seul le chef de groupe peut modifier la méthode et le seuil de butin."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Ces réglages sont contrôlés par %s."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Maître du Butin Automatisé"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
 	"Distribue le butin aux joueurs que vous désignez lorsque vous êtes Maître du butin."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "Activer le Maître du Butin Automatique en Instance"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Activer le Maître du Butin Automatique hors des Instances"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Activer le Maître du Butin Automatique"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Aussi hors des Instances"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"Attention : Le butin des boss en extérieur n'étant pas échangeable, ceci n'est pas conseillé !"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Inclure les Objets de Quête"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Distribue aussi les objets de quête, pour booster un personnage que vous jouez vous-même. Seuls les objets de quête qui tombent en un seul exemplaire pour le groupe peuvent être distribués. Ce que chaque joueur en quête ramasse pour lui-même, comme la tête d'un boss, ne passe jamais par le Maître du butin."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"La plupart des objets de quête étant de qualité Médiocre, ceci ne fonctionne que si votre seuil de butin est réglé sur Médiocre ou moins. Et même alors, tous les objets de quête ne peuvent pas être distribués par le Maître du butin."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Attention : Ceci est destiné aux joueurs qui jouent plusieurs personnages à la fois, et n'est pas conseillé en raid."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Réglages rapides"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
@@ -176,13 +201,26 @@ L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Activer la fenêtre du Maître du butin"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Destinations du Butin"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
-	"Assignez un membre du groupe pour recevoir les objets de chaque niveau de qualité."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Choisissez qui reçoit le butin distribué par GogoLoot."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Soi-même"
 L["MASTER_LOOTER_SEND_ALL"] = "Envoyer tout le butin à"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Envoie toutes les qualités à un seul joueur. Ajuste les qualités individuelles ci-dessous pour outrepasser ce choix."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Choisissez qui reçoit les objets %s."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Définir les Niveaux de Qualité Individuellement"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Affiche une ligne par niveau de qualité, pour que des niveaux différents aillent à des joueurs différents."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "les niveaux diffèrent"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Liste d'Ignorés"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -238,10 +276,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Sortie actuelle"
 L["TRADE_CHECKBOX_LABEL"] = "Annoncer"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Publie l'activité du maître du butin dans la discussion de groupe. Les distributions automatiques utilisent un seuil de qualité pour éviter le spam ; les distributions manuelles sont toujours annoncées."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Publie l'activité du maître du butin dans la discussion de groupe."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Activer les messages de destination du butin"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Activer les annonces de destination du butin"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] = "Exemple : {rt4} GogoLoot // Aevala recevra tous les objets Épiques."
 
 L["MASTER_LOOTER_ANNOUNCE_AUTO"] = "Activer les Annonces Automatiques du Maître du Butin"

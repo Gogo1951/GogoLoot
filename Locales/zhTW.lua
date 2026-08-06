@@ -117,8 +117,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "輸入物品 ID 或將物品拖曳至此以將
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "載入中... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] = "任務物品、配方、書籍、坐騎、寵物和傳說物品總是被略過。"
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "配方、書籍、坐騎、寵物和傳說物品總是被略過。"
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "版本"
@@ -153,29 +156,64 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "你隊伍目前的拾取方式和品質門檻。"
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "目前拾取設定"
 L["MASTER_LOOTER_LOOT_METHOD"] = "拾取方式"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "拾取品質門檻"
-L["MASTER_LOOTER_SET_BY"] = "(由 %s 設定)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "只有隊長可以變更拾取方式和品質門檻。"
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "這些設定由 %s 掌管。"
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "自動隊長分配"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "當您是隊長分配者時，將戰利品分配給您指定的玩家。"
-L["MASTER_LOOTER_AUTO_ENABLE"] = "在副本中啟用自動隊長分配"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "在副本外啟用自動隊長分配"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "啟用自動隊長分配"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "副本外也啟用"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] = "警告：由於世界首領掉落無法交易，不建議使用此功能！"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "包含任務物品"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"同時分配任務物品，方便為您自己操作的角色進行代練。只有整隊共用、只掉落一件的任務物品才能分配。每位接了任務的玩家各自拾取的物品（例如首領的頭顱）永遠不會經過隊長分配。"
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"由於大多數任務物品是普通品質，只有將拾取品質門檻設為普通或更低時才會生效。即便如此，也並非所有任務物品都能透過隊長分配發放。"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"警告：此功能面向喜歡多開的玩家，不建議在團隊副本中使用。"
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // 快速設定"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] = "每當你成為戰利品分配者時，開啟一個設定戰利品的視窗。"
 L["MASTER_LOOTER_POPUP_ENABLE"] = "啟用分配者視窗"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "戰利品目標"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "指定小隊成員接收每個品質級別的物品。"
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "選擇由誰接收 GogoLoot 分配的戰利品。"
 L["MASTER_LOOTER_DESTINATION_SELF"] = "自己"
 L["MASTER_LOOTER_SEND_ALL"] = "全部戰利品發送給"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"將所有品質發送給同一名玩家。可在下方單獨設定各品質以覆蓋。"
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "選擇誰接收 %s 物品。"
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "個別設定品質等級"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"為每個品質等級顯示一行，讓不同等級發送給不同玩家。"
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "各等級不同"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "忽略列表"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] = "清單中的物品跳過自動分配，留待手動分配。"
@@ -229,10 +267,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "目前輸出"
 L["TRADE_CHECKBOX_LABEL"] = "通報"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"將隊長分配活動發送到隊伍頻道。自動分配使用品質門檻以避免洗頻；手動分配一律會通報。"
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "將隊長分配活動發送到隊伍頻道。"
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "啟用戰利品歸屬訊息"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "啟用戰利品去向通報"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] =
 	"範例：{rt4} GogoLoot // Aevala 將接收所有的 史詩 物品。"
 

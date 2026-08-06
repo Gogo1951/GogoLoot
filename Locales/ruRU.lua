@@ -123,9 +123,13 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Загрузка... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Задания, рецепты, книги, транспорт, питомцы и легендарные предметы всегда пропускаются."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
+	"Рецепты, книги, транспорт, питомцы и легендарные предметы всегда пропускаются."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Версия"
@@ -161,23 +165,40 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] =
-	"Текущий способ распределения добычи и порог качества вашей группы."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Текущие настройки добычи"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Метод распределения добычи"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Порог добычи"
-L["MASTER_LOOTER_SET_BY"] = "(Установлено: %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] =
-	"Только лидер группы может изменить способ распределения добычи и порог качества."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Этими настройками управляет %s."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Автоматический ответственный за добычу"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
 	"Распределяет добычу назначенным игрокам, пока вы ответственный за добычу."
-L["MASTER_LOOTER_AUTO_ENABLE"] =
-	"Включить автоматическое распределение добычи в инстансах"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] =
-	"Включить автоматическое распределение добычи вне инстансов"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Включить автоматическое распределение добычи"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Также вне инстансов"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"Внимание: Поскольку добычу с мировых боссов нельзя передать, это не рекомендуется!"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Включать квестовые предметы"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Также раздаёт квестовые предметы, для прокачки персонажа, которым вы играете сами. Раздать можно только те квестовые предметы, что выпадают группе в одном экземпляре. То, что каждый игрок на задании подбирает себе сам, например голова босса, через ответственного за добычу не проходит."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	'Большинство квестовых предметов обычного качества, поэтому это работает, только если ваш порог добычи стоит на "Обычное" или ниже. Да и тогда раздать можно не любой квестовый предмет.'
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Внимание: Это предназначено для тех, кто играет несколькими персонажами сразу, и не рекомендуется в рейдах."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Быстрые настройки"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
@@ -186,12 +207,26 @@ L["MASTER_LOOTER_POPUP_ENABLE"] = "Включить окно распредел�
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Назначения добычи"
 L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
-	"Назначьте участника группы для получения предметов каждого уровня качества."
+	"Выберите, кто получает добычу, которую раздаёт GogoLoot."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Себе"
 L["MASTER_LOOTER_SEND_ALL"] = "Отправлять всю добычу"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Отправляет предметы всех качеств одному игроку. Настройте отдельные качества ниже, чтобы изменить это."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Выберите, кто получит предметы качества %s."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Настроить уровни качества по отдельности"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Показывает строку для каждого уровня качества, чтобы разные уровни доставались разным игрокам."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "уровни различаются"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Список исключений"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -256,10 +291,16 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Текущий вывод"
 L["TRADE_CHECKBOX_LABEL"] = "Оповестить"
 
 -- Master Looter Announcements
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
 L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Публикует действия ответственного за добычу в групповой чат. Автоматическое распределение использует порог качества, чтобы избежать спама; ручное распределение объявляется всегда."
+	"Публикует действия ответственного за добычу в групповой чат."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Включить сообщения о получателях добычи"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Включить оповещения о получателях добычи"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] =
 	"Пример: {rt4} GogoLoot // Aevala будет получать все Эпические предметы."
 

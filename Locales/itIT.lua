@@ -119,9 +119,12 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Inserisci un ID oggetto o trascina un oggetto 
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Caricamento... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Oggetti di missione, ricette, libri, cavalcature, mascotte e leggendari vengono sempre saltati."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Ricette, libri, cavalcature, mascotte e leggendari vengono sempre saltati."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Versione"
@@ -156,18 +159,39 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "Il metodo e la soglia di bottino attuali del tuo gruppo."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Impostazioni Bottino Attuali"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Metodo di Bottino"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Soglia del Bottino"
-L["MASTER_LOOTER_SET_BY"] = "(Impostato da %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Solo il capogruppo può cambiare il metodo e la soglia del bottino."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Queste impostazioni sono controllate da %s."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Maestro del Bottino Automatico"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distribuisce il bottino ai giocatori designati mentre sei Maestro del Bottino."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "Abilita Maestro del Bottino Automatico in Istanza"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Abilita Maestro del Bottino Automatico fuori dalle Istanze"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Abilita Maestro del Bottino Automatico"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Anche fuori dalle Istanze"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"Attenzione: Poiché il bottino dei boss mondiali non è scambiabile, è sconsigliato!"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Includi Oggetti di Missione"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Distribuisce anche gli oggetti di missione, per potenziare un personaggio che giochi tu stesso. Possono essere distribuiti solo gli oggetti di missione che cadono in un unico esemplare per il gruppo. Ciò che ogni giocatore in missione raccoglie per sé, come la testa di un boss, non passa mai dal Maestro del Bottino."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"Poiché la maggior parte degli oggetti di missione è di qualità Comune, questo funziona solo con la soglia del bottino impostata su Comune o inferiore. E anche allora, non tutti gli oggetti di missione sono idonei al Maestro del Bottino."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Attenzione: Questo è pensato per chi gioca più personaggi insieme e non è consigliato nelle incursioni."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Impostazioni rapide"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
@@ -175,13 +199,26 @@ L["MASTER_LOOTER_POPUP_DESCRIPTION"] =
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Attiva la finestra del Saccheggiatore Maestro"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Destinazioni del Bottino"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
-	"Assegna a un membro del gruppo la ricezione di oggetti per ogni livello di qualità."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Scegli chi riceve il bottino distribuito da GogoLoot."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Te Stesso"
 L["MASTER_LOOTER_SEND_ALL"] = "Invia tutto il bottino a"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Invia ogni livello di qualità a un solo giocatore. Imposta i singoli livelli qui sotto per sovrascriverlo."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Scegli chi riceve oggetti %s."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Imposta i Livelli di Qualità Singolarmente"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Mostra una riga per ogni livello di qualità, così livelli diversi possono andare a giocatori diversi."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "i livelli differiscono"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Lista Ignorati"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -236,10 +273,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Output Corrente"
 L["TRADE_CHECKBOX_LABEL"] = "Annuncia"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Invia l'attività del maestro del bottino nella chat di gruppo. Le distribuzioni automatiche usano una soglia di qualità per evitare spam; le distribuzioni manuali sono sempre annunciate."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Invia l'attività del maestro del bottino nella chat di gruppo."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Attiva i messaggi sulle destinazioni del bottino"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Abilita gli annunci sulla destinazione del bottino"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] = "Esempio: {rt4} GogoLoot // Aevala riceverà tutti gli oggetti Epici."
 
 L["MASTER_LOOTER_ANNOUNCE_AUTO"] = "Abilita Annunci Distribuzione Automatica"
