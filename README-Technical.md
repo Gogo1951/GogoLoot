@@ -86,7 +86,7 @@ The distribution engine in `Features/Master-Looter-Distribution.lua` runs Scan �
 
 1. **Scan** — `LOOT_OPENED` fires `RunDistributionPass` when `ns:WillAutoMasterLoot()` is true (master looter + `autoMasterLoot`, inside a raid/party instance unless `autoMasterLootOutsideInstances`).
 2. **Resolve** — `BuildCandidateMap` maps lowercased candidate names per slot, adding a realm-stripped alias only when exactly one candidate normalizes to it; ambiguous duplicates (e.g. `Bob` and `Bob-OtherRealm`) create no alias and fall back to manual handling rather than guessing.
-3. **Distribute** — `TryDistributeSlot` gates each slot (`ns:ShouldSkipItemByType`, ignore list, BoP outside trade-eligible instances, quality→destination mapping) and calls `GiveMasterLoot(slot, candidate, true)` — the `true` lets the manual hook distinguish automated calls. Distribution takes the **whole** skip set, quest items included: it has no per-item instruction to honour, so there is nothing to weigh against the skip (see Item-Type Skips).
+3. **Distribute** — `TryDistributeSlot` gates each slot (`ns:ShouldSkipItemForMasterLoot`, ignore list, BoP outside trade-eligible instances, quality→destination mapping) and calls `GiveMasterLoot(slot, candidate, true)` — the `true` lets the manual hook distinguish automated calls. Distribution takes the never-automated set unconditionally and the quest-class skip unless `autoMasterLootQuestItems` is on: it has no per-item instruction to honour, so the panel toggle is the only thing that can weigh against the skip (see Item-Type Skips).
 4. **Confirm** — announcements are never sent inline; see the Pending Hand-out Registry deep-dive. A 0.1 s retry ticker (`DISTRIBUTION_RETRY_INTERVAL`) re-runs the pass up to 20 times (`DISTRIBUTION_MAX_RETRIES`) until nothing is left or `DISTRIBUTION_QUIET_TICKS` consecutive ticks make no progress, covering late candidate data and cold item caches.
 
 ### Detecting the Master Looter (verified on Classic Era 1.15.9)
@@ -105,9 +105,11 @@ The raid case is not yet verified: `masterLooterRaidIndex` was `nil` in the part
 
 - `ns:IsNeverAutomatedItem` — legendaries (quality 5), recipes/books/patterns (`classId` 9), mounts and companion pets. Absolute. No list entry can opt back in.
 - `ns:IsQuestClassItem` — `classId == ns.ITEM_CLASS_QUEST` (12) or `bindType == ns.BIND_QUEST_ITEM`. Skipped by every path that picks items **on its own**, and only those.
-- `ns:ShouldSkipItemByType` — the union of the two. Master-loot distribution takes this one.
+- `ns:ShouldSkipItemForMasterLoot` — the composite master-loot distribution takes: the never-automated half always, plus the quest-class half unless `autoMasterLootQuestItems` says otherwise. The opt-in reaches nothing else; the roll path's own quest-class skip is untouched by it.
 
 The split is load-bearing rather than tidy. **The AQ and ZG war-effort tokens the default roll list exists to roll on all report `classId` 12**: the scarabs (20858–20865), AQ20 idols (20866–20873), AQ40 idols (20874–20882), ZG coins (19698–19706), ZG bijous (19707–19715), and the Wartorn scraps (22373–22376). While a single quest-class test ran ahead of the list, every one of those default entries was unreachable — correct ids, correct saved action, and no roll ever went out. So the roll path calls the two halves separately and sits the list between them; distribution, having no per-item instruction to weigh, keeps the composite.
+
+Quest items are the one skip a player can turn off, and only for distribution. The case it exists for is boosting a character the same player controls, where handing the drop to the "wrong" character is the point; it ships off, because a quest item given to somebody not on the quest is wasted. A quest item still has to clear the loot threshold to reach master loot at all, which is why the panel pairs the toggle with a note about lowering it — on TBC Anniversary, where the threshold floor is Uncommon, most quest items stay out of reach entirely.
 
 ### Item Data Caching
 
@@ -203,15 +205,40 @@ Destinations are scoped to **one master-loot setup**, and `Features/Master-Loote
 
 `ns:GetSharedDestination` backs the Send All Loot To dropdown and returns nil when the tiers disagree, so the control shows blank rather than picking one tier's answer to stand for all five. It tracks *whether a tier has been seen* rather than whether the running answer is still nil — an explicit "no destination" is a value in its own right, and without that an unset tier followed by an assigned one would report the assigned player as the answer for all five.
 
+### Collapsing the tier rows
+
+The five per-tier rows are hidden behind the Set Quality Tiers Individually toggle (`showDestinationTiers`), because one destination is what most setups use and six dropdowns to express it is most of the panel. The toggle gates display only — it writes no destination, so collapsing the rows can never change where loot goes.
+
+It is drawn as a sub-option of Send All Loot To (`ns.OptionsSubRow`), which is both true — it decides whether that one destination is expressed as itself or as five rows — and the only way it lines up with anything. Flush, its checkbox lands a couple of pixels right of the Label above it, because AceGUI's checkbox art is inset inside its own widget; that reads as a near-miss rather than a decision, and the indent cell makes it deliberate. The five tier rows it reveals sit one step deeper again, at `ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH`, so they read as belonging to the toggle rather than as its peers.
+
+That leaves one state the panel could otherwise hide. Send All Loot To reads *blank* in two very different situations — nothing set up at all, and tiers that disagree — so it is honest about the first and silent about the second. While the rows are collapsed the toggle's label therefore carries `MASTER_LOOTER_TIERS_SUMMARY_MIXED` in `INFO` blue, and **only** for the divergent case: a shared destination is already named in the dropdown, and nothing set is already a blank dropdown, so saying either again is bloat. Expanded, the suffix goes away entirely — the rows say it themselves.
+
+`SummarizeDestinations` counts the assigned tiers itself rather than reading `ns:GetSharedDestination`, which answers nil for both "they disagree" and "none of them is set" — two states that need different copy.
+
 `ns:GetDestinationDisplayName` resolves the stored `"self"` literal to the player's own name before announcing. Announcing it verbatim would tell the group that "Self" is holding the loot, and resolving it is also what makes switching *back* to yourself announceable at all — the group has already been told somebody else is holding loot, and silence would leave that standing.
+
+### Master Looter panel order
+
+Top to bottom: **Automated Master Looting**, **Current Loot Settings**, **Loot Destinations**, **Ignore List** — what GogoLoot *does* before the group state it merely *reads*. The opening block carries no header of its own, because the tab is already titled Master Looter and that block is what the title describes; every other panel opens the same way.
+
+`Enable Master Looter Pop-up` sits below the Automated Master Looting sub-options but is **not** one of them: the pop-up runs whether or not anything is automated, so it neither indents nor greys out with `autoMasterLoot`.
+
+Current Loot Settings opens on `ns.AddLeaderNoteRow` — one line naming whoever controls the loot method and threshold, shown only while somebody else does. It replaced a red "only the group leader can change these" warning *plus* a `(Set by Spek)` suffix appended to both labels: the same fact three times, crowding the labels and reading as an error rather than as whose group it is. The line hides while solo or while the player leads, which is exactly when the dropdowns are live — its whole job is explaining why they are not. The pop-up carries it too, since it draws the same two dropdowns.
 
 ### The Master Looter Pop-up
 
 `Options/Options-Master-Looter-Popup.lua` opens on every false-to-true transition of `ns:AreWeMasterLooter()`, gated by the `masterLooterPopup` setting. The flag starts at `false`, so logging in already master looter counts as becoming one, and repeat fires of the same state are a no-op.
 
+Both events feeding that transition are load-bearing, because there is more than one way to be handed the role. `PARTY_LOOT_METHOD_CHANGED` covers the leader naming you master looter; `GROUP_ROSTER_UPDATE` covers the role *falling* to you because whoever held it left, which no loot-method event accompanies. Narrowing the trigger to the loot-method event drops that second case silently.
+
+**Changing zones is not one of those ways, and used to read as one.** A loading screen re-syncs the party's loot state, so the loot API answers with the default for a moment before the real method lands: a zoning master looter reads as "not the master looter" and then as one again — a false-to-true transition indistinguishable from a promotion, arriving on the `GROUP_ROSTER_UPDATE`s that fire freely throughout. Two guards close it, both in `CheckMasterLooterPopup`:
+
+- **A zone-change settle window** (`ZONE_SETTLE_SECONDS`, armed from `PLAYER_ENTERING_WORLD` and `ZONE_CHANGED_NEW_AREA`). Readings taken inside it are ignored outright and deliberately **not recorded** either. Freezing rather than updating is what keeps a genuine promotion that lands mid-loading-screen: the first reading after the window still compares against the state from before it, so the window opens a beat late instead of never. `PLAYER_ENTERING_WORLD`'s own `(isInitialLogin, isReloadingUi)` arguments exempt login and `/reload` — those are the two loading screens the pop-up *is* meant to answer from a standing start.
+- **An unreadable loot method is not a demotion.** When `ns:SafeCallLootMethod()` returns nil the client cannot answer yet; clearing the flag on that reading is what turns the next good one into a promotion that never happened. This one applies outside zoning too, wherever the API has no answer.
+
 It is an AceConfigDialog standalone window, not a hand-built frame: registered with AceConfigRegistry like any other panel but never passed to `AddToBlizOptions`, so it inherits the add-on's widget styling and stays out of the Blizzard settings tree. Nothing in it is protected, so opening it during combat is safe.
 
-Its three rows — loot method, loot threshold, Send All Loot To — are built by the shared builders in `Options-Master-Looter.lua` (`ns.AddLootMethodRow`, `ns.AddLootThresholdRow`, `ns.AddSendAllDestinationRow`), so the panel and the pop-up can never drift. `ns:RefreshMasterLooterPanels` notifies both registry names together for the same reason. Rows that don't apply to the current loot method hide rather than shrink the window: AceConfigDialog takes the frame size from its status table, never from how much content is on show.
+Every row in it is built by a shared builder, so the panel and the pop-up can never drift: its own on/off toggle and the destination-message toggle (`ns.AddPopupToggleRow`, `ns.AddDestinationMessagesRow`), the leader note (`ns.AddLeaderNoteRow`), then loot method, loot threshold and Send All Loot To (`ns.AddLootMethodRow`, `ns.AddLootThresholdRow`, `ns.AddSendAllDestinationRow`). The two toggles are there because this is the window you would most want them from — it opened on its own, and the destination you are about to pick below is exactly what the second one decides whether to announce. `ns:RefreshMasterLooterPanels` notifies both registry names together for the same reason. Rows that don't apply to the current loot method hide rather than shrink the window: AceConfigDialog takes the frame size from its status table, never from how much content is on show.
 
 ## Custom Roll List vs. the Automated Rolls Toggle
 
@@ -266,7 +293,8 @@ Per-profile keys (`ns.db.profile`):
 
 - `autoGreed`, `customRollList` — feature toggles. `autoGreed` is the Automated Rolls master switch; the name predates Pass/Need being configurable and is kept to avoid a migration for a key no user ever sees.
 - `autoRollActionParty` / `autoRollThresholdParty`, `autoRollActionRaid` / `autoRollThresholdRaid` — the threshold path's quality ceiling (`0`…`4`) and roll action (`"manual"` / `"pass"` / `"greed"` / `"need"`), one pair per group context. Defaults are Greed at Uncommon & Lower for both.
-- `autoMasterLoot`, `autoMasterLootOutsideInstances` — distribution engine gates.
+- `autoMasterLoot`, `autoMasterLootOutsideInstances` — distribution engine gates, and **not a symmetrical pair**. `autoMasterLoot` is the master switch: `ns:WillAutoMasterLoot` returns false outright when it is off, so nothing distributes anywhere, inside an instance or out. `autoMasterLootOutsideInstances` only extends it past the instance check. The Options panel says so by nesting — the master switch reads `Enable Automated Master Looting` with no location in it, and both sub-options indent under it and grey out with it.
+- `autoMasterLootQuestItems` — opts distribution out of the quest-class skip, for boosting a character the same player controls. Off by default, and read nowhere but `ns:ShouldSkipItemForMasterLoot`.
 - `masterLooterPopup` — whether the master looter pop-up window opens on becoming master looter.
 - `announceDestinations`, `announceMasterLootAuto`, `announceMasterLootAutoThreshold` — ML announcement toggles. The auto path is threshold-gated (default `3` = Rare+) so routine auto-loot doesn't spam chat; manual hand-outs have no setting and are always announced.
 - `announceTrade`, `announceTradeCondition` (`always` / `party_or_raid` / `raid_only`), `announceTradeOutput` (`whisper` / `group`).
@@ -279,6 +307,7 @@ Account-wide global keys (`ns.db.global`):
 
 - `showWelcome` — the login welcome message toggle.
 - `speedyLoot` — Speedy Loot, toggled from the General panel or the mini-map button's right-click.
+- `showDestinationTiers` — whether the Master Looter panel draws a row per quality tier or just Send All Loot To. Presentation rather than loot policy: it changes what the panel draws and no destination, so it stays out of the profile.
 - `minimap` — LibDBIcon position + `hide` flag, so switching, resetting, or deleting a profile never moves the button.
 
 Defaults come from `ns.DATABASE_DEFAULTS` (`Data/Default-Settings.lua`) and are applied by AceDB-3.0 when a scope is first accessed — explicit user values, including `false`, are never overridden. Note that scalar and table defaults are physically copied into the saved table (`copyDefaults` via `rawset`); only `*`/`**` wildcard defaults resolve through metatables. That copying is exactly why the migrations below `rawget` past the metatable to tell a genuinely stored value from a default. There is no manual defaults merge anywhere in the add-on.
@@ -316,6 +345,36 @@ Every one except `MigrateFlatSettingsToProfile` also runs per profile from `Hand
 3. Register it in `ns.RegisterOptionsPanels` (`Options/Options.lua`): `RegisterOptionsTable` plus `AddToBlizOptions(registryName, L["TAB_*"], L["ADDON_TITLE"])` — the third argument must match the parent panel's display name exactly, and the order of `AddToBlizOptions` calls is the order panels appear in Blizzard's settings tree.
 4. Add the file to `GogoLoot.toc` after `Options/Options-Utilities.lua` and before `Options/Options.lua`.
 5. Lay controls out as label-beside-control rows: an `ns.OptionsRowLabel` at `ns.OPTIONS_LABEL_WIDTH` followed by a control with `name = ""` at `ns.OPTIONS_CONTROL_WIDTH`, so every row on every panel shares one right edge (`ns.OPTIONS_ROW_WIDTH`).
+6. For a control that only means anything while the toggle above it is on, use `ns.OptionsSubRow` and `ns.OptionsSubLabel`, and `disabled` it on the parent's state.
+
+### Sub-options
+
+`ns.OptionsSubRow(order, hidden, controls, indentWidth)` wraps a row in a nameless inline group and leads it with a blank description cell of `ns.OPTIONS_SUB_INDENT_WIDTH`. **The indent must be a cell, not padding on the caption** — AceConfig pins a checkbox at the left edge of its own widget, so a padded label moves the words and leaves the box lined up with its parent's.
+
+Two depths, and which one a row takes says what it is:
+
+- `ns.OPTIONS_SUB_INDENT_WIDTH` — the row **is** a sub-option. Its box starts where its parent's box visually ends.
+- `ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH` — the row **belongs to** a sub-option: its notes, and the rows a sub-option reveals. One indent plus a checkbox, so it aligns under the caption above rather than under its box.
+
+Expressing both in width units rather than leading spaces is what keeps them aligned without anyone guessing at the width of a space in a proportional font.
+
+A row at either depth still owes the panel its shared right edge, so an indented label-beside-control row **narrows its label to pay for its indent** rather than pushing everything right. That is `ns.OPTIONS_SUB_LABEL_WIDTH` (`ns.OPTIONS_LABEL_WIDTH` minus the indent), and it is why the quality-tier dropdowns stay in the same column as Send All Loot To above them, and the Announcements panel's threshold, When and Message Output dropdowns stay in the same column as each other.
+
+The Announcements panel is the clearest case of the pattern: only its three Enable toggles are top level. Every other control belongs to one of them — a threshold that applies only while its toggle is on, an example of what that toggle posts — so each is a sub-option indented under it.
+
+**A dropdown goes with its toggle; an example stays.** A dropdown configures something that is not happening, so it hides rather than greying out, along with the spacer that paired with it or the gaps double up. The examples and the manual-distribution note are what somebody reads to *decide* whether to turn a thing on, so they are shown whatever the toggle says — a feature that shows you nothing until you enable it cannot be judged before you do.
+
+Those dropdowns also take `ANNOUNCEMENT_DROPDOWN_WIDTH` rather than `ns.OPTIONS_CONTROL_WIDTH`: they hold short fixed labels (a quality tier, "Always", "Whisper") rather than the player names the Master Looter dropdowns carry. Their left edges still line up, because a row pays for its indent out of its label and never out of its control.
+
+### Hiding a panel behind its master switch
+
+Both the Master Looter and Automated Rolls panels hide everything below their master switch while it is off. In each case the switch really is a master switch — `ns:WillAutoMasterLoot` returns false outright without `autoMasterLoot`, and `autoGreed` gates every roll including the Custom Roll List — so what is below it changes nothing, and a page of greyed controls says that at far greater length than an absence. It also means a hidden control has no use for a `disabled` state, and carrying one would be dead logic.
+
+The Master Looter panel applies this as a single sweep over `args` at the end of its builder, skipping `PANEL_ALWAYS_SHOWN`. Two reasons it is a sweep rather than a flag per row: the panel is built partly from shared row builders the pop-up also calls, so the gate cannot live inside them; and anything added later is covered without having to remember. The sweep **composes** with whatever a row already answered to rather than replacing it — a threshold row that hides under Free for All, a tier row below the loot threshold, a leader note that only appears for a non-leader — so the master switch is an additional reason to hide, never a substitute for theirs.
+
+The group wrapper is load-bearing. Laid out flat, an indent cell and its control are just two more widgets in the panel's flow, held together only by their widths happening to fill the line; the next pair then packs into whatever is left and its indent stops indenting anything. A fill-width group always takes a line of its own, so one group pins one row. For the same reason the controls inside need slack rather than an exact fit — a row summing to the full pane width sits on the wrap boundary, where a measuring pass can tip the control onto its own line and strand the indent above it. Put `hidden` on the group, never on the control inside it, or the indent cell stays behind as a blank line.
+
+`ns.OptionsSubLabel` colors the caption `HELP` silver against the parent's white, so the row reads as subordinate rather than merely shifted, and stays clear of the dimmer gray AceGUI paints a genuinely disabled label. MagicEraser sizes its Auto-Vend sub-options the same way; the two add-ons should stay in step.
 
 ## Adding a New Registered Event
 
@@ -350,7 +409,7 @@ Every user-facing string goes through `L["KEY"]`. `ns.L` is bound once at the to
 - **Using raw `C_Timer.After` for anything cancellable**: use `ns:After(identifier, seconds, callback)`. Scheduling the same identifier replaces the pending one and `ns:CancelTimer` kills it, so no call site needs a hand-rolled guard flag doubling as a self-cancel token.
 - **Adding an API guard outside Utilities' shim block**: every modern-versus-legacy decision belongs in one place. The single exception is Core's `GetAddOnMetadata`, which runs at file scope before Utilities loads.
 - **Letting the Custom Roll List bypass `autoGreed`**: the toggle is the master switch for every automated roll. The override check must stay behind the `autoGreed` gate — the options copy promises that off means off.
-- **Moving the quest-class skip ahead of the Custom Roll List**: the AQ and ZG war-effort tokens the default list ships for are all `classId` 12, so a skip that runs first makes the entire feature a no-op for them — correct ids, correct saved action, no roll, no error. Call the two halves separately (`ns:IsNeverAutomatedItem`, then the list, then `ns:IsQuestClassItem`) and keep `ns:ShouldSkipItemByType` for distribution, which has no override to weigh.
+- **Moving the quest-class skip ahead of the Custom Roll List**: the AQ and ZG war-effort tokens the default list ships for are all `classId` 12, so a skip that runs first makes the entire feature a no-op for them — correct ids, correct saved action, no roll, no error. Call the two halves separately (`ns:IsNeverAutomatedItem`, then the list, then `ns:IsQuestClassItem`) and keep `ns:ShouldSkipItemForMasterLoot` for distribution, whose only override is the panel toggle.
 - **Treating a nil `GetLootRollItemLink` as a dead roll**: it also reads nil while the client's item query is still in flight, which is the normal state of a token's first drop of the session. Return `false` from `EvaluateRoll` and let the retry timer poll; `CANCEL_LOOT_ROLL` is what tears a genuinely dead roll down.
 - **Sizing the roll retry cap as a give-up point**: it isn't one. The cap exists only to bound a cancel that never arrives, so it sits past the 60 s roll window. The old ten-attempt, five-second version dropped rolls whose item query simply took longer than that.
 - **Gating automated rolls on the loot method**: the roll module answers `START_LOOT_ROLL` and nothing else. Adding a `GetLootMethod` check would silently stop the rolls that *do* open during a master-loot session.

@@ -358,6 +358,7 @@ ns.EVENT_NAMES = {
 	"TRADE_TARGET_ITEM_CHANGED",
 	"UI_ERROR_MESSAGE",
 	"UI_INFO_MESSAGE",
+	"ZONE_CHANGED_NEW_AREA",
 }
 
 -- Membership set for the drift guard below, plus the events already warned about.

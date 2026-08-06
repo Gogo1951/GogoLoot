@@ -38,6 +38,13 @@ ns.DATABASE_DEFAULTS = {
 		autoRollThresholdRaid = 2,
 		autoMasterLoot = true,
 		autoMasterLootOutsideInstances = false,
+		--[[
+            Off by default, and deliberately not part of the always-skipped set
+            it opts out of: handing a quest item to somebody who isn't on the
+            quest wastes the drop, so this is only worth turning on when the
+            recipient is a character the same player controls.
+        ]]
+		autoMasterLootQuestItems = false,
 		masterLooterPopup = true,
 		customRollList = true,
 		--[[
@@ -60,6 +67,13 @@ ns.DATABASE_DEFAULTS = {
 	global = {
 		showWelcome = true,
 		speedyLoot = true,
+		--[[
+            Whether the Master Looter panel shows a row per quality tier or just
+            Send All Loot To. Presentation, not loot policy: it decides what the
+            panel draws and changes no destination, so it stays out of the
+            profile and survives a profile switch like every other view setting.
+        ]]
+		showDestinationTiers = false,
 		minimap = {},
 	},
 }

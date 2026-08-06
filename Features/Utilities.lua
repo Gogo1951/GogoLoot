@@ -444,17 +444,28 @@ function ns:IsQuestClassItem(itemInformation)
 end
 
 --[[
-    The full automatic skip: never-automated types plus quest-class items.
-    Master-loot distribution takes the whole set, having no per-item roll
-    instruction to honour; the roll path calls the two halves separately so the
-    Custom Roll List can sit between them.
+    The master-loot distribution skip: never-automated types always, plus
+    quest-class items unless the player opted into handing those out
+    (autoMasterLootQuestItems, for boosting a character they also control).
+
+    Distribution asks this one question because it has no per-item instruction
+    to weigh — unlike the roll path, which calls the two halves separately so
+    the Custom Roll List can sit between them.
 ]]
 ---@param itemInformation table
 ---@return boolean
-function ns:ShouldSkipItemByType(itemInformation)
+function ns:ShouldSkipItemForMasterLoot(itemInformation)
 	if not itemInformation then
 		return true
 	end
 
-	return ns:IsNeverAutomatedItem(itemInformation) or ns:IsQuestClassItem(itemInformation)
+	if ns:IsNeverAutomatedItem(itemInformation) then
+		return true
+	end
+
+	if ns.db.profile.autoMasterLootQuestItems then
+		return false
+	end
+
+	return ns:IsQuestClassItem(itemInformation)
 end

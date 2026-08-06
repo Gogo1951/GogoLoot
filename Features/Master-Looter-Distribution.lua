@@ -73,9 +73,9 @@ end
     On LOOT_OPENED in ML mode, walks the loot list and uses GiveMasterLoot
     to assign each at-or-above-threshold item to the player configured in
     ns.db.profile.destinations for its quality tier. Skipped items
-    (legendaries, quest items, recipes, mounts, pets, anything in the
-    ignore list, BoP outside trade-eligible instances) are left in the
-    standard loot frame for manual handling.
+    (legendaries, recipes, mounts, pets, quest items unless the player opted
+    into those, anything in the ignore list, BoP outside trade-eligible
+    instances) are left in the standard loot frame for manual handling.
 
     Initial pass + retry ticker: GetMasterLootCandidate can return nil for
     the first frame or two after LOOT_OPENED, and SafeGetItemInfo returns
@@ -460,8 +460,8 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 		return false
 	end
 
-	-- Hard skip: legendaries, quest items, recipes, mounts, pets
-	if ns:ShouldSkipItemByType(itemInfo) then
+	-- Hard skip: legendaries, recipes, mounts, pets — and quest items unless opted in
+	if ns:ShouldSkipItemForMasterLoot(itemInfo) then
 		return false
 	end
 

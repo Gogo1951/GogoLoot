@@ -117,8 +117,11 @@ L["ITEM_LIST_ADD_DESCRIPTION"] = "Enter Item ID or drag an item here to add it t
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "Loading... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] = "Quest items, recipes, books, mounts, pets, and legendaries are always skipped."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Recipes, books, mounts, pets, and legendaries are always skipped."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "Version"
@@ -153,29 +156,66 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "Your group's current loot method and loot threshold."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "Current Loot Settings"
 L["MASTER_LOOTER_LOOT_METHOD"] = "Loot Method"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "Loot Threshold"
-L["MASTER_LOOTER_SET_BY"] = "(Set by %s)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "Only the group leader can change the loot method and threshold."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "Automated Master Looting"
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "These settings are controlled by %s."
+
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] = "Distributes loot to your designated players while you're Master Looter."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "Enable Automated Master Looting in Instances"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Enable Automated Master Looting Outside of Instances"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "Enable Automated Master Looting"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "Also Outside Instances"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] = "Caution: world boss loot isn't tradable, so this isn't advised."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Include Quest Items"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"Hands quest items out as well, for boosting a character you're playing yourself. Only quest items that drop as a single item for the group can be handed out. Anything every player on the quest loots for themselves, like a boss's head, never passes through master loot."
+
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"Since most quest items are Common quality, this only works when your loot threshold is set to Common or lower. Even then, not every quest item is eligible for master looting."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"Caution: this is intended for players who like to dual box, and isn't recommended for use in raids."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Quick Settings"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] = "Opens a window to set up loot whenever you become Master Looter."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Enable Master Looter Pop-up"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "Loot Destinations"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Assign a group member to receive items of each quality tier."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "Choose who receives the loot GogoLoot hands out."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Self"
 L["MASTER_LOOTER_SEND_ALL"] = "Send All Loot To"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"Send every quality tier to one player. Set individual tiers below to override."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "Choose who receives %s items."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "Set Quality Tiers Individually"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"Show a row for each quality tier, so different tiers can go to different players."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "tiers differ"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "Ignore List"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] = "Listed items skip auto-distribution and are left for manual assignment."
@@ -228,10 +268,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "Current Output"
 L["TRADE_CHECKBOX_LABEL"] = "Announce"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"Posts master loot activity to group chat. Automated distributions use a quality threshold to avoid spam; manual distributions are always announced."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "Posts master loot activity to group chat."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Enable Loot Destination Messages"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "Enable Loot Destination Announcements"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] =
 	"Example: {rt4} GogoLoot // Aevala will be holding Epic items for the group."
 

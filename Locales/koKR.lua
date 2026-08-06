@@ -121,9 +121,12 @@ L["ITEM_LIST_ADD_DESCRIPTION"] =
 -- Placeholder shown in both item lists until the client caches an item's info
 L["ITEM_LOADING"] = "불러오는 중... (ID: %d)"
 
--- Appended to both the Automated Master Looting and the Automated Rolls description.
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"퀘스트 아이템, 도안, 책, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다."
+
+-- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
+L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "도안, 책, 탈것, 애완동물, 전설 아이템은 항상 건너뜁니다."
 
 -- Version prefix in the options panel
 L["VERSION_LABEL"] = "버전"
@@ -158,31 +161,66 @@ L["WAGO"] = "Wago"
 -- Options: Master Looter
 --------------------------------------------------------------------------------
 
-L["MASTER_LOOTER_CURRENT_LOOT_DESCRIPTION"] = "현재 파티의 전리품 방식과 품질 기준입니다."
+L["MASTER_LOOTER_CURRENT_LOOT_HEADER"] = "현재 전리품 설정"
 L["MASTER_LOOTER_LOOT_METHOD"] = "획득 방식"
 L["MASTER_LOOTER_LOOT_THRESHOLD"] = "획득 기준"
-L["MASTER_LOOTER_SET_BY"] = "(%s님이 설정)"
-L["MASTER_LOOTER_NOT_LEADER_WARNING"] = "파티장만 전리품 방식과 품질 기준을 변경할 수 있습니다."
+--[[
+    Shown above the two dropdowns whenever the player is in a group, naming
+    whoever controls them — including the player themselves. Argument: the group
+    leader. Hidden only while solo, where there is no leader to name.
+]]
+L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "이 설정은 %s님이 관리합니다."
 
-L["MASTER_LOOTER_AUTO_HEADER"] = "자동 전리품 담당자"
 L["MASTER_LOOTER_AUTO_DESCRIPTION"] =
 	"전리품 담당자일 때 지정한 플레이어에게 전리품을 분배합니다."
-L["MASTER_LOOTER_AUTO_ENABLE"] = "인스턴스에서 자동 전리품 담당자 활성화"
-L["MASTER_LOOTER_AUTO_OUTSIDE"] = "인스턴스 외부에서 자동 전리품 담당자 활성화"
+--[[
+    AUTO_ENABLE is the master switch for the whole feature, not the instance half
+    of a pair: with it off nothing distributes anywhere. AUTO_OUTSIDE and
+    AUTO_QUEST_ITEMS are its sub-options and read as fragments under it.
+]]
+L["MASTER_LOOTER_AUTO_ENABLE"] = "자동 전리품 담당자 활성화"
+L["MASTER_LOOTER_AUTO_OUTSIDE"] = "인스턴스 외부에서도"
 L["MASTER_LOOTER_AUTO_OUTSIDE_CAUTION"] =
 	"주의: 야외 우두머리 전리품은 거래할 수 없으므로 권장하지 않습니다!"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "퀘스트 아이템 포함"
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_DESCRIPTION"] =
+	"본인이 직접 조종하는 캐릭터를 육성할 때를 위해 퀘스트 아이템도 분배합니다. 파티에 하나만 떨어지는 퀘스트 아이템만 분배할 수 있습니다. 퀘스트 중인 모든 플레이어가 각자 획득하는 우두머리의 머리 같은 아이템은 전리품 담당자를 거치지 않습니다."
+--[[
+    Both are shown whether the toggle is on or off: they are what somebody reads
+    to decide whether to tick it at all. The NOTE covers what has to be true for
+    the option to do anything; the CAUTION covers who it is for, and leads with
+    the same word as the outside-instances one above it.
+]]
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_NOTE"] =
+	"대부분의 퀘스트 아이템은 일반 품질이므로, 획득 기준을 일반 이하로 설정해야만 작동합니다. 그마저도 모든 퀘스트 아이템을 분배할 수 있는 것은 아닙니다."
+L["MASTER_LOOTER_AUTO_QUEST_ITEMS_CAUTION"] =
+	"주의: 멀티박싱을 즐기는 플레이어를 위한 기능이며, 공격대에서는 권장하지 않습니다."
 
 L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // 빠른 설정"
 L["MASTER_LOOTER_POPUP_DESCRIPTION"] = "분배자가 될 때마다 전리품을 설정할 수 있는 창을 엽니다."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "분배자 창 활성화"
 
 L["MASTER_LOOTER_DESTINATION_HEADER"] = "전리품 대상"
-L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "각 품질 등급의 아이템을 받을 파티원을 할당하세요."
+L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] = "GogoLoot이 분배하는 전리품을 받을 대상을 선택하세요."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "자신"
 L["MASTER_LOOTER_SEND_ALL"] = "모든 전리품 받을 대상"
 L["MASTER_LOOTER_SEND_ALL_DESCRIPTION"] =
 	"모든 품질 등급을 한 명에게 보냅니다. 아래에서 등급별로 따로 지정할 수 있습니다."
 L["MASTER_LOOTER_DESTINATION_CHOOSE"] = "%s 아이템을 받을 사람을 선택하세요."
+
+L["MASTER_LOOTER_TIERS_INDIVIDUAL"] = "품질 등급을 개별 설정"
+L["MASTER_LOOTER_TIERS_INDIVIDUAL_DESCRIPTION"] =
+	"품질 등급마다 행을 표시하여 등급별로 다른 플레이어에게 보낼 수 있습니다."
+
+--[[
+    Appended to the toggle above only while the tier rows are collapsed, and only
+    for this one state. Send All Loot To reads blank both when nothing is set and
+    when the tiers disagree; it is honest about the first and silent about the
+    second, so with the rows collapsed a per-tier setup would be invisible
+    without this. A shared destination is already named in that dropdown and is
+    deliberately not repeated here.
+]]
+L["MASTER_LOOTER_TIERS_SUMMARY_MIXED"] = "등급별로 다름"
 
 L["MASTER_LOOTER_IGNORE_HEADER"] = "무시 목록"
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
@@ -239,10 +277,15 @@ L["TRADE_TOOLTIP_OUTPUT"] = "현재 출력"
 L["TRADE_CHECKBOX_LABEL"] = "알림"
 
 -- Master Looter Announcements
-L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] =
-	"전리품 담당자 활동을 파티 대화에 게시합니다. 자동 분배는 도배를 피하기 위해 품질 임계값을 사용하며, 수동 분배는 항상 알립니다."
+--[[
+    Deliberately short. The two clauses this used to carry are both said better
+    elsewhere on the panel: the quality threshold is a control the reader can
+    see, and ANNOUNCE_MANUAL_NOTE says the manual half in the one place it
+    answers a question the threshold has just raised.
+]]
+L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"] = "전리품 담당자 활동을 파티 대화에 게시합니다."
 
-L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "전리품 수령자 메시지 활성화"
+L["MASTER_LOOTER_ANNOUNCE_DESTINATION"] = "전리품 분배 대상 알림 활성화"
 L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] =
 	"예시: {rt4} GogoLoot // Aevala님이 모든 영웅 아이템을 받습니다."
 
