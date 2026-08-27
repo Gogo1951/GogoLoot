@@ -11,7 +11,21 @@ jobs:
     env:
       CF_API_KEY: ${{ secrets.CF_API_KEY }}
       WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
-      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+      # NEITHER GITHUB_OAUTH NOR GITHUB_API_TOKEN IS SET HERE, AND NEITHER MAY BE
+      # ADDED. release.sh accepts either one, and either is enough to do the damage.
+      #
+      # Given a token, the packager's upload_github() looks the release up by tag
+      # and PATCHes it with "name": the bare tag and "body": a changelog it builds
+      # from the commit messages since the previous tag. That silently replaces
+      # hand-written release notes with developer detail on every build. There is
+      # no flag to suppress only the body; -d would also skip CurseForge and Wago.
+      #
+      # With no token, upload_github() returns at its first guard and never reads,
+      # creates, or edits a release. Release notes written on GitHub are then the
+      # only thing that has ever been there. CurseForge and Wago uploads are
+      # unaffected: they authenticate with the two tokens above. The one trade is
+      # that the packager no longer attaches the zip or release.json to the
+      # GitHub release.
     steps:
       - name: Clone project
         uses: actions/checkout@v6
