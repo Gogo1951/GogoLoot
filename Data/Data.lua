@@ -662,6 +662,7 @@ ns.OPTIONS_REGISTRY = {
 	MasterLooterIgnoreList = ADDON_NAME .. "_MasterLooterIgnoreList",
 	AutomatedOpening = ADDON_NAME .. "_AutomatedOpening",
 	OpenableItems = ADDON_NAME .. "_OpenableItems",
+	Lockboxes = ADDON_NAME .. "_Lockboxes",
 	LootToasts = ADDON_NAME .. "_LootToasts",
 	LootToastFilters = ADDON_NAME .. "_LootToastFilters",
 	LootSounds = ADDON_NAME .. "_LootSounds",

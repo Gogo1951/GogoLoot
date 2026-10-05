@@ -3,28 +3,21 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The switch, then its two hold-offs as on/off choices indented under it,
-    leaving the panel while it is off (see Toggle Rows in Options-Utilities.lua).
-    Each keeps the saved string Features/Automated-Opening.lua reads:
-    autoOpenWhere is "ALWAYS" or "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or
-    "SOLO_ONLY".
+    The switch, then its two hold-offs as on/off choices indented under it
+    (see Toggle Rows in Options-Utilities.lua). Each keeps the saved string
+    Features/Automated-Opening.lua reads: autoOpenWhere is "ALWAYS" or
+    "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY".
 
-    Enable Ignore Notifications follows as a peer of the switch, neither
-    indented under it nor leaving with it, the way the pop-up switch sits on the
-    Master Looter panel: an item set to Ignore is also one Speedy Loot leaves in
-    the loot window, and that notice matters with opening off. It lives here
-    rather than on the Openables List, whose first checkbox would otherwise read
-    as the list's own switch. An example of the notice sits under it and stays
-    on show with it, the way the announcements' examples do.
+    Enable Ignore Notifications follows as a peer of the switch, not indented
+    under it. It lives here rather than on the Openables List, whose first
+    checkbox would otherwise read as the list's own switch. An example of the
+    notice sits under it and stays on show while the notice is off, the way the
+    announcements' examples do.
 
-    Lockboxes follows as a section under its own header: what a lockbox needs,
-    and when the player is told one is waiting. It stays on show with the
-    switch off, because the tooltips work whether or not anything opens on its
-    own. Both lockbox features carry a scope on their toggle's line rather than
-    only an on/off, since a non-Rogue can't pick a lock and has little use for
-    either; the scope leaves the line while its toggle is off
-    (ns.OptionsToggleRow). The scope rule both apply lives in
-    Features/Utilities.lua.
+    Everything below the switch leaves the panel while it is off, the Ignore
+    notice included (maintainer, 2026-10-05), even though Speedy Loot gives the
+    notice too. Lockboxes, which works with nothing opening, is a child panel
+    of its own (Options-Lockboxes.lua).
 ]]
 local _, ns = ...
 local L = ns.L
@@ -74,20 +67,6 @@ local function IgnoreNotificationExample()
 	return ns.OptionsPrintedExample(L["MESSAGE_ITEM_IGNORED"]:format(ns.OptionsExampleItem(EXAMPLE_CONTAINER_QUALITY)))
 end
 
-local function ScopeControl(desc, getScope, setScope)
-	return {
-		type = "select",
-		desc = desc,
-		values = {
-			ROGUES = L["LOCKBOXES_FOR_ROGUES"],
-			ALL = L["LOCKBOXES_FOR_ALL_CHARACTERS"],
-		},
-		sorting = { "ROGUES", "ALL" },
-		get = getScope,
-		set = setScope,
-	}
-end
-
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
@@ -97,6 +76,8 @@ function ns.BuildAutomatedOpeningOptions()
 	local autoOpen = ns.AutomatedOpeningSwitch()
 	autoOpen.width = "full"
 	autoOpen.order = 3
+	local ignoreExample = ns.OptionsExampleRow(8, IgnoreNotificationExample)
+	ignoreExample.hidden = AutomatedOpeningOff
 	return {
 		type = "group",
 		name = L["TAB_AUTOMATED_OPENING"],
@@ -128,13 +109,14 @@ function ns.BuildAutomatedOpeningOptions()
 					ns.ScheduleOpeningScan(true)
 				end,
 			}),
-			spacerBeforeIgnoreNotifications = ns.OptionsSpacer(6),
+			spacerBeforeIgnoreNotifications = ns.OptionsSpacer(6, AutomatedOpeningOff),
 			ignoreNotifications = {
 				type = "toggle",
 				name = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"],
 				desc = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"],
 				width = "full",
 				order = 7,
+				hidden = AutomatedOpeningOff,
 				get = function()
 					return ns.db.profile.openingIgnoreNotifications
 				end,
@@ -142,55 +124,7 @@ function ns.BuildAutomatedOpeningOptions()
 					ns.db.profile.openingIgnoreNotifications = value
 				end,
 			},
-			ignoreNotificationsExampleRow = ns.OptionsExampleRow(8, IgnoreNotificationExample),
-
-			-- Lockboxes
-			spacerBeforeLockboxes = ns.OptionsSpacer(10),
-			lockboxesHeader = ns.OptionsHeader(L["TAB_LOCKBOXES"], 11),
-			spacerAfterLockboxesHeader = ns.OptionsSpacer(12),
-			lockboxesDesc = ns.OptionsDesc(
-				L["LOCKBOXES_SECTION_DESCRIPTION"]:format(
-					LOCALIZED_CLASS_NAMES_MALE.ROGUE or "",
-					ns.GetLockpickingSkillName() or ""
-				),
-				13
-			),
-			spacerAfterLockboxesDesc = ns.OptionsSpacer(14),
-			tooltipsRow = ns.OptionsToggleRow(15, {
-				type = "toggle",
-				name = L["LOCKBOXES_TOOLTIPS_ENABLE"],
-				desc = L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"]:format(ns.GetLockpickingSkillName() or ""),
-				get = function()
-					return ns.db.profile.lockboxTooltips
-				end,
-				set = function(_, value)
-					ns.db.profile.lockboxTooltips = value
-				end,
-			}, {
-				control = ScopeControl(L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"], function()
-					return ns.db.profile.lockboxTooltipsScope
-				end, function(_, value)
-					ns.db.profile.lockboxTooltipsScope = value
-				end),
-			}),
-			spacerBeforeNotifications = ns.OptionsSpacer(16),
-			notificationsRow = ns.OptionsToggleRow(17, {
-				type = "toggle",
-				name = L["LOCKBOXES_NOTIFICATIONS_ENABLE"],
-				desc = L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"],
-				get = function()
-					return ns.db.profile.lockboxNotifications
-				end,
-				set = function(_, value)
-					ns.db.profile.lockboxNotifications = value
-				end,
-			}, {
-				control = ScopeControl(L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"], function()
-					return ns.db.profile.lockboxNotificationsScope
-				end, function(_, value)
-					ns.db.profile.lockboxNotificationsScope = value
-				end),
-			}),
+			ignoreNotificationsExampleRow = ignoreExample,
 		},
 	}
 end

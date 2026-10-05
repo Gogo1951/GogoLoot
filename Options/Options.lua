@@ -65,6 +65,12 @@ local FEATURE_PANELS = {
 		title = "TAB_OPENABLE_ITEMS",
 		parent = "AutomatedOpening",
 	},
+	{
+		key = "Lockboxes",
+		builder = "BuildLockboxOptions",
+		title = "TAB_LOCKBOXES",
+		parent = "AutomatedOpening",
+	},
 	{ key = "LootToasts", builder = "BuildLootToastOptions", title = "TAB_LOOT_TOASTS" },
 	{
 		key = "LootToastFilters",
