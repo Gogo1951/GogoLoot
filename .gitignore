@@ -1,9 +1,12 @@
-.DS_Store
+# Folders
 .claude/
-.release/
-*.zip
 .idea/
+.release/
 .vscode/
 
-# Packager-generated; pipeline deletes the dev copy anyway
+# File Types
+*.zip
+
+# Files
+.DS_Store
 CHANGELOG.md
