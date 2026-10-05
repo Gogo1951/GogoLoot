@@ -28,7 +28,7 @@ jobs:
       # GitHub release.
     steps:
       - name: Clone project
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
@@ -62,5 +62,11 @@ jobs:
             git tag -f "${TAG}"
             git push -f origin "refs/tags/${TAG}"
           fi
+      - name: Link the CurseForge and Wago changelog to the GitHub release
+        run: |
+          # With no manual changelog, the packager writes its commit log into the
+          # zip as CHANGELOG.md. This one sits under .github/, which never ships.
+          echo "[Release Notes]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME)" > .github/CHANGELOG.md
+          printf '\nmanual-changelog:\n  filename: .github/CHANGELOG.md\n  markup-type: markdown\n' >> .pkgmeta
       - name: Package and release
         uses: BigWigsMods/packager@v2
