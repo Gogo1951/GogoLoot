@@ -20,6 +20,8 @@ externals:
     url: https://github.com/tekkub/libdatabroker-1-1
   Includes/Libraries/LibDBIcon-1.0:
     url: https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0/
+  Includes/Libraries/LibSharedMedia-3.0:
+    url: https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0/
 
 ignore:
   - .DS_Store
@@ -28,6 +30,9 @@ ignore:
   - .github
   - .gitignore
   - .idea
+  - .luacheckrc
   - .pkgmeta
   - .vscode
   - LICENSE
+  - Tests
+  - Data/Wrath
