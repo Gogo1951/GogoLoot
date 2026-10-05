@@ -3,38 +3,57 @@
 --------------------------------------------------------------------------------
 
 --[[
-    This panel hosts BOTH trade announcements and master looter announcements
-    under a single "Announcements" tab, so all chat-output controls live in
-    one place. The AceConfig registry key is ns.OPTIONS_REGISTRY.Announcements
-    — a stable identifier referenced by NotifyChange calls across modules
-    (see Options.lua's Initialization & Registration).
+    One panel for everything GogoLoot tells other players: trade summaries and
+    master loot. What it shows and plays for the player alone lives on the Loot
+    Toasts and Loot Sounds panels. Enable Announcements is the panel's master switch,
+    and everything below it leaves the panel while it is off: Trade
+    Announcements, then Master Looter Announcements, each under its own header.
+    The saved key, lootNotifications, and the locale keys keep the panel's
+    earlier name, Loot Notifications.
 
     Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
+      lootNotifications
+        - the master switch: ns:Announce (Announcements.lua) sends nothing
+          while it is off
       announceTrade, announceTradeCondition, announceTradeOutput
-        - trade announcement settings (Announcements-Trade.lua)
+        - read by Announcements-Trade.lua; the checkbox on the trade window
+          writes announceTrade too, and repaints this panel when it does
       announceDestinations
         - gates MESSAGE_DESTINATION_SET / MESSAGE_DESTINATION_LEFT
       announceMasterLootAuto + announceMasterLootAutoThreshold
         - gates the announce inside Master-Looter-Distribution.lua's
           TryDistributeSlot (items handed out by the auto path)
+      announceMasterLootManual
+        - gates the announce for items handed out by hand (the GiveMasterLoot
+          hook in Master-Looter-Distribution.lua)
 
     The auto path is threshold-gated (default Blue+) so routine auto-loot
     doesn't spam chat. Manual hand-outs via the standard ML candidate dropdown
-    have no setting at all: they are deliberate, so every one is always
-    announced (see the GiveMasterLoot hook in Master-Looter-Distribution.lua).
+    are deliberate, so they take no threshold: every one is announced while
+    its own switch and the master switch are on.
 ]]
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
-local GetQualityColor = ns.GetQualityColor
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+
+local function LootNotificationsOff()
+	return not ns.db.profile.lootNotifications
+end
+
+local function TradeAnnouncementsOff()
+	return not ns.db.profile.announceTrade
+end
 
 --[[
     Shared with the master looter pop-up (Options-Master-Looter-Popup.lua), which
-    carries it second: the destination the player is about to pick in that window
-    is exactly what this decides whether to announce, so the answer belongs
-    beside the question rather than a panel away. Built once here so the two can
+    carries it third, after its own switch and Enable Automated Master Looting:
+    the destination the player is about to pick in that window is exactly what
+    this decides whether to announce, so the answer belongs beside the question
+    rather than a panel away. Built once here so the two can
     never drift, and it repaints both surfaces because they can be open at once.
+    It leaves both with the master switch, since nothing it decides can be
+    posted while that is off.
 ]]
 ---@param args table
 ---@param order number
@@ -43,8 +62,10 @@ function ns.AddDestinationMessagesRow(args, order)
 	args.announceDestinations = {
 		type = "toggle",
 		name = L["MASTER_LOOTER_ANNOUNCE_DESTINATION"],
+		desc = L["MASTER_LOOTER_ANNOUNCE_DESTINATION_DESCRIPTION"],
 		width = "full",
 		order = order,
+		hidden = LootNotificationsOff,
 		get = function()
 			return ns.db.profile.announceDestinations
 		end,
@@ -57,52 +78,58 @@ function ns.AddDestinationMessagesRow(args, order)
 	return order + 1
 end
 
---[[
-    Every control on this panel except the three toggles belongs to one of them:
-    a threshold that only applies while its toggle is on, an example of what that
-    toggle posts, a note qualifying what it covers. They are drawn as sub-options
-    (ns.OptionsSubRow) so the panel shows that ownership rather than listing nine
-    peers.
-
-    A dropdown goes with its toggle: it configures something that is not
-    happening, so it hides rather than greying out. The EXAMPLES stay whatever
-    the toggle says, because they are what somebody reads to decide whether to
-    turn it on — a feature that shows you nothing until you enable it cannot be
-    judged before you do.
-]]
-local function AutoAnnouncementsOff()
-	return not ns.db.profile.announceMasterLootAuto
-end
-
-local function TradeAnnouncementsOff()
-	return not ns.db.profile.announceTrade
-end
-
----@param entry table
----@return table # the same entry, hidden with the toggle it belongs to
-local function HideWhenAutoOff(entry)
-	entry.hidden = AutoAnnouncementsOff
-	return entry
-end
-
----@param entry table
----@return table # the same entry, hidden with the toggle it belongs to
-local function HideWhenTradeOff(entry)
-	entry.hidden = TradeAnnouncementsOff
-	return entry
-end
+--------------------------------------------------------------------------------
+-- Examples
+--------------------------------------------------------------------------------
 
 --[[
-    These dropdowns hold short fixed labels — a quality tier, "Always", "Whisper"
-    — rather than the player names the Master Looter dropdowns carry, so they
-    take less than the shared control width and stop well short of the panel's
-    right edge. Their left edges still line up with each other, because a row
-    pays for its indent out of its label and not out of its control.
+    What each announcement posts, drawn by ns.OptionsExampleRow (Message
+    Examples in Options-Utilities.lua) from the template and decoration the
+    real one uses, ns:BuildAnnounceMessage. The one exception is the Me Only
+    trade example, a printed line, which ns.OptionsPrintedExample lays out from
+    the _PRINT template. Each leaves with the master switch, like everything
+    else below it.
 ]]
-local ANNOUNCEMENT_DROPDOWN_WIDTH = 1.0
+local EXAMPLE_PLAYER = "Aero"
+-- The printed example names Aero in a class color, as Automated Rolls' winner summary example does.
+local EXAMPLE_PLAYER_CLASS = "WARRIOR"
+-- Two of one item for 5 gold: a trade that shows a count and money both.
+local EXAMPLE_TRADE_COUNT = 2
+local EXAMPLE_TRADE_COPPER = 50000
+local EXAMPLE_TRADE_QUALITY = 2
+
+-- Me Only prints the summary rather than sending it, so its example is the printed line, name first.
+local function TradeExample()
+	local gave = ns.FormatTradeSummary(
+		{ { link = ns.OptionsExampleItem(EXAMPLE_TRADE_QUALITY), count = EXAMPLE_TRADE_COUNT } },
+		nil,
+		0
+	)
+	local received = ns.FormatTradeSummary({}, nil, EXAMPLE_TRADE_COPPER)
+	if ns.db.profile.announceTradeOutput == "self" then
+		local partner = EXAMPLE_PLAYER
+		local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[EXAMPLE_PLAYER_CLASS]
+		if type(classColor) == "table" and type(classColor.colorStr) == "string" then
+			-- The silver after the name keeps the rest of the example line silver.
+			partner = "|c" .. classColor.colorStr .. EXAMPLE_PLAYER .. GetColor("HELP")
+		end
+		return ns.OptionsPrintedExample(L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"]:format(gave, partner, received))
+	end
+	return ns:BuildAnnounceMessage("MESSAGE_TRADE_GAVE_RECEIVED", gave, EXAMPLE_PLAYER, received)
+end
+
+local function DestinationExample()
+	return ns:BuildAnnounceMessage("MESSAGE_DESTINATION_SET", EXAMPLE_PLAYER, ns.QUALITY_DISPLAY_NAMES.epic)
+end
+
+-- The item takes the threshold's color, so the example answers the dropdown beside its toggle.
+local function AutomatedHandOutExample()
+	local item = ns.OptionsExampleItem(ns.db.profile.announceMasterLootAutoThreshold)
+	return ns:BuildAnnounceMessage("MESSAGE_GAVE", item, EXAMPLE_PLAYER)
+end
 
 --------------------------------------------------------------------------------
--- Announcement Threshold Dropdown
+-- Quality Dropdowns
 --------------------------------------------------------------------------------
 
 --[[
@@ -113,129 +140,94 @@ local ANNOUNCEMENT_DROPDOWN_WIDTH = 1.0
     intent stable across loot-threshold changes, instead of silently bumping
     their saved selection upward each time.
 
-    Poor (0) is intentionally excluded: ML doesn't distribute Poor items.
+    Poor (0) is left off, so a Poor hand-out, possible only where the loot
+    threshold reaches Poor (Classic Era and WoW Forever), is never announced.
 ]]
+local ANNOUNCE_THRESHOLD_VALUES, ANNOUNCE_THRESHOLD_SORTING = ns.OptionsQualityChoices(1, "+")
 
-local function BuildAnnouncementThresholdOptions()
-	local options = {}
-	for quality = 1, 4 do
-		local rarityKey = ns.rarityToConfigurationKey[quality]
-		local localizedName = ns.QUALITY_DISPLAY_NAMES[rarityKey] or ns:CapitalizeFirstLetter(rarityKey)
-		options[quality] = GetQualityColor(quality) .. localizedName .. "+|r"
-	end
-	return options
+--------------------------------------------------------------------------------
+-- Shared Switch
+--------------------------------------------------------------------------------
+
+--[[
+    Enable Announcements, drawn on this panel and again in the Features section
+    of the General panel. Built once here so the two can never drift; each
+    caller sets its own order and width.
+]]
+---@return table
+function ns.AnnouncementsSwitch()
+	return {
+		type = "toggle",
+		name = L["ANNOUNCEMENTS_ENABLE"],
+		desc = L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"],
+		get = function()
+			return ns.db.profile.lootNotifications
+		end,
+		set = function(_, value)
+			ns.db.profile.lootNotifications = value
+			-- The trade window's checkbox and the pop-up's destination toggle leave and return with it.
+			ns:SyncTradeCheckbox()
+			ns:RefreshMasterLooterPanels()
+		end,
+	}
 end
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
+--[[
+    Each toggle carries what belongs to it the way every GogoLoot panel does
+    (see Toggle Rows in Options-Utilities.lua): a single setting on the toggle's
+    own line, which leaves the line while the toggle is off, and a captioned
+    setting on an indented row below, which leaves the panel with it.
+]]
 ---@return table
 function ns.BuildAnnouncementOptions()
-	local thresholdOptions = BuildAnnouncementThresholdOptions()
-
+	local lootNotifications = ns.AnnouncementsSwitch()
+	lootNotifications.width = "full"
+	lootNotifications.order = 3
 	local args = {
-		----------------------------------------------------------------
-		-- Master Looter Announcements
-		----------------------------------------------------------------
+		description = ns.OptionsDesc(L["ANNOUNCEMENTS_DESCRIPTION"], 1),
+		spacerAfterDesc = ns.OptionsSpacer(2),
+		lootNotifications = lootNotifications,
+	}
 
-		--[[
-		    The panel title already reads "Announcements", so the first section
-		    opens straight on its description with no header of its own, matching
-		    the other panels.
-		]]
-		mlDesc = ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 13),
-		spacerAfterMLDesc = ns.OptionsSpacer(14),
+	--[[
+        Everything below the switch goes through Add, which gives it the next
+        order and hides it with the switch, on top of any condition of its own,
+        so nothing added later can be left standing on a switched-off panel.
+    ]]
+	local order = 3
+	local function Add(key, entry)
+		order = order + 1
+		entry.order = order
+		local ownHidden = entry.hidden
+		if ownHidden then
+			entry.hidden = function()
+				return LootNotificationsOff() or ownHidden()
+			end
+		else
+			entry.hidden = LootNotificationsOff
+		end
+		args[key] = entry
+	end
+	local function AddSpacer(key)
+		Add(key, ns.OptionsSpacer(0))
+	end
 
-		spacerAfterDestToggle = ns.OptionsSpacer(16),
-		destExample = ns.OptionsSubRow(17, nil, {
-			{
-				type = "description",
-				name = GetColor("HELP") .. L["MASTER_LOOTER_ANNOUNCE_DESTINATION_EXAMPLE"] .. "|r",
-				fontSize = "medium",
-				width = "relative",
-				relWidth = ns.OPTIONS_SUB_TEXT_REL_WIDTH,
-			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-
-		-- Auto distribution toggle + threshold
-		spacerBeforeAuto = ns.OptionsSpacer(18),
-		announceMasterLootAuto = {
-			type = "toggle",
-			name = L["MASTER_LOOTER_ANNOUNCE_AUTO"],
-			width = "full",
-			order = 19,
-			get = function()
-				return ns.db.profile.announceMasterLootAuto
-			end,
-			set = function(_, value)
-				ns.db.profile.announceMasterLootAuto = value
-			end,
-		},
-		spacerAfterAutoToggle = ns.OptionsSpacer(20),
-		autoThresholdRow = ns.OptionsSubRow(21, AutoAnnouncementsOff, {
-			ns.OptionsRowLabel(
-				ns.OptionsSubLabel(L["MASTER_LOOTER_ANNOUNCE_AUTO_THRESHOLD"]),
-				0,
-				ns.OptionsSubLabelWidth(ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH)
-			),
-			{
-				type = "select",
-				name = "",
-				style = "dropdown",
-				width = ANNOUNCEMENT_DROPDOWN_WIDTH,
-				values = thresholdOptions,
-				get = function()
-					return ns.db.profile.announceMasterLootAutoThreshold
-				end,
-				set = function(_, value)
-					ns.db.profile.announceMasterLootAutoThreshold = value
-				end,
-			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-		spacerBeforeAutoExample = HideWhenAutoOff(ns.OptionsSpacer(22)),
-		autoExample = ns.OptionsSubRow(23, nil, {
-			{
-				type = "description",
-				name = GetColor("HELP") .. L["MASTER_LOOTER_ANNOUNCE_AUTO_EXAMPLE"] .. "|r",
-				fontSize = "medium",
-				width = "relative",
-				relWidth = ns.OPTIONS_SUB_TEXT_REL_WIDTH,
-			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-
-		--[[
-		    Indented with the rest of the block even though manual hand-outs have
-		    no toggle of their own. It answers the question the threshold above it
-		    raises — "so blues and below go unannounced?" — so it is part of that
-		    block by subject, and the one flush line in an otherwise indented block
-		    reads as the section having ended early rather than as a deliberate
-		    exception.
-		]]
-		spacerBeforeManual = ns.OptionsSpacer(24),
-		manualNote = ns.OptionsSubRow(25, nil, {
-			{
-				type = "description",
-				name = GetColor("INFO") .. L["MASTER_LOOTER_ANNOUNCE_MANUAL_NOTE"] .. "|r",
-				fontSize = "medium",
-				width = "relative",
-				relWidth = ns.OPTIONS_SUB_TEXT_REL_WIDTH,
-			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-
-		----------------------------------------------------------------
-		-- Trade Announcements
-		----------------------------------------------------------------
-		spacerBeforeTrade = ns.OptionsSpacer(40),
-		tradeHeader = ns.OptionsHeader(L["TRADE_HEADER"], 41),
-		spacerAfterTradeHeader = ns.OptionsSpacer(42),
-		tradeDesc = ns.OptionsDesc(L["TRADE_DESCRIPTION"], 43),
-		spacerAfterTradeDesc = ns.OptionsSpacer(44),
-		announceTrade = {
+	-- Trade Announcements
+	AddSpacer("spacerBeforeTrade")
+	Add("tradeHeader", ns.OptionsHeader(L["TAB_TRADE_ANNOUNCEMENTS"], 0))
+	AddSpacer("spacerAfterTradeHeader")
+	Add("tradeDesc", ns.OptionsDesc(L["TRADE_DESCRIPTION"], 0))
+	AddSpacer("spacerAfterTradeDesc")
+	Add(
+		"tradeRow",
+		ns.OptionsToggleRow(0, {
 			type = "toggle",
 			name = L["TRADE_ENABLE"],
-			width = "full",
-			order = 45,
+			desc = L["TRADE_ENABLE_DESCRIPTION"],
 			get = function()
 				return ns.db.profile.announceTrade
 			end,
@@ -243,19 +235,11 @@ function ns.BuildAnnouncementOptions()
 				ns.db.profile.announceTrade = value
 				ns:SyncTradeCheckbox()
 			end,
-		},
-		spacerAfterTradeToggle = ns.OptionsSpacer(46),
-		tradeConditionRow = ns.OptionsSubRow(47, TradeAnnouncementsOff, {
-			ns.OptionsRowLabel(
-				ns.OptionsSubLabel(L["TRADE_CONDITION"]),
-				0,
-				ns.OptionsSubLabelWidth(ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH)
-			),
-			{
+		}, {
+			control = {
 				type = "select",
-				name = "",
+				desc = L["TRADE_CONDITION_DESCRIPTION"],
 				style = "dropdown",
-				width = ANNOUNCEMENT_DROPDOWN_WIDTH,
 				values = {
 					["always"] = L["TRADE_CONDITION_ALWAYS"],
 					["party_or_raid"] = L["TRADE_CONDITION_PARTY_OR_RAID"],
@@ -269,43 +253,90 @@ function ns.BuildAnnouncementOptions()
 					ns.db.profile.announceTradeCondition = value
 				end,
 			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-		spacerBetweenTradeDropdowns = HideWhenTradeOff(ns.OptionsSpacer(48)),
-		tradeOutputRow = ns.OptionsSubRow(49, TradeAnnouncementsOff, {
-			ns.OptionsRowLabel(
-				ns.OptionsSubLabel(L["TRADE_OUTPUT"]),
-				0,
-				ns.OptionsSubLabelWidth(ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH)
-			),
-			{
+		})
+	)
+	--[[
+	    Where summaries go, as a captioned dropdown under the toggle: whispered
+	    to the trade partner, posted to group chat, or printed to the player
+	    alone. It writes the saved announceTradeOutput string ("whisper" |
+	    "group" | "self") the trade module and the trade window's tooltip read.
+	]]
+	Add(
+		"tradeOutputRow",
+		ns.OptionsSubSelectRow(0, TradeAnnouncementsOff, L["TRADE_CHANNEL"], {
+			type = "select",
+			desc = L["TRADE_CHANNEL_TOOLTIP"]:format(WHISPER),
+			style = "dropdown",
+			values = ns.TRADE_OUTPUT_LABELS,
+			sorting = { "whisper", "group", "self" },
+			get = function()
+				return ns.db.profile.announceTradeOutput
+			end,
+			set = function(_, value)
+				ns.db.profile.announceTradeOutput = value
+			end,
+		})
+	)
+	Add("tradeExampleRow", ns.OptionsExampleRow(0, TradeExample))
+
+	-- Master Looter Announcements
+	AddSpacer("spacerBeforeMasterLooter")
+	Add("masterLooterHeader", ns.OptionsHeader(L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"], 0))
+	AddSpacer("spacerAfterMasterLooterHeader")
+	Add("masterLooterDesc", ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 0))
+	AddSpacer("spacerAfterMasterLooterDesc")
+	-- Shared with the pop-up, so its own builder adds it, and hides it with the master switch itself.
+	order = order + 1
+	ns.AddDestinationMessagesRow(args, order)
+	Add("destinationExampleRow", ns.OptionsExampleRow(0, DestinationExample))
+	AddSpacer("spacerBeforeAuto")
+	Add(
+		"autoAnnounceRow",
+		ns.OptionsToggleRow(0, {
+			type = "toggle",
+			name = L["MASTER_LOOTER_ANNOUNCE_AUTO"],
+			desc = L["MASTER_LOOTER_ANNOUNCE_AUTO_DESCRIPTION"],
+			get = function()
+				return ns.db.profile.announceMasterLootAuto
+			end,
+			set = function(_, value)
+				ns.db.profile.announceMasterLootAuto = value
+			end,
+		}, {
+			control = {
 				type = "select",
-				name = "",
+				desc = L["MASTER_LOOTER_ANNOUNCE_AUTO_THRESHOLD_DESCRIPTION"],
 				style = "dropdown",
-				width = ANNOUNCEMENT_DROPDOWN_WIDTH,
-				values = ns.TRADE_OUTPUT_LABELS,
-				sorting = { "whisper", "group" },
+				values = ANNOUNCE_THRESHOLD_VALUES,
+				sorting = ANNOUNCE_THRESHOLD_SORTING,
 				get = function()
-					return ns.db.profile.announceTradeOutput
+					return ns.db.profile.announceMasterLootAutoThreshold
 				end,
 				set = function(_, value)
-					ns.db.profile.announceTradeOutput = value
+					ns.db.profile.announceMasterLootAutoThreshold = value
 				end,
 			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-		spacerBeforeTradeExample = HideWhenTradeOff(ns.OptionsSpacer(50)),
-		tradeExample = ns.OptionsSubRow(51, nil, {
-			{
-				type = "description",
-				name = GetColor("HELP") .. L["TRADE_EXAMPLE"] .. "|r",
-				fontSize = "medium",
-				width = "relative",
-				relWidth = ns.OPTIONS_SUB_TEXT_REL_WIDTH,
-			},
-		}, ns.OPTIONS_SUB_CAPTION_INDENT_WIDTH),
-	}
-
-	-- Shared with the pop-up, so it is added rather than written inline.
-	ns.AddDestinationMessagesRow(args, 15)
+		})
+	)
+	Add("autoExampleRow", ns.OptionsExampleRow(0, AutomatedHandOutExample))
+	--[[
+	    Items handed out by hand post the same line as the automated ones, so
+	    the example above serves both, and they take no threshold: each one was
+	    a deliberate choice.
+	]]
+	AddSpacer("spacerBeforeManual")
+	Add("manualAnnounce", {
+		type = "toggle",
+		name = L["MASTER_LOOTER_ANNOUNCE_MANUAL"],
+		desc = L["MASTER_LOOTER_ANNOUNCE_MANUAL_TOOLTIP"]:format(MASTER_LOOTER),
+		width = "full",
+		get = function()
+			return ns.db.profile.announceMasterLootManual
+		end,
+		set = function(_, value)
+			ns.db.profile.announceMasterLootManual = value
+		end,
+	})
 
 	return {
 		type = "group",

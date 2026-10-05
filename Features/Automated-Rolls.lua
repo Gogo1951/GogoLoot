@@ -2,6 +2,7 @@
 -- GogoLoot Automated Rolls Module
 --------------------------------------------------------------------------------
 local _, ns = ...
+local L = ns.L
 
 --------------------------------------------------------------------------------
 -- Add-on-Initiated Roll Tracking
@@ -25,19 +26,41 @@ local rollsInitiatedByAddon = {}
     flag doubling as a self-cancel token.
 
     The attempt cap only backstops a cancel that never arrives, so it is sized
-    past the 60-second roll window rather than acting as the give-up point. It
-    used to be the give-up point — 10 attempts, five seconds — and that was a
-    live bug: a war-effort token's first drop of the night can keep its item
-    query in flight past any short cap while the roll still has most of its
-    minute left, and the give-up meant no roll, no error.
+    past the 60-second roll window and must never become the give-up point: a
+    war-effort token's first drop of the night can keep its item query in
+    flight past any short cap while the roll still has most of its minute left,
+    and giving up there means no roll and no error.
 ]]
 local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
 local ROLL_RETRY_INTERVAL = 0.5
 local ROLL_RETRY_MAX_ATTEMPTS = 150
 
-local function ExecuteTrackedRoll(rollIdentifier, rollAction)
+--[[
+    Print Item in Chat: the roll window closes the moment GogoLoot rolls, so
+    without this line the player never sees what came up or what was picked.
+    It names the roll actually made, so a Need that fell back to Greed reads
+    as Greed. The game's own word for each roll, as the dropdowns use.
+]]
+local ROLL_ACTION_WORDS = {
+	[ns.ROLL_ACTION_NEED] = NEED,
+	[ns.ROLL_ACTION_GREED] = GREED,
+}
+
+local function PrintRoll(rollAction, rollItemLink)
+	if not ns.db.profile.printRolledItems then
+		return
+	end
+	if rollAction == ns.ROLL_ACTION_PASS then
+		ns:PrintMessage(L["MESSAGE_ROLL_PASS_PRINT"]:format(rollItemLink))
+	else
+		ns:PrintMessage(L["MESSAGE_ROLL_PRINT"]:format(ROLL_ACTION_WORDS[rollAction], rollItemLink))
+	end
+end
+
+local function ExecuteTrackedRoll(rollIdentifier, rollAction, rollItemLink)
 	rollsInitiatedByAddon[rollIdentifier] = true
 	RollOnLoot(rollIdentifier, rollAction)
+	PrintRoll(rollAction, rollItemLink)
 end
 
 --[[
@@ -54,24 +77,24 @@ local function GetContextRollSettings()
 	return ns.db.profile.autoRollActionParty, ns.db.profile.autoRollThresholdParty
 end
 
-local function ExecuteRollOverride(rollIdentifier, rollOverride, rollGreedAllowed, rollNeedAllowed)
+local function ExecuteRollOverride(rollIdentifier, rollItemLink, rollOverride, rollGreedAllowed, rollNeedAllowed)
 	if rollOverride == ns.NEED then
 		if rollNeedAllowed then
-			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_NEED)
+			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_NEED, rollItemLink)
 		elseif rollGreedAllowed then
-			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_GREED)
+			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_GREED, rollItemLink)
 		end
 	elseif rollOverride == ns.GREED then
 		if rollGreedAllowed then
-			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_GREED)
+			ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_GREED, rollItemLink)
 		end
 	elseif rollOverride == ns.PASS then
-		ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_PASS)
+		ExecuteTrackedRoll(rollIdentifier, ns.ROLL_ACTION_PASS, rollItemLink)
 	end
 end
 
 --------------------------------------------------------------------------------
--- START_LOOT_ROLL
+-- Roll Evaluation
 --------------------------------------------------------------------------------
 
 --[[
@@ -87,21 +110,16 @@ end
     hard skips need the full item info, so the roll is never decided from
     GetLootRollItemInfo's quality/BoP arguments alone.
 ]]
----@param itemIdentifier number
----@return string|nil
-function ns:GetItemRollOverride(itemIdentifier)
-	if not itemIdentifier then
-		return nil
-	end
-	local override = ns.db.profile.ignoredItemsSolo[itemIdentifier]
-	if not override then
-		return nil
-	end
-	return override
-end
-
 local function EvaluateRoll(rollIdentifier)
 	if not ns.db then
+		return true
+	end
+
+	--[[
+        Master switch: when Automated Rolls is off, nothing rolls
+        automatically, Item Overrides included.
+    ]]
+	if not ns.db.profile.autoGreed then
 		return true
 	end
 
@@ -116,10 +134,10 @@ local function EvaluateRoll(rollIdentifier)
         nil here until its item query answers — Blizzard's own
         GroupLootFrame_OnShow reads nil item info in the same state and bails —
         which is the normal condition of a war-effort token's first drop of the
-        session. Treating it as "roll no longer live" is exactly what silently
-        dropped Custom Roll List tokens whose drop raced the item cache: no
-        retry was scheduled, no roll went out, no error. Dead rolls don't reach
-        this read, because CANCEL_LOOT_ROLL cancels the retry timer outright.
+        session. Treating it as "roll no longer live" silently drops Item
+        Overrides tokens whose drop races the item cache: no retry, no roll, no
+        error. Dead rolls don't reach this read, because CANCEL_LOOT_ROLL
+        cancels the retry timer outright.
     ]]
 	local rollItemLink = GetLootRollItemLink(rollIdentifier)
 	if not rollItemLink then
@@ -142,15 +160,7 @@ local function EvaluateRoll(rollIdentifier)
 	end
 
 	--[[
-        Master switch: when Automated Rolls is off, nothing rolls
-        automatically, Custom Roll List included.
-    ]]
-	if not ns.db.profile.autoGreed then
-		return true
-	end
-
-	--[[
-        Custom List: a per-item override is an explicit instruction, so it
+        Item Overrides: a per-item override is an explicit instruction, so it
         bypasses the threshold, the BoP guard, and the quest-class skip below.
         It runs ahead of that skip deliberately — the AQ and ZG tokens the
         default list exists to roll on are all quest-class (see
@@ -158,12 +168,12 @@ local function EvaluateRoll(rollIdentifier)
         feature a no-op for them.
     ]]
 	if ns.db.profile.customRollList then
-		local rollOverride = ns:GetItemRollOverride(parsedItemLink.itemIdentifier)
+		local rollOverride = ns.db.profile.ignoredItemsSolo[parsedItemLink.itemIdentifier]
 		if rollOverride then
 			if rollOverride == ns.MANUAL then
 				return true
 			end
-			ExecuteRollOverride(rollIdentifier, rollOverride, rollGreedAllowed, rollNeedAllowed)
+			ExecuteRollOverride(rollIdentifier, rollItemLink, rollOverride, rollGreedAllowed, rollNeedAllowed)
 			return true
 		end
 	end
@@ -184,7 +194,16 @@ local function EvaluateRoll(rollIdentifier)
 	end
 
 	if rollQuality <= contextRollThreshold then
-		ExecuteRollOverride(rollIdentifier, contextRollAction, rollGreedAllowed, rollNeedAllowed)
+		--[[
+            Character Rules: gear with a stat this character set to Manual is
+            left to the player. The last check before rolling, since its
+            tooltip read is the costliest and a rule can only leave a roll
+            alone; Item Overrides, which name one item, still come first.
+        ]]
+		if ns.CharacterRulesLeaveToPlayer(rollItemLink, parsedItemLink.itemIdentifier) then
+			return true
+		end
+		ExecuteRollOverride(rollIdentifier, rollItemLink, contextRollAction, rollGreedAllowed, rollNeedAllowed)
 	end
 
 	return true
@@ -197,8 +216,8 @@ end
     name is all it takes to tear the poll down when the roll ends; the attempt
     cap only bounds a cancel that never arrives. There is deliberately no
     "still live?" probe inside the tick — the one read that could answer it,
-    GetLootRollItemLink, is nil for unresolved items too, and bailing on it is
-    the bug the retry exists to fix.
+    GetLootRollItemLink, is nil for unresolved items too, and bailing on it
+    would drop exactly the rolls the retry exists for.
 ]]
 ---@param rollIdentifier number
 ---@return nil
@@ -220,27 +239,30 @@ local function ScheduleRollRetry(rollIdentifier)
 	ns:After(timerIdentifier, ROLL_RETRY_INTERVAL, Retry)
 end
 
-local function HandleStartLootRoll(rollIdentifier)
+local function OnStartLootRoll(rollIdentifier)
 	if not EvaluateRoll(rollIdentifier) then
 		ScheduleRollRetry(rollIdentifier)
 	end
 end
 
-ns:RegisterModuleEvent("START_LOOT_ROLL", HandleStartLootRoll)
+ns:RegisterModuleEvent("START_LOOT_ROLL", OnStartLootRoll)
 
 --------------------------------------------------------------------------------
 -- CONFIRM_LOOT_ROLL & CANCEL_LOOT_ROLL
 --------------------------------------------------------------------------------
 
-ns:RegisterModuleEvent("CONFIRM_LOOT_ROLL", function(rollIdentifier, rollAction)
+local function OnConfirmLootRoll(rollIdentifier, rollAction)
 	if not rollsInitiatedByAddon[rollIdentifier] then
 		return
 	end
 	rollsInitiatedByAddon[rollIdentifier] = nil
 	ConfirmLootRoll(rollIdentifier, rollAction)
-end)
+end
 
-ns:RegisterModuleEvent("CANCEL_LOOT_ROLL", function(rollIdentifier)
+local function OnCancelLootRoll(rollIdentifier)
 	rollsInitiatedByAddon[rollIdentifier] = nil
 	ns:CancelTimer(ROLL_RETRY_TIMER_PREFIX .. rollIdentifier)
-end)
+end
+
+ns:RegisterModuleEvent("CONFIRM_LOOT_ROLL", OnConfirmLootRoll)
+ns:RegisterModuleEvent("CANCEL_LOOT_ROLL", OnCancelLootRoll)

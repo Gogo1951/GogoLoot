@@ -4,10 +4,12 @@
 
 --[[
     Snapshots both sides of a trade and posts a summary when it completes —
-    whispered to the trade partner by default, or sent to group chat per
-    the announceTradeOutput setting. Also owns the trade window checkbox
-    that mirrors the Enable Trade Announcements toggle. All chat output
-    routes through ns:Announce (Announcements.lua).
+    whispered to the trade partner by default, sent to group chat, or printed
+    to the player's own chat alone (Me Only), per the announceTradeOutput
+    setting. Also owns the trade window checkbox that mirrors the Enable Trade
+    Announcements toggle. All sent output routes through ns:Announce
+    (Announcements.lua), which is where Enable Announcements silences it; the
+    Me Only print reads that switch itself.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -25,6 +27,7 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local tradeState = {
 	player = nil,
 	playerFullName = nil,
+	playerClass = nil,
 	ourItems = {},
 	theirItems = {},
 	ourEnchantDescription = nil,
@@ -36,6 +39,7 @@ local tradeState = {
 local function ResetTradeState()
 	tradeState.player = nil
 	tradeState.playerFullName = nil
+	tradeState.playerClass = nil
 	wipe(tradeState.ourItems)
 	wipe(tradeState.theirItems)
 	tradeState.ourEnchantDescription = nil
@@ -75,12 +79,12 @@ end
       GetTradeTargetItemInfo -> name, texture, quantity,  quality,
                                 isUsable (5),   ENCHANT (6)
 
-    Reading a fixed sixth return for both — which this did — worked for their
-    side and silently failed for ours: position 6 on our side is
-    canLoseTransmog, a boolean, so the string check rejected it and every
-    service performed on OUR item vanished from the summary. That is the
-    lockbox case (the box sits in our own enchant slot while the rogue applies
-    Pick Lock) and equally every enchant somebody else put on our gear.
+    Reading a fixed sixth return for both works for their side and silently
+    fails for ours: position 6 on our side is canLoseTransmog, a boolean, so
+    the string check rejects it and every service performed on OUR item
+    vanishes from the summary. That is the lockbox case (the box sits in our
+    own enchant slot while the rogue applies Pick Lock) and equally every
+    enchant somebody else puts on our gear.
 
     Each caller therefore passes the position for the function it is reading.
     Never share one index between the two.
@@ -113,18 +117,18 @@ local function FormatMoneyString(copperAmount)
 	if not copperAmount or copperAmount <= 0 then
 		return nil
 	end
-	local gold = math.floor(copperAmount / 10000)
-	local silver = math.floor((copperAmount % 10000) / 100)
-	local copper = copperAmount % 100
+	local gold = math.floor(copperAmount / ns.COPPER_PER_GOLD)
+	local silver = math.floor((copperAmount % ns.COPPER_PER_GOLD) / ns.COPPER_PER_SILVER)
+	local copper = copperAmount % ns.COPPER_PER_SILVER
 	local parts = {}
 	if gold > 0 then
-		table.insert(parts, gold .. "g")
+		table.insert(parts, gold .. GOLD_AMOUNT_SYMBOL)
 	end
 	if silver > 0 then
-		table.insert(parts, silver .. "s")
+		table.insert(parts, silver .. SILVER_AMOUNT_SYMBOL)
 	end
 	if copper > 0 then
-		table.insert(parts, copper .. "c")
+		table.insert(parts, copper .. COPPER_AMOUNT_SYMBOL)
 	end
 	return table.concat(parts, " ")
 end
@@ -177,6 +181,18 @@ local function BuildTradeSummaryParts(itemTable, enchantDescription, moneyAmount
 	end
 
 	return summaryParts
+end
+
+--[[
+    The same summary as one line, for a caller showing a trade rather than
+    sending one: the Announcements panel's example.
+]]
+---@param itemTable table # { link, count } by trade slot
+---@param enchantDescription string|nil
+---@param moneyAmount number # copper
+---@return string
+function ns.FormatTradeSummary(itemTable, enchantDescription, moneyAmount)
+	return table.concat(BuildTradeSummaryParts(itemTable, enchantDescription, moneyAmount), ", ")
 end
 
 --------------------------------------------------------------------------------
@@ -243,33 +259,33 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Sends one or more announcements for a summary parts list, packing as many
-    parts into each message as fit within ns.CHAT_MESSAGE_MAX_LENGTH. Splits
-    only at part boundaries — an item link broken mid-escape is rejected by
-    the client — and repeats the same format template so every message reads
-    as a complete announcement. A single part that exceeds the limit on its
-    own is sent anyway; it cannot be shortened without destroying the link.
+    Me Only: the summary printed to the player's own chat, sent to nobody. A
+    print has no 255-byte ceiling to split at, so each side's list goes out
+    whole, in the _PRINT templates, which end on their own punctuation as every
+    printed line does. It answers to Enable Announcements like every other
+    summary: ns:Announce reads that switch for the sent ones.
 ]]
-local function AnnounceSummaryParts(chatChannel, whisperTarget, formatKey, summaryParts, partnerDisplayName)
-	local startIndex = 1
-	while startIndex <= #summaryParts do
-		local endIndex = startIndex
-		while endIndex < #summaryParts do
-			local candidateSummary = table.concat(summaryParts, ", ", startIndex, endIndex + 1)
-			local candidateMessage = ns:BuildAnnounceMessage(formatKey, candidateSummary, partnerDisplayName)
-			if not candidateMessage or #candidateMessage > ns.CHAT_MESSAGE_MAX_LENGTH then
-				break
-			end
-			endIndex = endIndex + 1
-		end
-		ns:Announce(
-			chatChannel,
-			whisperTarget,
-			formatKey,
-			table.concat(summaryParts, ", ", startIndex, endIndex),
-			partnerDisplayName
-		)
-		startIndex = endIndex + 1
+local function PrintTradeSummary()
+	if not ns.db.profile.lootNotifications then
+		return
+	end
+	local ourParts = BuildTradeSummaryParts(tradeState.ourItems, tradeState.ourEnchantDescription, tradeState.ourMoney)
+	local theirParts =
+		BuildTradeSummaryParts(tradeState.theirItems, tradeState.theirEnchantDescription, tradeState.theirMoney)
+	local ourSummary, theirSummary = table.concat(ourParts, ", "), table.concat(theirParts, ", ")
+	-- Printed only, so the partner takes their class color; a sent summary keeps the plain name.
+	local theirName = tradeState.player
+	local classColor = tradeState.playerClass and RAID_CLASS_COLORS and RAID_CLASS_COLORS[tradeState.playerClass]
+	if type(classColor) == "table" and type(classColor.colorStr) == "string" then
+		theirName = "|c" .. classColor.colorStr .. theirName .. "|r"
+	end
+
+	if #ourParts > 0 and #theirParts > 0 then
+		ns:PrintMessage(L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"]:format(ourSummary, theirName, theirSummary))
+	elseif #ourParts > 0 then
+		ns:PrintMessage(L["MESSAGE_GAVE_PRINT"]:format(ourSummary, theirName))
+	elseif #theirParts > 0 then
+		ns:PrintMessage(L["MESSAGE_TRADE_RECEIVED_PRINT"]:format(theirSummary, theirName))
 	end
 end
 
@@ -295,6 +311,11 @@ local function AnnounceTradeComplete()
 		end
 	end
 
+	if output == "self" then
+		PrintTradeSummary()
+		return
+	end
+
 	-- Determine chat channel from output setting
 	local chatChannel, whisperTarget
 	if output == "whisper" then
@@ -314,6 +335,10 @@ local function AnnounceTradeComplete()
 
 	local theirName = tradeState.player
 
+	local function SummaryThenPartner(summary)
+		return summary, theirName
+	end
+
 	local ourParts = BuildTradeSummaryParts(tradeState.ourItems, tradeState.ourEnchantDescription, tradeState.ourMoney)
 	local theirParts =
 		BuildTradeSummaryParts(tradeState.theirItems, tradeState.theirEnchantDescription, tradeState.theirMoney)
@@ -328,8 +353,7 @@ local function AnnounceTradeComplete()
         the target marker and add-on name for the channel and sends. A
         two-sided summary that fits the chat limit goes out as a single
         message; one that does not is decomposed into the one-sided GAVE and
-        RECEIVED templates, each split at part boundaries by
-        AnnounceSummaryParts.
+        RECEIVED templates, each split at part boundaries by ns:AnnounceParts.
     ]]
 	if #ourParts > 0 and #theirParts > 0 then
 		local ourSummary = table.concat(ourParts, ", ")
@@ -339,13 +363,13 @@ local function AnnounceTradeComplete()
 		if combinedMessage and #combinedMessage <= ns.CHAT_MESSAGE_MAX_LENGTH then
 			ns:Announce(chatChannel, whisperTarget, "MESSAGE_TRADE_GAVE_RECEIVED", ourSummary, theirName, theirSummary)
 		else
-			AnnounceSummaryParts(chatChannel, whisperTarget, "MESSAGE_GAVE", ourParts, theirName)
-			AnnounceSummaryParts(chatChannel, whisperTarget, "MESSAGE_TRADE_RECEIVED", theirParts, theirName)
+			ns:AnnounceParts(chatChannel, whisperTarget, "MESSAGE_GAVE", ourParts, SummaryThenPartner)
+			ns:AnnounceParts(chatChannel, whisperTarget, "MESSAGE_TRADE_RECEIVED", theirParts, SummaryThenPartner)
 		end
 	elseif #ourParts > 0 then
-		AnnounceSummaryParts(chatChannel, whisperTarget, "MESSAGE_GAVE", ourParts, theirName)
+		ns:AnnounceParts(chatChannel, whisperTarget, "MESSAGE_GAVE", ourParts, SummaryThenPartner)
 	else
-		AnnounceSummaryParts(chatChannel, whisperTarget, "MESSAGE_TRADE_RECEIVED", theirParts, theirName)
+		ns:AnnounceParts(chatChannel, whisperTarget, "MESSAGE_TRADE_RECEIVED", theirParts, SummaryThenPartner)
 	end
 end
 
@@ -353,30 +377,44 @@ end
 -- Event Handling
 --------------------------------------------------------------------------------
 
-local function HandleTradeShow()
+local function BeginTrade()
 	ResetTradeState()
 	tradeState.player = ns:FormatPlayerName(ns:GetCleanUnitName("npc"))
+	tradeState.playerClass = select(2, UnitClass("npc"))
 
 	--[[
         Keep the realm suffix for the whisper target: a cross-realm partner
         (possible in battlegrounds) is only routable as "Name-Realm", while the
-        stripped tradeState.player is what the message templates display.
+        stripped tradeState.player is what the message templates display. WoW
+        Forever has no realms: the second half is a last name, and the whisper
+        goes to "First Last", the form its chat gives as a message's author.
     ]]
 	local partnerName, partnerRealm = UnitName("npc")
-	if partnerRealm and partnerRealm ~= "" then
+	if ns.FLAVOR == "Camelot" then
+		tradeState.playerFullName = ns:GetCleanUnitName("npc")
+	elseif partnerRealm and partnerRealm ~= "" then
 		tradeState.playerFullName = partnerName .. "-" .. partnerRealm
 	else
 		tradeState.playerFullName = partnerName
 	end
 end
 
-local function HandleTradeAcceptUpdate(playerAccepted, targetAccepted)
+--[[
+    The record is the window as it stood when a player accepted. Any change to
+    the window clears both acceptances, so the last accept before the trade
+    goes through always reads the final contents, money and enchant slot
+    included. The per-slot change events are deliberately not followed: as the
+    trade executes, WoW Forever empties our side of the window
+    (TRADE_PLAYER_ITEM_CHANGED) just before "Trade complete.", and reading that
+    would drop everything we gave from the summary.
+]]
+local function OnTradeAcceptUpdate(playerAccepted, targetAccepted)
 	if playerAccepted == 1 or targetAccepted == 1 then
 		SnapshotTradeItems()
 	end
 end
 
-local function HandleTradeRequestCancel()
+local function OnTradeRequestCancel()
 	ResetTradeState()
 end
 
@@ -430,7 +468,7 @@ local function GetTradeResult(messageId, informationMessage)
 	return nil
 end
 
-local function HandleUserInterfaceInfoMessage(messageId, informationMessage)
+local function OnUiInfoMessage(messageId, informationMessage)
 	local tradeResult = GetTradeResult(messageId, informationMessage)
 	if tradeResult == "cancelled" then
 		ResetTradeState()
@@ -440,40 +478,9 @@ local function HandleUserInterfaceInfoMessage(messageId, informationMessage)
 	end
 end
 
-local function HandleTradePlayerItemChanged(slotIndex)
-	if slotIndex and slotIndex >= 1 and slotIndex <= ns.TRADE_ITEM_SLOT_COUNT then
-		local itemLink = GetTradePlayerItemLink(slotIndex)
-		if itemLink then
-			tradeState.ourItems[slotIndex] = {
-				link = itemLink,
-				count = GetOurTradeSlotCount(slotIndex),
-			}
-		else
-			tradeState.ourItems[slotIndex] = nil
-		end
-	end
-end
-
-local function HandleTradeTargetItemChanged(slotIndex)
-	if slotIndex and slotIndex >= 1 and slotIndex <= ns.TRADE_ITEM_SLOT_COUNT then
-		local itemLink = GetTradeTargetItemLink(slotIndex)
-		if itemLink then
-			tradeState.theirItems[slotIndex] = {
-				link = itemLink,
-				count = GetTheirTradeSlotCount(slotIndex),
-			}
-		else
-			tradeState.theirItems[slotIndex] = nil
-		end
-	end
-end
-
-ns:RegisterModuleEvent("TRADE_SHOW", HandleTradeShow)
-ns:RegisterModuleEvent("TRADE_ACCEPT_UPDATE", HandleTradeAcceptUpdate)
-ns:RegisterModuleEvent("TRADE_REQUEST_CANCEL", HandleTradeRequestCancel)
-ns:RegisterModuleEvent("TRADE_PLAYER_ITEM_CHANGED", HandleTradePlayerItemChanged)
-ns:RegisterModuleEvent("TRADE_TARGET_ITEM_CHANGED", HandleTradeTargetItemChanged)
-ns:RegisterModuleEvent("UI_INFO_MESSAGE", HandleUserInterfaceInfoMessage)
+ns:RegisterModuleEvent("TRADE_ACCEPT_UPDATE", OnTradeAcceptUpdate)
+ns:RegisterModuleEvent("TRADE_REQUEST_CANCEL", OnTradeRequestCancel)
+ns:RegisterModuleEvent("UI_INFO_MESSAGE", OnUiInfoMessage)
 
 --------------------------------------------------------------------------------
 -- Trade Window Checkbox
@@ -505,15 +512,15 @@ local function CreateTradeAnnounceCheckbox()
 	end)
 
 	checkbox:SetScript("OnEnter", function(self)
-		local currentOutput = ns.TRADE_OUTPUT_LABELS[ns.db.profile.announceTradeOutput] or L["TRADE_OUTPUT_WHISPER"]
+		local currentOutput = ns.TRADE_OUTPUT_LABELS[ns.db.profile.announceTradeOutput] or WHISPER
 
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		ns:AddTooltipLine(GameTooltip, L["ADDON_TITLE"], "TITLE")
 		GameTooltip:AddLine(" ")
-		ns:AddTooltipLine(GameTooltip, L["TRADE_HEADER"], "TITLE")
+		ns:AddTooltipLine(GameTooltip, L["TAB_TRADE_ANNOUNCEMENTS"], "TITLE")
 		ns:AddTooltipLine(GameTooltip, L["TRADE_TOOLTIP_DESCRIPTION"], "BODY", true)
 		GameTooltip:AddLine(" ")
-		ns:AddTooltipDoubleLine(GameTooltip, L["TRADE_TOOLTIP_OUTPUT"], currentOutput, "BODY", "TEXT")
+		ns:AddTooltipDoubleLine(GameTooltip, L["TRADE_CHANNEL"], currentOutput, "BODY", "TEXT")
 		GameTooltip:Show()
 	end)
 
@@ -524,14 +531,28 @@ local function CreateTradeAnnounceCheckbox()
 	tradeAnnounceCheckbox = checkbox
 end
 
+--[[
+    The checkbox leaves the trade window while Enable Announcements is off:
+    the master switch silences trades too, so a ticked box there would promise a
+    summary that never goes out.
+]]
 ---@return nil
 function ns:SyncTradeCheckbox()
-	if tradeAnnounceCheckbox then
-		tradeAnnounceCheckbox:SetChecked(ns.db.profile.announceTrade)
+	if not tradeAnnounceCheckbox then
+		return
 	end
+	if ns.db.profile.lootNotifications then
+		tradeAnnounceCheckbox:Show()
+	else
+		tradeAnnounceCheckbox:Hide()
+	end
+	tradeAnnounceCheckbox:SetChecked(ns.db.profile.announceTrade)
 end
 
-ns:RegisterModuleEvent("TRADE_SHOW", function()
+local function OnTradeShow()
+	BeginTrade()
 	CreateTradeAnnounceCheckbox()
 	ns:SyncTradeCheckbox()
-end)
+end
+
+ns:RegisterModuleEvent("TRADE_SHOW", OnTradeShow)

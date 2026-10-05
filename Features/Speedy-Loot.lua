@@ -3,68 +3,55 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Watches LOOT_READY and rapidly loots every available slot, bypassing the
-    loot window for faster pickup.
+    Watches LOOT_READY and loots every slot at once, keeping the loot window
+    hidden so pickup is near instant.
 
     Gated by ns.db.global.speedyLoot, and stands down for the whole master-loot
-    session whenever ns:AreWeMasterLooter() is true — LootSlot calls in an ML
-    session race the distribution path and pop the candidate dropdown for items
-    the engine would have placed automatically.
+    session whenever ns:AreWeMasterLooter() is true: LootSlot calls in a
+    master-loot session race the distribution path and pop the candidate
+    dropdown for items the engine would have placed automatically.
+
+    The window stays up whenever something is left in it: an item set to Ignore
+    on the Openables List, which is left for the player to take by hand, loot
+    the bags had no room for, or a Bind on Pickup item waiting on the client's
+    bind question. Auto Loot, which this depends on, is enforced by
+    Features/Auto-Loot.lua.
 ]]
 local _, ns = ...
 
 local LOOT_THROTTLE_SECONDS = 0.3
-local lastLootAttemptTime = 0
-
---------------------------------------------------------------------------------
--- Free Bag Slots
---------------------------------------------------------------------------------
+local lastLootAttemptTime = nil
 
 --[[
-    ns.GetContainerNumFreeSlots (Utilities' shim) returns freeSlots, bagFamily.
+    True only when the most recent pass took everything with bag space to spare,
+    so nothing was left in the window and nothing it asked for can still bounce
+    off full bags. The LootFrame OnShow hook at the bottom of this file re-hides
+    the window the instant the default UI shows it on LOOT_OPENED. That re-show
+    is what makes the window flash for half a second: a plain LootFrame:Hide()
+    on LOOT_READY is a no-op because the frame isn't shown yet, and nothing
+    re-hides it after. Hooking OnShow rather than handling LOOT_OPENED makes the
+    suppression independent of handler order: it hides after whatever showed the
+    frame.
 
-    Only general-purpose bags (bagFamily 0, or nil from the backpack/legacy API)
-    count toward the budget: specialty bags — soul bags, quivers, ammo pouches,
-    profession bags — can't hold normal loot, so their free slots are useless to
-    us. This is deliberately conservative: loot that could stack into a matching
-    specialty bag may be left in the loot window instead, where it stays
-    reachable, rather than risk a budget that overcounts usable space.
+    Cleared on LOOT_CLOSED, so a throttled LOOT_READY can't carry one corpse's
+    "fully looted" verdict onto the next corpse's window.
 ]]
-
-local function CountFreeBagSlots()
-	local totalFree = 0
-	for bagIndex = 0, NUM_BAG_SLOTS do
-		local freeInBag, bagFamily = ns.GetContainerNumFreeSlots(bagIndex)
-		if freeInBag and (bagFamily == 0 or bagFamily == nil) then
-			totalFree = totalFree + freeInBag
-		end
-	end
-	return totalFree
-end
+local suppressLootWindow = false
 
 --------------------------------------------------------------------------------
 -- Loot Slot Type
 --------------------------------------------------------------------------------
 
---[[
-    Money (and currency) slots take no bag space, so only item slots count
-    against the free-slot budget. When GetLootSlotType is unavailable, treat
-    every slot as an item — that degrades to the conservative budget-for-
-    everything behavior instead of risking overfilled bags.
-]]
-
+-- Money and currency slots take no bag space, so only item slots count against the free slots.
 local function IsItemLootSlot(slotIndex)
-	if type(GetLootSlotType) ~= "function" then
-		return true
-	end
-	return GetLootSlotType(slotIndex) == (LOOT_SLOT_ITEM or 1)
+	return GetLootSlotType(slotIndex) == ns.LOOT_SLOT_TYPE_ITEM
 end
 
 --------------------------------------------------------------------------------
--- LOOT_READY Handler
+-- Speedy Loot
 --------------------------------------------------------------------------------
 
-local function HandleLootReady()
+local function RunSpeedyLoot()
 	if not ns.db or not ns.db.global.speedyLoot then
 		return
 	end
@@ -72,34 +59,32 @@ local function HandleLootReady()
 	--[[
         Stand down for the whole loot session whenever we are the master looter,
         not only when GogoLoot will auto-distribute. Master loot is a managed
-        flow: at-or-above-threshold items are assigned through the ML window
-        (automatically by Master-Looter.lua, or by hand) and sub-threshold items
-        are handed out by the group method. LootSlot here would vacuum that loot
-        into the master looter's own bags before it can be assigned, and LootSlot
-        on a threshold item pops MasterLooterFrame_Show, which errors on some
-        clients (the nil colorInfo loot-frame crash). AreWeMasterLooter() is the
-        superset of WillAutoMasterLoot(), so this still covers the auto-distribute
-        case it replaces — including outside instances, where auto-distribution is
-        off by default but we must still not auto-loot a master-loot session.
+        flow: at-or-above-threshold items are assigned through the master looter
+        window (automatically by Master-Looter.lua, or by hand) and sub-threshold
+        items are handed out by the group method. LootSlot here would vacuum that
+        loot into the master looter's own bags before it can be assigned, and
+        LootSlot on a threshold item pops MasterLooterFrame_Show, which errors on
+        some clients (the nil colorInfo loot-frame crash). AreWeMasterLooter() is
+        the superset of WillAutoMasterLoot(), so this also covers loot outside
+        instances, where auto-distribution is off by default.
     ]]
-	if ns.AreWeMasterLooter and ns:AreWeMasterLooter() then
+	if ns:AreWeMasterLooter() then
 		return
 	end
 
 	--[[
-        Respect the user's Auto Loot CVar plus the modifier-key inversion, so
+        Respect the user's Auto Loot setting plus the modifier-key inversion, so
         holding the auto-loot modifier still flips behavior as expected.
     ]]
 	local autoLootEnabled = ns:IsAutoLootCVarEnabled()
 	local modifierKeyHeld = IsModifiedClick("AUTOLOOTTOGGLE")
-	local shouldAutoLoot = (autoLootEnabled ~= modifierKeyHeld)
-	if not shouldAutoLoot then
+	if autoLootEnabled == modifierKeyHeld then
 		return
 	end
 
-	-- Throttle to avoid double-firing on closely-spaced LOOT_READY events.
+	-- Throttle to avoid double-firing on closely spaced LOOT_READY events.
 	local currentTime = GetTime()
-	if (currentTime - lastLootAttemptTime) < LOOT_THROTTLE_SECONDS then
+	if lastLootAttemptTime and (currentTime - lastLootAttemptTime) < LOOT_THROTTLE_SECONDS then
 		return
 	end
 
@@ -108,11 +93,11 @@ local function HandleLootReady()
 		return
 	end
 
-	local availableBagSlots = CountFreeBagSlots()
+	local availableBagSlots = ns.CountFreeBagSlots()
 
 	--[[
         With no bag space and item slots present, loot nothing and leave the
-        standard loot window visible — hiding it would strand the loot.
+        standard loot window visible: hiding it would strand the loot.
     ]]
 	if availableBagSlots <= 0 then
 		for slotIndex = 1, lootSlotCount do
@@ -122,30 +107,106 @@ local function HandleLootReady()
 		end
 	end
 
-	if LootFrame then
-		LootFrame:Hide()
+	--[[
+        Set whenever the window has to stay up: an item set to Ignore, one
+        skipped because the bags filled partway through, or a Bind on Pickup
+        item, whose bind question the client only asks while the loot session is
+        open, so hiding the window would cancel it and leave the item behind. It
+        drives both re-showing the window and the suppression flag below: the
+        window is only suppressed when this pass took everything.
+    ]]
+	local leftBehind = false
+	local tookItem = false
+
+	--[[
+        From the bottom of the list upward, mirroring the game's own auto loot
+        and avoiding index shifts as slots empty. The free-slot count is read once
+        and decremented per item, one slot per item even when it would stack onto
+        one already carried: conservative, and anything left behind stays
+        reachable in the window.
+    ]]
+	for slotIndex = lootSlotCount, 1, -1 do
+		-- A locked slot is still being rolled for, or isn't the player's to take yet; its roll window handles it.
+		local locked = select(6, GetLootSlotInfo(slotIndex))
+		if not locked then
+			if not IsItemLootSlot(slotIndex) then
+				LootSlot(slotIndex)
+			elseif availableBagSlots > 0 then
+				local itemLink = GetLootSlotLink(slotIndex)
+				local itemIdentifier = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+				if itemIdentifier and ns:IsOpeningIgnored(itemIdentifier) then
+					if ns.db.profile.openingIgnoreNotifications then
+						ns:AnnounceItemOnce("MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW", itemIdentifier, itemLink)
+					end
+					leftBehind = true
+				else
+					LootSlot(slotIndex)
+					availableBagSlots = availableBagSlots - 1
+					tookItem = true
+					if itemLink and select(14, C_Item.GetItemInfo(itemLink)) == ns.BIND_ON_PICKUP then
+						leftBehind = true
+					end
+				end
+			else
+				leftBehind = true
+			end
+		end
 	end
 
 	--[[
-        Iterate from the bottom of the loot list upward to mirror default
-        WoW auto-loot behavior and avoid index shifts as slots empty.
-        Money and currency slots are always looted — they take no bag space.
-        The free-slot budget is cached once and decremented per item; items
-        can stack into existing slots so this is conservative. We may skip a
-        slot or two early on a stackable run, but anything left in the loot
-        window is still recoverable normally and this avoids an O(N*bags)
-        scan inside the loop.
+        Hiding the window closes the loot (the default UI calls CloseLoot from
+        its OnHide), and the hide lands before the server has answered a single
+        LootSlot. The free-slot count is only a guess until then: items from the
+        previous corpse can still be arriving. So once this pass leaves fewer
+        than ns.MIN_FREE_SLOTS free, the line Automated Opening pauses at, the
+        window stays up. It closes itself when the last item is taken, and a
+        pickup that bounces off full bags stays in it instead of on a corpse the
+        player can no longer see.
     ]]
-	for slotIndex = lootSlotCount, 1, -1 do
-		if not IsItemLootSlot(slotIndex) then
-			LootSlot(slotIndex)
-		elseif availableBagSlots > 0 then
-			LootSlot(slotIndex)
-			availableBagSlots = availableBagSlots - 1
-		end
+	local bagsTight = tookItem and availableBagSlots < ns.MIN_FREE_SLOTS
+
+	suppressLootWindow = not leftBehind and not bagsTight
+
+	-- Belt and braces with the default UI's own show: stranded loot must be seen.
+	if leftBehind and LootFrame then
+		LootFrame:Show()
 	end
 
 	lastLootAttemptTime = currentTime
 end
 
-ns:RegisterModuleEvent("LOOT_READY", HandleLootReady)
+--[[
+    The one LOOT_READY handler, and its order is load-bearing. The world-loot
+    stamp and the Pick Pocket sound (Features/Loot-Sounds.lua) read the loot
+    slots, which the Speedy Loot pass empties, so both run first.
+]]
+local function OnLootReady()
+	ns.StampWorldLoot()
+	ns.PlayPickPocketSound()
+	RunSpeedyLoot()
+end
+
+local function OnLootClosed()
+	suppressLootWindow = false
+end
+
+ns:RegisterModuleEvent("LOOT_READY", OnLootReady)
+ns:RegisterModuleEvent("LOOT_CLOSED", OnLootClosed)
+
+--------------------------------------------------------------------------------
+-- Loot Window OnShow Hook
+--------------------------------------------------------------------------------
+
+--[[
+    Re-hide the loot window the instant the default UI shows it, but only when
+    the last pass took everything. This is what actually kills the flash; see
+    suppressLootWindow above. Hooked once at load: LootFrame exists by then,
+    since the default UI loads before add-ons.
+]]
+if LootFrame then
+	LootFrame:HookScript("OnShow", function(self)
+		if suppressLootWindow then
+			self:Hide()
+		end
+	end)
+end

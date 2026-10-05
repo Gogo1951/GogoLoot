@@ -3,14 +3,14 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Shared infrastructure consumed by every Options panel: the AceConfig
-    widget helper constructors, item-cache warming for the item lists,
-    item-input parsing and item-name sorting, the shared item list builder,
-    the item display helper, and the GogoLoot_ItemLink AceGUI widget.
+    The building blocks every Options panel uses: the AceConfig widget helper
+    constructors, toggle rows, the feature-off note, quality choices and
+    message examples. The item lists are built in
+    Options-Utilities-Item-Lists.lua, over Options-Utilities-Item-Cache.lua and
+    Options-Utilities-Item-List-Filter.lua.
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 local GetColor = ns.GetColor
 
@@ -50,13 +50,39 @@ function ns.OptionsDesc(text, order)
 end
 
 ---@param order number
+---@param hidden? boolean|function
 ---@return table
-function ns.OptionsSpacer(order)
+function ns.OptionsSpacer(order, hidden)
 	return {
 		type = "description",
 		name = " ",
 		order = order,
+		hidden = hidden,
 	}
+end
+
+--[[
+    A child panel's line saying the feature it belongs to is off, so a page of
+    settings nothing is using doesn't read as live. Its trailing spacer comes
+    with it, and both leave while the feature is on. The whole line takes the
+    Off red, which keeps each sentence one string in every locale. Returns the
+    next free order.
+]]
+---@param args table
+---@param order number
+---@param text string
+---@param featureOn function # true while the parent feature's switch is on
+---@return number
+function ns.AddFeatureOffNote(args, order, text, featureOn)
+	args.featureOffNote = {
+		type = "description",
+		name = GetColor("OFF") .. text .. "|r",
+		fontSize = "medium",
+		order = order,
+		hidden = featureOn,
+	}
+	args.spacerAfterFeatureOffNote = ns.OptionsSpacer(order + 1, featureOn)
+	return order + 2
 end
 
 --[[
@@ -89,6 +115,58 @@ function ns.OptionsRowLabel(text, order, width)
 end
 
 --[[
+    One row of cells, left to right, wrapped in an inline group with no name,
+    which AceConfig renders as a bare SimpleGroup — no border, no title, no
+    padding — at "fill" width. That wrapper is load-bearing, not decoration.
+    Laid out flat, a row's cells are just more widgets in the panel's flow, kept
+    together only by their widths happening to fill the line, and the row after
+    them packs onto whatever space is left. A fill widget always gets a line to
+    itself, so one group pins one row no matter what the pane is doing.
+
+    Inside the group the cells total at most ns.OPTIONS_ROW_WIDTH and none is
+    "full": a wider row tips its last cell onto a line of its own.
+
+    Hiding belongs on the group, never on the cells inside it, or the cells left
+    behind hold the line open.
+]]
+---@param order number
+---@param hidden? boolean|function
+---@param controls table[] # laid out left to right
+---@return table
+function ns.OptionsRow(order, hidden, controls)
+	local args = {}
+	for index, control in ipairs(controls) do
+		control.order = index
+		args["control" .. index] = control
+	end
+	return {
+		type = "group",
+		name = "",
+		inline = true,
+		order = order,
+		hidden = hidden,
+		args = args,
+	}
+end
+
+--[[
+    A caption and its dropdown (or slider) on one line, for a setting that sits
+    at the panel's own level rather than under a toggle: the caption takes the
+    label column and the control the shared control column, so it lines up with
+    every other dropdown on every panel.
+]]
+---@param order number
+---@param hidden? boolean|function
+---@param caption string
+---@param control table # a select or range; its name and width are set here
+---@return table
+function ns.OptionsSelectRow(order, hidden, caption, control)
+	control.name = ""
+	control.width = ns.OPTIONS_CONTROL_WIDTH
+	return ns.OptionsRow(order, hidden, { ns.OptionsRowLabel(caption, 0), control })
+end
+
+--[[
     A sub-option is a control that only means anything while the toggle above it
     is on, and it is marked two ways at once.
 
@@ -103,51 +181,25 @@ end
     paints a genuinely disabled label, so a sub-option that greys out with its
     parent still reads as disabled rather than as ordinary sub-option text.
 
-    The whole row is wrapped in an inline group with no name, which AceConfig
-    renders as a bare SimpleGroup — no border, no title, no padding — at "fill"
-    width. That wrapper is load-bearing, not decoration. Laid out flat, the
-    indent and its control are just two more widgets in the panel's flow, kept
-    together only by their widths happening to fill the line; the pair after them
-    then packs onto whatever space is left and its indent stops indenting
-    anything. A fill widget always gets a line to itself, so one group per
-    sub-option pins one row per sub-option no matter what the pane is doing.
-
-    Inside the group the controls need slack rather than an exact fit: a row
-    summing to the full pane width sits on the wrap boundary, where a pass that
-    measures a control before its width is applied tips the control onto its own
-    line and strands the indent above it.
-
-    Hiding belongs on the group, never on the controls inside it — hiding only
-    the control would leave its indent cell behind as a blank line.
+    It is an ns.OptionsRow led by the indent, and the row's group is what keeps
+    the indent with its control: laid out flat, the pair after it would pack onto
+    the leftover space and its indent would stop indenting anything. The indent
+    counts toward ns.OPTIONS_ROW_WIDTH like any other cell, and since hiding
+    rides on the group, a hidden sub-option takes its indent cell with it.
 ]]
 ---@param order number
 ---@param hidden? boolean|function
 ---@param controls table[] # laid out left to right after the indent cell
----@param indentWidth? number # defaults to one step; notes pass the wider cell
 ---@return table
-function ns.OptionsSubRow(order, hidden, controls, indentWidth)
-	local args = {
-		indent = {
-			type = "description",
-			name = " ",
-			width = indentWidth or ns.OPTIONS_SUB_INDENT_WIDTH,
-			order = 1,
-		},
+function ns.OptionsSubRow(order, hidden, controls)
+	local row = ns.OptionsRow(order, hidden, controls)
+	row.args.indent = {
+		type = "description",
+		name = " ",
+		width = ns.OPTIONS_SUB_INDENT_WIDTH,
+		order = 0,
 	}
-
-	for index, control in ipairs(controls) do
-		control.order = index + 1
-		args["control" .. index] = control
-	end
-
-	return {
-		type = "group",
-		name = "",
-		inline = true,
-		order = order,
-		hidden = hidden,
-		args = args,
-	}
+	return row
 end
 
 ---@param text string
@@ -157,464 +209,292 @@ function ns.OptionsSubLabel(text)
 end
 
 --[[
-    The label width for an indented label-beside-control row: one label column
-    minus whatever cell indents the row. An indented row still owes the panel its
-    shared right edge, so it pays for the indent out of its own label rather than
-    carrying the control column right with it — which is what keeps an indented
-    dropdown in the same column as the un-indented one it sits beneath.
-
-    Derived from the indent rather than pinned to a constant because rows indent
-    to two different depths (ns.OPTIONS_SUB_INDENT_WIDTH for a row inside a
-    sub-option's block, the caption indent for prose) and both owe the same edge.
+    A dropdown sub-option: its silver caption and the dropdown on one indented
+    line. The caption pays for the indent out of its own label column
+    (ns.OPTIONS_SUB_LABEL_WIDTH), so the dropdown keeps the shared control width
+    and lines up with every other dropdown on the panel, sub-option or not.
 ]]
----@param indentWidth number
----@return number
-function ns.OptionsSubLabelWidth(indentWidth)
-	return ns.OPTIONS_LABEL_WIDTH - indentWidth
-end
-
---------------------------------------------------------------------------------
--- Item Cache Warming
---------------------------------------------------------------------------------
-
---[[
-    GetItemInfo returns nil for items the client hasn't cached; querying it
-    triggers a server request and GET_ITEM_INFO_RECEIVED fires when the data
-    arrives. A debounced NotifyChange repaints the item lists as answers
-    stream in. The watcher is registered on demand — at login when a saved
-    list contains uncached items, or when the user adds an uncached item ID
-    — and unregisters itself once every list item has resolved, so it does
-    not keep running for the rest of the session.
-]]
-
-local itemCacheRefreshTimer = nil
-local itemRefreshWatcherRegistered = false
-local HandleItemInformationReceived
-
---[[
-    Queries every list entry (re-requesting uncached ones) and reports
-    whether anything is still missing from the client cache.
-]]
-local function QueryListItemsAndFindMissing()
-	local hasMissing = false
-	for itemIdentifier in pairs(ns.db.profile.ignoredItemsSolo or {}) do
-		if not ns.GetItemInfo(itemIdentifier) then
-			hasMissing = true
-		end
-	end
-	for itemIdentifier in pairs(ns.db.profile.ignoredItemsMaster or {}) do
-		if not ns.GetItemInfo(itemIdentifier) then
-			hasMissing = true
-		end
-	end
-	return hasMissing
-end
-
-local function RefreshOptionsAfterDelay()
-	if itemCacheRefreshTimer then
-		return
-	end
-	itemCacheRefreshTimer = C_Timer.NewTimer(0.3, function()
-		itemCacheRefreshTimer = nil
-		AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.AutomatedRolls)
-		AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooter)
-		if itemRefreshWatcherRegistered and not QueryListItemsAndFindMissing() then
-			itemRefreshWatcherRegistered = false
-			ns:UnregisterModuleEvent("GET_ITEM_INFO_RECEIVED", HandleItemInformationReceived)
-		end
-	end)
-end
-
-HandleItemInformationReceived = function()
-	RefreshOptionsAfterDelay()
-end
-
-local function EnsureItemRefreshWatcher()
-	if itemRefreshWatcherRegistered then
-		return
-	end
-	itemRefreshWatcherRegistered = true
-	ns:RegisterModuleEvent("GET_ITEM_INFO_RECEIVED", HandleItemInformationReceived)
-end
-
----@return nil
-function ns:WarmItemCache()
-	if not QueryListItemsAndFindMissing() then
-		return
-	end
-
-	C_Timer.After(1, RefreshOptionsAfterDelay)
-	EnsureItemRefreshWatcher()
-end
-
---------------------------------------------------------------------------------
--- Item Input Parsing
---------------------------------------------------------------------------------
-
---[[
-    Accepts a numeric item ID string or a full item link; returns the numeric
-    item ID or nil. Shared by the Options panels that let users add items.
-]]
-
----@param rawInput any
----@return number|nil
-function ns:ParseItemInput(rawInput)
-	if not rawInput or rawInput == "" then
-		return nil
-	end
-
-	local numericIdentifier = tonumber(rawInput)
-	if numericIdentifier then
-		return numericIdentifier
-	end
-
-	local fromLink = string.match(rawInput, "item:(%d+)")
-	if fromLink then
-		return tonumber(fromLink)
-	end
-
-	return nil
-end
-
---------------------------------------------------------------------------------
--- Item Identifier Sort
---------------------------------------------------------------------------------
-
---[[
-    Sorts in place alphabetically by name, one flat A-Z list — quality is not a
-    sort key. Each row still shows its item link, so the quality colour reads at
-    a glance without also driving the order.
-
-    Items whose info hasn't been cached yet have no name to sort on, so they
-    fall to the bottom rather than clustering under an empty string at the top;
-    they re-sort into place as GET_ITEM_INFO_RECEIVED repaints the list.
-
-    Equal names tie-break on item ID, which makes the comparator a total order.
-    Without it the nine identically-named Punctured Voodoo Dolls in the default
-    roll list compare equal, and their rows reshuffle on every repaint.
-]]
-
----@param identifiers number[]
----@return nil
-function ns:SortItemIdentifiersByName(identifiers)
-	table.sort(identifiers, function(a, b)
-		local infoA = ns:SafeGetItemInfo(a)
-		local infoB = ns:SafeGetItemInfo(b)
-		local nameA = infoA and infoA.name or ""
-		local nameB = infoB and infoB.name or ""
-		if nameA == "" and nameB == "" then
-			return a < b
-		end
-		if nameA == "" then
-			return false
-		end
-		if nameB == "" then
-			return true
-		end
-		if nameA == nameB then
-			return a < b
-		end
-		return nameA < nameB
-	end)
-end
-
---------------------------------------------------------------------------------
--- Shared Item List Builder
---------------------------------------------------------------------------------
-
---[[
-    Used by both the Automated Rolls custom list and the Master Looter ignore
-    list. Handles the restore button, add-item input, sort, and per-item rows
-    with optional action dropdown. Pass in a spec table:
-
-      getSourceTable: function returning the DB table to iterate
-      onRestore: function that replaces the source with defaults
-      onAdd: function(itemId) that adds an item to the source
-      onRemove: function(itemId) that removes an item from the source
-      notifyKey: AceConfigRegistry table name to NotifyChange on edits
-      labels: { restore, restoreConfirm, addDesc, addName, removeDesc }
-      actionColumn: optional { desc, values, sorting, get, set }; when present
-        each row gets an action dropdown and the item label is narrower.
-        sorting is the AceConfig display order for values (optional)
-]]
-
---[[
-    The remove column is an icon, not a labeled button. An execute carrying an
-    `image` renders as an AceGUI Icon rather than the stock Button, and Button
-    insets its font string 15px from each edge — in a column this narrow that
-    leaves a caption almost no room and clips it to a sliver. The Icon has no
-    such inset, and the group-loot pass texture is already the game's own
-    "no, get rid of this" mark.
-
-    `name` stays empty so the Icon draws no caption under the texture; the
-    label rides in `desc`, which AceConfigDialog shows on hover.
-]]
-local REMOVE_ICON = "Interface/Buttons/UI-GroupLoot-Pass-Up"
-local REMOVE_ICON_SIZE = 16
-
---[[
-    The item label absorbs whatever the columns to its right leave behind, so an
-    item row spends the same ns.OPTIONS_ROW_WIDTH every other row does.
-]]
-
----@param spec table
+---@param order number
+---@param hidden? boolean|function
+---@param caption string
+---@param control table # a select; its name and width are set here
 ---@return table
-function ns:BuildItemListOptions(spec)
-	local labels = spec.labels
-	local args = {}
-	local order = 1
+function ns.OptionsSubSelectRow(order, hidden, caption, control)
+	control.name = ""
+	control.width = ns.OPTIONS_CONTROL_WIDTH
+	return ns.OptionsSubRow(order, hidden, {
+		ns.OptionsRowLabel(ns.OptionsSubLabel(caption), 0, ns.OPTIONS_SUB_LABEL_WIDTH),
+		control,
+	})
+end
 
-	args.restoreDefaults = {
+--------------------------------------------------------------------------------
+-- Toggle Rows
+--------------------------------------------------------------------------------
+
+--[[
+    How a toggle carries what belongs to it, the layout Connoisseur uses, with
+    Control Freak's speaker:
+
+      * One setting of its own rides on the toggle's line, in the control column,
+        and leaves the line while the toggle is off (ns.OptionsToggleRow).
+      * A sound toggle carries a speaker that plays the sound, past the end of
+        the row after its setting, in the right margin, and leaves with the
+        setting while the toggle is off. A sound with no setting to choose keeps
+        its speaker in that same column, so every speaker on a panel lines up.
+      * Anything else it owns, an on/off choice or one of several settings, sits
+        on an indented sub-row below it (ns.OptionsSubToggleRow, ns.OptionsSubRow)
+        that leaves the panel while the toggle is off.
+
+    A caption and what rides with it share the line only when the caption fits
+    the label column, which its measured width decides as the panel is built:
+    AceGUI draws a checkbox caption on one line and cuts a longer one short with
+    "...", and a German or French caption can run half as long again as the
+    English. A caption that won't fit takes the whole line, and its setting and
+    speaker drop to the line below, still in their columns.
+]]
+
+-- AceGUI's checkbox: a 24-pixel box, then its caption in GameFontHighlight.
+local CHECKBOX_BOX_PIXELS = 24
+-- Room past the caption's last letter, so a caption that fits never grazes the edge it would be cut at.
+local CAPTION_SLACK_PIXELS = 12
+
+local captionMeasure
+
+--[[
+    The width in pixels of a caption in GameFontHighlight, read off a hidden
+    font string without drawing anything. GameFontNormal, a button's caption
+    font, differs only in color, so it measures the same, which is how the item
+    lists' Add button sizes itself too.
+]]
+---@param caption string
+---@return number
+function ns.MeasureCaptionPixels(caption)
+	if not captionMeasure then
+		local measureFrame = CreateFrame("Frame")
+		measureFrame:Hide()
+		captionMeasure = measureFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	end
+	captionMeasure:SetText(caption)
+	return captionMeasure:GetStringWidth()
+end
+
+--[[
+    The width, in AceConfig units, a checkbox needs to show its caption whole,
+    measured in the checkbox's own font.
+]]
+---@param caption string
+---@return number
+function ns.OptionsToggleWidth(caption)
+	return (CHECKBOX_BOX_PIXELS + ns.MeasureCaptionPixels(caption) + CAPTION_SLACK_PIXELS)
+		/ ns.OPTIONS_PIXELS_PER_WIDTH_UNIT
+end
+
+--[[
+    A speaker that plays a sound: an execute carrying an image, which AceGUI
+    draws as a bare icon, with its label in the tooltip. Control Freak's icon at
+    Control Freak's size, so the two add-ons' sound rows match.
+]]
+local PREVIEW_ICON = "Interface\\COMMON\\VoiceChat-Speaker"
+local PREVIEW_ICON_SIZE = 18
+
+---@param desc string
+---@param play function
+---@return table
+function ns.OptionsSoundPreview(desc, play)
+	return {
 		type = "execute",
-		name = labels.restore,
-		width = "double",
-		order = order,
-		confirm = true,
-		confirmText = labels.restoreConfirm,
-		func = function()
-			spec.onRestore()
-			AceConfigRegistry:NotifyChange(spec.notifyKey)
-		end,
-	}
-	order = order + 1
-
-	args.spacerAfterRestore = ns.OptionsSpacer(order)
-	order = order + 1
-
-	args.addItemDesc = ns.OptionsDesc(labels.addDesc, order)
-	order = order + 1
-
-	args.addItemLabel = ns.OptionsRowLabel(labels.addName, order)
-	order = order + 1
-
-	args.addItemInput = {
-		type = "input",
 		name = "",
-		width = ns.OPTIONS_CONTROL_WIDTH,
-		order = order,
-		get = function()
-			return ""
-		end,
-		set = function(_, value)
-			local itemIdentifier = ns:ParseItemInput(value)
-			if not itemIdentifier then
-				return
-			end
-			spec.onAdd(itemIdentifier)
-			--[[
-                Query the item now; if it isn't cached yet, watch for the
-                server's answer so the row updates from "Loading…" in place.
-            ]]
-			if not ns.GetItemInfo(itemIdentifier) then
-				EnsureItemRefreshWatcher()
-			end
-			AceConfigRegistry:NotifyChange(spec.notifyKey)
-		end,
+		desc = desc,
+		image = PREVIEW_ICON,
+		imageWidth = PREVIEW_ICON_SIZE,
+		imageHeight = PREVIEW_ICON_SIZE,
+		width = ns.OPTIONS_SPEAKER_WIDTH,
+		func = play,
 	}
-	order = order + 1
+end
 
-	args.spacerBeforeItems = ns.OptionsSpacer(order)
-	order = order + 1
-
-	local sortedIdentifiers = {}
-	for itemIdentifier in pairs(spec.getSourceTable()) do
-		table.insert(sortedIdentifiers, itemIdentifier)
-	end
-	ns:SortItemIdentifiersByName(sortedIdentifiers)
-
-	--[[
-        Building the rows above queries each item, which requests any uncached
-        one from the server. Arm the refresh watcher whenever a row is still
-        cold so the panel repaints as the item info streams in (rather than
-        staying on "Loading..." until the window is reopened). The watcher
-        self-unregisters once every list entry has resolved (see WarmItemCache).
-    ]]
-	for _, itemIdentifier in ipairs(sortedIdentifiers) do
-		if not ns.GetItemInfo(itemIdentifier) then
-			EnsureItemRefreshWatcher()
-			break
-		end
+--[[
+    A primary toggle with what rides on its line: `extras.control`, its one
+    setting (a select or range, given its tooltip in `desc`; its name and width
+    are set here) in the control column, then `extras.preview`, a speaker from
+    ns.OptionsSoundPreview, past the end of the row. A speaker with no setting
+    beside it gets a blank cell the control column's width in the setting's
+    place, so it lands where every other speaker does. Everything after the
+    toggle leaves the line while the toggle is off. One unnamed inline group,
+    so the row keeps a line of its own, and a caption too long to share it
+    sends the rest to the line below.
+]]
+---@param order number
+---@param toggle table # a toggle with a string name (it is measured); its get decides whether the rest shows
+---@param extras table # { control = table?, preview = table? }
+---@return table
+function ns.OptionsToggleRow(order, toggle, extras)
+	local control, preview = extras.control, extras.preview
+	local function IsOff()
+		return not toggle.get()
 	end
 
-	local hasActionColumn = spec.actionColumn ~= nil
-	local labelWidth = ns.OPTIONS_ROW_WIDTH - ns.OPTIONS_REMOVE_ICON_WIDTH
-	if hasActionColumn then
-		labelWidth = labelWidth - ns.ROLL_ACTION_DROPDOWN_WIDTH
-	end
+	local args = { toggle = toggle }
+	toggle.order = 1
 
-	for _, itemIdentifier in ipairs(sortedIdentifiers) do
-		local capturedId = itemIdentifier
-		local rowArgs = {
-			label = {
-				type = "input",
-				dialogControl = ns.ITEM_LINK_WIDGET_TYPE,
-				name = "",
-				width = labelWidth,
-				order = 1,
-				get = function()
-					return tostring(capturedId)
-				end,
-				set = function() end,
-			},
+	-- What follows the caption, left to right: the setting or the blank cell standing in for it, then the speaker.
+	local rest = {}
+	if control then
+		control.name = ""
+		control.width = ns.OPTIONS_CONTROL_WIDTH
+		control.order = 2
+		rest.control = control
+	elseif preview then
+		rest.controlSpace = {
+			type = "description",
+			name = " ",
+			width = ns.OPTIONS_CONTROL_WIDTH,
+			order = 2,
 		}
+	end
+	if preview then
+		preview.order = 3
+		rest.preview = preview
+	end
 
-		if hasActionColumn then
-			rowArgs.action = {
-				type = "select",
-				name = "",
-				desc = spec.actionColumn.desc,
-				values = spec.actionColumn.values,
-				sorting = spec.actionColumn.sorting,
-				width = ns.ROLL_ACTION_DROPDOWN_WIDTH,
-				order = 2,
-				get = function()
-					return spec.actionColumn.get(capturedId)
-				end,
-				set = function(_, value)
-					spec.actionColumn.set(capturedId, value)
-				end,
-			}
+	if not next(rest) then
+		toggle.width = "full"
+	elseif ns.OptionsToggleWidth(toggle.name) <= ns.OPTIONS_LABEL_WIDTH then
+		toggle.width = ns.OPTIONS_LABEL_WIDTH
+		for key, cell in pairs(rest) do
+			cell.hidden = IsOff
+			args[key] = cell
 		end
-
-		rowArgs.remove = {
-			type = "execute",
-			name = "",
-			desc = labels.removeDesc,
-			image = REMOVE_ICON,
-			imageWidth = REMOVE_ICON_SIZE,
-			imageHeight = REMOVE_ICON_SIZE,
-			width = ns.OPTIONS_REMOVE_ICON_WIDTH,
-			order = 3,
-			func = function()
-				spec.onRemove(capturedId)
-				AceConfigRegistry:NotifyChange(spec.notifyKey)
-			end,
+	else
+		--[[
+            The line below, in a group of its own. A group always starts a new
+            line; a filler left to wrap there by itself could, on a wide enough
+            panel, stay beside a long caption and push the setting to the left
+            edge.
+        ]]
+		toggle.width = "full"
+		rest.filler = {
+			type = "description",
+			name = " ",
+			width = ns.OPTIONS_LABEL_WIDTH,
+			order = 1,
 		}
-
-		args["item_" .. capturedId] = {
+		args.controlRow = {
 			type = "group",
 			name = "",
 			inline = true,
-			order = order,
-			args = rowArgs,
+			order = 2,
+			hidden = IsOff,
+			args = rest,
 		}
-		order = order + 1
 	end
 
-	return args
-end
-
---------------------------------------------------------------------------------
--- Item Display Helper
---------------------------------------------------------------------------------
-
---[[
-    Used by the GogoLoot_ItemLink AceGUI widget (registered in the next
-    section) to render the row label.
-]]
-
----@param itemIdentifier number
----@return string
-function ns:GetItemDisplayName(itemIdentifier)
-	local itemName, itemLink = ns.GetItemInfo(itemIdentifier)
-	local _, _, _, _, icon = ns.GetItemInfoInstant(itemIdentifier)
-
-	if itemLink and icon then
-		return "|T" .. icon .. ":16|t " .. itemLink
-	elseif itemLink then
-		return itemLink
-	elseif icon then
-		return "|T" .. icon .. ":16|t " .. GetColor("MUTED") .. string.format(L["ITEM_LOADING"], itemIdentifier) .. "|r"
-	end
-
-	return GetColor("MUTED") .. string.format(L["ITEM_LOADING"], itemIdentifier) .. "|r"
-end
-
---------------------------------------------------------------------------------
--- Custom AceGUI Widget: GogoLoot_ItemLink
---------------------------------------------------------------------------------
-
---[[
-    A lightweight label that shows the full item tooltip on hover. Used via
-    dialogControl on the AceConfig "input" entries built by
-    BuildItemListOptions; the get() function returns the item ID as a
-    string, and SetText handles lookup + rendering via ns:GetItemDisplayName
-    (defined above).
-]]
-
-local AceGUI = LibStub("AceGUI-3.0")
-local widgetType = ns.ITEM_LINK_WIDGET_TYPE
-local widgetVersion = 1
-
-local function OnItemLinkWidgetEnter(frame)
-	local self = frame.obj
-	if not self.itemIdentifier then
-		return
-	end
-	local _, itemLink = ns.GetItemInfo(self.itemIdentifier)
-	if itemLink then
-		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-		GameTooltip:SetHyperlink(itemLink)
-		GameTooltip:Show()
-	end
-end
-
-local function OnItemLinkWidgetLeave(frame)
-	GameTooltip:Hide()
-end
-
-local widgetMethods = {}
-
-function widgetMethods:OnAcquire()
-	self.itemIdentifier = nil
-	self:SetHeight(20)
-end
-
-function widgetMethods:OnRelease()
-	self.itemIdentifier = nil
-end
-
-function widgetMethods:SetText(text)
-	local itemId = tonumber(text)
-	if itemId then
-		self.itemIdentifier = itemId
-		self.label:SetText(ns:GetItemDisplayName(itemId))
-	else
-		self.label:SetText(text or "")
-	end
-end
-
-function widgetMethods:GetText()
-	return self.itemIdentifier and tostring(self.itemIdentifier) or ""
-end
-
-function widgetMethods:SetLabel(text) end
-function widgetMethods:SetMaxLetters(num) end
-function widgetMethods:SetDisabled(disabled) end
-
-local function ItemLinkWidgetConstructor()
-	local frame = CreateFrame("Frame", nil, UIParent)
-	frame:SetHeight(20)
-	frame:EnableMouse(true)
-	frame:SetScript("OnEnter", OnItemLinkWidgetEnter)
-	frame:SetScript("OnLeave", OnItemLinkWidgetLeave)
-
-	local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	label:SetJustifyH("LEFT")
-	label:SetPoint("TOPLEFT")
-	label:SetPoint("BOTTOMRIGHT")
-
-	local widget = {
-		label = label,
-		frame = frame,
-		type = widgetType,
+	return {
+		type = "group",
+		name = "",
+		inline = true,
+		order = order,
+		args = args,
 	}
-
-	for method, func in pairs(widgetMethods) do
-		widget[method] = func
-	end
-
-	return AceGUI:RegisterAsWidget(widget)
 end
 
-AceGUI:RegisterWidgetType(widgetType, ItemLinkWidgetConstructor, widgetVersion)
+--[[
+    An on/off choice that belongs to the toggle above it: an indented checkbox
+    with a silver caption, leaving the panel while `hidden` says the parent is
+    off.
+]]
+---@param order number
+---@param hidden? function
+---@param toggle table
+---@return table
+function ns.OptionsSubToggleRow(order, hidden, toggle)
+	toggle.name = ns.OptionsSubLabel(toggle.name)
+	toggle.width = ns.OPTIONS_SUB_TOGGLE_WIDTH
+	return ns.OptionsSubRow(order, hidden, { toggle })
+end
+
+--[[
+    A quality dropdown's values from `lowest` up to Epic, each in the game's own
+    quality color so the tiers read like the items themselves, and the order to
+    show them in. `suffix` ("+") makes a threshold read as one where no caption
+    says so.
+]]
+---@param lowest number
+---@param suffix? string
+---@return table values
+---@return number[] sorting
+function ns.OptionsQualityChoices(lowest, suffix)
+	local values, sorting = {}, {}
+	for quality = lowest, 4 do
+		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
+		values[quality] = ns.GetQualityColor(quality) .. ns.QUALITY_DISPLAY_NAMES[qualityKey] .. (suffix or "") .. "|r"
+		sorting[#sorting + 1] = quality
+	end
+	return values, sorting
+end
+
+--------------------------------------------------------------------------------
+-- Message Examples
+--------------------------------------------------------------------------------
+
+--[[
+    What a message says in chat, on a silver line under the toggle that
+    decides whether it goes out: the Announcements panel's posts and the
+    Automated Opening panel's Ignore notice. Each panel runs the real template,
+    a sent one through ns:BuildAnnounceMessage and a printed one through
+    ns.OptionsPrintedExample, so an example can't drift from its message in any
+    language. Only the stand-ins are made up: a player, and an item drawn the
+    way chat draws a link, bracketed in its quality color. The raid marker is
+    drawn as the icon chat shows, where a panel would print "{rt4}".
+
+    An example stays on show while its own toggle is off, because it is what
+    somebody reads to decide whether to turn that toggle on.
+]]
+local RAID_MARKER_ICON = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_%s:0|t"
+
+---@param quality number
+---@return string
+function ns.OptionsExampleItem(quality)
+	-- Back to silver after the item rather than |r, which would drop the rest of the line to white.
+	return ns.GetQualityColor(quality) .. "[" .. L["LOOT_TOASTS_EXAMPLE_ITEM"] .. "]" .. GetColor("HELP")
+end
+
+-- A printed line laid out as ns:PrintMessage lays it, add-on name first, without its chat colors.
+---@param text string
+---@return string
+function ns.OptionsPrintedExample(text)
+	return L["ADDON_TITLE"] .. " // " .. text
+end
+
+---@param message string # as ns:BuildAnnounceMessage decorates it, or as ns.OptionsPrintedExample lays it out
+---@return string
+local function ExampleLine(message)
+	local markerIndex = ns.TARGET_MARKER:match("^{rt(%d)}$")
+	local markerStart, markerEnd = message:find(ns.TARGET_MARKER, 1, true)
+	if markerIndex and markerStart then
+		message = message:sub(1, markerStart - 1) .. RAID_MARKER_ICON:format(markerIndex) .. message:sub(markerEnd + 1)
+	end
+	return GetColor("HELP") .. L["OPTIONS_EXAMPLE"]:format(message) .. "|r"
+end
+
+--[[
+    An example sits under its toggle the way a sub-option does, indented and
+    silver, across the rest of the row. Its text is read as the panel draws, so
+    it follows the settings it shows.
+]]
+---@param order number
+---@param buildMessage function # returns the message the example shows
+---@return table
+function ns.OptionsExampleRow(order, buildMessage)
+	return ns.OptionsSubRow(order, nil, {
+		{
+			type = "description",
+			name = function()
+				return ExampleLine(buildMessage())
+			end,
+			fontSize = "medium",
+			width = ns.OPTIONS_ROW_WIDTH - ns.OPTIONS_SUB_INDENT_WIDTH,
+		},
+	})
+end
