@@ -9,21 +9,30 @@ local _, ns = ...
 
 --[[
     AceDB-3.0 defaults table, passed to AceDB:New in Features/Core.lua. Loot
-    policy lives in the active profile (ns.db.profile); the presentation keys
-    live in global, per the comment on that table below. AceDB physically copies
+    policy lives in the active profile (ns.db.profile), and with it the
+    Automated Opening, lockbox, loot sound and loot toast settings; the
+    presentation keys and the two account-wide records live in global, per the
+    comment on that table below, and the chat tab state Loot Toasts changes
+    lives in char, per character. AceDB physically copies
     these defaults into the saved table rather than resolving them through a
     metatable, so there is no manual merge anywhere. The empty
-    ignoredItemsMaster / ignoredItemsSolo lists are seeded from the default
-    lists below by Core's refill-on-empty rule, never here.
+    ignoredItemsMaster / ignoredItemsSolo lists are seeded from this client's
+    Data/{Folder}/Default-Item-Lists-{Folder}.lua by Core's refill-on-empty
+    rule, never here.
 ]]
 
 ns.DATABASE_DEFAULTS = {
 	profile = {
+		-- Enable Announcements: the master switch over everything GogoLoot posts to chat.
+		lootNotifications = true,
 		announceDestinations = true,
 		announceMasterLootAuto = true,
 		announceMasterLootAutoThreshold = 3,
+		-- Items the player hands out from the master looter menu, whatever their quality.
+		announceMasterLootManual = true,
 		announceTrade = true,
 		announceTradeCondition = "always",
+		-- "whisper" | "group" | "self" (printed to the player's own chat, sent to nobody)
 		announceTradeOutput = "whisper",
 		autoGreed = false,
 		--[[
@@ -36,7 +45,22 @@ ns.DATABASE_DEFAULTS = {
 		autoRollThresholdParty = 2,
 		autoRollActionRaid = ns.GREED,
 		autoRollThresholdRaid = 2,
-		autoMasterLoot = true,
+		--[[
+            Print Item in Chat: on, since the roll window closes the moment
+            GogoLoot rolls, and this line is the only record of what came up
+            and which roll was made.
+        ]]
+		printRolledItems = true,
+		--[[
+            Hide Roll Messages: on, since a five-player roll prints about eleven
+            lines and the winner's toast now carries the result. Who won and
+            what they received stay in chat.
+        ]]
+		hideRollMessages = true,
+		-- With Hide Roll Messages on, one GogoLoot line per win in place of the game's won line.
+		winnerSummary = "PRINT",
+		-- Off by default (maintainer, 2026-10-05).
+		autoMasterLoot = false,
 		autoMasterLootOutsideInstances = false,
 		--[[
             Off by default, and deliberately not part of the always-skipped set
@@ -49,14 +73,112 @@ ns.DATABASE_DEFAULTS = {
 		customRollList = true,
 		--[[
             Quality key -> recipient, and deliberately empty: an absent tier is
-            "nobody chosen yet", which auto-distributes nothing and shows an
-            empty dropdown. Seeding every tier with "self" would make AceDB
+            "nobody chosen yet", which auto-distributes nothing and reads as
+            Loot Window. Seeding every tier with "self" would make AceDB
             re-apply it at each login, so a cleared setup could never survive a
             reload, and a destination nobody picked would look like one they had.
         ]]
 		destinations = {},
 		ignoredItemsMaster = {},
 		ignoredItemsSolo = {},
+		autoOpen = true,
+		-- "ALWAYS" | "OUTSIDE_INSTANCES"
+		autoOpenWhere = "ALWAYS",
+		-- "ALWAYS" | "SOLO_ONLY"
+		autoOpenGroup = "ALWAYS",
+		-- Tells the player when Automated Opening or Speedy Loot leaves an item set to Ignore alone.
+		openingIgnoreNotifications = true,
+		lockboxTooltips = true,
+		-- "ROGUES" | "ALL"
+		lockboxTooltipsScope = "ROGUES",
+		lockboxNotifications = true,
+		-- "ROGUES" | "ALL"
+		lockboxNotificationsScope = "ROGUES",
+		lootSounds = true,
+		lootSoundThreshold = 2,
+		-- Rogues only in practice; nothing else can cast Pick Pocket.
+		pickPocketSound = true,
+		-- Off until the toasts are polished; players can turn them on to try them and give feedback (maintainer, 2026-10-05).
+		lootToasts = false,
+		--[[
+            With the toasts on, the game's Item Loot and Money Loot lines leave
+            the General tab: the toasts carry the same loot.
+        ]]
+		standardLootMessages = "DISABLE",
+		--[[
+            Whether this profile has been shown the drag handle and put it away.
+            Per profile on purpose: a new or reset profile is one that has not
+            been introduced to the feature, and should be.
+        ]]
+		lootToastsIntroSeen = false,
+		--[[
+            Filters: which of ns.LOOT_TOAST_FILTER_ROWS get a toast, for the
+            player's own loot (Mine) and the rest of the group's (Group), each
+            keyed by the row's key.
+
+            Mine ships with every row on and every quality at Poor: the toast
+            stack stands in for the loot window Speedy Loot hides, and a window
+            shows what was picked up whatever its color. The loot SOUND keeps its
+            Uncommon threshold, because a sound is an interruption and a row is a
+            record: one wants to be rare, the other wants to be complete.
+
+            Group ships with quest items and Uncommon-or-better weapons and armor:
+            what a group member picks up that the player might be waiting on or
+            rolling for, and none of their cloth and greys. A row left out here is
+            off, and AceDB saves only what the player changes.
+        ]]
+		lootToastMine = {
+			ARMOR = true,
+			WEAPON = true,
+			GEM = true,
+			TRADE_GOODS = true,
+			COMPANION_PET = true,
+			CONSUMABLE = true,
+			CONTAINER = true,
+			KEY = true,
+			MISCELLANEOUS = true,
+			MOUNT = true,
+			PROJECTILE = true,
+			QUEST = true,
+			QUIVER = true,
+			REAGENT = true,
+			RECIPE = true,
+			BIND_ON_PICKUP = true,
+			OPENABLES = true,
+			MONEY = true,
+		},
+		lootToastGroup = {
+			ARMOR = true,
+			WEAPON = true,
+			QUEST = true,
+		},
+		lootToastMineQuality = {
+			ARMOR = 0,
+			WEAPON = 0,
+			GEM = 0,
+			TRADE_GOODS = 0,
+		},
+		lootToastGroupQuality = {
+			ARMOR = 2,
+			WEAPON = 2,
+			GEM = 2,
+			TRADE_GOODS = 2,
+		},
+		-- Show Winning Roll: the roll an item was won with, on the winner's toast.
+		lootToastWinningRollMine = true,
+		lootToastWinningRollGroup = true,
+		-- Show Bag Count: off, since a number on every stack only helps the player farming one.
+		lootToastBagCount = false,
+		lootToastDuration = 5,
+		lootToastMaxVisible = 8,
+		-- "UP" | "DOWN"
+		lootToastGrowth = "UP",
+		-- "LEFT" | "RIGHT"
+		lootToastAlign = "LEFT",
+		lootToastFont = "DEFAULT",
+		lootToastFontSize = 16,
+		-- One of ns.LOOT_TOAST_FONT_FLAGS.
+		lootToastFontFlags = "OUTLINE",
 	},
 	--[[
 		Account-wide: how GogoLoot presents itself and what it does to the
@@ -67,151 +189,22 @@ ns.DATABASE_DEFAULTS = {
 	global = {
 		showWelcome = true,
 		speedyLoot = true,
-		--[[
-            Whether the Master Looter panel shows a row per quality tier or just
-            Send All Loot To. Presentation, not loot policy: it decides what the
-            panel draws and changes no destination, so it stays out of the
-            profile and survives a profile switch like every other view setting.
-        ]]
-		showDestinationTiers = false,
 		minimap = {},
+		--[[
+            The player's Openables List changes, { [itemId] = action }: the
+            listed items set differently from their default (ns.OPENING_OPEN or
+            ns.OPENING_IGNORE), the items they added, and ns.OPENING_REMOVED for
+            the listed items they took off.
+            Account-wide because which containers a player hoards is a decision
+            about the items, not about a loot setup, and saving only the changes
+            is what lets new data reach every player without a migration.
+        ]]
+		openingActions = {},
+		-- Where the loot toasts sit on screen: a decision about the screen, not the loot.
+		lootToastPosition = {},
 	},
-}
-
---------------------------------------------------------------------------------
--- Default Custom Roll / Ignore Lists
---------------------------------------------------------------------------------
-
---[[
-    Format: [itemId] = {expansion, rollOverride}
-    Expansion: VANILLA=1, TBC=2, WRATH=3
-    Roll Override (solo only): ROLL_INDEX_MANUAL=1, ROLL_INDEX_GREED=2, ROLL_INDEX_NEED=3, ROLL_INDEX_PASS=4
-]]
-
--- TODO: Add SQL Query
-ns.DEFAULT_IGNORE_LIST_SOLO = {
-	[20873] = { 1, 3 }, -- Alabaster Idol
-	[20869] = { 1, 3 }, -- Amber Idol
-	[20866] = { 1, 3 }, -- Azure Idol
-	[19706] = { 1, 3 }, -- Bloodscalp Coin
-	[19708] = { 1, 3 }, -- Blue Hakkari Bijou
-	[20864] = { 1, 3 }, -- Bone Scarab
-	[19713] = { 1, 3 }, -- Bronze Hakkari Bijou
-	[20861] = { 1, 3 }, -- Bronze Scarab
-	[20863] = { 1, 3 }, -- Clay Scarab
-	[12843] = { 1, 1 }, -- Corruptor's Scourgestone
-	[20862] = { 1, 3 }, -- Crystal Scarab
-	[20520] = { 1, 1 }, -- Dark Rune
-	[12662] = { 1, 1 }, -- Demonic Rune
-	[17010] = { 1, 3 }, -- Fiery Core
-	[22682] = { 1, 1 }, -- Frozen Rune
-	[19715] = { 1, 3 }, -- Gold Hakkari Bijou
-	[20859] = { 1, 3 }, -- Gold Scarab
-	[21762] = { 1, 3 }, -- Greater Scarab Coffer Key
-	[19711] = { 1, 3 }, -- Green Hakkari Bijou
-	[19701] = { 1, 3 }, -- Gurubashi Coin
-	[19700] = { 1, 3 }, -- Hakkari Coin
-	[20876] = { 1, 3 }, -- Idol of Death
-	[20879] = { 1, 3 }, -- Idol of Life
-	[20875] = { 1, 3 }, -- Idol of Night
-	[20878] = { 1, 3 }, -- Idol of Rebirth
-	[20881] = { 1, 3 }, -- Idol of Strife
-	[20877] = { 1, 3 }, -- Idol of the Sage
-	[20874] = { 1, 3 }, -- Idol of the Sun
-	[20882] = { 1, 3 }, -- Idol of War
-	[20865] = { 1, 3 }, -- Ivory Scarab
-	[20870] = { 1, 3 }, -- Jasper Idol
-	[20868] = { 1, 3 }, -- Lambent Idol
-	[17011] = { 1, 3 }, -- Lava Core
-	[11733] = { 1, 1 }, -- Libram of Constitution
-	[18333] = { 1, 1 }, -- Libram of Focus
-	[18334] = { 1, 1 }, -- Libram of Protection
-	[18332] = { 1, 1 }, -- Libram of Rapidity
-	[11736] = { 1, 1 }, -- Libram of Resilience
-	[11732] = { 1, 1 }, -- Libram of Rumination
-	[11734] = { 1, 1 }, -- Libram of Tenacity
-	[11737] = { 1, 1 }, -- Libram of Voracity
-	[20871] = { 1, 3 }, -- Obsidian Idol
-	[20867] = { 1, 3 }, -- Onyx Idol
-	[17966] = { 1, 1 }, -- Onyxia Hide Backpack
-	[19710] = { 1, 3 }, -- Orange Hakkari Bijou
-	[19914] = { 1, 1 }, -- Panther Hide Sack
-	[19813] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19819] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19820] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19816] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19818] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19821] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19815] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19814] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19817] = { 1, 1 }, -- Punctured Voodoo Doll
-	[19712] = { 1, 3 }, -- Purple Hakkari Bijou
-	[19699] = { 1, 3 }, -- Razzashi Coin
-	[19707] = { 1, 3 }, -- Red Hakkari Bijou
-	[12811] = { 1, 1 }, -- Righteous Orb
-	[19704] = { 1, 3 }, -- Sandfury Coin
-	[21156] = { 1, 3 }, -- Scarab Bag
-	[21761] = { 1, 3 }, -- Scarab Coffer Key
-	[19714] = { 1, 3 }, -- Silver Hakkari Bijou
-	[20860] = { 1, 3 }, -- Silver Scarab
-	[19705] = { 1, 3 }, -- Skullsplitter Coin
-	[20858] = { 1, 3 }, -- Stone Scarab
-	[4500] = { 1, 1 }, -- Traveler's Backpack
-	[20872] = { 1, 3 }, -- Vermillion Idol
-	[19702] = { 1, 3 }, -- Vilebranch Coin
-	--[[
-        The Wartorn scraps are listed at Manual on purpose. They are an AQ40
-        Cenarion Circle turn-in with real value, so auto-needing one in a pug
-        reads as ninja-ing; the entry exists so the row is in the UI ready to
-        change, not so the add-on rolls on it.
-    ]]
-	[22374] = { 1, 1 }, -- Wartorn Chain Scrap
-	[22376] = { 1, 1 }, -- Wartorn Cloth Scrap
-	[22373] = { 1, 1 }, -- Wartorn Leather Scrap
-	[22375] = { 1, 1 }, -- Wartorn Plate Scrap
-	[19703] = { 1, 3 }, -- Witherbark Coin
-	[23055] = { 1, 1 }, -- Word of Thawing
-	[19709] = { 1, 3 }, -- Yellow Hakkari Bijou
-	[19698] = { 1, 3 }, -- Zulian Coin
-	[29739] = { 2, 1 }, -- Arcane Tome
-	[32227] = { 2, 1 }, -- Crimson Spinel
-	[23440] = { 2, 1 }, -- Dawnstone
-	[32228] = { 2, 1 }, -- Empyrean Sapphire
-	[29740] = { 2, 1 }, -- Fel Armament
-	[32229] = { 2, 1 }, -- Lionseye
-	[23436] = { 2, 1 }, -- Living Ruby
-	[30183] = { 2, 1 }, -- Nether Vortex
-	[23441] = { 2, 1 }, -- Nightseye
-	[23439] = { 2, 1 }, -- Noble Topaz
-	[22451] = { 2, 1 }, -- Primal Air
-	[22452] = { 2, 1 }, -- Primal Earth
-	[21884] = { 2, 1 }, -- Primal Fire
-	[21886] = { 2, 1 }, -- Primal Life
-	[22457] = { 2, 1 }, -- Primal Mana
-	[23572] = { 2, 1 }, -- Primal Nether
-	[22456] = { 2, 1 }, -- Primal Shadow
-	[21885] = { 2, 1 }, -- Primal Water
-	[32231] = { 2, 1 }, -- Pyrestone
-	[32249] = { 2, 1 }, -- Seaspray Emerald
-	[32230] = { 2, 1 }, -- Shadowsong Amethyst
-	[23438] = { 2, 1 }, -- Star of Elune
-	[23437] = { 2, 1 }, -- Talasite
-}
-
--- TODO: Add SQL Query
-ns.DEFAULT_IGNORE_LIST_MASTER = {
-	-- Vanilla: BoP Crafting Materials
-	[12662] = { 1 }, -- Demonic Rune
-	[20520] = { 1 }, -- Dark Rune
-	-- Vanilla: Bags
-	[17966] = { 1 }, -- Onyxia Hide Backpack
-	[19914] = { 1 }, -- Panther Hide Sack
-	-- TBC: BoP Crafting Materials
-	[23572] = { 2 }, -- Primal Nether
-	[30183] = { 2 }, -- Nether Vortex
-	[32428] = { 2 }, -- Heart of Darkness
-	[34664] = { 2 }, -- Sunmote
-	-- TBC: Bags
-	[34845] = { 2 }, -- Pit Lord's Satchel
-	[34846] = { 2 }, -- Black Sack of Gems
+	char = {
+		-- The General tab's message groups GogoLoot took off it, per character because chat settings are.
+		lootGroupsHiddenByGogoLoot = {},
+	},
 }

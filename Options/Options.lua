@@ -16,29 +16,100 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
     localized — they're used by NotifyChange calls across modules.
 
     The user-facing display names passed as the SECOND arg to
-    AddToBlizOptions, and the parent reference (THIRD arg), are localized
-    via the TAB_* locale keys. The parent reference must match the display
-    name registered for the parent panel exactly so the child panels nest
-    correctly under the main GogoLoot category. OpenOptionsPanel below
-    routes by the category ID captured from the main-panel registration
-    rather than by name.
+    AddToBlizOptions are localized (the TAB_* locale keys, the stock Profiles
+    name, the Diagnostics strings table). A panel directly under the add-on
+    passes L["ADDON_TITLE"] as the parent (THIRD arg), which must match the
+    root panel's display name exactly. A panel nested one level further down
+    passes its parent's captured category ID instead: every child panel's
+    display name is only a title, and nothing keeps titles unique.
+    OpenOptionsPanel below routes by the root's captured category ID rather
+    than by name.
 ]]
+
+--[[
+    The feature panels in Settings-tree order: the features that act on loot
+    first, in the order loot meets them (rolls, master loot, opening), then the
+    three that report it, what the player sees, what they hear, then what the
+    group is told. A row with a `parent` belongs to that panel: it nests beneath it where
+    ns.OPTIONS_NESTED_PANELS allows, and otherwise follows it as a sibling
+    titled "Parent: Child". A parent is always listed before its children, so
+    its category ID is captured by the time they need it. Profiles and
+    Diagnostic Tools come after all of these, last.
+]]
+local FEATURE_PANELS = {
+	{ key = "AutomatedRolls", builder = "BuildAutomatedRollOptions", title = "TAB_AUTOMATED_ROLLS" },
+	{
+		key = "ItemOverrides",
+		builder = "BuildItemOverridesOptions",
+		title = "TAB_ITEM_OVERRIDES",
+		parent = "AutomatedRolls",
+	},
+	{
+		key = "CharacterRules",
+		builder = "BuildCharacterRulesOptions",
+		title = "TAB_CHARACTER_RULES",
+		parent = "AutomatedRolls",
+		onRegistered = "OnCharacterRulesRegistered",
+	},
+	{ key = "MasterLooter", builder = "BuildMasterLooterOptions", title = "TAB_MASTER_LOOTER" },
+	{
+		key = "MasterLooterIgnoreList",
+		builder = "BuildMasterLooterIgnoreListOptions",
+		title = "TAB_IGNORE_LIST",
+		parent = "MasterLooter",
+	},
+	{ key = "AutomatedOpening", builder = "BuildAutomatedOpeningOptions", title = "TAB_AUTOMATED_OPENING" },
+	{
+		key = "OpenableItems",
+		builder = "BuildOpenableItemsOptions",
+		title = "TAB_OPENABLE_ITEMS",
+		parent = "AutomatedOpening",
+	},
+	{ key = "LootToasts", builder = "BuildLootToastOptions", title = "TAB_LOOT_TOASTS" },
+	{
+		key = "LootToastFilters",
+		builder = "BuildLootToastFilterOptions",
+		title = "TAB_LOOT_TOAST_FILTERS",
+		parent = "LootToasts",
+	},
+	{ key = "LootSounds", builder = "BuildLootSoundOptions", title = "TAB_LOOT_SOUNDS" },
+	{ key = "Announcements", builder = "BuildAnnouncementOptions", title = "TAB_ANNOUNCEMENTS" },
+}
+
+--[[
+    No pcall around AddToBlizOptions: AceConfigDialog records a panel before it
+    looks its parent up, so a failed call cannot be retried under the same name.
+    A parent the client cannot resolve has to fail loudly, not half-register.
+]]
+---@param panel table # a FEATURE_PANELS row whose builder exists
+---@param panelsByKey table # FEATURE_PANELS rows by key
+---@param categoryIDs table # captured category IDs by panel key
+---@return nil
+local function AddFeaturePanel(panel, panelsByKey, categoryIDs)
+	local registryName = ns.OPTIONS_REGISTRY[panel.key]
+	local title = L[panel.title]
+	local parent = L["ADDON_TITLE"]
+
+	if panel.parent then
+		if ns.OPTIONS_NESTED_PANELS then
+			parent = categoryIDs[panel.parent]
+		else
+			title = L["TAB_NESTED_FORMAT"]:format(L[panelsByKey[panel.parent].title], title)
+		end
+	end
+
+	AceConfigRegistry:RegisterOptionsTable(registryName, ns[panel.builder])
+	local panelFrame, categoryID = AceConfigDialog:AddToBlizOptions(registryName, title, parent)
+	categoryIDs[panel.key] = categoryID
+	-- A panel that sets itself up once its frame exists names the function in onRegistered.
+	if panel.onRegistered and ns[panel.onRegistered] then
+		ns[panel.onRegistered](panelFrame, registryName)
+	end
+end
 
 ---@return nil
 function ns.RegisterOptionsPanels()
 	AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.General, ns.BuildGeneralOptions)
-
-	if ns.BuildAnnouncementOptions then
-		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Announcements, ns.BuildAnnouncementOptions)
-	end
-
-	if ns.BuildAutomatedRollOptions then
-		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.AutomatedRolls, ns.BuildAutomatedRollOptions)
-	end
-
-	if ns.BuildMasterLooterOptions then
-		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.MasterLooter, ns.BuildMasterLooterOptions)
-	end
 
 	if ns.BuildDiagnosticsOptions then
 		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Diagnostics, ns.BuildDiagnosticsOptions)
@@ -64,39 +135,29 @@ function ns.RegisterOptionsPanels()
         name-based lookup.
     ]]
 	local mainPanel, mainCategoryID = AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.General, L["ADDON_TITLE"])
-	ns.optionsFrames = { main = mainPanel, categoryID = mainCategoryID }
+	local categoryIDs = {}
+	ns.optionsFrames = { main = mainPanel, categoryID = mainCategoryID, categoryIDs = categoryIDs }
 
 	--[[
-        Child-panel display order in Blizzard's settings UI is the order of
-        AddToBlizOptions calls: Master Looter, Automated Rolls, Announcements,
-        Profiles — with Diagnostics registered last so it sits at the bottom.
+        Display order in Blizzard's settings UI is the order of AddToBlizOptions
+        calls. A panel whose parent never registered (its file left out of this
+        flavor's TOC) is skipped rather than registered in the wrong place.
     ]]
-	if ns.BuildMasterLooterOptions then
-		ns.optionsFrames.ml =
-			AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.MasterLooter, L["TAB_MASTER_LOOTER"], L["ADDON_TITLE"])
+	local panelsByKey = {}
+	for _, panel in ipairs(FEATURE_PANELS) do
+		panelsByKey[panel.key] = panel
 	end
-
-	if ns.BuildAutomatedRollOptions then
-		ns.optionsFrames.rolls = AceConfigDialog:AddToBlizOptions(
-			ns.OPTIONS_REGISTRY.AutomatedRolls,
-			L["TAB_AUTOMATED_ROLLS"],
-			L["ADDON_TITLE"]
-		)
-	end
-
-	if ns.BuildAnnouncementOptions then
-		ns.optionsFrames.trade = AceConfigDialog:AddToBlizOptions(
-			ns.OPTIONS_REGISTRY.Announcements,
-			L["TAB_ANNOUNCEMENTS"],
-			L["ADDON_TITLE"]
-		)
+	for _, panel in ipairs(FEATURE_PANELS) do
+		local parentRegistered = not panel.parent or categoryIDs[panel.parent] ~= nil
+		if ns[panel.builder] and parentRegistered then
+			AddFeaturePanel(panel, panelsByKey, categoryIDs)
+		end
 	end
 
 	if ns.BuildProfilesOptions then
 		-- The panel's display name comes already-localized from AceDBOptions-3.0; read it from the built table.
 		local profilesDisplayName = ns.BuildProfilesOptions().name
-		ns.optionsFrames.profiles =
-			AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Profiles, profilesDisplayName, L["ADDON_TITLE"])
+		AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Profiles, profilesDisplayName, L["ADDON_TITLE"])
 	end
 
 	--[[
@@ -105,11 +166,17 @@ function ns.RegisterOptionsPanels()
 	    ns.DiagnosticsStrings.
 	]]
 	if ns.BuildDiagnosticsOptions then
-		ns.optionsFrames.diagnostics = AceConfigDialog:AddToBlizOptions(
-			ns.OPTIONS_REGISTRY.Diagnostics,
-			ns.DiagnosticsStrings.TAB,
-			L["ADDON_TITLE"]
-		)
+		AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Diagnostics, ns.DiagnosticsStrings.TAB, L["ADDON_TITLE"])
+	end
+
+	--[[
+        Closing the Options window ends an item list's New section (see
+        Options-Utilities-Item-List-Filter.lua). SettingsPanel is the window on all
+        three clients; hooked rather than replaced, so Blizzard's own OnHide
+        still runs.
+    ]]
+	if SettingsPanel then
+		SettingsPanel:HookScript("OnHide", ns.ForgetNewListItems)
 	end
 
 	ns:WarmItemCache()
@@ -136,13 +203,6 @@ function ns:OpenOptionsPanel()
 		return
 	end
 
-	if InterfaceOptionsFrame_OpenToCategory then
-		InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
-		-- Called twice for Classic compatibility
-		InterfaceOptionsFrame_OpenToCategory(ns.optionsFrames.main)
-		return
-	end
-
 	AceConfigDialog:Open(ns.OPTIONS_REGISTRY.General)
 end
 
@@ -150,8 +210,7 @@ end
 -- Slash Commands
 --------------------------------------------------------------------------------
 
-SLASH_GOGOLOOT1 = "/gl"
-SLASH_GOGOLOOT2 = "/gogoloot"
+SLASH_GOGOLOOT1 = "/gogo"
 SlashCmdList["GOGOLOOT"] = function()
 	ns:OpenOptionsPanel()
 end

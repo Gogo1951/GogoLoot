@@ -20,15 +20,19 @@
 ]]
 local _, ns = ...
 
+local RegisterPendingLootAnnouncement
+local ResolveSilentHandout
+
 --------------------------------------------------------------------------------
 -- Manual Distribution Hook
 --------------------------------------------------------------------------------
 
 --[[
     Items distributed manually via the standard ML candidate dropdown are
-    always announced — no toggle, no quality threshold — since a manual
-    hand-out is a deliberate act the group should always see. The automated
-    path (TryDistributeSlot below) passes `true` as the third argument to
+    announced whatever their quality, since a manual hand-out is a deliberate
+    act the group is owed a record of; announceMasterLootManual turns the
+    success line off, and a failure is still reported. The automated path
+    (TryDistributeSlot below) passes `true` as the third argument to
     GiveMasterLoot so this hook can tell them apart and skip.
 
     Never announce inline here — register a pending entry instead; the
@@ -61,7 +65,13 @@ if type(GiveMasterLoot) == "function" then
 		end
 
 		local displayName = ns:FormatPlayerName(candidateName)
-		ns:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName, true)
+		RegisterPendingLootAnnouncement(
+			slotIndex,
+			lootLink,
+			displayName,
+			true,
+			not ns.db.profile.announceMasterLootManual
+		)
 	end)
 end
 
@@ -79,9 +89,9 @@ end
 
     Initial pass + retry ticker: GetMasterLootCandidate can return nil for
     the first frame or two after LOOT_OPENED, and SafeGetItemInfo returns
-    nil until the client caches the item. The ticker re-runs the pass until
-    everything resolves or DISTRIBUTION_QUIET_TICKS consecutive ticks make
-    no progress.
+    nil until the client caches the item. The ticker re-runs the pass and
+    stops after DISTRIBUTION_QUIET_TICKS consecutive passes with nothing
+    handed out and nothing left waiting, or at DISTRIBUTION_MAX_RETRIES.
 
     Announcements are never sent inline with GiveMasterLoot — see the Pending
     Hand-out Registry below for the timing rules and the four outcomes.
@@ -137,23 +147,29 @@ local quietTickCount = 0
 
     Manual entries additionally survive the window closing. The confirmation is
     a server round trip while LOOT_CLOSED is local and immediate, so anything
-    that shuts the window inside that gap — handing out the last item, pressing
-    Escape, being moved out of range mid-fight — used to lose the announcement
-    silently. A hand-out the master looter clicked deliberately must always
-    reach the group, so those are flushed before the registry is cleared. The
-    automated path keeps confirm-only semantics: it fires without the player
-    asking, so a false positive there is worse than a missed line.
+    that shuts the window inside that gap (handing out the last item, pressing
+    Escape, being moved out of range mid-fight) would otherwise lose the
+    announcement silently. A hand-out the master looter clicked deliberately
+    must always reach the group, so those are flushed before the registry is
+    cleared. The automated path keeps confirm-only semantics: it fires without
+    the player asking, so a false positive there is worse than a missed line.
 ]]
 
-local PendingHandouts = {}
+local pendingHandouts = {}
 local handoutSequence = 0
 
+--[[
+    silentSuccess records that the player doesn't want the success line for this
+    hand-out; the entry is registered all the same, since the registry is what
+    detects a failure, and a failure is reported either way.
+]]
 ---@param slotIndex number
 ---@param itemLink string
 ---@param displayName string
 ---@param isManual? boolean
+---@param silentSuccess? boolean
 ---@return nil
-function ns:RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName, isManual)
+function RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName, isManual, silentSuccess)
 	if not slotIndex or not itemLink or not displayName then
 		return
 	end
@@ -162,7 +178,7 @@ function ns:RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName, is
 	local handoutId = tostring(handoutSequence)
 	local parsedLink = ns:ParseItemLink(itemLink)
 
-	PendingHandouts[handoutId] = {
+	pendingHandouts[handoutId] = {
 		handoutId = handoutId,
 		order = handoutSequence,
 		slotIndex = slotIndex,
@@ -170,21 +186,22 @@ function ns:RegisterPendingLootAnnouncement(slotIndex, itemLink, displayName, is
 		itemIdentifier = parsedLink and parsedLink.itemIdentifier or nil,
 		displayName = displayName,
 		isManual = isManual,
+		silentSuccess = silentSuccess,
 	}
 
 	ns:After(HANDOUT_TIMER_PREFIX .. handoutId, HANDOUT_FALLBACK_DELAY, function()
-		ns:ResolveSilentHandout(handoutId)
+		ResolveSilentHandout(handoutId)
 	end)
 end
 
 ---@param handoutId string
 ---@return table|nil # the removed entry, or nil when it was already resolved
 local function ResolveHandout(handoutId)
-	local handout = PendingHandouts[handoutId]
+	local handout = pendingHandouts[handoutId]
 	if not handout then
 		return nil
 	end
-	PendingHandouts[handoutId] = nil
+	pendingHandouts[handoutId] = nil
 	ns:CancelTimer(HANDOUT_TIMER_PREFIX .. handoutId)
 	return handout
 end
@@ -192,7 +209,7 @@ end
 ---@param slotIndex number
 ---@return table|nil
 local function ResolveHandoutForSlot(slotIndex)
-	for handoutId, handout in pairs(PendingHandouts) do
+	for handoutId, handout in pairs(pendingHandouts) do
 		if handout.slotIndex == slotIndex then
 			return ResolveHandout(handoutId)
 		end
@@ -207,7 +224,7 @@ end
 ---@return table|nil
 local function ResolveOldestHandout()
 	local oldestId, oldestOrder
-	for handoutId, handout in pairs(PendingHandouts) do
+	for handoutId, handout in pairs(pendingHandouts) do
 		if not oldestOrder or handout.order < oldestOrder then
 			oldestId, oldestOrder = handoutId, handout.order
 		end
@@ -234,7 +251,7 @@ end
 ]]
 ---@return nil
 local function FlushPendingManualAnnouncements()
-	for handoutId, handout in pairs(PendingHandouts) do
+	for handoutId, handout in pairs(pendingHandouts) do
 		if handout.isManual then
 			ResolveHandout(handoutId)
 			EmitLootAnnouncement(handout)
@@ -247,32 +264,35 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    One message per player per failure reason, not one per item and not one per
+    One report per player per failure reason, not one per item and not one per
     retry pass. A raider with full bags on a six-item kill would otherwise get
     six identical lines, and the distribution ticker's retries would repeat them.
 
-    Items collect for ERROR_BATCH_DELAY and go out as a single list; every item
-    already reported for that player and reason is remembered for the rest of the
-    loot session so a later pass stays quiet about it.
+    Items collect for ERROR_BATCH_DELAY and go out as one list, split across as
+    many messages as the chat limit needs (ns:AnnounceParts); every item already
+    reported for that player and reason is remembered for the rest of the loot
+    session so a later pass stays quiet about it.
 ]]
-local LootErrors = {}
+local lootErrors = {}
 
 ---@param batchKey string
 ---@return nil
 local function FlushLootError(batchKey)
-	local batch = LootErrors[batchKey]
+	local batch = lootErrors[batchKey]
 	if not batch or #batch.itemLinks == 0 then
 		return
 	end
 
-	local itemList = table.concat(batch.itemLinks, ", ")
-	for _, itemLink in ipairs(batch.itemLinks) do
+	local itemLinks = batch.itemLinks
+	for _, itemLink in ipairs(itemLinks) do
 		batch.reported[itemLink] = true
 	end
 	batch.itemLinks = {}
 
 	if IsInGroup() then
-		ns:Announce(ns:GetGroupChatChannel(), nil, batch.localeKey, batch.displayName, itemList)
+		ns:AnnounceParts(ns:GetGroupChatChannel(), nil, batch.localeKey, itemLinks, function(itemList)
+			return batch.displayName, itemList
+		end)
 	end
 end
 
@@ -286,10 +306,10 @@ local function ReportLootError(displayName, localeKey, itemLink)
 	end
 
 	local batchKey = displayName .. "\0" .. localeKey
-	local batch = LootErrors[batchKey]
+	local batch = lootErrors[batchKey]
 	if not batch then
 		batch = { displayName = displayName, localeKey = localeKey, itemLinks = {}, reported = {} }
-		LootErrors[batchKey] = batch
+		lootErrors[batchKey] = batch
 	end
 
 	if batch.reported[itemLink] then
@@ -318,8 +338,8 @@ end
 ]]
 ---@param handoutId string
 ---@return nil
-function ns:ResolveSilentHandout(handoutId)
-	local handout = PendingHandouts[handoutId]
+function ResolveSilentHandout(handoutId)
+	local handout = pendingHandouts[handoutId]
 	if not handout then
 		return
 	end
@@ -344,16 +364,18 @@ end
 
 ---@return nil
 local function ClearDistributionState()
-	for handoutId in pairs(PendingHandouts) do
+	for handoutId in pairs(pendingHandouts) do
 		ns:CancelTimer(HANDOUT_TIMER_PREFIX .. handoutId)
 	end
-	for batchKey in pairs(LootErrors) do
+	-- A failure still in its batch window is sent now; closing the window must not swallow it.
+	for batchKey in pairs(lootErrors) do
+		FlushLootError(batchKey)
 		ns:CancelTimer(ERROR_TIMER_PREFIX .. batchKey)
 	end
 
-	PendingHandouts = {}
-	LootErrors = {}
-	distributedSlots = {}
+	wipe(pendingHandouts)
+	wipe(lootErrors)
+	wipe(distributedSlots)
 	quietTickCount = 0
 	if lootDistributionTicker then
 		lootDistributionTicker:Cancel()
@@ -371,12 +393,16 @@ end
     "Bob-OtherRealm"), no alias is created and a realm-stripped destination
     matches nothing, so the item falls back to manual handling rather than
     guessing a recipient.
+
+    On WoW Forever a candidate reads "Aero Bramblefoot", which is also how
+    a destination is stored there (ns:GetCleanUnitName), so the exact key
+    matches.
 ]]
 local function BuildCandidateMap()
 	local map = {}
-	local numItems = GetNumLootItems()
+	local lootSlotCount = GetNumLootItems()
 	local groupSize = GetNumGroupMembers()
-	for slotIndex = 1, numItems do
+	for slotIndex = 1, lootSlotCount do
 		local slotCandidates = {}
 		local normalizedCounts = {}
 		local normalizedIndexes = {}
@@ -432,11 +458,45 @@ end
 --------------------------------------------------------------------------------
 
 ---@return boolean
-function ns:IsInBindOnPickupTradeInstance()
+local function IsInBindOnPickupTradeInstance()
 	local _, instanceType = GetInstanceInfo()
 	return (instanceType == "raid" or instanceType == "party")
 end
 
+--[[
+    The master-loot distribution skip: never-automated types always, plus
+    quest-class items unless the player opted into handing those out
+    (autoMasterLootQuestItems, for boosting a character they also control).
+
+    Distribution asks this one question because it has no per-item instruction
+    to weigh — unlike the roll path, which calls the two halves separately so
+    Item Overrides can sit between them.
+]]
+---@param itemInformation table
+---@return boolean
+local function ShouldSkipItemForMasterLoot(itemInformation)
+	if not itemInformation then
+		return true
+	end
+
+	if ns:IsNeverAutomatedItem(itemInformation) then
+		return true
+	end
+
+	if ns.db.profile.autoMasterLootQuestItems then
+		return false
+	end
+
+	return ns:IsQuestClassItem(itemInformation)
+end
+
+--[[
+    The second return marks a slot the ticker should keep waiting on: its item
+    info hasn't loaded, or its destination isn't a candidate yet. A slot skipped
+    for good (ignored, never automated, no destination) returns false, false.
+]]
+---@return boolean distributed
+---@return boolean waiting
 local function TryDistributeSlot(slotIndex, candidateMap)
 	if distributedSlots[slotIndex] then
 		return false
@@ -454,14 +514,13 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 	end
 
 	local itemId = parsedLink.itemIdentifier
-	local itemInfo = ns:SafeGetItemInfo(itemId)
-	if not itemInfo then
-		-- Item info not yet cached — the retry ticker will pick this up
-		return false
+	local itemInformation = ns:SafeGetItemInfo(itemId)
+	if not itemInformation then
+		return false, true
 	end
 
 	-- Hard skip: legendaries, recipes, mounts, pets — and quest items unless opted in
-	if ns:ShouldSkipItemForMasterLoot(itemInfo) then
+	if ShouldSkipItemForMasterLoot(itemInformation) then
 		return false
 	end
 
@@ -471,29 +530,33 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 	end
 
 	-- BoP items can only be redistributed inside trade-eligible instances
-	if itemInfo.bindType == ns.BIND_ON_PICKUP and not ns:IsInBindOnPickupTradeInstance() then
+	if itemInformation.bindType == ns.BIND_ON_PICKUP and not IsInBindOnPickupTradeInstance() then
 		return false
 	end
 
-	local qualityKey = ns.rarityToConfigurationKey[itemInfo.quality]
+	local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[itemInformation.quality]
 	if not qualityKey then
 		return false
 	end
 
 	local slotCandidates = candidateMap[slotIndex]
 	if not slotCandidates then
-		return false
+		return false, true
 	end
 
 	local resolvedName, candidateIndex = ResolveDestinationCandidate(qualityKey, slotCandidates)
+	if not resolvedName then
+		return false
+	end
 	if not candidateIndex then
 		--[[
-            Destination isn't a valid candidate for this slot (out of range,
-            different sub-group, no longer in group, or an ambiguous duplicate
-            base name across realms). Leave it for manual handling rather
-            than silently re-routing.
+            Destination isn't a candidate for this slot yet: the candidate list
+            can lag LOOT_OPENED, so the ticker keeps waiting until its ceiling.
+            One that never becomes a candidate (out of range, different
+            sub-group, no longer in group, or an ambiguous duplicate base name
+            across realms) is left for manual handling rather than re-routed.
         ]]
-		return false
+		return false, true
 	end
 
 	local displayName = ns:FormatPlayerName(resolvedName)
@@ -510,40 +573,40 @@ local function TryDistributeSlot(slotIndex, candidateMap)
         the happy path.
     ]]
 	local wantsAnnounce = ns.db.profile.announceMasterLootAuto
-		and itemInfo.quality >= ns.db.profile.announceMasterLootAutoThreshold
+		and itemInformation.quality >= ns.db.profile.announceMasterLootAutoThreshold
 
-	ns:RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName)
-	for _, handout in pairs(PendingHandouts) do
-		if handout.slotIndex == slotIndex then
-			handout.silentSuccess = not wantsAnnounce
-		end
-	end
+	RegisterPendingLootAnnouncement(slotIndex, lootLink, displayName, false, not wantsAnnounce)
 
 	return true
 end
 
+---@return boolean distributedAny
+---@return boolean stillWaiting
 local function RunDistributionPass()
 	if not lootIsOpen then
-		return false
+		return false, false
 	end
 
 	local candidateMap = BuildCandidateMap()
-	local numItems = GetNumLootItems()
-	local distributedAny = false
+	local lootSlotCount = GetNumLootItems()
+	local distributedAny, stillWaiting = false, false
 
 	--[[
         Iterate from the bottom upward so that as slots are consumed, the
         remaining indices we still care about don't shift.
     ]]
-	for slotIndex = numItems, 1, -1 do
+	for slotIndex = lootSlotCount, 1, -1 do
 		if not distributedSlots[slotIndex] then
-			if TryDistributeSlot(slotIndex, candidateMap) then
+			local distributed, waiting = TryDistributeSlot(slotIndex, candidateMap)
+			if distributed then
 				distributedAny = true
+			elseif waiting then
+				stillWaiting = true
 			end
 		end
 	end
 
-	return distributedAny
+	return distributedAny, stillWaiting
 end
 
 local function StartDistributionTicker()
@@ -562,8 +625,8 @@ local function StartDistributionTicker()
 			return
 		end
 
-		local distributedAny = RunDistributionPass()
-		if distributedAny then
+		local distributedAny, stillWaiting = RunDistributionPass()
+		if distributedAny or stillWaiting then
 			quietTickCount = 0
 		else
 			quietTickCount = quietTickCount + 1
@@ -579,7 +642,7 @@ end
 -- Loot Window Lifecycle
 --------------------------------------------------------------------------------
 
-local function HandleLootOpened()
+local function OnLootOpened()
 	--[[
         A fresh loot window replaces the whole registry, so anything a manual
         hand-out is still waiting on has to go out first — looting the next
@@ -601,7 +664,7 @@ local function HandleLootOpened()
 	StartDistributionTicker()
 end
 
-local function HandleLootClosed()
+local function OnLootClosed()
 	lootIsOpen = false
 	FlushPendingManualAnnouncements()
 	ClearDistributionState()
@@ -618,22 +681,22 @@ end
     constants below to this client's ids and the correlation becomes a numeric
     comparison.
 
-    Matching numerically is why this no longer touches a localized string: no
+    Matching numerically keeps this off localized strings entirely: no
     exact-versus-substring tradeoff, no locale drift, and no dependence on
-    whether a given ERR_* global happens to be bound as a string (several are
-    not on 1.15.9, which silently disabled the cases that relied on them).
+    whether a given ERR_* global is bound as a string (several are not on
+    1.15.9).
 
     Every constant here describes the RECIPIENT of a hand-out, which is what the
-    ERROR_* announcements say. Deliberately absent: ERR_INV_FULL and
-    ERR_LOOT_BAG_FULL, which are about the local player's own bags, so
-    auto-looting into full bags mid-hand-out would blame the recipient.
+    ERROR_* announcements say. Deliberately absent: ERR_INV_FULL,
+    ERR_LOOT_BAG_FULL and ERR_ITEM_MAX_COUNT, which are about the local
+    player's own bags, so auto-looting into full bags mid-hand-out would blame
+    the recipient; and ERR_TOO_FAR_TO_INTERACT, which the master looter's own
+    out-of-reach clicks raise.
 ]]
 local ERROR_CONSTANT_TO_LOCALE_KEY = {
 	ERR_LOOT_MASTER_INV_FULL = "ERROR_BAG_FULL",
 	ERR_LOOT_MASTER_UNIQUE_ITEM = "ERROR_MAX_COUNT",
-	ERR_ITEM_MAX_COUNT = "ERROR_MAX_COUNT",
 	ERR_LOOT_TOO_FAR = "ERROR_OUT_OF_RANGE",
-	ERR_TOO_FAR_TO_INTERACT = "ERROR_OUT_OF_RANGE",
 	ERR_LOOT_PLAYER_NOT_FOUND = "ERROR_NOT_IN_GROUP",
 	ERR_LOOT_MASTER_OTHER = "ERROR_DISTRIBUTION_FAILED",
 }
@@ -663,21 +726,8 @@ local function MapErrorIdToLocaleKey(errorId)
 	return errorIdToLocaleKey[errorId]
 end
 
--- Diagnostics reads both of these to report what resolved on this client.
+-- Diagnostics reads this to report which constants resolved on this client.
 ns.LOOT_ERROR_CONSTANTS = ERROR_CONSTANT_TO_LOCALE_KEY
-
----@return table
-function ns:GetResolvedLootErrorIds()
-	if not errorIdToLocaleKey then
-		BuildErrorIdMap()
-	end
-	local resolved = {}
-	for errorId, localeKey in pairs(errorIdToLocaleKey) do
-		resolved[localeKey] = resolved[localeKey] or {}
-		table.insert(resolved[localeKey], errorId)
-	end
-	return resolved
-end
 
 --[[
     UI_ERROR_MESSAGE is (errorType, message) where errorType is the numeric id.
@@ -685,10 +735,10 @@ end
     working on any build that reorders or omits arguments.
 ]]
 local function ExtractErrorId(...)
-	for argIndex = 1, select("#", ...) do
-		local argValue = select(argIndex, ...)
-		if type(argValue) == "number" then
-			return argValue
+	for argumentIndex = 1, select("#", ...) do
+		local argumentValue = select(argumentIndex, ...)
+		if type(argumentValue) == "number" then
+			return argumentValue
 		end
 	end
 	return nil
@@ -700,8 +750,8 @@ end
     error the client raises, so with no hand-out in flight it is somebody else's
     error and must not be announced.
 ]]
-local function HandleUIErrorMessage(...)
-	if not next(PendingHandouts) then
+local function OnUiErrorMessage(...)
+	if not next(pendingHandouts) then
 		return
 	end
 
@@ -730,7 +780,7 @@ end
     item), so only act when a pending entry exists for that slot.
 ]]
 
-local function HandleLootSlotCleared(slotIndex)
+local function OnLootSlotCleared(slotIndex)
 	if not slotIndex then
 		return
 	end
@@ -747,7 +797,7 @@ end
 -- Distribution Event Registrations
 --------------------------------------------------------------------------------
 
-ns:RegisterModuleEvent("LOOT_OPENED", HandleLootOpened)
-ns:RegisterModuleEvent("LOOT_CLOSED", HandleLootClosed)
-ns:RegisterModuleEvent("LOOT_SLOT_CLEARED", HandleLootSlotCleared)
-ns:RegisterModuleEvent("UI_ERROR_MESSAGE", HandleUIErrorMessage)
+ns:RegisterModuleEvent("LOOT_OPENED", OnLootOpened)
+ns:RegisterModuleEvent("LOOT_CLOSED", OnLootClosed)
+ns:RegisterModuleEvent("LOOT_SLOT_CLEARED", OnLootSlotCleared)
+ns:RegisterModuleEvent("UI_ERROR_MESSAGE", OnUiErrorMessage)
