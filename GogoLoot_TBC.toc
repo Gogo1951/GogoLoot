@@ -109,6 +109,7 @@ Options/Options-Master-Looter-Ignore-List.lua
 Options/Options-Master-Looter-Popup.lua
 Options/Options-Automated-Opening.lua
 Options/Options-Openable-Items.lua
+Options/Options-Lockboxes.lua
 Options/Options-Loot-Toasts.lua
 Options/Options-Loot-Toast-Filters.lua
 Options/Options-Loot-Sounds.lua

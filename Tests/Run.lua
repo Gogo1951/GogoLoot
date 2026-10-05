@@ -130,6 +130,7 @@ local FILES = {
 	"Options/Options-Master-Looter-Popup.lua",
 	"Options/Options-Automated-Opening.lua",
 	"Options/Options-Openable-Items.lua",
+	"Options/Options-Lockboxes.lua",
 	"Options/Options-Loot-Toasts.lua",
 	"Options/Options-Loot-Toast-Filters.lua",
 	"Options/Options-Loot-Sounds.lua",
@@ -317,6 +318,7 @@ test("the settings tree nests each child panel under its parent", function()
 		{ registry.MasterLooterIgnoreList, "category:" .. registry.MasterLooter },
 		{ registry.AutomatedOpening, root },
 		{ registry.OpenableItems, "category:" .. registry.AutomatedOpening },
+		{ registry.Lockboxes, "category:" .. registry.AutomatedOpening },
 		{ registry.LootToasts, root },
 		{ registry.LootToastFilters, "category:" .. registry.LootToasts },
 		{ registry.LootSounds, root },
@@ -1597,7 +1599,7 @@ end)
 ]]
 local function ToggleRowsWithSetting(ns)
 	local announcementArgs = ns.BuildAnnouncementOptions().args
-	local lockboxArgs = ns.BuildAutomatedOpeningOptions().args
+	local lockboxArgs = ns.BuildLockboxOptions().args
 	return {
 		{ key = "autoAnnounceRow", row = announcementArgs.autoAnnounceRow, setting = "announceMasterLootAuto" },
 		{ key = "tradeRow", row = announcementArgs.tradeRow, setting = "announceTrade" },
@@ -1674,7 +1676,7 @@ test("a caption too long to share its line sends the setting to the line below",
 	ns.OptionsToggleWidth = function()
 		return ns.OPTIONS_LABEL_WIDTH + 0.5
 	end
-	local cells = ns.BuildAutomatedOpeningOptions().args.tooltipsRow.args
+	local cells = ns.BuildLockboxOptions().args.tooltipsRow.args
 
 	checkEqual("full", cells.toggle.width, "the caption takes the whole line")
 	checkEqual(nil, cells.control, "with nothing beside it")
@@ -1854,27 +1856,7 @@ test("a panel below its switch leaves with it, gaps included", function()
 			name = "Automated Opening",
 			args = ns.BuildAutomatedOpeningOptions().args,
 			setting = "autoOpen",
-			--[[
-			    The Lockboxes section isn't the switch's: its tooltips work with
-			    nothing opening on its own. Nor is the Ignore notice or its
-			    example, since Speedy Loot gives the notice too.
-			]]
-			alwaysShown = {
-				description = true,
-				spacerAfterDesc = true,
-				autoOpen = true,
-				spacerBeforeIgnoreNotifications = true,
-				ignoreNotifications = true,
-				ignoreNotificationsExampleRow = true,
-				spacerBeforeLockboxes = true,
-				lockboxesHeader = true,
-				spacerAfterLockboxesHeader = true,
-				lockboxesDesc = true,
-				spacerAfterLockboxesDesc = true,
-				tooltipsRow = true,
-				spacerBeforeNotifications = true,
-				notificationsRow = true,
-			},
+			alwaysShown = { description = true, spacerAfterDesc = true, autoOpen = true },
 		},
 	}) do
 		ns.db.profile[case.setting] = false
@@ -1894,40 +1876,37 @@ test("a panel below its switch leaves with it, gaps included", function()
 end)
 
 --[[
-    Lockboxes is a section of the Automated Opening panel rather than a panel of
-    its own: under its own header, below the switch and its hold-offs, with its
-    description and then its two toggles.
+    Lockboxes is a child panel of Automated Opening rather than a section of
+    it: its description, then its two toggles. It works with nothing opening,
+    so nothing on it hides behind the Automated Opening switch.
 ]]
-test("the Automated Opening panel carries Lockboxes as a section of its own", function()
+test("Lockboxes is a child panel of Automated Opening", function()
 	local ns = loadAddon()
-	local args = ns.BuildAutomatedOpeningOptions().args
+	local args = ns.BuildLockboxOptions().args
 
-	checkEqual("header", args.lockboxesHeader.type, "Lockboxes has a header")
-	check(args.lockboxesHeader.name:find(ns.L["TAB_LOCKBOXES"], 1, true) ~= nil, "titled Lockboxes")
+	checkEqual(ns.L["TAB_LOCKBOXES"], ns.BuildLockboxOptions().name, "titled Lockboxes")
 	checkEqual(
 		ns.L["LOCKBOXES_SECTION_DESCRIPTION"]:format("Rogue", "Lockpicking"),
-		args.lockboxesDesc.name,
+		args.description.name,
 		"with its description, in the game's own names"
 	)
-	local topToBottom = {
-		"soloOnlyRow",
-		"ignoreNotifications",
-		"ignoreNotificationsExampleRow",
-		"lockboxesHeader",
-		"lockboxesDesc",
-		"tooltipsRow",
-		"notificationsRow",
-	}
-	for index = 2, #topToBottom do
-		local above, below = topToBottom[index - 1], topToBottom[index]
-		check(args[above].order < args[below].order, above .. " comes before " .. below)
+	check(args.description.order < args.tooltipsRow.order, "description first")
+	check(args.tooltipsRow.order < args.notificationsRow.order, "then tooltips, then notifications")
+
+	for key in pairs(ns.BuildAutomatedOpeningOptions().args) do
+		check(not key:find("^lockbox") and key ~= "tooltipsRow", "the Automated Opening panel no longer carries " .. key)
+	end
+
+	ns.db.profile.autoOpen = false
+	for key, entry in pairs(args) do
+		check(not evaluate(entry.hidden), key .. " stays on show with opening off")
 	end
 end)
 
 --[[
-    The Ignore notice sits under the Automated Opening switch as its peer,
-    neither indented nor leaving with it, and the Openables List no longer
-    opens on a checkbox that reads as its own switch.
+    The Ignore notice sits under the Automated Opening switch as its peer, not
+    indented, and leaves with it like everything else below the switch. The
+    Openables List no longer opens on a checkbox that reads as its own switch.
 ]]
 test("the Ignore notice is a peer of the Automated Opening switch, not the list's first checkbox", function()
 	local ns = loadAddon()
@@ -1949,7 +1928,7 @@ end)
     Under the Ignore notice sits an example of what it prints: the plain
     notice's real template, laid out as printed, add-on name first and with no
     marker. Like the announcements' examples, it stays on show while its toggle
-    is off, and while opening is off too.
+    is off, but leaves with the rest of the panel while opening is off.
 ]]
 test("the Ignore notice's example is its real printed line", function()
 	local ns = loadAddon()
@@ -1973,10 +1952,10 @@ test("the Ignore notice's example is its real printed line", function()
 	checkEqual(nil, text:find("UI-RaidTargetingIcon", 1, true), "with no marker, since nobody else sees it")
 
 	check(args.ignoreNotifications.order < row.order, "it sits under its toggle")
-	check(row.order < args.spacerBeforeLockboxes.order, "above the Lockboxes section")
 	ns.db.profile.openingIgnoreNotifications = false
+	check(not evaluate(row.hidden), "and stays on show with the notice off")
 	ns.db.profile.autoOpen = false
-	check(not evaluate(row.hidden), "and stays on show with the notice and opening both off")
+	check(evaluate(row.hidden), "but leaves with opening")
 end)
 
 --[[
