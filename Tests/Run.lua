@@ -1894,7 +1894,10 @@ test("Lockboxes is a child panel of Automated Opening", function()
 	check(args.tooltipsRow.order < args.notificationsRow.order, "then tooltips, then notifications")
 
 	for key in pairs(ns.BuildAutomatedOpeningOptions().args) do
-		check(not key:find("^lockbox") and key ~= "tooltipsRow", "the Automated Opening panel no longer carries " .. key)
+		check(
+			not key:find("^lockbox") and key ~= "tooltipsRow",
+			"the Automated Opening panel no longer carries " .. key
+		)
 	end
 
 	ns.db.profile.autoOpen = false
@@ -3227,12 +3230,12 @@ end)
 
 test("every locale carries the same keys as enUS", function()
 	local enUS = {}
-	for key in io.open(ROOT .. "Locales/enUS.lua"):read("a"):gmatch('L%["([A-Z0-9_]+)"%]') do
+	for key in io.open(ROOT .. "Locales/enUS.lua"):read("*a"):gmatch('L%["([A-Z0-9_]+)"%]') do
 		enUS[key] = true
 	end
 
 	for _, locale in ipairs({ "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW" }) do
-		local body = io.open(ROOT .. "Locales/" .. locale .. ".lua"):read("a")
+		local body = io.open(ROOT .. "Locales/" .. locale .. ".lua"):read("*a")
 		local present = {}
 		for key in body:gmatch('L%["([A-Z0-9_]+)"%]') do
 			present[key] = true
@@ -3261,7 +3264,7 @@ test("every locale's /Commands line shows the registered command", function()
 	checkEqual("function", type(env.SlashCmdList.GOGOLOOT), "and it is wired")
 
 	for _, locale in ipairs({ "enUS", "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW" }) do
-		local body = io.open(ROOT .. "Locales/" .. locale .. ".lua"):read("a")
+		local body = io.open(ROOT .. "Locales/" .. locale .. ".lua"):read("*a")
 		local shown = body:match('L%["OPTIONS_COMMAND"%]%s*=%s*"([^"]*)"')
 		-- A locale without its own copy falls back to enUS's.
 		if shown or locale == "enUS" then

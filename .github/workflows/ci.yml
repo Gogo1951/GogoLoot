@@ -1,0 +1,17 @@
+# Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
+# The checks live in Common-Core/.github/workflows/ci.yml.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: Gogo1951/Common-Core/.github/workflows/ci.yml@main
