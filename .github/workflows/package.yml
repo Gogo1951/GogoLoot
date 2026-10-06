@@ -1,72 +1,22 @@
+# Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
+# The release logic lives in Common-Core/.github/workflows/package.yml.
+# Tag push: build and upload to CurseForge and Wago.
+# Run workflow (Actions tab): dry run, builds the zip and uploads nothing.
 name: Package and release
+
 on:
   push:
     tags:
       - "**"
+  workflow_dispatch:
+
 jobs:
   release:
-    runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
+    uses: Gogo1951/Common-Core/.github/workflows/package.yml@main
+    with:
+      dry_run: ${{ github.event_name == 'workflow_dispatch' }}
+    secrets:
       CF_API_KEY: ${{ secrets.CF_API_KEY }}
       WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
-      # NEITHER GITHUB_OAUTH NOR GITHUB_API_TOKEN IS SET HERE, AND NEITHER MAY BE
-      # ADDED. release.sh accepts either one, and either is enough to do the damage.
-      #
-      # Given a token, the packager's upload_github() looks the release up by tag
-      # and PATCHes it with "name": the bare tag and "body": a changelog it builds
-      # from the commit messages since the previous tag. That silently replaces
-      # hand-written release notes with developer detail on every build. There is
-      # no flag to suppress only the body; -d would also skip CurseForge and Wago.
-      #
-      # With no token, upload_github() returns at its first guard and never reads,
-      # creates, or edits a release. Release notes written on GitHub are then the
-      # only thing that has ever been there. CurseForge and Wago uploads are
-      # unaffected: they authenticate with the two tokens above. The one trade is
-      # that the packager no longer attaches the zip or release.json to the
-      # GitHub release.
-    steps:
-      - name: Clone project
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          fetch-depth: 0
-      - name: Install Subversion
-        run: sudo apt-get update && sudo apt-get install -y subversion
-      - name: Update vendored libraries from .pkgmeta
-        run: |
-          yq e '.externals | to_entries[] | .key + "|" + .value.url' .pkgmeta | while IFS='|' read -r path url; do
-            rm -rf "$path"
-            if [[ "$url" == *"curseforge.com"* ]]; then
-              svn export --force --non-interactive "$url" "$path"
-            else
-              git clone --depth 1 "$url" "$path"
-              rm -rf "$path/.git"
-            fi
-          done
-      - name: Commit libraries and move tag onto the new commit
-        run: |
-          BRANCH="${{ github.event.repository.default_branch }}"
-          TAG="${GITHUB_REF_NAME}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Includes/Libraries/
-          if git diff --staged --quiet; then
-            echo "Libraries already up to date; nothing to commit."
-          else
-            git commit -m "Update vendored libraries for ${TAG}"
-            git push origin "HEAD:${BRANCH}"
-            # Fast-forward the release tag onto the commit that has the libraries,
-            # so the packager builds a clean release (HEAD == tag), not an alpha.
-            git tag -f "${TAG}"
-            git push -f origin "refs/tags/${TAG}"
-          fi
-      - name: Link the CurseForge and Wago changelog to the GitHub release
-        run: |
-          # With no manual changelog, the packager writes its commit log into the
-          # zip as CHANGELOG.md. This one sits under .github/, which never ships.
-          echo "[Release Notes]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME)" > .github/CHANGELOG.md
-          printf '\nmanual-changelog:\n  filename: .github/CHANGELOG.md\n  markup-type: markdown\n' >> .pkgmeta
-      - name: Package and release
-        uses: BigWigsMods/packager@v2

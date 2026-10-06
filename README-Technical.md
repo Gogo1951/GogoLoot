@@ -6,7 +6,8 @@ This document combines architecture notes and contribution guidance for develope
 
 ```
 GogoLoot/
-├── .github/workflows/package.yml                CurseForge + Wago release, library vendoring (repo only)
+├── .github/workflows/ci.yml                     Calls Common-Core: Lua 5.1 syntax, luacheck, StyLua and tests on every PR (repo only)
+├── .github/workflows/package.yml                Calls Common-Core: CurseForge + Wago release, library vendoring (repo only)
 ├── .gitattributes                               LF normalization (repo only)
 ├── .gitignore                                   Dev-clutter ignore list (repo only)
 ├── .luacheckrc                                  Lint settings and the WoW globals the add-on reads (repo only)
@@ -530,10 +531,10 @@ Stop halts the event log and keeps the buffer, so start, reproduce, stop, show r
 ## Tests
 
 ```
-lua Tests/Run.lua
+lua5.1 Tests/Run.lua
 ```
 
-Run from the add-on folder, with the system Lua: no WoW client, no libraries. **`Tests/` is deliberately absent from the TOC and the zip**: per the Style Guide, real logic tests live in the dev toolchain, never in the shipped Diagnostics panel, so these files never load in game. For what a human has to verify in the client, see [README-Testing.md](https://github.com/Gogo1951/GogoLoot/blob/main/README-Testing.md).
+Run from the add-on folder, with Lua 5.1 (the version WoW embeds, and what CI runs on every PR): no WoW client, no libraries. **`Tests/` is deliberately absent from the TOC and the zip**: per the Style Guide, real logic tests live in the dev toolchain, never in the shipped Diagnostics panel, so these files never load in game. For what a human has to verify in the client, see [README-Testing.md](https://github.com/Gogo1951/GogoLoot/blob/main/README-Testing.md).
 
 `Tests/Fakes/WoW.lua` stubs the WoW and Ace surface: `GiveMasterLoot` (recording every call and firing the `hooksecurefunc` hook), loot slots with their types and sources, master-loot candidates, `GetGameMessageInfo`, chat output and chat frames, bags (items, links, a lock per slot) and `UseContainerItem`, a `GameTooltipTemplate` tooltip whose lines are published by name and whose `SetBagItem` runs method post-hooks, `LootFrame` with its `OnShow` hook, the interaction windows, sounds, the client's loot, roll and money format strings, LibSharedMedia, and an AceDB fake that copies defaults the way the real library does, keeps `char` sections, and keeps its profile callbacks so a test can fire them.
 
@@ -744,7 +745,7 @@ Everything else (the Spanish file pairing, the overflow canary, the output ceili
 - **Issues**: [GitHub Issues](https://github.com/Gogo1951/GogoLoot/issues).
 - **Bug reports**: include game version + locale, class + level, group context (solo, party or raid, and the loot method), repro steps, and the relevant chat output or error text. The Diagnostic Tools panel builds a client-tagged report you can paste in.
 - **Discord**: [discord.gg/eh8hKq992Q](https://discord.gg/eh8hKq992Q).
-- **PR guidelines**: keep PRs scoped to one change; match the conventions in this codebase (namespace `ns`, locale keys for every user-facing string, no abbreviations in names); verify the 255-byte limit for any change to outbound messages (Style Guide → MESSAGES → Message Length) and check labels in the longer locales; ship every change to saved data with its own migration, tagged `MIGRATION (remove after YYYY-MM-DD)`, 30 days past the release that ships it; keep `ns.EVENT_NAMES` and the diagnostics probes in sync with any new events or API guards; run `lua Tests/Run.lua`; update this document if the architecture or file map changes.
+- **PR guidelines**: keep PRs scoped to one change; match the conventions in this codebase (namespace `ns`, locale keys for every user-facing string, no abbreviations in names); verify the 255-byte limit for any change to outbound messages (Style Guide → MESSAGES → Message Length) and check labels in the longer locales; ship every change to saved data with its own migration, tagged `MIGRATION (remove after YYYY-MM-DD)`, 30 days past the release that ships it; keep `ns.EVENT_NAMES` and the diagnostics probes in sync with any new events or API guards; run `lua5.1 Tests/Run.lua`; update this document if the architecture or file map changes.
 - **Commit and PR descriptions require a User Story.** Don't just say "I changed X" or "I fixed Y." Frame the change in terms of who it helps and why:
 
    **Format:** *As a [role], I [needed / wanted] [behavior] so that [outcome]. This change [does X].*
