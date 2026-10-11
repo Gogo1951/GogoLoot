@@ -213,5 +213,5 @@ globals = {
 	-- the add-on's own globals (FILE STRUCTURE's globals bullet), plus SlashCmdList, whose field the slash registration writes
 	"GogoLootDB",
 	"SLASH_GOGOLOOT1",
-	"SlashCmdList",
+	SlashCmdList = { fields = { "GOGOLOOT" } }, -- a field, so only the add-on's own slash entry is writable
 }
