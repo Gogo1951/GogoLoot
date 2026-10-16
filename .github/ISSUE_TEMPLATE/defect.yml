@@ -1,0 +1,123 @@
+# Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
+# Issue Type adds an "Area: ..." label through .github/workflows/issue-labels.yml.
+name: Defect
+description: Something is broken or not working the way it should.
+labels: ["Defect"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Fields marked with a red asterisk are required; everything else is optional, but the diagnostic reports at the bottom are the fastest way to get a defect fixed.
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue Description
+      description: What happened, and what did you expect to happen instead?
+      placeholder: The add-on's window vanishes every time I enter combat in a raid. I expected it to stay on screen for the whole fight.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type (optional)
+      options:
+        - Code
+        - Copywriting
+        - Data
+        - Interface Design
+        - Localization
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce (optional)
+      description: Optional. If you can make it happen again, list what you did. If you're not sure, skip this; the description is enough.
+      placeholder: |
+        1. Join a raid and zone into Naxxramas
+        2. Pull Anub'Rekhan
+        3. The add-on's window disappears the moment combat starts
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots (optional)
+      description: Optional. Drag images or a short video into the box. A report too long to paste below can also be saved as a .txt file and dropped here.
+      placeholder: Drag and drop files here
+    validations:
+      required: false
+
+  - type: dropdown
+    id: game-flavor
+    attributes:
+      label: Game Flavor
+      description: Which game flavor are you playing? Pick all that apply.
+      multiple: true
+      options:
+        - World of Warcraft
+        - Mists of Pandaria Classic
+        - Burning Crusade Anniversary
+        - "World of Warcraft: Forever"
+        - "World of Warcraft: Season of Discovery"
+        - "World of Warcraft: Classic"
+        - Not sure
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Diagnostic Reports (optional, but they help the most)
+
+        > [!NOTE]
+        > **Diagnostic reports are the single best way to get your issue fixed fast.** They show exactly what the add-on sees on your end, so the problem can be tracked down without a lot of back-and-forth. Paste in as many as you can, thanks!
+
+        **How to grab them**
+        1. Open the add-on's settings and find **Diagnostic Tools**.
+        2. Check **Enable Diagnostic Tools**.
+        3. Open each tab (Settings, Code, Data, Localization), run the report, copy the report, and paste it in the matching box below.
+
+  - type: textarea
+    id: settings-report
+    attributes:
+      label: Settings Report (optional)
+      description: Paste from the Settings tab.
+      placeholder: Paste report here
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: code-report
+    attributes:
+      label: Code Report (optional)
+      description: Paste from the Code tab.
+      placeholder: Paste report here
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: data-report
+    attributes:
+      label: Data Report (optional)
+      description: Paste from the Data tab.
+      placeholder: Paste report here
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: localization-report
+    attributes:
+      label: Localization Report (optional)
+      description: Paste from the Localization tab.
+      placeholder: Paste report here
+      render: text
+    validations:
+      required: false

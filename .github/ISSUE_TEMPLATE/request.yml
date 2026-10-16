@@ -1,0 +1,27 @@
+# Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
+name: Request
+description: A suggestion for something new or changed, or feedback on how things are working.
+labels: ["Feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a suggestion for something new, an idea to change something that exists, or feedback on how things are working? This is the place. Just three quick fields, all required.
+
+  - type: textarea
+    id: your-request
+    attributes:
+      label: Your Request
+      description: Describe your suggestion or share your feedback. Feel free to drag in screenshots or a quick sketch too; a picture of where it would go helps a lot.
+      placeholder: Show a countdown for how long until the boss drops below 20% health.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-it-matters
+    attributes:
+      label: Why It Matters to You
+      description: What would this let you do, or do better? Why does it matter to you? Knowing the goal behind a request helps me find the best way to build it, and sometimes there's a simpler fix than the one you first pictured.
+      placeholder: I play a Fury warrior in Naxxramas. If I can see when the boss is about to hit Execute range, I can save up rage and burn it down the moment it does. Faster kills mean fewer wipes and more time to clear the whole raid before the night ends, so everyone gets more chances at loot.
+    validations:
+      required: true

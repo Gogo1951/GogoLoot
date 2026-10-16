@@ -1,0 +1,16 @@
+# Started from Gogo1951/Common-Core/addon-starters/.github/ISSUE_TEMPLATE/config.yml.
+# Different in every add-on, so CI never checks it.
+# It controls the "New issue" page: the blank-issue link and the links shown
+# below the Defect and Request templates.
+
+# Keeps "Open a blank issue" for the rare issue that is neither a Defect nor a Request.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Chat on Discord
+    url: https://discord.gg/eh8hKq992Q
+    about: Quick questions, help with setup, or just hanging out.
+
+  - name: "GogoLoot on CurseForge"
+    url: https://www.curseforge.com/wow/addons/gogoloot
+    about: "Downloads, changelog, and the latest version of GogoLoot."

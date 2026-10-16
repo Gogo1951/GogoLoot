@@ -1,0 +1,15 @@
+# Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
+# The labeling logic lives in Common-Core/.github/workflows/issue-labels.yml.
+# New issue: adds an "Area: ..." label from the Defect form's Issue Type answer.
+name: Issue labels
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  label:
+    permissions:
+      issues: write
+    uses: Gogo1951/Common-Core/.github/workflows/issue-labels.yml@main
