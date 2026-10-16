@@ -275,12 +275,16 @@ function ns:InitMinimap()
 	    nudged onto the hole. The nudge was tuned by eye on Forever, where one
 	    unit is about two screen pixels; the texture alone doesn't predict it.
 	    Refresh leaves all of this alone, and a click only changes the icon's
-	    texture coordinates.
+	    texture coordinates. The icon is sized and anchored by hand rather than
+	    through SetButtonIcon, whose ResetButtonIcon calls icon:UpdateCoord()
+	    and errors when another add-on has replaced the button's icon.
 	]]
-	if ns.FLAVOR == "Camelot" or ns.FLAVOR == "Mainline" then
-		LibDBIcon:SetButtonIcon(ADDON_NAME, nil, 20, "CENTER", 1, -0.35)
+	local button = LibDBIcon:GetMinimapButton(ADDON_NAME)
+	if (ns.FLAVOR == "Camelot" or ns.FLAVOR == "Mainline") and button and button.icon then
+		button.icon:SetSize(20, 20)
+		button.icon:ClearAllPoints()
+		button.icon:SetPoint("CENTER", 1, -0.35)
 
-		local button = LibDBIcon:GetMinimapButton(ADDON_NAME)
 		local mask = button:CreateMaskTexture()
 		mask:SetTexture(130924, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") -- Interface\CharacterFrame\TempPortraitAlphaMask
 		mask:SetAllPoints(button.icon)
