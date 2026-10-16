@@ -47,7 +47,7 @@ body:
     id: screenshots
     attributes:
       label: Screenshots (optional)
-      description: Optional. Drag images or a short video into the box. A report too long to paste below can also be saved as a .txt file and dropped here.
+      description: Optional. Drag images into the box.
       placeholder: Drag and drop files here
     validations:
       required: false
