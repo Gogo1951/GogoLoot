@@ -7,7 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report this. Fields marked with a red asterisk are required; everything else is optional, but the diagnostic reports at the bottom are the fastest way to get a defect fixed.
+        > 💖 **Thanks for helping make this add-on better!**
+        >
+        > The more details you share, the easier it is to track down bugs and get them fixed. A little clarity goes a long way! Pull requests are always welcome, too.
 
   - type: textarea
     id: issue-description
