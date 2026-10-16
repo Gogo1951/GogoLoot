@@ -7,9 +7,9 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > 💖 **Thanks for helping make this add-on better!**
+        > Thanks for helping make this add-on better! The more details you share, the easier it is to track down bugs and get them fixed.
         >
-        > The more details you share, the easier it is to track down bugs and get them fixed. A little clarity goes a long way! Pull requests are always welcome, too.
+        > Pull requests are always welcome, too.
 
   - type: textarea
     id: your-request
