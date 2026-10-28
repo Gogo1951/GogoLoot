@@ -2,6 +2,7 @@
 name: Request
 description: A suggestion for something new or changed, or feedback on how things are working.
 labels: ["Feedback"]
+projects: ["Gogo1951/6"]
 body:
   - type: markdown
     attributes:

@@ -3,6 +3,7 @@
 name: Defect
 description: Something is broken or not working the way it should.
 labels: ["Defect"]
+projects: ["Gogo1951/6"]
 body:
   - type: markdown
     attributes:
