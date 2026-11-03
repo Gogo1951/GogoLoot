@@ -124,7 +124,7 @@ ns.DEFAULT_IGNORE_LIST_MASTER = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, TBC Anniversary 2.5.6.69795
+	2026-11-03, TBC Anniversary 2.5.6.70577
 
 Notes
 	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.
@@ -140,5 +140,8 @@ Wowhead
 	None.
 
 wago.tools
+	None.
+
+QuestieDB
 	None.
 ]]

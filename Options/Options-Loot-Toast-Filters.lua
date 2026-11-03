@@ -57,8 +57,16 @@ local FILTER_DESCRIPTIONS = {
 	},
 }
 
--- The last three rows' tooltips, which say what the row gathers rather than name a type.
+--[[
+    Tooltips that say what a row gathers rather than name a type: the last three
+    rows, and Container, which is the bag class, not the clams and crates the
+    rest of GogoLoot calls containers (those are under Openables).
+]]
 local OWN_ROW_DESCRIPTIONS = {
+	CONTAINER = {
+		Mine = "LOOT_TOASTS_FILTER_CONTAINER_MINE_DESCRIPTION",
+		Group = "LOOT_TOASTS_FILTER_CONTAINER_GROUP_DESCRIPTION",
+	},
 	BIND_ON_PICKUP = {
 		Mine = "LOOT_TOASTS_FILTER_BIND_ON_PICKUP_MINE_DESCRIPTION",
 		Group = "LOOT_TOASTS_FILTER_BIND_ON_PICKUP_GROUP_DESCRIPTION",
@@ -180,7 +188,7 @@ local function FilterRowGroups()
 end
 
 -- The made-up wins the Winning Roll tooltips show, worded as a toast words them.
-local EXAMPLE_PLAYER = "Aero"
+local EXAMPLE_PLAYER_CLASS = "DRUID"
 local EXAMPLE_MINE_ROLL = 54
 local EXAMPLE_GROUP_ROLL = 87
 
@@ -263,7 +271,7 @@ function ns.BuildLootToastFilterOptions()
 				side = "Group",
 				setting = "lootToastWinningRollGroup",
 				descText = L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"]:format(
-					EXAMPLE_PLAYER,
+					ns.GetClassColor(EXAMPLE_PLAYER_CLASS) .. ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS] .. "|r",
 					L["LOOT_TOASTS_ROLL_RESULT"]:format(NEED, EXAMPLE_GROUP_ROLL)
 				),
 			},

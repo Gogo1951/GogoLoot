@@ -26,10 +26,12 @@ local function HidingRollMessages()
 	return profile ~= nil and profile.autoGreed and profile.hideRollMessages or false
 end
 
+-- Also what shows the winner summary's Example line on the Automated Rolls panel.
 ---@return boolean
 local function PrintingWinnerSummary()
 	return HidingRollMessages() and ns.db.profile.winnerSummary == ns.WINNER_SUMMARY_PRINT
 end
+ns.PrintingWinnerSummary = PrintingWinnerSummary
 
 local function FilterRollChatter(_, _, message)
 	if not HidingRollMessages() then

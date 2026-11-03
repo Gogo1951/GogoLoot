@@ -18,6 +18,12 @@ local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
 
+-- What Enable Lockbox Notifications prints, drawn as printed (Message Examples in Options-Utilities.lua).
+local function LockboxNotificationExample()
+	local item = ns.OptionsExampleLink(ns.ExampleLockedContainer() or ns.SAMPLE_ITEM_IDS[2])
+	return ns.OptionsPrintedLine(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(item))
+end
+
 local function ScopeControl(desc, getScope, setScope)
 	return {
 		type = "select",
@@ -85,11 +91,12 @@ function ns.BuildLockboxOptions()
 					ns.db.profile.lockboxNotificationsScope = value
 				end),
 			}),
+			notificationsExampleRow = ns.OptionsExampleRow(6, LockboxNotificationExample),
 			notificationsOffNote = {
 				type = "description",
 				name = GetColor("OFF") .. L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] .. "|r",
 				fontSize = "medium",
-				order = 6,
+				order = 7,
 				hidden = function()
 					return ns.db.profile.autoOpen or not ns.db.profile.lockboxNotifications
 				end,

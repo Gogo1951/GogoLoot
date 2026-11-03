@@ -56,6 +56,7 @@ Locales/zhTW.lua
 # Data
 Data/Flavor.lua
 Data/Data.lua
+Data/Mists/Character-Rule-Stats-Mists.lua
 Data/Mists/Default-Item-Lists-Mists.lua
 Data/Mists/Lockbox-Skill-Levels-Mists.lua
 Data/Mists/Openable-Items-Mists.lua

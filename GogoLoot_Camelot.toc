@@ -56,6 +56,7 @@ Locales/zhTW.lua
 # Data
 Data/Flavor.lua
 Data/Data.lua
+Data/Camelot/Character-Rule-Stats-Camelot.lua
 Data/Camelot/Default-Item-Lists-Camelot.lua
 Data/Camelot/Lockbox-Skill-Levels-Camelot.lua
 Data/Camelot/Openable-Items-Camelot.lua

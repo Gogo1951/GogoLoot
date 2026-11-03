@@ -144,7 +144,7 @@ ns.DiagnosticsStrings = {
 		.. TITLE
 		.. " reads it as locked, and whether it would open. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
 	ROLLS_TITLE = "Automated Rolls Context",
-	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, and this character's Character Rules.",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, and this character's Character Rules with the stats this client offers.",
 	VERDICTS_TITLE = "Roll Verdicts",
 	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
@@ -155,10 +155,14 @@ ns.DiagnosticsStrings = {
 	LINES_DESCRIPTION = "Builds the game's own loot, money and roll lines with an item from your bags and shows whether "
 		.. TITLE
 		.. " reads each one back, which every toast, loot sound, opening, winning roll and hidden roll message depends on. Nothing is sent.",
-	ANNOUNCE_TITLE = "Announcements Context",
-	ANNOUNCE_DESCRIPTION = "Shows the Enable Announcements switch, the trade and master loot announcement settings, and the chat channel "
+	ANNOUNCE_TITLE = "Loot Announcements Context",
+	ANNOUNCE_DESCRIPTION = "Shows the Enable Loot Announcements switch, the trade and master loot announcement settings, and the chat channel "
 		.. TITLE
 		.. " would send to right now.",
+	MACRO_TITLE = "Roll Macro Context",
+	MACRO_DESCRIPTION = "Shows the Enable Roll Macro switch, whether the macro is in your General Macros as "
+		.. TITLE
+		.. " writes it, how full that tab is, combat, and what each mouse button would roll right now.",
 	PLAYER_TITLE = "Player & Spells",
 	PLAYER_DESCRIPTION = "Shows your class, race, level and the Rogue spells " .. TITLE .. " watches.",
 	VALIDATE_TITLE = "Validate Data: %s",
@@ -183,7 +187,7 @@ ns.DiagnosticsStrings = {
 	MESSAGES_TITLE = "Message Length",
 	MESSAGES_DESCRIPTION = "Builds each message "
 		.. TITLE
-		.. " can send to the group or a trade partner, with the longest item link in your bags and the longest name in your group, and shows each one's length against the chat limit. Nothing is sent.",
+		.. " can send to the group or a trade partner, with the longest item link in your bags and the longest name in your group, and the Roll Macro's text, and shows each one's length against its limit. Nothing is sent and no macro is written.",
 
 	STATUS_WAITING = "Waiting",
 	STATUS_RUNNING = "Running",

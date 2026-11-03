@@ -389,9 +389,10 @@ end
     holds two kinds of keys: the exact lowercased full name, plus a
     normalized alias — but the alias only when exactly one candidate
     normalizes to it. When two members share a base name ("Bob" and
-    "Bob-OtherRealm"), no alias is created and a realm-stripped destination
-    matches nothing, so the item falls back to manual handling rather than
-    guessing a recipient.
+    "Bob-OtherRealm"), no alias is created, but the same-realm member's exact
+    key is "bob", which is what the realm-stripped destination reads. So that
+    destination reaches the same-realm member, and the cross-realm one can't
+    be reached by a saved destination.
 
     On WoW Forever a candidate reads "Aero Bramblefoot", which is also how
     a destination is stored there (ns:GetCleanUnitName), so the exact key

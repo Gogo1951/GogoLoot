@@ -25,13 +25,13 @@ local GetColor = ns.GetColor
       * Announce sends a chat message to other players via
         C_ChatInfo.SendChatMessage,
         pulling the body template from L[formatKey] and decorating it with
-        the target marker and add-on name. Every channel GogoLoot sends to
-        uses the one format, on every flavor:
+        the target marker and the add-on's Short Name. Every channel GogoLoot
+        sends to uses the one format, on every flavor:
           WHISPER/PARTY/RAID/INSTANCE_CHAT -> "{rt4} <body> // GogoLoot"
         The name follows the body, so sent bodies carry no end punctuation.
         All cross-player chat output should route through Announce so the
         marker, name, and separator are handled in one place and locale
-        strings stay clean bodies. It also enforces Enable Announcements
+        strings stay clean bodies. It also enforces Enable Loot Announcements
         (lootNotifications) for everything sent: with the master switch off,
         Announce sends nothing, whoever calls it, hand-outs and failure reports
         included.
@@ -49,20 +49,25 @@ local GetColor = ns.GetColor
     sends to.
 ]]
 
+-- The exact line PrintMessage prints, which the options panels' Example lines draw too.
+---@param text string
+---@return string
+function ns.BuildPrintMessage(text)
+	return GetColor("INFO")
+		.. L["ADDON_TITLE"]
+		.. "|r "
+		.. GetColor("SEPARATOR")
+		.. "//"
+		.. "|r "
+		.. GetColor("TEXT")
+		.. text
+		.. "|r"
+end
+
 ---@param text string
 ---@return nil
 function ns:PrintMessage(text)
-	print(
-		GetColor("INFO")
-			.. L["ADDON_TITLE"]
-			.. "|r "
-			.. GetColor("SEPARATOR")
-			.. "//"
-			.. "|r "
-			.. GetColor("TEXT")
-			.. text
-			.. "|r"
-	)
+	print(ns.BuildPrintMessage(text))
 end
 
 ---@param formatKey string
@@ -75,7 +80,7 @@ function ns:BuildAnnounceMessage(formatKey, ...)
 	end
 	local body = string.format(template, ...)
 	-- No pipe-stripping: bodies carry item links (|Hitem...), which survive sent chat and would break if stripped.
-	return ns.TARGET_MARKER .. " " .. body .. " // " .. L["ADDON_TITLE"]
+	return ns.TARGET_MARKER .. " " .. body .. " // " .. L["ADDON_SHORT_NAME"]
 end
 
 ---@param channel string|nil

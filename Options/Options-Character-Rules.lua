@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
-local GetColor = ns.GetColor
 
 --------------------------------------------------------------------------------
 -- Characters
@@ -148,12 +147,13 @@ local function BuildCharacterArgs(characterKey)
 
 	--[[
         Primary Attributes in the character sheet's order, then Secondary
-        Attributes A to Z in the player's language, each under a gold caption,
-        with a blank line between the two.
+        Attributes A to Z in the player's language, each under a section
+        header: spacer, header, spacer, then the rows, two sections sharing
+        the spacer between them.
     ]]
 	local args = {}
 	local order = 1
-	for groupIndex, group in ipairs(ns.CHARACTER_RULE_GROUPS) do
+	for _, group in ipairs(ns.CHARACTER_RULE_GROUPS) do
 		local stats = {}
 		for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
 			if stat.group == group.key then
@@ -166,16 +166,11 @@ local function BuildCharacterArgs(characterKey)
 			end)
 		end
 
-		if groupIndex > 1 then
-			args["spacerBefore" .. group.key] = ns.OptionsSpacer(order)
-			order = order + 1
-		end
-		args["caption" .. group.key] = {
-			type = "description",
-			name = GetColor("TITLE") .. GroupCaption(group) .. "|r",
-			fontSize = "medium",
-			order = order,
-		}
+		args["spacerBefore" .. group.key] = ns.OptionsSpacer(order)
+		order = order + 1
+		args["header" .. group.key] = ns.OptionsHeader(GroupCaption(group), order)
+		order = order + 1
+		args["spacerAfter" .. group.key] = ns.OptionsSpacer(order)
 		order = order + 1
 		for _, stat in ipairs(stats) do
 			args["rule" .. stat.key] = StatRow(order, stat)

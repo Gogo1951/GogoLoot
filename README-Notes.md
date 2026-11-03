@@ -4,17 +4,17 @@
 
 ## Exceptions
 
+### Two Showcase images
+
+- **Departs from:** `09 - Optional Create README.md` → Showcase, one image under the TL;DR.
+- **Instead:** The README's Showcase carries two images, each under its own heading naming the feature it shows.
+- **Why:** Automated Opening and Automated Rolls are separate reasons to install, and one picture can't show both at work.
+
 ### Target marker on WoW Forever
 
 - **Departs from:** MESSAGES → Target Marker, the marker left off on WoW Forever.
 - **Instead:** Sent lines lead with the target marker on WoW Forever too.
 - **Why:** Forever blocks raid markers only in /say and public channels such as General, which GogoLoot never sends to.
-
-### Sent lines end on the add-on name
-
-- **Departs from:** MESSAGES, the add-on name leading every sent message.
-- **Instead:** Sent lines read `{rt4} Message // GogoLoot`, the body first and the name after it, so sent templates carry no closing punctuation.
-- **Why:** The group reads what was handed out or traded first, and the name only marks whose line it is.
 
 ### Locked Items leads the mini-map tooltip
 
@@ -84,8 +84,6 @@
 
 ## Decisions
 
-- **The Openables List is the whole list, with Add Item, a remove column and Restore Defaults.** Every container the client's data lists appears with its own dropdown of two choices, Open or Ignore (maintainer, 2026-09-28: Open when Unlocked opened exactly as Open does, and the three Ignores only changed the reason printed). A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for one that can hold a Unique item; Ignore, tagged Sell Sealed, for one that can hold a Bind on Pickup item while it can itself be traded (a Bind on Pickup container just opens); the rest on Open, untagged. The tag belongs to the item, so it stays whatever the player picks, and a looted container's notice gives the reason. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item. The player can add an item the data lacks, which joins on Open (gear and bags are refused, since using one equips it), or remove a listed one, which GogoLoot then treats as an ordinary item. Only the changes are saved, account-wide, so new data reaches every player, and Restore Defaults clears them all.
+- **The Openables List is the whole list, with Add Item, a remove column and Restore Defaults.** Every container the client's data lists appears with its own dropdown of two choices, Open or Ignore (maintainer, 2026-09-28: Open when Unlocked opened exactly as Open does, and the three Ignores only changed the reason printed). A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a tradeable container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for a tradeable one that can hold a Unique item; Ignore, tagged Sell Sealed, for a tradeable one that can hold a Bind on Pickup item; the rest on Open, untagged. Tradeable means the container isn't itself Bind on Pickup or a quest item: one that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03). One exception is set by hand in every flavor folder: Gnarlpine Necklace (8049), a quest item holding the unique Tallonkai's Jewel, stays on Ignore, tagged May Hold Unique, and a regenerated list must keep it there. The tag belongs to the item, so it stays whatever the player picks, and a looted container's notice gives the reason. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item. The player can add an item the data lacks, which joins on Open (gear and bags are refused, since using one equips it), or remove a listed one, which GogoLoot then treats as an ordinary item. Only the changes are saved, account-wide, so new data reaches every player, and Restore Defaults clears them all.
 - **Each flavor's openable items come from that client's own tables** on wago.tools, every item flagged Openable, rather than from a private-server database or Wowhead listings. Season of Discovery's items stay out of the Classic Era and WoW Forever lists, though both clients know the IDs, and clams stay out of Wrath, Mists and Retail, which open them through a spell no add-on can cast. What a container holds and where it drops, which no client table records, come from the CMaNGOS world databases instead (README-Technical, Openable Items Data).
 - **The "Level N" gear and supply boxes are never on the Openables List** (maintainer, 2026-10-04). WoW Forever's client data flags them openable (Level 23, 38, 57 and 60 Cloth, Leather, Mail and Plate Gear, and Cloth, Enchanting, Herbalism, Hunter, Mining, Skinning and Tradeskill Supplies, items 274559–278066), and the online databases list them, but no player can get one. All 39 rows were removed from `Data/Camelot/`, and a regenerated list must leave them out on every flavor.
-- **Lord Grayson's Satchel opens by default** (maintainer, 2026-10-18). Item 18804 holds the unique Divination Scryer and Blessed Arcanite Barding, so the rules put it on Ignore, tagged May Hold Unique. It is set to `ns.OPENING_OPEN` by hand in every flavor folder, and a regenerated list must keep it on Open.
-- **Character Rules offers only the five primary attributes on Classic Era and TBC** (maintainer, 2026-10-20). Their spell power, healing, attack power, crit, hit and mana regeneration are "Equip:" spells that no item read sees, and covering them took generated tables of about 6,000 items per flavor. GogoLoot doesn't carry an item database to make a roll, so the tables were deleted and the secondary stats show from WoW Forever on only.

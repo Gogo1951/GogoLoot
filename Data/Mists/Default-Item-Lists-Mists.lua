@@ -1,7 +1,5 @@
--- Data/Mists/Default-Item-Lists-Mists.lua
 local _, ns = ...
 
--- Copied from Data/TBC until Validate Data passes on this client.
 -- { itemId, rollAction }
 ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 20873, ns.NEED }, -- Alabaster Idol
@@ -21,7 +19,6 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 22682, ns.MANUAL }, -- Frozen Rune
 	{ 19715, ns.NEED }, -- Gold Hakkari Bijou
 	{ 20859, ns.NEED }, -- Gold Scarab
-	{ 21762, ns.NEED }, -- Greater Scarab Coffer Key
 	{ 19711, ns.NEED }, -- Green Hakkari Bijou
 	{ 19701, ns.NEED }, -- Gurubashi Coin
 	{ 19700, ns.NEED }, -- Hakkari Coin
@@ -65,7 +62,6 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 12811, ns.MANUAL }, -- Righteous Orb
 	{ 19704, ns.NEED }, -- Sandfury Coin
 	{ 21156, ns.NEED }, -- Scarab Bag
-	{ 21761, ns.NEED }, -- Scarab Coffer Key
 	{ 19714, ns.NEED }, -- Silver Hakkari Bijou
 	{ 20860, ns.NEED }, -- Silver Scarab
 	{ 19705, ns.NEED }, -- Skullsplitter Coin
@@ -73,12 +69,6 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 4500, ns.MANUAL }, -- Traveler's Backpack
 	{ 20872, ns.NEED }, -- Vermillion Idol
 	{ 19702, ns.NEED }, -- Vilebranch Coin
-	--[[
-        The Wartorn scraps are listed at Manual on purpose. They are an AQ40
-        Cenarion Circle turn-in with real value, so auto-needing one in a pug
-        reads as ninja-ing; the entry exists so the row is in the UI ready to
-        change, not so the add-on rolls on it.
-    ]]
 	{ 22374, ns.MANUAL }, -- Wartorn Chain Scrap
 	{ 22376, ns.MANUAL }, -- Wartorn Cloth Scrap
 	{ 22373, ns.MANUAL }, -- Wartorn Leather Scrap
@@ -112,10 +102,9 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 23437, ns.MANUAL }, -- Talasite
 }
 
--- Copied from Data/TBC until Validate Data passes on this client.
 -- { itemId }
 ns.DEFAULT_IGNORE_LIST_MASTER = {
-	-- BoP Crafting Materials
+	-- Crafting Materials
 	{ 12662 }, -- Demonic Rune
 	{ 20520 }, -- Dark Rune
 	{ 23572 }, -- Primal Nether
@@ -128,3 +117,30 @@ ns.DEFAULT_IGNORE_LIST_MASTER = {
 	{ 34845 }, -- Pit Lord's Satchel
 	{ 34846 }, -- Black Sack of Gems
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, MoP Classic 5.5.4.70631
+
+Notes
+	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.
+	- ns.DEFAULT_IGNORE_LIST_SOLO seeds Item Overrides, under Automated Rolls: items GogoLoot rolls on its own way rather than by the player's Party or Raid setting (Features/Automated-Rolls.lua). Need for the Zul'Gurub coins and bijous, the Ahn'Qiraj scarabs and idols, Scarab Bag, Fiery Core and Lava Core. Manual, which leaves the roll to the player, for the librams, the Punctured Voodoo Dolls, Demonic Rune and Dark Rune, Righteous Orb, Corruptor's Scourgestone, Frozen Rune, Word of Thawing, the bags and the Wartorn scraps.
+	- On this client the solo list adds, at Manual, the Outland gems (the six rare cuts from Living Ruby to Nightseye and the six epic ones from Crimson Spinel to Seaspray Emerald), the Primals from Air to Water, Primal Nether, Nether Vortex, and the Arcane Tome and Fel Armament turn-ins.
+	- The two Scarab Coffer Keys (21761, 21762), which the other folders list at Need, aren't on this client, so they're left out.
+	- The Wartorn scraps are listed at Manual on purpose. They are an AQ40 Cenarion Circle turn-in with real value, so auto-needing one in a pug reads as ninja-ing; the entry exists so the row is in the UI ready to change, not so the add-on rolls on it.
+	- ns.DEFAULT_IGNORE_LIST_MASTER seeds the Master Looter Ignore List: items automated master looting leaves in the loot window for the master looter to hand out by hand (Features/Master-Looter-Distribution.lua). The crafting materials Demonic Rune, Dark Rune, Primal Nether, Nether Vortex, Heart of Darkness and Sunmote, then Onyxia Hide Backpack, Panther Hide Sack, Pit Lord's Satchel and Black Sack of Gems.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	None.
+
+QuestieDB
+	None.
+]]

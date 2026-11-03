@@ -63,7 +63,8 @@ ns.IsItemOutstanding = IsItemOutstanding
     The item lists being watched, by the registry name of the panel that draws
     each, with a function returning the list's source table. The two saved
     lists, Item Overrides and the Master Looter Ignore List, join at login
-    (ns:WarmItemCache), so they warm before anyone opens a panel. Any other list joins the first time its panel is built, which
+    (ns:WarmItemCache) with the Example lines' items, so they warm before
+    anyone opens a panel. Any other list joins the first time its panel is built, which
     keeps the Openables List, hundreds of rows, from being requested from
     the server until the player actually looks at it.
 ]]
@@ -124,6 +125,17 @@ function ns.WatchItemList(registryName, getSource)
 	watchedItemLists[registryName] = getSource
 end
 
+--[[
+    The items the Example lines link (Message Examples in Options-Utilities.lua),
+    watched for the panels that draw them, so a link that was still loading
+    fills in on its own.
+]]
+local exampleItems = {}
+
+local function GetExampleItems()
+	return exampleItems
+end
+
 ---@return nil
 function ns:WarmItemCache()
 	watchedItemLists[ns.OPTIONS_REGISTRY.ItemOverrides] = function()
@@ -132,6 +144,19 @@ function ns:WarmItemCache()
 	watchedItemLists[ns.OPTIONS_REGISTRY.MasterLooterIgnoreList] = function()
 		return ns.db.profile.ignoredItemsMaster
 	end
+	for _, itemIdentifier in pairs(ns.SAMPLE_ITEM_IDS) do
+		exampleItems[itemIdentifier] = true
+	end
+	for _, container in ipairs({ ns.ExampleIgnoredContainer() or false, ns.ExampleLockedContainer() or false }) do
+		if container then
+			exampleItems[container] = true
+		end
+	end
+	watchedItemLists[ns.OPTIONS_REGISTRY.Announcements] = GetExampleItems
+	watchedItemLists[ns.OPTIONS_REGISTRY.AutomatedRolls] = GetExampleItems
+	-- Replaced by the list itself the first time the Openables List is built; the example container is on it.
+	watchedItemLists[ns.OPTIONS_REGISTRY.OpenableItems] = GetExampleItems
+	watchedItemLists[ns.OPTIONS_REGISTRY.Lockboxes] = GetExampleItems
 	if not QueryListItemsAndFindMissing() then
 		return
 	end

@@ -17,8 +17,10 @@ end
 -- Add-on Identity
 --------------------------------------------------------------------------------
 
--- Brands every printed line, sent message, options panel, and report. A proper noun; keep it untranslated.
+-- The Full Name: leads every printed line, and names the options panels, window titles and the mini-map header. A proper noun; keep it untranslated.
 L["ADDON_TITLE"] = "GogoLoot"
+-- The Short Name: closes every sent message and names the add-on on tooltip lines other than the mini-map header. A proper noun; keep it untranslated.
+L["ADDON_SHORT_NAME"] = "GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Chat Messages
@@ -140,7 +142,7 @@ L["TAB_AUTOMATED_OPENING"] = "Автооткрытие"
 -- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "Запертые ящики"
 L["TAB_OPENABLE_ITEMS"] = "Список контейнеров"
--- The last feature panel, named for its switch, Enable Automated Master Looting.
+-- Named for its switch, Enable Automated Master Looting. Roll Macro follows it.
 L["TAB_MASTER_LOOTER"] = "Автораздача"
 -- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "Получатели добычи"
@@ -191,6 +193,10 @@ L["MINIMAP_TOGGLE"] = "Переключить"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Запертые предметы"
+-- Under the list. Argument: the game's own name for the Rogue class.
+L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s может вскрыть их для вас."
+-- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
+L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = 'Используйте "%s", чтобы отпереть их.'
 L["MINIMAP_OPTIONS"] = "Настройки GogoLoot"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + средний клик"
 
@@ -225,8 +231,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List brings text of its own), the hint the box shows while empty,
-    and its button.
+    Openables List and Item Overrides bring text of their own), the hint the
+    box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "Добавить предмет"
 L["ITEM_LIST_ADD_DESCRIPTION"] =
@@ -239,6 +245,9 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "Фильтр предметов..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"Показывает только предметы, чье название, ID, настройка или метка содержат введенный текст."
 L["ITEM_LIST_NO_MATCHES"] = "Нет предметов, подходящих под фильтр."
+-- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+L["ITEM_LIST_EMPTY_REFILLS"] =
+	'Список пуст, поэтому стандартные предметы вернутся при следующем входе в игру. Кнопка "Восстановить по умолчанию" вернет их сразу.'
 
 -- The header over what the player just added to an item list, at its top until they filter it or close the window.
 L["ITEM_LIST_NEW"] = "Новые"
@@ -278,11 +287,7 @@ L["SAFETY_SKIP_NOTE"] =
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"Рецепты, книги, транспорт, питомцы и легендарные предметы всегда остаются вам."
 
---[[
-    Shown under each announcement's toggle, under Print Item in Chat and Hide
-    Roll Messages, and under Enable Ignore Notifications. Argument: the
-    message, as GogoLoot sends or prints it.
-]]
+-- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Пример: %s"
 
 --------------------------------------------------------------------------------
@@ -347,8 +352,8 @@ L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_ADDED"] =
 	'Макрос "%s" добавлен в общие макросы. Введите %s и перетащите его на панель команд.'
 L["ROLL_MACRO_REMOVED"] = 'Макрос "%s" удален.'
-L["ROLL_MACRO_FULL"] =
-	'Не удалось добавить макрос "%s": общие макросы заполнены. Удалите один, и макрос добавится при следующем входе в игру.'
+L["ROLL_MACRO_FULL_LOADING"] =
+	'Не удалось добавить макрос "%s": общие макросы заполнены. Удалите один, и макрос добавится после следующего экрана загрузки.'
 
 --------------------------------------------------------------------------------
 -- Options: Feedback & Support Panel
@@ -419,7 +424,8 @@ L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Включая предметы для з
 L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 	'Раздает и предметы для заданий, чтобы прокачивать персонажа, за которого вы играете сами. Работает только при пороге качества "Обычное" или ниже и только для предметов, которые выпадают один раз на всю группу. Не рекомендуется в рейдах.'
 
-L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Быстрые настройки"
+-- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
+L["QUICK_SETTINGS_TITLE"] = "Быстрые настройки"
 -- Argument: the game's own word for Master Looter.
 L["MASTER_LOOTER_POPUP_TOOLTIP"] =
 	'Открывает эти настройки в отдельном окне, когда вы получаете роль "%s".'
@@ -447,7 +453,7 @@ L["MASTER_LOOTER_OFF_NOTE"] =
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] =
 	"Заменяет Список исключений стандартными предметами для вашего дополнения."
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
-	"Ваш Список исключений будет заменен стандартными предметами для вашего дополнения. Продолжить?"
+	"Заменить ваш Список исключений стандартными предметами для вашего дополнения?"
 L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] =
 	"Удаляет этот предмет из Списка исключений."
 
@@ -470,7 +476,7 @@ L["ROLLS_THRESHOLD_CHOOSE"] =
 L["ROLLS_ACTION_CHOOSE"] =
 	'%s: какой бросок делает GogoLoot. "Вручную" оставляет бросок вам.'
 -- Section headers on the Automated Rolls panel.
-L["ROLLS_LOOT_THRESHOLDS_HEADER"] = "Пороги добычи"
+L["ROLLS_PARTY_AND_RAID_HEADER"] = "Броски в группе и рейде"
 L["ROLLS_MESSAGES_HEADER"] = "Сообщения о бросках"
 L["ROLLS_PRINT_ITEM"] = "Выводить предмет в чат"
 L["ROLLS_PRINT_ITEM_DESCRIPTION"] =
@@ -497,15 +503,20 @@ L["ROLLS_OFF_NOTE"] =
 L["ITEM_OVERRIDES_ENABLE"] = "Включить Особые предметы"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"Использует броски, заданные ниже. Если выключено, эти предметы следуют настройкам качества, как и все остальные."
+-- Shown under Enable Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] =
+	"Пока Особые предметы выключены, эти броски не используются."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"Заменяет ваши Особые предметы стандартными предметами для вашего дополнения."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"Ваши Особые предметы будут заменены стандартными предметами для вашего дополнения. Продолжить?"
+	"Заменить ваши Особые предметы стандартными предметами для вашего дополнения?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] =
 	"Задает автоматический бросок для этого предмета."
 L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "Удаляет этот предмет из Особых предметов."
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] =
 	"Удалить этот предмет и его бросок из Особых предметов?"
+L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
+	'Введите ID предмета или перетащите предмет сюда, чтобы добавить его в список с действием "Вручную".'
 
 --[[
     Character Rules, under Automated Rolls: the stats whose gear each
@@ -549,6 +560,8 @@ L["TRADE_CONDITION_DESCRIPTION"] =
 L["TRADE_CONDITION_ALWAYS"] = "Всегда"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "В группе или рейде"
 L["TRADE_CONDITION_RAID_ONLY"] = "В рейде"
+-- The trade window checkbox tooltip's line naming when summaries are posted.
+L["TRADE_WHEN"] = "Когда"
 -- The caption of the dropdown that picks where summaries go, and the trade window checkbox tooltip's line naming it.
 L["TRADE_CHANNEL"] = "Канал"
 -- Argument: the game's own word for Whisper.
@@ -630,6 +643,11 @@ L["LOOT_TOASTS_FILTER_MINE_QUALITY_DESCRIPTION"] =
 	'Самое низкое качество подбираемых вами предметов типа "%s", для которого показывается уведомление.'
 L["LOOT_TOASTS_FILTER_GROUP_QUALITY_DESCRIPTION"] =
 	'Самое низкое качество подбираемых группой предметов типа "%s", для которого показывается уведомление.'
+-- The Container row is the bag class; clams, crates and lockboxes have the Openables row.
+L["LOOT_TOASTS_FILTER_CONTAINER_MINE_DESCRIPTION"] =
+	'Показывает подбираемые вами сумки. Моллюски, ящики и запертые ящики находятся в строке "Открываемые предметы".'
+L["LOOT_TOASTS_FILTER_CONTAINER_GROUP_DESCRIPTION"] =
+	'Показывает сумки, которые подбирает любой участник группы или рейда, с именем подобравшего. Моллюски, ящики и запертые ящики находятся в строке "Открываемые предметы".'
 
 -- The three Filters rows after the item types, which aren't item types themselves: their captions (Money's is the client's MONEY) and their boxes' tooltips.
 L["LOOT_TOASTS_FILTER_BIND_ON_PICKUP"] = "Персональные при поднятии"
@@ -686,8 +704,8 @@ L["LOOT_TOASTS_GROWTH_DESCRIPTION"] =
 	"Куда сдвигаются старые уведомления, прочь от самого нового: вверх или вниз."
 L["LOOT_TOASTS_GROW_UP"] = "Вверх"
 L["LOOT_TOASTS_GROW_DOWN"] = "Вниз"
-L["LOOT_TOASTS_ALIGN"] = "Выравнивание"
-L["LOOT_TOASTS_ALIGN_DESCRIPTION"] =
+L["LOOT_TOASTS_ALIGN_TOASTS"] = "Выравнивание уведомлений"
+L["LOOT_TOASTS_ALIGN_TOASTS_DESCRIPTION"] =
 	"По какой стороне рамки выравниваются уведомления."
 L["LOOT_TOASTS_ALIGN_LEFT"] = "Слева"
 L["LOOT_TOASTS_ALIGN_RIGHT"] = "Справа"
@@ -712,17 +730,18 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "Монохромный конту
 L["LOOT_TOASTS_UNLOCK"] = "Разблокировать позицию"
 L["LOOT_TOASTS_LOCK"] = "Заблокировать позицию"
 L["LOOT_TOASTS_RESET"] = "Сбросить позицию"
+L["LOOT_TOASTS_RESET_CONFIRM"] =
+	"Вернуть уведомления о добыче на исходное место?"
 L["LOOT_TOASTS_LOCK_DESCRIPTION"] =
 	"Показывает или скрывает рамку, за которую уведомления можно перетащить на новое место."
 L["LOOT_TOASTS_RESET_DESCRIPTION"] =
 	"Возвращает уведомления на исходное место над центром экрана."
 
--- The drag handle: its title, the two gestures it answers to, its button, and the preview rows.
-L["LOOT_TOASTS_HANDLE_TITLE"] = "Уведомления о добыче GogoLoot"
+-- The drag handle, titled "Loot Toasts // GogoLoot" by code: the two gestures it answers to, its button, and the preview rows.
 L["LOOT_TOASTS_CLICK_DRAG"] = "Зажмите и перетащите, чтобы переместить"
 L["LOOT_TOASTS_RIGHT_CLICK_LOCK"] = "Правый клик, чтобы заблокировать"
 L["LOOT_TOASTS_DISABLE_BUTTON"] = "Отключить уведомления о добыче"
--- The stand-in item on the sample toasts, and in every Example line.
+-- The stand-in item on the sample toasts the position preview shows; Example lines link real items.
 L["LOOT_TOASTS_EXAMPLE_ITEM"] = "Пример предмета"
 
 -- Loot Sounds

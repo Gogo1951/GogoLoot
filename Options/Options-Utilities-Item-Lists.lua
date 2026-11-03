@@ -62,18 +62,29 @@ end
     Each name is read once, before sorting, and never for an item this client
     doesn't have. Reading an uncached item asks the server for it, the
     comparator sees every item several times, and the list repaints often.
+    A name the client has answered with is kept for the session, so a repaint
+    only asks about the items still loading.
 
     Equal names tie-break on item ID, which makes the comparator a total order.
     Without it the nine identically-named Punctured Voodoo Dolls in the default
     roll list compare equal, and their rows reshuffle on every repaint.
 ]]
 
+local knownItemNames = {}
+
 ---@param identifiers number[]
 ---@return table # the name read for each identifier, "" where there is none yet
 local function SortItemIdentifiersByName(identifiers)
 	local itemNames = {}
 	for _, itemIdentifier in ipairs(identifiers) do
-		itemNames[itemIdentifier] = ns.IsItemOnClient(itemIdentifier) and C_Item.GetItemInfo(itemIdentifier) or ""
+		local itemName = knownItemNames[itemIdentifier]
+		if not itemName and ns.IsItemOnClient(itemIdentifier) then
+			itemName = C_Item.GetItemInfo(itemIdentifier)
+			if itemName and itemName ~= "" then
+				knownItemNames[itemIdentifier] = itemName
+			end
+		end
+		itemNames[itemIdentifier] = itemName or ""
 	end
 
 	table.sort(identifiers, function(a, b)
@@ -175,6 +186,9 @@ end
       tagFor: optional function(itemId) returning a short reason, or nil; every
         row then gets a silver tag column before its dropdown, empty where the
         item has none, and the filter finds rows by their tag too
+      refillsWhenEmpty: optional true for a list that RebuildEmptyItemLists
+        (Features/Core.lua) refills at login; with no rows and no filter text,
+        a silver line says so
 
     The rows sit under the list's filter (Options-Utilities-Item-List-Filter.lua), which every list
     gets. An ID this client doesn't have is never loaded: it gets no row and no
@@ -438,8 +452,9 @@ end
 local function WithNewSection(spec, sections)
 	local newIdentifiers = {}
 	local isNew = {}
+	local sourceTable = spec.getSourceTable()
 	for _, itemIdentifier in ipairs(ns.GetNewListItems(spec.notifyKey)) do
-		if spec.getSourceTable()[itemIdentifier] ~= nil and ns.IsItemOnClient(itemIdentifier) then
+		if sourceTable[itemIdentifier] ~= nil and ns.IsItemOnClient(itemIdentifier) then
 			newIdentifiers[#newIdentifiers + 1] = itemIdentifier
 			isNew[itemIdentifier] = true
 		end
@@ -592,6 +607,9 @@ function ns:BuildItemListOptions(spec)
 	-- A picked kind always has rows of its own, so only the filter's text can leave the list empty.
 	if shownRows == 0 and needle ~= "" then
 		args.noFilterMatches = ns.OptionsDesc(GetColor("HELP") .. L["ITEM_LIST_NO_MATCHES"] .. "|r", order)
+		order = order + 1
+	elseif #sortedIdentifiers == 0 and spec.refillsWhenEmpty then
+		args.emptyListNote = ns.OptionsDesc(GetColor("HELP") .. L["ITEM_LIST_EMPTY_REFILLS"] .. "|r", order)
 		order = order + 1
 	end
 

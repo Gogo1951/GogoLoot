@@ -624,6 +624,17 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "GetNumSkillLines", GlobalIsType("GetNumSkillLines", "function") },
 	{ "GetSkillLineInfo", GlobalIsType("GetSkillLineInfo", "function") },
 
+	-- Roll Macro — Roll-Macro.lua keeps the General macro, and waits out combat to change it
+	{ "GetMacroIndexByName", GlobalIsType("GetMacroIndexByName", "function") },
+	{ "GetMacroInfo", GlobalIsType("GetMacroInfo", "function") },
+	{ "CreateMacro", GlobalIsType("CreateMacro", "function") },
+	{ "EditMacro", GlobalIsType("EditMacro", "function") },
+	{ "DeleteMacro", GlobalIsType("DeleteMacro", "function") },
+	{ "InCombatLockdown", GlobalIsType("InCombatLockdown", "function") },
+	-- What the macro's own text calls when it's clicked (ns.ROLL_MACRO_BODY)
+	{ "GetMouseButtonClicked", GlobalIsType("GetMouseButtonClicked", "function") },
+	{ "RandomRoll", GlobalIsType("RandomRoll", "function") },
+
 	-- Opening the options panel — Options.lua
 	{ "Settings.OpenToCategory", MemberIsFunction("Settings", "OpenToCategory") },
 	-- Closing it ends the item lists' New sections — Options.lua
@@ -1236,8 +1247,9 @@ end
 
 local function AppendLockboxLines(lines, profile)
 	lines[#lines + 1] = string.format(
-		"Notices: Ignore notice %s; lockbox notices %s (scope %s, shows for you %s); lockbox tooltips %s (scope %s, shows for you %s); you are a Rogue %s",
+		"Notices: Ignore notice %s (Speedy Loot's needs only this), opening's active now %s (needs Automated Opening); lockbox notices %s (scope %s, shows for you %s); lockbox tooltips %s (scope %s, shows for you %s); you are a Rogue %s",
 		OnOff(profile.openingIgnoreNotifications),
+		YesNo(profile.autoOpen and profile.openingIgnoreNotifications),
 		OnOff(profile.lockboxNotifications),
 		tostring(profile.lockboxNotificationsScope),
 		YesNo(ns.LockboxScopeAllows(profile.lockboxNotificationsScope)),
@@ -1249,7 +1261,7 @@ local function AppendLockboxLines(lines, profile)
 	local rank = ns.GetPlayerLockpickingSkill()
 	lines[#lines + 1] = string.format(
 		"Lockpicking: skill line name %s, rank %s, %d lockboxes with a skill level in this client's data",
-		tostring(C_TradeSkillUI.GetTradeSkillDisplayName(ns.SKILL_LINE_IDS.LOCKPICKING)),
+		tostring(ns.GetLockpickingSkillName()),
 		rank and tostring(rank) or "unavailable on this client (or not trained)",
 		CountKeys(ns.LOCKBOX_SKILL_LEVELS)
 	)
@@ -1405,6 +1417,22 @@ local function ManualStats()
 	return #manual > 0 and table.concat(manual, ", ") or nil
 end
 
+-- This character's saved rules for stats this client's folder doesn't offer, A to Z, or nil for none.
+local function UnreadRuleStats()
+	local offered = {}
+	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
+		offered[stat.key] = true
+	end
+	local unread = {}
+	for statKey, action in pairs(ns.db.char.characterRules or {}) do
+		if not offered[statKey] then
+			unread[#unread + 1] = statKey .. "=" .. tostring(action)
+		end
+	end
+	table.sort(unread)
+	return #unread > 0 and table.concat(unread, ", ") or nil
+end
+
 --[[
     What decides a roll (EvaluateRoll in Features/Automated-Rolls.lua): the
     master switch, Item Overrides ahead of everything else, then the group
@@ -1447,16 +1475,19 @@ function ns:BuildRollsContextReport()
 	)
 	lines[#lines + 1] = string.format("Print Item in Chat: %s", OnOff(profile.printRolledItems))
 	lines[#lines + 1] = string.format(
-		"Hide Roll Messages: %s, active now %s (needs Automated Rolls), winner summary %s",
+		"Hide Roll Messages: %s, active now %s (needs Automated Rolls), winner summary %s, printing now %s",
 		OnOff(profile.hideRollMessages),
 		YesNo(profile.autoGreed and profile.hideRollMessages),
-		tostring(profile.winnerSummary)
+		tostring(profile.winnerSummary),
+		YesNo(ns.PrintingWinnerSummary())
 	)
 	lines[#lines + 1] = string.format(
 		"Character Rules on %s: %s",
 		tostring(ns.db.keys and ns.db.keys.char),
 		ManualStats() and ("Manual for " .. ManualStats()) or "nothing (every stat on Standard Automated Roll)"
 	)
+	lines[#lines + 1] = "  Stats this client offers: " .. table.concat(ns.CHARACTER_RULE_STAT_KEYS, ", ")
+	lines[#lines + 1] = "  Saved for a stat this client doesn't offer, so never read: " .. (UnreadRuleStats() or "none")
 	return table.concat(lines, "\n")
 end
 
@@ -2053,12 +2084,12 @@ function ns:BuildLootLineReport()
 end
 
 --------------------------------------------------------------------------------
--- Announcements Context
+-- Loot Announcements Context
 --------------------------------------------------------------------------------
 
 --[[
     Everything GogoLoot sends goes through ns:Announce (Features/Announcements.lua),
-    which sends nothing at all while Enable Announcements is off, and to the
+    which sends nothing at all while Enable Loot Announcements is off, and to the
     group channel ns:GetGroupChatChannel resolves, nil when not grouped. Each
     sender then has its own switch.
 ]]
@@ -2073,7 +2104,7 @@ function ns:BuildAnnouncementsContextReport()
 
 	lines[#lines + 1] = ""
 	lines[#lines + 1] =
-		string.format("Enable Announcements: %s (off sends nothing to anyone)", OnOff(profile.lootNotifications))
+		string.format("Enable Loot Announcements: %s (off sends nothing to anyone)", OnOff(profile.lootNotifications))
 	lines[#lines + 1] = string.format(
 		"Group chat channel now: %s (none when not grouped: a trade then whispers the partner, and master loot lines stay quiet)",
 		tostring(ns:GetGroupChatChannel() or "none")
@@ -2095,6 +2126,71 @@ function ns:BuildAnnouncementsContextReport()
 		OnOff(profile.announceDestinations)
 	)
 	lines[#lines + 1] = string.format("Target marker: %s", tostring(ns.TARGET_MARKER))
+	return table.concat(lines, "\n")
+end
+
+--------------------------------------------------------------------------------
+-- Roll Macro Context
+--------------------------------------------------------------------------------
+
+--[[
+    Roll-Macro.lua keeps ns.ROLL_MACRO_NAME among the General macros while
+    Enable Roll Macro is on: it makes it at each load when it's missing, puts
+    its icon and text back when either differs, and can't make it while the
+    General tab is full. Every change waits out combat. How full the tab is
+    comes from GetNumMacros, which GogoLoot itself never calls, so it is read
+    through _G; its size, MAX_ACCOUNT_MACROS, comes from the game's Macros
+    window, so it reads nil until that window has loaded. The macro's
+    middle-click rolls up to the group's size, which GetNumGroupMembers reads
+    as 0 alone.
+]]
+---@return string
+function ns:BuildRollMacroContextReport()
+	local lines = { GetClientHeader(), "" }
+	AppendProfileLines(lines)
+	if not ns.db then
+		lines[#lines + 1] = "(saved variables not loaded)"
+		return table.concat(lines, "\n")
+	end
+
+	lines[#lines + 1] = ""
+	lines[#lines + 1] = string.format(
+		"Enable Roll Macro: %s (account-wide; a change asked for in combat waits for combat to end)",
+		OnOff(ns.db.global.rollMacro)
+	)
+	local getNumMacros = _G.GetNumMacros
+	local accountCount = type(getNumMacros) == "function" and getNumMacros() or "unreadable"
+	local maxAccount = _G.MAX_ACCOUNT_MACROS
+	lines[#lines + 1] = string.format(
+		"General macros: %s used of %s",
+		tostring(accountCount),
+		maxAccount and tostring(maxAccount) or "unknown (the Macros window hasn't loaded)"
+	)
+	local index = GetMacroIndexByName(ns.ROLL_MACRO_NAME)
+	if index and index > 0 then
+		local _, icon, body = GetMacroInfo(index)
+		lines[#lines + 1] = string.format(
+			"Macro %q: found at %d, icon %s (%s), text %s",
+			ns.ROLL_MACRO_NAME,
+			index,
+			tostring(icon),
+			icon == ns.ROLL_MACRO_ICON and "matches" or ("differs, GogoLoot writes " .. ns.ROLL_MACRO_ICON),
+			string.gsub(body or "", "%s+$", "") == ns.ROLL_MACRO_BODY and "matches"
+				or "differs (put back at the next load while the switch is on)"
+		)
+	else
+		lines[#lines + 1] = string.format(
+			"Macro %q: not found%s",
+			ns.ROLL_MACRO_NAME,
+			ns.db.global.rollMacro and " (made at the next load or switch-on, unless the General tab is full)" or ""
+		)
+	end
+	local groupSize = GetNumGroupMembers()
+	lines[#lines + 1] = string.format(
+		"Rolls now: left-click 1-100, right-click 1-99, middle-click 1-%d (group members %d)",
+		groupSize > 0 and groupSize or 100,
+		groupSize
+	)
 	return table.concat(lines, "\n")
 end
 
@@ -2141,7 +2237,7 @@ function ns:BuildPlayerReport()
 	lines[#lines + 1] = string.format(
 		"LOCKPICKING skill line %s: name=%s",
 		tostring(ns.SKILL_LINE_IDS.LOCKPICKING),
-		tostring(C_TradeSkillUI.GetTradeSkillDisplayName(ns.SKILL_LINE_IDS.LOCKPICKING))
+		tostring(ns.GetLockpickingSkillName())
 	)
 	lines[#lines + 1] = ""
 	local rank = ns.GetPlayerLockpickingSkill()
@@ -2160,12 +2256,10 @@ end
     exactly as the features do. The client strings are Blizzard UI labels and
     formats, so each one's id is its own constant name: the loot, money and roll
     lines are the formats GogoLoot reads chat back with, and a NIL there is a
-    line that goes unread on this client. The full ITEM_MOD formats are the
-    tooltip lines Character Rules matches; the _SHORT labels caption its
-    dropdowns. The STAT_CATEGORY captions exist only on WoW Forever and later,
-    so NIL is expected on Classic Era and TBC, where the panel uses its own
-    words. A row whose name loads late (a spell) adds request, which the report
-    calls and polls.
+    line that goes unread on this client. Character Rules adds its captions
+    and the full ITEM_MOD formats it matches tooltip lines with, below. A row
+    whose name loads late (a spell) adds request, which the report calls and
+    polls.
 ]]
 local function UiLabel(constant)
 	return {
@@ -2251,19 +2345,6 @@ local UI_LABELS = {
 	"LOOT_ROLL_YOU_WON_NO_SPAM_NEED",
 	"LOOT_ROLL_YOU_WON_NO_SPAM_GREED",
 	"LOOT_ROLL_YOU_WON_NO_SPAM_DE",
-	"STAT_CATEGORY_PRIMARY_ATTRIBUTES",
-	"STAT_CATEGORY_SECONDARY_ATTRIBUTES",
-	"ITEM_MOD_STRENGTH_SHORT",
-	"ITEM_MOD_AGILITY_SHORT",
-	"ITEM_MOD_STAMINA_SHORT",
-	"ITEM_MOD_INTELLECT_SHORT",
-	"ITEM_MOD_SPIRIT_SHORT",
-	"ITEM_MOD_SPELL_POWER_SHORT",
-	"ITEM_MOD_SPELL_HEALING_DONE_SHORT",
-	"ITEM_MOD_ATTACK_POWER_SHORT",
-	"ITEM_MOD_CRIT_RATING_SHORT",
-	"ITEM_MOD_HIT_RATING_SHORT",
-	"ITEM_MOD_POWER_REGEN0_SHORT",
 }
 
 ns.DIAGNOSTIC_NAME_LOOKUPS = {
@@ -2276,6 +2357,28 @@ end
 
 for _, constant in ipairs(UI_LABELS) do
 	AddNameLookup(UiLabel(constant))
+end
+
+--[[
+    The Character Rules panel's captions, for the stats and sections this
+    client offers (ns.CHARACTER_RULE_STATS and ns.CHARACTER_RULE_GROUPS, already
+    cut to Data/{Folder}/Character-Rule-Stats-{Folder}.lua at load): each
+    stat's label as the panel shows it, and each section's game label, which
+    WoW Forever and later have and the panel replaces with its own words where
+    it reads NIL.
+]]
+for _, group in ipairs(ns.CHARACTER_RULE_GROUPS) do
+	AddNameLookup(UiLabel(group.labelGlobal))
+end
+for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
+	AddNameLookup({
+		constant = "CHARACTER_RULE_STATS." .. stat.key,
+		kind = "statLabel",
+		id = stat.key,
+		lookup = function()
+			return stat.label
+		end,
+	})
 end
 
 -- Every full format Character Rules matches a stat's tooltip lines with (StatLinePatterns in Features/Character-Rules.lua).
@@ -2316,14 +2419,15 @@ AddNameLookup({
 	end,
 })
 
-AddNameLookup({
-	constant = "SKILL_LINE_IDS.LOCKPICKING",
-	kind = "skillLine",
-	id = ns.SKILL_LINE_IDS.LOCKPICKING,
-	lookup = function()
-		return C_TradeSkillUI.GetTradeSkillDisplayName(ns.SKILL_LINE_IDS.LOCKPICKING)
-	end,
-})
+-- MoP Classic has no Lockpicking skill line, so its data carries no ID and there is no name to check.
+if ns.SKILL_LINE_IDS.LOCKPICKING then
+	AddNameLookup({
+		constant = "SKILL_LINE_IDS.LOCKPICKING",
+		kind = "skillLine",
+		id = ns.SKILL_LINE_IDS.LOCKPICKING,
+		lookup = ns.GetLockpickingSkillName,
+	})
+end
 
 --[[
     The item types the Loot Toasts Filters rows and the item lists' headers are
@@ -2353,6 +2457,22 @@ for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
 end
 
 --------------------------------------------------------------------------------
+-- Saved Variables
+--------------------------------------------------------------------------------
+
+--[[
+    The saved tables GogoLoot fills in itself, which the Saved Variables dump
+    prints as a row count: what was handed out, the drops by boss of the last
+    few raids, and what was picked up this instance. A raid's worth of drops
+    runs to hundreds of item links, more than the output box shows.
+]]
+ns.DIAGNOSTIC_SAVED_SUMMARY_KEYS = {
+	awarded = true,
+	dropRaids = true,
+	pickedUp = true,
+}
+
+--------------------------------------------------------------------------------
 -- Validate Data Sources
 --------------------------------------------------------------------------------
 
@@ -2365,7 +2485,8 @@ end
     gets a row) and its kind: "item", "spell", or "other" for ids no client
     API looks up. Ids are reached through rowId(key, row) over the table's
     pairs, since the tables come in three shapes: rows of { itemId, ... }, maps
-    keyed by item id, and maps keyed by name (spells, skill lines). dataColumns
+    keyed by item id, and maps whose values are the ids (spells and skill lines
+    by name, sample items by quality). dataColumns
     carries the shipped row's own values as { header, getter(key, row) }, so
     the export sets what the file says beside what the client says. Adding a data file adds an entry here, and the panel
     and the validator pick it up with no second list.
@@ -2446,11 +2567,23 @@ ns.DIAGNOSTIC_DATA_SOURCES = {
 				dataColumns = { { "DATA_KEY", KeyValue } },
 			},
 			{
+				table = "SAMPLE_ITEM_IDS",
+				kind = "item",
+				rowId = ValueIsId,
+				dataColumns = { { "DATA_KEY", KeyValue } },
+			},
+			{
 				table = "SOUND_KIT_IDS",
 				kind = "other",
 				rowId = ValueIsId,
 				dataColumns = { { "DATA_KEY", KeyValue } },
 			},
+		},
+	},
+	{
+		label = "Character-Rule-Stats",
+		sources = {
+			{ table = "CHARACTER_RULE_STAT_KEYS", kind = "other", rowId = ValueIsId },
 		},
 	},
 	{

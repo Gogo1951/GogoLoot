@@ -15,7 +15,7 @@ ns.SPELLS = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, Classic Era 1.15.9.70003
+	2026-11-03, Classic Era 1.15.9.70576
 
 Notes
 	- The spells GogoLoot listens for or reads, hand-picked, each under the key the code uses.
@@ -31,5 +31,8 @@ Wowhead
 	None.
 
 wago.tools
+	https://wago.tools/db2/SpellName?build=1.15.9.70576
+
+QuestieDB
 	None.
 ]]

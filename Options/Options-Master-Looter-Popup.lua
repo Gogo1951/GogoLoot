@@ -84,7 +84,7 @@ function ns.BuildMasterLooterPopupOptions()
 
 	return {
 		type = "group",
-		name = L["MASTER_LOOTER_POPUP_TITLE"],
+		name = L["QUICK_SETTINGS_TITLE"] .. " // " .. L["ADDON_TITLE"],
 		args = args,
 	}
 end

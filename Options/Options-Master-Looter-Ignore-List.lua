@@ -35,6 +35,7 @@ function ns.BuildMasterLooterIgnoreListOptions()
 			ns.db.profile.ignoredItemsMaster[itemIdentifier] = nil
 		end,
 		notifyKey = ns.OPTIONS_REGISTRY.MasterLooterIgnoreList,
+		refillsWhenEmpty = true,
 		labels = {
 			restoreDesc = L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"],
 			restoreConfirm = L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"],

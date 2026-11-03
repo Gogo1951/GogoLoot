@@ -496,6 +496,10 @@ function Fake.newEnvironment()
 		end
 		return name, state.unitRealms[unit]
 	end
+	-- The name alone, as the options panels' Example lines read the player's.
+	env.GetUnitName = function(unitIdentifier)
+		return state.unitNames[unitIdentifier]
+	end
 	env.GetRealmName = function()
 		return "Test Realm"
 	end
@@ -1356,6 +1360,10 @@ function Fake.newEnvironment()
 		issecretvalue = true,
 		-- Classic has no item GUIDs through ItemLocation in this fake: bag items are keyed by where they sit.
 		ItemLocation = true,
+		-- The client's chat colors and line openers, so the Example lines draw from their fallbacks unless a test sets them.
+		ChatTypeInfo = true,
+		CHAT_PARTY_GET = true,
+		CHAT_WHISPER_GET = true,
 	}
 
 	-- Anything not named above resolves to a permissive stub.

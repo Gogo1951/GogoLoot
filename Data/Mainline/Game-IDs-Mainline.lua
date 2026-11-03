@@ -10,6 +10,15 @@ ns.ITEM_IDS = {
 	BIND_PROBE = 6948, -- Hearthstone
 }
 
+-- { [quality] = itemId }, a real item at each quality for the options panels' Example lines
+ns.SAMPLE_ITEM_IDS = {
+	[0] = 3300, -- Rabbit's Foot
+	[1] = 2589, -- Linen Cloth
+	[2] = 1206, -- Moss Agate
+	[3] = 12784, -- Arcanite Reaper
+	[4] = 17073, -- Earthshaker
+}
+
 -- { [key] = soundKitId }, BAG_FULL_BY_RACE as { [raceFile] = { [sex] = soundKitId } }
 ns.SOUND_KIT_IDS = {
 	BAG_FULL_FALLBACK = 846, -- Inventory full, for a race with no voice line below

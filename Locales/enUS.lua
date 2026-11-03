@@ -17,8 +17,10 @@ end
 -- Add-on Identity
 --------------------------------------------------------------------------------
 
--- Brands every printed line, sent message, options panel, and report. A proper noun; keep it untranslated.
+-- The Full Name: leads every printed line, and names the options panels, window titles and the mini-map header. A proper noun; keep it untranslated.
 L["ADDON_TITLE"] = "GogoLoot"
+-- The Short Name: closes every sent message and names the add-on on tooltip lines other than the mini-map header. A proper noun; keep it untranslated.
+L["ADDON_SHORT_NAME"] = "GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Chat Messages
@@ -129,7 +131,7 @@ L["TAB_AUTOMATED_OPENING"] = "Automated Opening"
 -- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "Lockboxes"
 L["TAB_OPENABLE_ITEMS"] = "Openables List"
--- The last feature panel, named for its switch, Enable Automated Master Looting.
+-- Named for its switch, Enable Automated Master Looting. Roll Macro follows it.
 L["TAB_MASTER_LOOTER"] = "Automated Master Looting"
 -- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "Loot Destinations"
@@ -176,6 +178,10 @@ L["MINIMAP_TOGGLE"] = "Toggle"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Locked Items"
+-- Under the list. Argument: the game's own name for the Rogue class.
+L["MINIMAP_LOCKED_ITEMS_HINT"] = "A %s can pick these for you."
+-- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
+L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Pick these with %s to unlock them."
 L["MINIMAP_OPTIONS"] = "GogoLoot Options"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + Middle-Click"
 
@@ -209,8 +215,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List brings text of its own), the hint the box shows while empty,
-    and its button.
+    Openables List and Item Overrides bring text of their own), the hint the
+    box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "Add Item"
 L["ITEM_LIST_ADD_DESCRIPTION"] = "Enter an item ID or drag an item here to add it to the list."
@@ -221,6 +227,9 @@ L["ITEM_LIST_ADD_BUTTON"] = "Add"
 L["ITEM_LIST_FILTER_PLACEHOLDER"] = "Filter items..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] = "Shows only the items whose name, item ID, setting, or tag contains what you type."
 L["ITEM_LIST_NO_MATCHES"] = "No items match your filter."
+-- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+L["ITEM_LIST_EMPTY_REFILLS"] =
+	"This list is empty, so its defaults come back at your next login. Restore Defaults brings them back now."
 
 -- The header over what the player just added to an item list, at its top until they filter it or close the window.
 L["ITEM_LIST_NEW"] = "New"
@@ -256,11 +265,7 @@ L["SAFETY_SKIP_NOTE"] =
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Recipes, books, mounts, pets, and legendaries are always left for you."
 
---[[
-    Shown under each announcement's toggle, under Print Item in Chat and Hide
-    Roll Messages, and under Enable Ignore Notifications. Argument: the
-    message, as GogoLoot sends or prints it.
-]]
+-- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Example: %s"
 
 --------------------------------------------------------------------------------
@@ -323,8 +328,8 @@ L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 ]]
 L["ROLL_MACRO_ADDED"] = "The %s macro is in your General Macros. Type %s and drag it to an action bar."
 L["ROLL_MACRO_REMOVED"] = "The %s macro has been deleted."
-L["ROLL_MACRO_FULL"] =
-	"Couldn't add the %s macro: your General Macros are full. Delete one, and it's added the next time you log in."
+L["ROLL_MACRO_FULL_LOADING"] =
+	"Couldn't add the %s macro: your General Macros are full. Delete one, and it's added after your next loading screen."
 
 --------------------------------------------------------------------------------
 -- Options: Feedback & Support Panel
@@ -392,7 +397,8 @@ L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "Include Quest Items"
 L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 	"Hands out quest items too, for boosting a character you play yourself. Only works at a Common or lower loot threshold, and only for quest items that drop once for the whole group. Not advised in raids."
 
-L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // Quick Settings"
+-- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
+L["QUICK_SETTINGS_TITLE"] = "Quick Settings"
 -- Argument: the game's own word for Master Looter.
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Opens these settings in a window whenever you become %s."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Enable Master Looter Pop-up"
@@ -413,8 +419,7 @@ L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 -- Shown on the Ignore List while Automated Master Looting is off.
 L["MASTER_LOOTER_OFF_NOTE"] = "These settings aren't being used while Automated Master Looting is off."
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] = "Replaces the Ignore List with the default items for your expansion."
-L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
-	"This will replace your Ignore List with the default items for your expansion. Continue?"
+L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] = "Replace your Ignore List with the default items for your expansion?"
 L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "Removes this item from the Ignore List."
 
 --------------------------------------------------------------------------------
@@ -433,7 +438,7 @@ L["ROLLS_UP_TO_QUALITY"] = "Up to Quality"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: the highest quality GogoLoot rolls on."
 L["ROLLS_ACTION_CHOOSE"] = "%s: the roll GogoLoot makes. Manual leaves the roll to you."
 -- Section headers on the Automated Rolls panel.
-L["ROLLS_LOOT_THRESHOLDS_HEADER"] = "Loot Thresholds"
+L["ROLLS_PARTY_AND_RAID_HEADER"] = "Party and Raid Rolls"
 L["ROLLS_MESSAGES_HEADER"] = "Roll Messages"
 L["ROLLS_PRINT_ITEM"] = "Print Item in Chat"
 L["ROLLS_PRINT_ITEM_DESCRIPTION"] =
@@ -459,12 +464,14 @@ L["ROLLS_OFF_NOTE"] = "These settings aren't being used while Automated Rolls is
 L["ITEM_OVERRIDES_ENABLE"] = "Enable Item Overrides"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"Uses the rolls set below. With it off, these items follow the quality settings like any other."
+-- Shown under Enable Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] = "These rolls aren't being used while Item Overrides is off."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] = "Replaces your Item Overrides with the default items for your expansion."
-L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"This will replace your Item Overrides with the default items for your expansion. Continue?"
+L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "Replace your Item Overrides with the default items for your expansion?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "Sets the automatic roll for this item."
 L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "Removes this item from Item Overrides."
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "Remove this item and its roll action from Item Overrides?"
+L["ITEM_OVERRIDES_ADD_DESCRIPTION"] = "Enter an item ID or drag an item here to add it to the list, set to Manual."
 
 --[[
     Character Rules, under Automated Rolls: the stats whose gear each
@@ -507,6 +514,8 @@ L["TRADE_CONDITION_DESCRIPTION"] =
 L["TRADE_CONDITION_ALWAYS"] = "Always"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "When in Party or Raid"
 L["TRADE_CONDITION_RAID_ONLY"] = "When in Raid"
+-- The trade window checkbox tooltip's line naming when summaries are posted.
+L["TRADE_WHEN"] = "When"
 -- The caption of the dropdown that picks where summaries go, and the trade window checkbox tooltip's line naming it.
 L["TRADE_CHANNEL"] = "Channel"
 -- Argument: the game's own word for Whisper.
@@ -577,6 +586,11 @@ L["LOOT_TOASTS_FILTER_GROUP_RARITY_DESCRIPTION"] =
 	"Shows the %s items anyone in your party or raid loots, at or above the quality beside it, with the looter's name."
 L["LOOT_TOASTS_FILTER_MINE_QUALITY_DESCRIPTION"] = "The lowest quality of %s items you loot that gets a toast."
 L["LOOT_TOASTS_FILTER_GROUP_QUALITY_DESCRIPTION"] = "The lowest quality of %s items your group loots that gets a toast."
+-- The Container row is the bag class; clams, crates and lockboxes have the Openables row.
+L["LOOT_TOASTS_FILTER_CONTAINER_MINE_DESCRIPTION"] =
+	"Shows the bags you loot. Clams, crates, and lockboxes are under Openables."
+L["LOOT_TOASTS_FILTER_CONTAINER_GROUP_DESCRIPTION"] =
+	"Shows the bags anyone in your party or raid loots, with the looter's name. Clams, crates, and lockboxes are under Openables."
 
 -- The three Filters rows after the item types, which aren't item types themselves: their captions (Money's is the client's MONEY) and their boxes' tooltips.
 L["LOOT_TOASTS_FILTER_BIND_ON_PICKUP"] = "Bind on Pickup"
@@ -629,8 +643,8 @@ L["LOOT_TOASTS_GROWTH"] = "Grow Direction"
 L["LOOT_TOASTS_GROWTH_DESCRIPTION"] = "Whether older toasts move up or down, away from the newest one."
 L["LOOT_TOASTS_GROW_UP"] = "Grow Up"
 L["LOOT_TOASTS_GROW_DOWN"] = "Grow Down"
-L["LOOT_TOASTS_ALIGN"] = "Align Items"
-L["LOOT_TOASTS_ALIGN_DESCRIPTION"] = "Which side of the handle the toasts line up on."
+L["LOOT_TOASTS_ALIGN_TOASTS"] = "Align Toasts"
+L["LOOT_TOASTS_ALIGN_TOASTS_DESCRIPTION"] = "Which side of the handle the toasts line up on."
 L["LOOT_TOASTS_ALIGN_LEFT"] = "Left"
 L["LOOT_TOASTS_ALIGN_RIGHT"] = "Right"
 
@@ -653,15 +667,15 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "Monochrome Outline"
 L["LOOT_TOASTS_UNLOCK"] = "Unlock Position"
 L["LOOT_TOASTS_LOCK"] = "Lock Position"
 L["LOOT_TOASTS_RESET"] = "Reset Position"
+L["LOOT_TOASTS_RESET_CONFIRM"] = "Put the loot toasts back in their default position?"
 L["LOOT_TOASTS_LOCK_DESCRIPTION"] = "Shows or hides the handle for dragging the toasts to a new spot."
 L["LOOT_TOASTS_RESET_DESCRIPTION"] = "Moves the toasts back to their default spot above the center of the screen."
 
--- The drag handle: its title, the two gestures it answers to, its button, and the preview rows.
-L["LOOT_TOASTS_HANDLE_TITLE"] = "GogoLoot Loot Toasts"
+-- The drag handle, titled "Loot Toasts // GogoLoot" by code: the two gestures it answers to, its button, and the preview rows.
 L["LOOT_TOASTS_CLICK_DRAG"] = "Click + Drag to Position"
 L["LOOT_TOASTS_RIGHT_CLICK_LOCK"] = "Right-Click to Lock"
 L["LOOT_TOASTS_DISABLE_BUTTON"] = "Disable Loot Toasts"
--- The stand-in item on the sample toasts, and in every Example line.
+-- The stand-in item on the sample toasts the position preview shows; Example lines link real items.
 L["LOOT_TOASTS_EXAMPLE_ITEM"] = "Example Item"
 
 -- Loot Sounds

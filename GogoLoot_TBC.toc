@@ -56,6 +56,7 @@ Locales/zhTW.lua
 # Data
 Data/Flavor.lua
 Data/Data.lua
+Data/TBC/Character-Rule-Stats-TBC.lua
 Data/TBC/Default-Item-Lists-TBC.lua
 Data/TBC/Lockbox-Skill-Levels-TBC.lua
 Data/TBC/Openable-Items-TBC.lua

@@ -30,19 +30,29 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
     The client knows an item's class without asking the server, so a row sits
     under its header even while its name is still loading. A row whose class
     the client can't give sits above the first header, under none.
+
+    A heading is kept for the session once the item has loaded, when the bind
+    can no longer move it, so a repaint only works out the items still loading.
 ]]
+local knownKindHeadings = {}
 
 ---@param itemIdentifier number
 ---@return string # "" when the client can't say
 local function GetItemKindHeading(itemIdentifier)
-	local _, itemKind, _, _, _, classIdentifier = C_Item.GetItemInfoInstant(itemIdentifier)
-	if
-		classIdentifier ~= ns.ITEM_CLASS_QUEST
-		and select(14, C_Item.GetItemInfo(itemIdentifier)) == ns.BIND_QUEST_ITEM
-	then
-		return C_Item.GetItemClassInfo(ns.ITEM_CLASS_QUEST) or itemKind or ""
+	local knownHeading = knownKindHeadings[itemIdentifier]
+	if knownHeading then
+		return knownHeading
 	end
-	return itemKind or ""
+	local _, itemKind, _, _, _, classIdentifier = C_Item.GetItemInfoInstant(itemIdentifier)
+	local itemName, _, _, _, _, _, _, _, _, _, _, _, _, bindType = C_Item.GetItemInfo(itemIdentifier)
+	local heading = itemKind or ""
+	if classIdentifier ~= ns.ITEM_CLASS_QUEST and bindType == ns.BIND_QUEST_ITEM then
+		heading = C_Item.GetItemClassInfo(ns.ITEM_CLASS_QUEST) or heading
+	end
+	if itemName and heading ~= "" then
+		knownKindHeadings[itemIdentifier] = heading
+	end
+	return heading
 end
 
 --[[

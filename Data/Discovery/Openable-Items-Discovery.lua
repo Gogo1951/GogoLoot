@@ -1,46 +1,17 @@
--- Data/Discovery/Openable-Items-Discovery.lua
 local _, ns = ...
 
 if not ns.IS_DISCOVERY then
 	return
 end
 
---[[
-    Every item this client can open, and what Automated Opening does with
-    each by default. The player's own changes, and the items they added or
-    removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
-
-    Pulled from the Classic Era client's own tables on wago.tools, build
-    1.15.9.69722: every ItemSparse row flagged Openable (Flags_0 & 0x4, the
-    flag behind "<Right Click to Open>"), less bags and equippable items
-    (InventoryType set), and less placeholders named "Test", "QATest",
-    "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated".
-
-    Season of Discovery runs on the Classic Era client, so this is every
-    row Data/Vanilla has plus the ids first seen after build
-    1.14.4.51829, the last before Season of Discovery launched.
-    https://wago.tools/db2/ItemSparse?build=1.15.9.69722
-
-    Each row's default follows the maintainer's rules, in this order:
-    ns.OPENING_IGNORE_RAID for a container that drops only from raid or world
-    bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE
-    for one holding a Unique item that isn't gear; ns.OPENING_IGNORE for one
-    holding a Bind on Pickup item while it can itself be traded; ns.OPENING_OPEN
-    for the rest. No client table records
-    what a container holds or drops from, so those come from the CMaNGOS Classic
-    world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's
-    earlier call stands. README-Technical describes the method.
-
-    -- TODO: Add SQL Query
-]]
 -- { [itemId] = defaultAction }
 ns.OPENABLE_ITEMS = {
 	[10456] = ns.OPENING_OPEN, -- A Bulging Coin Purse
 	[15902] = ns.OPENING_OPEN, -- A Crazy Grab Bag
 	[11883] = ns.OPENING_OPEN, -- A Dingy Fanny Pack
-	[5335] = ns.OPENING_IGNORE_UNIQUE, -- A Sack of Coins (unique: Old Moneybag)
-	[6755] = ns.OPENING_IGNORE_UNIQUE, -- A Small Container of Gems (unique: Jewelry Box)
-	[11107] = ns.OPENING_IGNORE_UNIQUE, -- A Small Pack (unique: Large Compass, Curled Map Parchment, Lion-headed Key, ...)
+	[5335] = ns.OPENING_OPEN, -- A Sack of Coins
+	[6755] = ns.OPENING_OPEN, -- A Small Container of Gems
+	[11107] = ns.OPENING_OPEN, -- A Small Pack
 	[205364] = ns.OPENING_OPEN, -- Acolyte's Knapsack
 	[208223] = ns.OPENING_OPEN, -- Acolyte's Knapsack
 	[21509] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
@@ -77,7 +48,7 @@ ns.OPENABLE_ITEMS = {
 	[8366] = ns.OPENING_IGNORE, -- Bloated Trout (Bind on Pickup: Pendant of Myzrael)
 	[17962] = ns.OPENING_IGNORE_RAID, -- Blue Sack of Gems (raid bosses: Azuregos, Onyxia, Nefarian, Lord Kazzak, ...)
 	[21812] = ns.OPENING_OPEN, -- Box of Chocolates
-	[10695] = ns.OPENING_IGNORE_UNIQUE, -- Box of Empty Vials (unique: Empty Vial Labeled #1, Empty Vial Labeled #2, Empty Vial Labeled #3, ...)
+	[10695] = ns.OPENING_OPEN, -- Box of Empty Vials
 	[213641] = ns.OPENING_OPEN, -- Box of Gnomeregan Salvage
 	[9541] = ns.OPENING_OPEN, -- Box of Goodies
 	[9539] = ns.OPENING_OPEN, -- Box of Rations
@@ -98,14 +69,14 @@ ns.OPENABLE_ITEMS = {
 	[227379] = ns.OPENING_OPEN, -- Corrupted Boots, Legs, and Shoulders Set
 	[227354] = ns.OPENING_OPEN, -- Corrupted Gloves and Belt Set
 	[227401] = ns.OPENING_OPEN, -- Corrupted Helm and Chestpiece Set
-	[5738] = ns.OPENING_IGNORE_UNIQUE, -- Covert Ops Pack (unique: Remote Detonator (Red), Remote Detonator (Blue), NG-5 Explosives (Red), ...)
+	[5738] = ns.OPENING_OPEN, -- Covert Ops Pack
 	[208848] = ns.OPENING_OPEN, -- Cracked Skull-Shaped Geode
 	[9265] = ns.OPENING_IGNORE_UNIQUE, -- Cuergo's Hidden Treasure (unique: Cuergo's Gold)
 	[23022] = ns.OPENING_OPEN, -- Curmudgeon's Payoff
 	[226405] = ns.OPENING_OPEN, -- Damaged Undermine Supply Crate
 	[236414] = ns.OPENING_OPEN, -- Damaged Undermine Supply Crate
 	[208838] = ns.OPENING_UNLOCKED, -- Dark Iron Lockbox
-	[19422] = ns.OPENING_IGNORE_UNIQUE, -- Darkmoon Faire Fortune (unique: Sayge's Fortune #23, Sayge's Fortune #24, Sayge's Fortune #25, ...)
+	[19422] = ns.OPENING_OPEN, -- Darkmoon Faire Fortune
 	[227371] = ns.OPENING_OPEN, -- Dawn Boots, Legs, and Shoulders Set
 	[227346] = ns.OPENING_OPEN, -- Dawn Gloves and Belt Set
 	[227393] = ns.OPENING_OPEN, -- Dawn Helm and Chestpiece Set
@@ -121,18 +92,18 @@ ns.OPENABLE_ITEMS = {
 	[227345] = ns.OPENING_OPEN, -- Divine Will Gloves and Belt Set
 	[227392] = ns.OPENING_OPEN, -- Divine Will Helm and Chestpiece Set
 	[238681] = ns.OPENING_OPEN, -- Dusty Bag
-	[8647] = ns.OPENING_IGNORE_UNIQUE, -- Egg Crate (unique: Extraordinary Egg, Fine Egg, Ordinary Egg, ...)
+	[8647] = ns.OPENING_OPEN, -- Egg Crate
 	[10752] = ns.OPENING_OPEN, -- Emerald Encrusted Chest
 	[221471] = ns.OPENING_OPEN, -- Emerald Wardens Chest
 	[213565] = ns.OPENING_OPEN, -- Entomology Starter Kit
-	[11617] = ns.OPENING_IGNORE_UNIQUE, -- Eridan's Supplies (unique: Book of Aquor, Irontree Heart)
+	[11617] = ns.OPENING_OPEN, -- Eridan's Supplies
 	[227376] = ns.OPENING_OPEN, -- Eruption's Boots, Legs, and Shoulders Set
 	[227351] = ns.OPENING_OPEN, -- Eruption's Gloves and Belt Set
 	[227398] = ns.OPENING_OPEN, -- Eruption's Helm and Chestpiece Set
 	[5760] = ns.OPENING_UNLOCKED, -- Eternium Lockbox
 	[11024] = ns.OPENING_OPEN, -- Evergreen Herb Casing
 	[11937] = ns.OPENING_IGNORE, -- Fat Sack of Coins (Bind on Pickup: Fire Opal Necklace)
-	[10834] = ns.OPENING_IGNORE_UNIQUE, -- Felhound Tracker Kit (unique: Fel Orb)
+	[10834] = ns.OPENING_OPEN, -- Felhound Tracker Kit
 	[227359] = ns.OPENING_OPEN, -- Feline Boots, Legs, and Shoulders Set
 	[227337] = ns.OPENING_OPEN, -- Feline Gloves and Belt Set
 	[227383] = ns.OPENING_OPEN, -- Feline Helm and Chestpiece Set
@@ -141,9 +112,9 @@ ns.OPENABLE_ITEMS = {
 	[189419] = ns.OPENING_OPEN, -- Fire Resist Plate Gear
 	[189420] = ns.OPENING_OPEN, -- Fire Resist Plate Gear
 	[21131] = ns.OPENING_OPEN, -- Followup Combat Assignment
-	[20805] = ns.OPENING_IGNORE_UNIQUE, -- Followup Logistics Assignment (unique: Logistics Task Briefing I, Logistics Task Briefing II, Logistics Task Briefing III, ...)
-	[21386] = ns.OPENING_IGNORE_UNIQUE, -- Followup Logistics Assignment (unique: Logistics Task Briefing I, Logistics Task Briefing II, Logistics Task Briefing III, ...)
-	[21133] = ns.OPENING_IGNORE_UNIQUE, -- Followup Tactical Assignment (unique: Tactical Task Briefing X, Tactical Task Briefing II, Tactical Task Briefing IV, ...)
+	[20805] = ns.OPENING_OPEN, -- Followup Logistics Assignment
+	[21386] = ns.OPENING_OPEN, -- Followup Logistics Assignment
+	[21133] = ns.OPENING_OPEN, -- Followup Tactical Assignment
 	[8484] = ns.OPENING_OPEN, -- Gadgetzan Water Co. Care Package
 	[21310] = ns.OPENING_OPEN, -- Gaily Wrapped Present
 	[21270] = ns.OPENING_OPEN, -- Gently Shaken Gift
@@ -180,10 +151,10 @@ ns.OPENABLE_ITEMS = {
 	[8507] = ns.OPENING_OPEN, -- Heavy Mithril Lotterybox
 	[208766] = ns.OPENING_OPEN, -- Helping Hand
 	[227931] = ns.OPENING_OPEN, -- Hidden Bundle
-	[22648] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Ashi Dossier (unique: Combat Task Briefing XII, Combat Task Briefing III, Combat Task Briefing I, ...)
-	[22649] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Regal Dossier (unique: Combat Task Briefing VIII, Combat Task Briefing IX, Combat Task Briefing X, ...)
-	[22650] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Zora Dossier (unique: Combat Task Briefing IV, Combat Task Briefing V, Combat Task Briefing VI, ...)
-	[10569] = ns.OPENING_IGNORE_UNIQUE, -- Hoard of the Black Dragonflight (unique: Preserved Threshadon Meat, Preserved Pheromone Mixture)
+	[22648] = ns.OPENING_OPEN, -- Hive'Ashi Dossier
+	[22649] = ns.OPENING_OPEN, -- Hive'Regal Dossier
+	[22650] = ns.OPENING_OPEN, -- Hive'Zora Dossier
+	[10569] = ns.OPENING_OPEN, -- Hoard of the Black Dragonflight
 	[210330] = ns.OPENING_OPEN, -- Hot Tip
 	[20367] = ns.OPENING_OPEN, -- Hunting Gear
 	[227381] = ns.OPENING_OPEN, -- Immoveable Boots, Legs, and Shoulders Set
@@ -206,8 +177,8 @@ ns.OPENABLE_ITEMS = {
 	[21743] = ns.OPENING_OPEN, -- Large Cluster Rocket Recipes
 	[21742] = ns.OPENING_OPEN, -- Large Rocket Recipes
 	[19297] = ns.OPENING_OPEN, -- Lesser Darkmoon Prize
-	[21132] = ns.OPENING_IGNORE_UNIQUE, -- Logistics Assignment (unique: Logistics Task Briefing X, Logistics Task Briefing IV, Logistics Task Briefing V, ...)
-	[21266] = ns.OPENING_IGNORE_UNIQUE, -- Logistics Assignment (unique: Logistics Task Briefing IV, Logistics Task Briefing VI, Logistics Task Briefing VII, ...)
+	[21132] = ns.OPENING_OPEN, -- Logistics Assignment
+	[21266] = ns.OPENING_OPEN, -- Logistics Assignment
 	[18804] = ns.OPENING_OPEN, -- Lord Grayson's Satchel
 	[21746] = ns.OPENING_OPEN, -- Lucky Red Envelope
 	[21640] = ns.OPENING_OPEN, -- Lunar Festival Fireworks Pack
@@ -230,7 +201,7 @@ ns.OPENABLE_ITEMS = {
 	[22320] = ns.OPENING_OPEN, -- Mux's Quality Goods
 	[19425] = ns.OPENING_OPEN, -- Mysterious Lockbox
 	[21042] = ns.OPENING_OPEN, -- Narain's Special Kit
-	[15876] = ns.OPENING_IGNORE_UNIQUE, -- Nathanos' Chest (unique: Rotten Apple)
+	[15876] = ns.OPENING_OPEN, -- Nathanos' Chest
 	[9537] = ns.OPENING_OPEN, -- Neatly Wrapped Box
 	[20768] = ns.OPENING_IGNORE_UNIQUE, -- Oozing Bag (unique: Disgusting Oozeling)
 	[4632] = ns.OPENING_UNLOCKED, -- Ornate Bronze Lockbox
@@ -317,7 +288,7 @@ ns.OPENABLE_ITEMS = {
 	[17727] = ns.OPENING_OPEN, -- Smokywood Pastures Gift Pack
 	[17685] = ns.OPENING_OPEN, -- Smokywood Pastures Sampler
 	[17726] = ns.OPENING_OPEN, -- Smokywood Pastures Special Gift
-	[21315] = ns.OPENING_IGNORE_UNIQUE, -- Smokywood Satchel (unique: Pouch of Reindeer Dust, Metzen's Letters and Notes)
+	[21315] = ns.OPENING_OPEN, -- Smokywood Satchel
 	[15874] = ns.OPENING_OPEN, -- Soft-shelled Clam
 	[9363] = ns.OPENING_OPEN, -- Sparklematic-Wrapped Box
 	[4637] = ns.OPENING_UNLOCKED, -- Steel Lockbox
@@ -328,7 +299,7 @@ ns.OPENABLE_ITEMS = {
 	[23224] = ns.OPENING_OPEN, -- Summer Gift Package
 	[217014] = ns.OPENING_OPEN, -- Supply Bag
 	[237263] = ns.OPENING_OPEN, -- Supply Bag
-	[20809] = ns.OPENING_IGNORE_UNIQUE, -- Tactical Assignment (unique: Tactical Task Briefing IX, Tactical Task Briefing VI, Tactical Task Briefing VII, ...)
+	[20809] = ns.OPENING_OPEN, -- Tactical Assignment
 	[7209] = ns.OPENING_UNLOCKED, -- Tazan's Satchel
 	[7870] = ns.OPENING_OPEN, -- Thaumaturgy Vessel Lockbox
 	[12033] = ns.OPENING_UNLOCKED, -- Thaurissan Family Jewels
@@ -341,7 +312,7 @@ ns.OPENABLE_ITEMS = {
 	[21327] = ns.OPENING_OPEN, -- Ticking Present
 	[213443] = ns.OPENING_OPEN, -- Ticking Present
 	[20708] = ns.OPENING_OPEN, -- Tightly Sealed Trunk
-	[11568] = ns.OPENING_IGNORE_UNIQUE, -- Torwa's Pouch (unique: Preserved Threshadon Meat, Preserved Pheromone Mixture)
+	[11568] = ns.OPENING_OPEN, -- Torwa's Pouch
 	[20393] = ns.OPENING_OPEN, -- Treat Bag
 	[227372] = ns.OPENING_OPEN, -- Twilight Boots, Legs, and Shoulders Set
 	[227347] = ns.OPENING_OPEN, -- Twilight Gloves and Belt Set
@@ -350,7 +321,7 @@ ns.OPENABLE_ITEMS = {
 	[227382] = ns.OPENING_OPEN, -- Unstoppable Boots, Legs, and Shoulders Set
 	[227357] = ns.OPENING_OPEN, -- Unstoppable Gloves and Belt Set
 	[227404] = ns.OPENING_OPEN, -- Unstoppable Helm and Chestpiece Set
-	[12339] = ns.OPENING_IGNORE_UNIQUE, -- Vaelan's Gift (unique: Orb of Draconic Energy, Unforged Seal of Ascension)
+	[12339] = ns.OPENING_OPEN, -- Vaelan's Gift
 	[231644] = ns.OPENING_OPEN, -- Warden's Enchanting Bag
 	[231642] = ns.OPENING_OPEN, -- Warden's Herb Bag
 	[237386] = ns.OPENING_OPEN, -- Wartorn Undermine Supply Crate
@@ -364,3 +335,33 @@ ns.OPENABLE_ITEMS = {
 	[22137] = ns.OPENING_OPEN, -- Ysida's Satchel
 	[216646] = ns.OPENING_OPEN, -- Ziri's Mystery Crate
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, Season of Discovery 1.15.9.70576
+
+Notes
+	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
+	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". README-Technical, Openable Items Data, gives the exact test. They come from this client's own tables, never from a private-server database or Wowhead listings.
+	- Pulled from the Classic Era client's own tables at build 1.15.9.69722. Season of Discovery runs on that client, so the rows are every row Data/Vanilla has plus the IDs first seen after build 1.14.4.51829, the last before Season of Discovery launched.
+	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
+	- No client table records what a container holds or drops from, so those come from the CMaNGOS Classic world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside. README-Technical describes the method.
+	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
+	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): WoW Forever's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	https://wago.tools/db2/ItemSparse?build=1.15.9.69722
+	https://wago.tools/db2/ItemSparse?build=1.15.9.70576
+	https://wago.tools/db2/ItemSparse?build=1.14.4.51829
+
+QuestieDB
+	None.
+]]

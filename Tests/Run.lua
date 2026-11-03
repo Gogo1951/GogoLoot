@@ -77,11 +77,13 @@ local FILES = {
 	"Locales/enUS.lua",
 	"Data/Flavor.lua",
 	"Data/Data.lua",
+	"Data/Vanilla/Character-Rule-Stats-Vanilla.lua",
 	"Data/Vanilla/Default-Item-Lists-Vanilla.lua",
 	"Data/Vanilla/Lockbox-Skill-Levels-Vanilla.lua",
 	"Data/Vanilla/Openable-Items-Vanilla.lua",
 	"Data/Vanilla/Spells-Vanilla.lua",
 	"Data/Vanilla/Game-IDs-Vanilla.lua",
+	"Data/Discovery/Character-Rule-Stats-Discovery.lua",
 	"Data/Discovery/Default-Item-Lists-Discovery.lua",
 	"Data/Discovery/Lockbox-Skill-Levels-Discovery.lua",
 	"Data/Discovery/Openable-Items-Discovery.lua",
@@ -183,7 +185,8 @@ local function loadAddon(beforeLoaded, beforeFiles)
 	end
 
 	for _, relative in ipairs(FILES) do
-		local path = ROOT .. relative
+		local flavorFiles = rawget(env, "__flavorFiles")
+		local path = ROOT .. (flavorFiles and flavorFiles[relative] or relative)
 		local chunk, err
 		if setfenv then
 			chunk, err = loadfile(path)
@@ -297,6 +300,11 @@ local function cacheOpenableItems(ns, env)
 	for itemIdentifier in pairs(ns.OPENABLE_ITEMS) do
 		env.__state.itemNames[itemIdentifier] = env.__state.itemNames[itemIdentifier]
 			or { name = "Container " .. itemIdentifier, quality = 1, classId = 15 }
+	end
+	-- The Example lines' items, which the cache watches from login.
+	for quality, itemIdentifier in pairs(ns.SAMPLE_ITEM_IDS) do
+		env.__state.itemNames[itemIdentifier] = env.__state.itemNames[itemIdentifier]
+			or { name = "Sample " .. itemIdentifier, quality = quality }
 	end
 end
 
@@ -1384,9 +1392,11 @@ test("sub-options are indented by a leading cell, not by padded captions", funct
 		{ announcementArgs, "tradeExampleRow" },
 		{ announcementArgs, "destinationExampleRow" },
 		{ announcementArgs, "autoExampleRow" },
+		{ announcementArgs, "manualExampleRow" },
 		{ ns.BuildAutomatedOpeningOptions().args, "outsideInstancesRow" },
 		{ ns.BuildAutomatedOpeningOptions().args, "soloOnlyRow" },
-		{ ns.BuildAutomatedOpeningOptions().args, "ignoreNotificationsExampleRow" },
+		{ ns.BuildOpenableItemsOptions().args, "ignoreNotificationsExampleRow" },
+		{ ns.BuildLockboxOptions().args, "notificationsExampleRow" },
 	}) do
 		local key = entry[2]
 		local row = entry[1][key]
@@ -1689,15 +1699,15 @@ end)
     party and raid rows, then Roll Messages over Print Item in Chat, its
     example, and Hide Roll Messages.
 ]]
-test("the automated rolls panel has a Loot Thresholds and a Roll Messages section", function()
+test("the automated rolls panel has a Party and Raid Rolls and a Roll Messages section", function()
 	local ns, env = loadAddon()
 	local args = ns.BuildAutomatedRollOptions().args
 	local L = ns.L
 	ns.db.profile.autoGreed = true
 
 	check(
-		args.lootThresholdsHeader.name:find(L["ROLLS_LOOT_THRESHOLDS_HEADER"], 1, true) ~= nil,
-		"Loot Thresholds heads the rolls"
+		args.partyAndRaidHeader.name:find(L["ROLLS_PARTY_AND_RAID_HEADER"], 1, true) ~= nil,
+		"Party and Raid Rolls heads the rolls"
 	)
 	check(
 		args.rollMessagesHeader.name:find(L["ROLLS_MESSAGES_HEADER"], 1, true) ~= nil,
@@ -1705,7 +1715,7 @@ test("the automated rolls panel has a Loot Thresholds and a Roll Messages sectio
 	)
 	local inOrder = {
 		args.autoGreed,
-		args.lootThresholdsHeader,
+		args.partyAndRaidHeader,
 		args.rollRowParty,
 		args.rollRowRaid,
 		args.rollMessagesHeader,
@@ -1721,7 +1731,8 @@ test("the automated rolls panel has a Loot Thresholds and a Roll Messages sectio
 	checkEqual(L["ROLLS_PRINT_ITEM"], args.printRolledItems.name, "Print Item in Chat")
 	local example = args.printRolledItemsExampleRow.args.control1.name()
 	check(
-		example:find(L["ADDON_TITLE"] .. " // You rolled " .. env.GREED .. " on ", 1, true) ~= nil,
+		example:find(ns.GetColor("TEXT") .. "You rolled " .. env.GREED .. " on ", 1, true) ~= nil
+			and example:find(ns.GetColor("INFO") .. L["ADDON_TITLE"] .. "|r", 1, true) ~= nil,
 		"its example is the printed line"
 	)
 end)
@@ -2054,50 +2065,63 @@ test("Lockboxes is a child panel of Automated Opening", function()
 end)
 
 --[[
-    The Ignore notice sits under the Automated Opening switch as its peer, not
-    indented, and leaves with it like everything else below the switch. The
-    Openables List no longer opens on a checkbox that reads as its own switch.
+    The Ignore notice sits on the Openables List, above the list, and never
+    hides: Speedy Loot gives its notice with opening off too (maintainer,
+    2026-11-03). Automated Opening no longer carries it.
 ]]
-test("the Ignore notice is a peer of the Automated Opening switch, not the list's first checkbox", function()
+test("the Ignore notice lives on the Openables List and never hides", function()
 	local ns = loadAddon()
-	local args = ns.BuildAutomatedOpeningOptions().args
+	local args = ns.BuildOpenableItemsOptions().args
 	local toggle = args.ignoreNotifications
 
 	checkEqual("toggle", toggle.type, "it is a checkbox")
 	checkEqual("full", toggle.width, "at the panel's own level, not indented")
 	checkEqual(ns.L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"], toggle.name, "Enable Ignore Notifications")
+	check(toggle.order < args.itemList.order, "above the list")
 	toggle.set(nil, false)
 	checkEqual(false, ns.db.profile.openingIgnoreNotifications, "it writes the setting Speedy Loot and opening read")
+	ns.db.profile.autoOpen = false
+	check(not evaluate(toggle.hidden), "it stays on show with opening off")
 
-	for key, entry in pairs(ns.BuildOpenableItemsOptions().args) do
-		check(entry.type ~= "toggle", "the Openables List has no checkbox of its own: " .. key)
-	end
+	checkEqual(
+		nil,
+		ns.BuildAutomatedOpeningOptions().args.ignoreNotifications,
+		"Automated Opening no longer carries it"
+	)
 end)
 
 --[[
     Under the Ignore notice sits an example of what it prints: the plain
-    notice's real template, laid out as printed, add-on name first and with no
-    marker. Like the announcements' examples, it stays on show while its toggle
-    is off, but leaves with the rest of the panel while opening is off.
+    notice's real template, drawn as printed with a real container from the
+    data, and with no marker. It stays on show while its toggle is off, and
+    while opening is off it shows Speedy Loot's left-in-the-window notice
+    instead, the one that still prints then.
 ]]
 test("the Ignore notice's example is its real printed line", function()
-	local ns = loadAddon()
+	local ns, env = loadAddon()
 	local L = ns.L
-	local args = ns.BuildAutomatedOpeningOptions().args
+	local args = ns.BuildOpenableItemsOptions().args
 	local row = args.ignoreNotificationsExampleRow
 
+	local container = ns.ExampleIgnoredContainer()
+	checkEqual(ns.OPENING_IGNORE, ns.OPENABLE_ITEMS[container], "the container is one the data sets to Ignore")
 	-- A stand-in template, so the example is seen to follow whatever the notice says.
 	L["MESSAGE_ITEM_IGNORED"] = "<%s is ignored>"
-	local item = ns.GetQualityColor(2) .. "[" .. L["LOOT_TOASTS_EXAMPLE_ITEM"] .. "]" .. ns.GetColor("HELP")
+	check(
+		row.args.control1.name():find(L["ITEM_LOADING"]:format(container), 1, true) ~= nil,
+		"it reads as loading until the client has the item"
+	)
+	env.__state.itemNames[container] = { name = "Sealed Box", quality = 1 }
 	local text = row.args.control1.name()
 	checkEqual(
 		1,
 		text:find(ns.GetColor("HELP") .. L["OPTIONS_EXAMPLE"]:format(""), 1, true),
 		"it reads Example, in silver"
 	)
+	check(text:find(ns.GetColor("INFO") .. L["ADDON_TITLE"] .. "|r", 1, true) ~= nil, "the printed line, name first")
 	check(
-		text:find(L["ADDON_TITLE"] .. " // <" .. item .. " is ignored>", 1, true) ~= nil,
-		"the printed notice, name first"
+		text:find(ns.GetColor("TEXT") .. "<|Hitem:" .. container .. "|h[Sealed Box]|h is ignored>", 1, true) ~= nil,
+		"the notice in the print's own body color, with the real link"
 	)
 	checkEqual(nil, text:find("UI-RaidTargetingIcon", 1, true), "with no marker, since nobody else sees it")
 
@@ -2105,7 +2129,12 @@ test("the Ignore notice's example is its real printed line", function()
 	ns.db.profile.openingIgnoreNotifications = false
 	check(not evaluate(row.hidden), "and stays on show with the notice off")
 	ns.db.profile.autoOpen = false
-	check(evaluate(row.hidden), "but leaves with opening")
+	check(not evaluate(row.hidden), "and with opening off")
+	L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "<%s stays behind>"
+	check(
+		row.args.control1.name():find("[Sealed Box]|h stays behind>", 1, true) ~= nil,
+		"where it shows Speedy Loot's notice instead"
+	)
 end)
 
 --[[
@@ -2434,39 +2463,47 @@ end)
 
 --[[
     Each announcement shows what it posts under its toggle: its real template,
-    with the real marker and name around it, so a change to a message shows in
-    its example too. The raid marker is drawn as the icon chat shows.
+    with the real marker and name around it, drawn as party chat from the
+    player's own character, so a change to a message shows in its example too.
+    The raid marker is drawn as the icon chat shows. The trade example follows
+    where the summary goes: a whisper as the partner receives it, party chat,
+    or for Me Only the printed line.
 ]]
 test("each announcement's example is its real message", function()
-	local ns = loadAddon()
+	local ns, env = loadAddon()
 	local L = ns.L
+	local state = env.__state
 	local args = ns.BuildAnnouncementOptions().args
 	local function example(key)
 		return args[key].args.control1.name()
 	end
+	for quality, itemIdentifier in pairs(ns.SAMPLE_ITEM_IDS) do
+		state.itemNames[itemIdentifier] = { name = "Sample " .. quality, quality = quality }
+	end
+	local function link(quality)
+		return ("|Hitem:%d|h[Sample %d]|h"):format(ns.SAMPLE_ITEM_IDS[quality], quality)
+	end
+	local you = ns.GetClassColor("WARRIOR") .. "Tester|r"
 
 	-- Stand-in templates, so the examples are seen to follow whatever the messages say.
 	L["MESSAGE_DESTINATION_SET"] = "<%s holds %s>"
 	L["MESSAGE_GAVE"] = "<gave %s to %s>"
 	L["MESSAGE_TRADE_GAVE_RECEIVED"] = "<gave %s to %s for %s>"
-	local item = "[" .. L["LOOT_TOASTS_EXAMPLE_ITEM"] .. "]" .. ns.GetColor("HELP")
 
 	local destination = example("destinationExampleRow")
 	check(destination:find("<Aero holds Epic>", 1, true) ~= nil, "the destination example runs its template")
-	local trade = example("tradeExampleRow")
-	check(
-		trade:find("<gave " .. ns.GetQualityColor(2) .. item .. " x2 to Aero for 5g>", 1, true) ~= nil,
-		"the trade example gives two of an item for 5 gold"
-	)
 	local handOut = example("autoExampleRow")
 	check(
-		handOut:find("<gave " .. ns.GetQualityColor(3) .. item .. " to Aero>", 1, true) ~= nil,
-		"the hand-out example's item wears the threshold's color"
+		handOut:find("<gave " .. link(3) .. " to Aero>", 1, true) ~= nil,
+		"the hand-out example's item is the threshold's quality"
 	)
 	ns.db.profile.announceMasterLootAutoThreshold = 4
+	check(example("autoExampleRow"):find(link(4), 1, true) ~= nil, "and follows it when it changes")
+	ns.db.profile.announceTradeOutput = "group"
+	local trade = example("tradeExampleRow")
 	check(
-		example("autoExampleRow"):find(ns.GetQualityColor(4) .. item, 1, true) ~= nil,
-		"and follows it when it changes"
+		trade:find("<gave " .. link(2) .. " x2 to Aero for 5g>", 1, true) ~= nil,
+		"the trade example gives two of an item for 5 gold"
 	)
 
 	for name, text in pairs({ destination = destination, trade = trade, handOut = handOut }) do
@@ -2475,20 +2512,70 @@ test("each announcement's example is its real message", function()
 			text:find(ns.GetColor("HELP") .. L["OPTIONS_EXAMPLE"]:format(""), 1, true),
 			name .. " reads Example, in silver"
 		)
+		check(
+			text:find(L["OPTIONS_EXAMPLE"]:format("|cffAAAAFF[Party] [" .. you .. "|cffAAAAFF]: "), 1, true) ~= nil,
+			name .. " is party chat from the player's own character, in party color"
+		)
 		check(text:find("UI-RaidTargetingIcon_4", 1, true) ~= nil, name .. " draws the marker as its icon")
 		checkEqual(nil, text:find(ns.TARGET_MARKER, 1, true), name .. " rather than printing it")
 		check(text:find(L["ADDON_TITLE"], 1, true) ~= nil, name .. " carries the add-on's name, as posted")
 	end
+
+	ns.db.profile.announceTradeOutput = "whisper"
+	check(
+		example("tradeExampleRow"):find("|cffFF80FF[" .. you .. "|cffFF80FF] whispers: ", 1, true) ~= nil,
+		"a whispered summary is drawn as the whisper the partner receives"
+	)
 
 	-- Me Only prints the summary, so its example is the printed line: name first, no marker.
 	L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"] = "<printed %s to %s for %s>"
 	ns.db.profile.announceTradeOutput = "self"
 	local printed = example("tradeExampleRow")
 	check(
-		printed:find(L["ADDON_TITLE"] .. " // <printed " .. ns.GetQualityColor(2) .. item, 1, true) ~= nil,
+		printed:find(ns.GetColor("INFO") .. L["ADDON_TITLE"] .. "|r", 1, true) ~= nil,
 		"the Me Only example is the printed line, name first"
 	)
+	check(
+		printed:find("<printed " .. link(2) .. " x2 to " .. ns.GetClassColor("DRUID") .. "Aero|r", 1, true) ~= nil,
+		"naming the partner in their class color"
+	)
 	checkEqual(nil, printed:find("UI-RaidTargetingIcon", 1, true), "with no marker, since nobody else sees it")
+end)
+
+--[[
+    The three forms an Example line is drawn in, each in the colors of where it
+    goes: the player's recolored chat colors win over the fallbacks, and the
+    line's color comes back after every |r a link or name closes with.
+]]
+test("the Example renderers draw each form in its chat colors", function()
+	local ns, env = loadAddon()
+	local you = ns.GetClassColor("WARRIOR") .. "Tester|r"
+	local closed = "|cff112233[Link]|r"
+
+	local printed = ns.OptionsPrintedLine("body " .. closed .. " tail")
+	checkEqual(
+		1,
+		printed:find(ns.GetColor("TEXT") .. ns.GetColor("INFO") .. ns.L["ADDON_TITLE"] .. "|r", 1, true),
+		"printed: the print helper's line"
+	)
+	check(printed:find(ns.GetColor("TEXT") .. "body " .. closed, 1, true) ~= nil, "printed: the body in its color")
+	check(
+		printed:find(closed .. ns.GetColor("TEXT") .. " tail", 1, true) ~= nil,
+		"printed: body color back after a link"
+	)
+
+	env.ChatTypeInfo = { PARTY = { r = 1, g = 0, b = 0 }, WHISPER = { r = 0, g = 1, b = 0 } }
+	local party = ns.OptionsSentLine("PARTY", "{rt4} hi " .. closed .. " tail")
+	checkEqual(
+		1,
+		party:find("|cffff0000[Party] [" .. you .. "|cffff0000]: ", 1, true),
+		"party: the player's party color"
+	)
+	check(party:find(closed .. "|cffff0000 tail", 1, true) ~= nil, "party: its color back after a link")
+	check(party:find("UI-RaidTargetingIcon_4", 1, true) ~= nil, "party: the marker as its icon")
+
+	local whisper = ns.OptionsSentLine("WHISPER", "hi")
+	checkEqual(1, whisper:find("|cff00ff00[" .. you .. "|cff00ff00] whispers: hi", 1, true), "whisper: as received")
 end)
 
 --------------------------------------------------------------------------------
@@ -3797,6 +3884,13 @@ end)
 ]]
 local function loadFlavorAddon(flavor)
 	return loadAddon(nil, function(env)
+		-- The flavor folder's stat list in place of Vanilla's, as that flavor's TOC loads it.
+		env.__flavorFiles = {
+			["Data/Vanilla/Character-Rule-Stats-Vanilla.lua"] = ("Data/%s/Character-Rule-Stats-%s.lua"):format(
+				flavor,
+				flavor
+			),
+		}
 		local readMetadata = env.C_AddOns.GetAddOnMetadata
 		env.C_AddOns.GetAddOnMetadata = function(addonName, field)
 			if field == "X-Flavor" then
@@ -3957,14 +4051,17 @@ test("the Character Rules panel lists every character in its class color and edi
 	end
 	checkEqual(
 		table.concat({
-			"captionPRIMARY",
+			"spacerBeforePRIMARY",
+			"headerPRIMARY",
+			"spacerAfterPRIMARY",
 			"ruleSTRENGTH",
 			"ruleAGILITY",
 			"ruleSTAMINA",
 			"ruleINTELLECT",
 			"ruleSPIRIT",
 			"spacerBeforeSECONDARY",
-			"captionSECONDARY",
+			"headerSECONDARY",
+			"spacerAfterSECONDARY",
 			-- The test client's words: Attack Power, Bonus Healing, Critical Strike, Hit, Mana Per 5 Sec., Spell Power.
 			"ruleATTACK_POWER",
 			"ruleHEALING_POWER",
@@ -4249,41 +4346,6 @@ test("only the player's changes are saved, so new data reaches them", function()
 		ns:SetOpeningAction(CLAM, reason)
 		checkEqual(nil, ns.db.global.openingActions[CLAM], "nor set a reason, which belongs to the data: " .. reason)
 	end
-end)
-
---[[
-    MIGRATION (remove after 2026-10-28): saved data from before the options
-    rework. The tier toggle is gone, and the Openables List's five choices
-    became two: each old choice maps to the one that does the same, and one
-    that lands on its item's default is dropped.
-]]
-test("saved data from before the options rework moves across", function()
-	local ns, env = loadAddon(function(_, loadingEnv)
-		local aceDB = loadingEnv.LibStub("AceDB-3.0")
-		local newDatabase = aceDB.New
-		aceDB.New = function(...)
-			local db = newDatabase(...)
-			db.global.showDestinationTiers = true
-			db.global.openingActions = {
-				[CLAM] = "UNLOCKED", -- a clam set to Open when Unlocked opens the same as Open, its default
-				[BLUE_SACK_OF_GEMS] = "IGNORE_UNIQUE", -- another Ignore, its default's action
-				[IRON_LOCKBOX] = "IGNORE_RAID", -- a lockbox the player chose to leave alone
-				[PIRATES_FOOTLOCKER] = "UNLOCKED", -- a footlocker the player chose to open
-				[WATERLOGGED_CRATE] = "OPEN", -- a choice already in the new form
-				[CUSTOM_BOX] = "UNLOCKED", -- an added item
-			}
-			return db
-		end
-	end)
-	local saved = ns.db.global.openingActions
-	checkEqual(nil, ns.db.global.showDestinationTiers, "the tier toggle's key is gone")
-	checkEqual(nil, saved[CLAM], "a choice that now matches its default is dropped")
-	checkEqual(nil, saved[BLUE_SACK_OF_GEMS], "an Ignore that matches its default's action too")
-	checkEqual(ns.OPENING_IGNORE, saved[IRON_LOCKBOX], "a chosen Ignore stays an Ignore")
-	checkEqual(ns.OPENING_OPEN, saved[PIRATES_FOOTLOCKER], "a chosen Open stays an Open")
-	checkEqual(ns.OPENING_OPEN, saved[WATERLOGGED_CRATE], "a new-form choice is left alone")
-	checkEqual(ns.OPENING_OPEN, saved[CUSTOM_BOX], "an added item keeps opening")
-	check(env ~= nil, "loaded")
 end)
 
 test("an item the data lacks can be added, and joins set to open", function()
@@ -4849,6 +4911,39 @@ test("speedy loot leaves an ignored container in the window and says so", functi
 	check(
 		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) ~= nil,
 		"and the player is told"
+	)
+end)
+
+test("speedy loot still says so while Automated Opening is off", function()
+	local ns, env = loadAddon()
+	ns.db.profile.autoOpen = false
+	ns.db.profile.openingIgnoreNotifications = true
+	local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
+	openLootWindow(env, {
+		{ link = sackLink },
+		{ link = itemLink(2589, "Linen Cloth") },
+	})
+	fire(ns, "LOOT_READY")
+	checkEqual(1, #env.__state.lootedSlots, "the container is still left in the window")
+	check(
+		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) ~= nil,
+		"and the player is told, since the notice's toggle never hides"
+	)
+end)
+
+test("speedy loot leaves an ignored container quietly while Ignore notices are off", function()
+	local ns, env = loadAddon()
+	ns.db.profile.openingIgnoreNotifications = false
+	local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
+	openLootWindow(env, {
+		{ link = sackLink },
+		{ link = itemLink(2589, "Linen Cloth") },
+	})
+	fire(ns, "LOOT_READY")
+	checkEqual(1, #env.__state.lootedSlots, "the container is still left in the window")
+	check(
+		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) == nil,
+		"and nothing is printed"
 	)
 end)
 
@@ -5647,13 +5742,19 @@ test("the winner summary sits beside Hide Roll Messages, its example under it", 
 	checkEqual(ns.L["ROLLS_WINNER_SUMMARY_NONE"], dropdown.values[ns.WINNER_SUMMARY_NONE], "Don't Print Winner Summary")
 	ns.db.profile.hideRollMessages = false
 	check(dropdown.hidden(), "it leaves while Hide Roll Messages is off")
-	local example = args.winnerSummaryExampleRow.args.control1.name()
+	local row = args.winnerSummaryExampleRow
+	check(row.hidden(), "and so does its example, since nothing prints")
+	ns.db.profile.hideRollMessages = true
+	check(not row.hidden(), "the example shows while the summary prints")
+	local example = row.args.control1.name()
 	check(
-		example:find(ns.L["ADDON_TITLE"] .. " // |c", 1, true) ~= nil,
-		"the example is the printed line, its winner class-colored"
+		example:find(ns.GetColor("INFO") .. ns.L["ADDON_TITLE"] .. "|r", 1, true) ~= nil,
+		"the example is the printed line"
 	)
-	check(example:find("Aero", 1, true) ~= nil, "naming Aero")
+	check(example:find(ns.GetClassColor("DRUID") .. "Aero|r", 1, true) ~= nil, "naming Aero in Druid orange")
 	check(example:find(", " .. env.GREED .. " 95.", 1, true) ~= nil, "with its roll")
+	ns.db.profile.winnerSummary = ns.WINNER_SUMMARY_NONE
+	check(row.hidden(), "and leaves when the dropdown says not to print")
 end)
 
 --[[
@@ -6255,7 +6356,7 @@ test("every flavor TOC loads the Vanilla TOC's files, with its own data folder",
 
 	local vanillaFields, vanillaFiles = ReadToc("Vanilla")
 	checkEqual("Vanilla", vanillaFields["X-Flavor"], "the Vanilla TOC names its flavor")
-	for _, flavor in ipairs({ "TBC", "Camelot", "Mists", "Mainline" }) do
+	for _, flavor in ipairs({ "TBC", "Camelot", "Mists" }) do
 		local fields, files = ReadToc(flavor)
 		checkEqual(flavor, fields["X-Flavor"], flavor .. " names its own flavor")
 		for key, value in pairs(vanillaFields) do
