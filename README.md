@@ -4,7 +4,11 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 **TL;DR:** You can't click corpses and pull the next pack at the same time. Don't let loot slow down your zug!
 
+### Automated Opening
+
 <img width="800" src="https://github.com/user-attachments/assets/8a232a0d-ad85-4108-b4dd-a04f4afd49b0" />
+
+### Automated Rolls
 
 <img width="800" src="https://github.com/user-attachments/assets/bd1ca322-a1b4-4e1e-b325-91d2cfbb4eb0" />
 
@@ -26,9 +30,9 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 ## Features
 
-🎲 **Automated Rolls** // Need, Greed, or Pass on everything up to the quality you pick, set apart for parties and raids. Give an item a roll of its own, or leave Intellect gear to you on your Warrior.
-
 🥡 **Automated Opening** // Clams, crates, coin purses, and unlocked lockboxes open in your bags on their own. Lockbox tooltips show the Lockpicking skill each one needs.
+
+🎲 **Automated Rolls** // Need, Greed, or Pass on everything up to the quality you pick, set apart for parties and raids. Give an item a roll of its own, or leave Intellect gear to you on your Warrior.
 
 ⚡ **Speedy Loot** // Corpses empty the moment you open them, with no loot window in the way. Hold Shift whenever you want a look.
 
