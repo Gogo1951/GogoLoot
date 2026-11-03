@@ -26,7 +26,7 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 2. Type `/gogo`, or Shift + Middle-Click the mini-map button, to open the Options Interface.
 3. Turn on Automated Rolls and pick how far it goes. It starts off, as a safety.
 4. Raid leading? Turn on Automated Master Looting and pick who gets each quality.
-5. _"If you ain’t first, you’re last."_
+5. _"If you ain't first, you're last."_
 
 ## Features
 

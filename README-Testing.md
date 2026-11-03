@@ -1,17 +1,17 @@
 # GogoLoot // Test Plan
 
-GogoLoot speeds up looting, rolls and opens for you, and hands out loot as master looter. This time we most want you to try the new Roll Macro, the reorganized options, and Loot Toasts on WoW Forever.
+GogoLoot speeds up looting, rolls and opens for you, and hands out loot as master looter. This time we most want you to try the reworked options pages and which containers open by themselves.
 
-**Play on Classic Era, Season of Discovery, TBC Anniversary, WoW Forever, MoP Classic and Retail.** If something looks wrong, tell us the check number and what you saw on [Discord](https://discord.gg/eh8hKq992Q).
+**Play on Classic Era, Season of Discovery, TBC Anniversary, WoW Forever and MoP Classic.** If something looks wrong, tell us the check number and what you saw on [Discord](https://discord.gg/eh8hKq992Q).
 
 ## What's New
 
-1. Open the options: Speedy Loot now has its own page, and the main page's eight feature switches follow the page list in the same order.
-2. Untick **Enable Loot Sounds**: neither the loot chime on a green nor the Pick Pocket bag sound plays.
-3. Tick **Enable Roll Macro**, type `/m` and drag the **- Roll** macro to a bar: left-click rolls 1-100, right-click 1-99, middle-click a raid roll.
-4. Tick **Enable Loot Toasts** and loot a mob: every item toasts, not only coins (WoW Forever especially), and chat says the loot lines in your General tab are off.
-5. Under **Automated Rolls → Character Rules**, set **Intellect** to **Manual**: an "of the Owl" green keeps its roll window for you.
-6. On WoW Forever and Retail, the mini-map icon sits centered in its ring.
+1. Read the **Example:** lines across the options pages: each matches the chat line it stands for, with a real item and a class-colored name.
+2. On the **Openables List**, set a clam to **Ignore**, untick **Enable Automated Opening**, then loot one: chat says it was left in the loot window for you.
+3. Loot a soulbound or quest container, one you can't sell: it now opens by itself instead of staying shut.
+4. Open **Automated Rolls → Character Rules**: each stat group has its own header, and only the stats your game version uses are listed.
+5. Untick **Enable Item Overrides**: a red line on its list says those rolls aren't being used, and any item you add starts on **Manual**.
+6. Carry a locked lockbox and hover the mini-map button: under **Locked Items**, a line says who can pick it.
 
 ## Everything Else
 
