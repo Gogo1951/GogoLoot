@@ -16,8 +16,8 @@
 
     Everything below the switch leaves the panel while it is off, the Ignore
     notice included (maintainer, 2026-10-05), even though Speedy Loot gives the
-    notice too. Lockboxes, which works with nothing opening, is a child panel
-    of its own (Options-Lockboxes.lua).
+    notice too. Lockboxes, whose tooltips work with nothing opening, is a child
+    panel of its own (Options-Lockboxes.lua).
 ]]
 local _, ns = ...
 local L = ns.L

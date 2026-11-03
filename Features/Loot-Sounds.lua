@@ -7,7 +7,8 @@
     chest, and the bag-grab sound for a Pick Pocket that actually took
     something. Speedy Loot hides the loot window, so these, with the loot
     toasts, are how the player hears what just came in. Each answers to its
-    own toggle alone, on the Loot Sounds panel.
+    own toggle on the Loot Sounds panel, and both to the panel's master switch,
+    Enable Loot Sounds.
 
     Both read the loot window's slots, which Speedy Loot empties, so Speedy
     Loot's own LOOT_READY handler runs ns.StampWorldLoot and
@@ -90,7 +91,7 @@ end
 ---@param itemLink string
 ---@return nil
 function ns.PlayLootSound(itemLink)
-	if not ns.db.profile.lootSounds then
+	if not ns.db.profile.lootSoundsEnabled or not ns.db.profile.lootSounds then
 		return
 	end
 	if not worldLootOpen and not (worldLootClosedAt and GetTime() - worldLootClosedAt < ns.LOOT_SOUND_WINDOW) then
@@ -134,7 +135,7 @@ end
 ]]
 ---@return nil
 function ns.PlayPickPocketSound()
-	if not pickPocketAt or not ns.db or not ns.db.profile.pickPocketSound then
+	if not pickPocketAt or not ns.db or not ns.db.profile.lootSoundsEnabled or not ns.db.profile.pickPocketSound then
 		return
 	end
 	if (GetTime() - pickPocketAt) >= ns.PICK_POCKET_LOOT_WINDOW or GetNumLootItems() == 0 then

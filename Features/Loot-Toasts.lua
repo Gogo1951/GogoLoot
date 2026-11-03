@@ -16,37 +16,18 @@
     always the one at the far end, fading out of it. That keeps the reading
     order stable, and the row the player just triggered is always in the same
     place on screen.
+
+    The anchor the stack hangs from, its drag handle and the first-login
+    introduction live in Features/Loot-Toasts-Handle.lua.
 ]]
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local TOAST_HANDLE_WIDTH = 400 -- The drag handle only; rows size themselves
 local TOAST_HEIGHT = 24 -- Minimum row height; large fonts raise it, see RowHeight
 local TOAST_SPACING = 8 -- Gap between rows, so entries read as separate lines
 local TOAST_TEXT_PADDING = 6 -- Breathing room above and below the text itself
-
---[[
-    The handle carries its caption as three blank-line-separated rows, the name
-    and the two gestures, over a button in the bottom corner, so it stands as a
-    panel rather than a strip of text the bottom toast sits on.
-
-    BOTH NUMBERS ARE FIXED, never font-derived: the handle marks where rows
-    start, so a size that drifted with the font would walk the whole stack. The
-    height holds the caption's five rendered lines from the top, the button at
-    the bottom, and padding at both ends, plus air between the two; every pixel
-    added here lands in that gap.
-
-    The caption keeps to its own column at one end, and rows hang off the other
-    end (lootToastAlign), so the two never share horizontal space.
-]]
-local TOAST_HANDLE_HEIGHT = 130
-local TOAST_HANDLE_LABEL_WIDTH = 260
-local TOAST_HANDLE_BUTTON_WIDTH = 150
-local TOAST_HANDLE_BUTTON_HEIGHT = 22
-local TOAST_HANDLE_PADDING = 10
 
 --[[
     Everything in a row is measured from the font size, so the layout holds its
@@ -69,11 +50,9 @@ local TEXT_WIDTH_RATIO = 32
 -- Sample rows the position preview shows when the cap is Unlimited, which has no count to mirror.
 local SAMPLE_COUNT_UNLIMITED = 8
 
-local anchor
 local pool = {}
 local active = {}
 local samples = {}
-local unlocked = false
 
 --------------------------------------------------------------------------------
 -- Appearance
@@ -182,7 +161,10 @@ local function AlignsRight()
 	return ns.db ~= nil and ns.db.profile.lootToastAlign == "RIGHT"
 end
 
--- The row clears the icon, which is taller than the text; at the default size this is TOAST_HEIGHT.
+-- The handle lays its caption out by the same alignment (Features/Loot-Toasts-Handle.lua).
+ns.LootToastsAlignRight = AlignsRight
+
+-- The row clears the icon, which is taller than the text; only small font sizes leave it at TOAST_HEIGHT.
 local function RowHeight()
 	return math.max(TOAST_HEIGHT, IconSize() + TOAST_TEXT_PADDING)
 end
@@ -224,224 +206,65 @@ local function Measure(toast, path, size, flags, fallbackPath)
 	if toast.text:GetStringWidth() > maxTextWidth then
 		toast.text:SetWidth(maxTextWidth)
 	end
-end
 
---------------------------------------------------------------------------------
--- Anchor
---------------------------------------------------------------------------------
-
---[[
-    The fixed point toasts stack from. Its saved point lives in
-    ns.db.global.lootToastPosition: where a player wants this on screen is not a
-    per-profile decision. Made on first use.
-]]
-local function GetAnchor()
-	if anchor then
-		return anchor
-	end
-	anchor = CreateFrame("Button", "GogoLootLootToastAnchor", UIParent)
-	anchor:SetSize(TOAST_HANDLE_WIDTH, TOAST_HANDLE_HEIGHT)
-	anchor:SetMovable(true)
-	anchor:SetClampedToScreen(true)
-	anchor:Hide()
-
-	anchor.background = anchor:CreateTexture(nil, "BACKGROUND")
-	anchor.background:SetAllPoints()
-	anchor.background:SetColorTexture(0, 0, 0, 0.5)
-
-	--[[
-        A width of its own, so a long translated title wraps inside the handle
-        instead of running under the rows. Anchored from the top, because the
-        button hangs off the bottom edge and the two have to stack predictably.
-    ]]
-	anchor.label = anchor:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	anchor.label:SetWidth(TOAST_HANDLE_LABEL_WIDTH)
-	anchor.label:SetJustifyV("TOP")
-
-	--[[
-        The way out, offered where the feature is: a player meeting toasts for
-        the first time shouldn't have to find an options panel to decline them.
-    ]]
-	anchor.disable = CreateFrame("Button", nil, anchor, "UIPanelButtonTemplate")
-	anchor.disable:SetSize(TOAST_HANDLE_BUTTON_WIDTH, TOAST_HANDLE_BUTTON_HEIGHT)
-	anchor.disable:SetText(L["LOOT_TOASTS_DISABLE_BUTTON"])
-	anchor.disable:SetScript("OnClick", function()
-		ns.DismissLootToastIntro()
-		ns.SetLootToastsEnabled(false)
-	end)
-
-	anchor:SetScript("OnDragStart", function(self)
-		self:StartMoving()
-	end)
-	anchor:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
-		ns.SaveLootToastPosition()
-	end)
-
-	-- Left drag moves, right click locks, and the handle says so.
-	anchor:RegisterForClicks("RightButtonUp")
-	anchor:SetScript("OnClick", function()
-		ns.DismissLootToastIntro()
-		ns.SetLootToastsUnlocked(false)
-	end)
-	return anchor
-end
-
--- The read-only half of GetAnchor, for Diagnostics, which must not create the frame.
----@return table|nil
-function ns.GetLootToastAnchorFrame()
-	return anchor
-end
-
---[[
-    The caption pins to the end the rows don't use, justified into that end, and
-    the button sits in the corner below it at the same inset. Re-run on every
-    appearance change, since the alignment setting can flip which end that is.
-]]
-local function ApplyHandleLayout()
-	local frame = GetAnchor()
-	frame.label:ClearAllPoints()
-	frame.disable:ClearAllPoints()
+	-- The hover area runs from the icon's outer edge to the end of the text, the icon's height tall.
+	toast.hover:ClearAllPoints()
 	if AlignsRight() then
-		frame.label:SetPoint("TOPLEFT", frame, "TOPLEFT", TOAST_HANDLE_PADDING, -TOAST_HANDLE_PADDING)
-		frame.label:SetJustifyH("LEFT")
-		frame.disable:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", TOAST_HANDLE_PADDING, TOAST_HANDLE_PADDING)
+		toast.hover:SetPoint("TOPRIGHT", toast.icon, "TOPRIGHT")
+		toast.hover:SetPoint("BOTTOMRIGHT", toast.icon, "BOTTOMRIGHT")
+		toast.hover:SetPoint("LEFT", toast.text, "LEFT")
 	else
-		frame.label:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -TOAST_HANDLE_PADDING, -TOAST_HANDLE_PADDING)
-		frame.label:SetJustifyH("RIGHT")
-		frame.disable:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -TOAST_HANDLE_PADDING, TOAST_HANDLE_PADDING)
+		toast.hover:SetPoint("TOPLEFT", toast.icon, "TOPLEFT")
+		toast.hover:SetPoint("BOTTOMLEFT", toast.icon, "BOTTOMLEFT")
+		toast.hover:SetPoint("RIGHT", toast.text, "RIGHT")
 	end
-end
-
----@return nil
-function ns.ApplyLootToastPosition()
-	local frame = GetAnchor()
-	local saved = ns.db and ns.db.global.lootToastPosition
-	frame:ClearAllPoints()
-	if saved and saved.point then
-		frame:SetPoint(saved.point, UIParent, saved.relativePoint, saved.x, saved.y)
-	else
-		-- Default: above center, clear of the action bars and the chat frame.
-		frame:SetPoint("CENTER", UIParent, "CENTER", 0, 200)
-	end
-end
-
----@return nil
-function ns.SaveLootToastPosition()
-	local point, _, relativePoint, x, y = GetAnchor():GetPoint()
-	ns.db.global.lootToastPosition = { point = point, relativePoint = relativePoint, x = x, y = y }
-end
-
----@return nil
-function ns.ResetLootToastPosition()
-	ns.db.global.lootToastPosition = {}
-	ns.ApplyLootToastPosition()
-end
-
---[[
-    Unlocking shows the anchor as a draggable handle so the player can see what
-    they're moving; locking hides it again. Purely visual, no secure frames.
-
-    The caption is the name, then the two gestures in the order a player meets
-    them, blank lines between so they read as a list. Body white rather than
-    helper silver: these lines ARE the point, read over open world.
-]]
----@param isUnlocked boolean
----@return nil
-function ns.SetLootToastsUnlocked(isUnlocked)
-	local frame = GetAnchor()
-	if isUnlocked then
-		local function BodyLine(key)
-			return "\n\n" .. GetColor("BODY") .. L[key] .. "|r"
-		end
-		frame.label:SetText(
-			GetColor("TITLE")
-				.. L["LOOT_TOASTS_HANDLE_TITLE"]
-				.. "|r"
-				.. BodyLine("LOOT_TOASTS_CLICK_DRAG")
-				.. BodyLine("LOOT_TOASTS_RIGHT_CLICK_LOCK")
-		)
-		frame:RegisterForDrag("LeftButton")
-		frame:EnableMouse(true)
-		frame:Show()
-	else
-		frame:RegisterForDrag()
-		frame:EnableMouse(false)
-		frame:Hide()
-	end
-	unlocked = isUnlocked and true or false
-	ns.RefreshLootToastSamples()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.LootToasts)
-end
-
----@return boolean
-function ns.AreLootToastsUnlocked()
-	return unlocked
-end
-
---------------------------------------------------------------------------------
--- The Introduction
---------------------------------------------------------------------------------
-
---[[
-    A profile with the toasts on that has never put the handle away gets it
-    raised at login, so the first a player knows of them isn't loot drawn
-    somewhere they didn't choose: it says what the feature is, where it will
-    draw, how to move it and put it away, and offers a button to decline.
-
-    Dismissing is remembered per profile, which is what makes a new or reset
-    profile show it again. Any of the three ways out counts: the right-click the
-    handle advertises, its Disable button, and the panel's own Lock button.
-]]
----@return nil
-function ns.DismissLootToastIntro()
-	if ns.db then
-		ns.db.profile.lootToastsIntroSeen = true
-	end
-end
-
----@return nil
-function ns.ShowLootToastIntro()
-	if not ns.db or ns.db.profile.lootToastsIntroSeen or not ns.db.profile.lootToasts then
-		return
-	end
-	ns.SetLootToastsUnlocked(true)
-end
-
---[[
-    Re-applies the active profile's toast settings on a profile switch, reset or
-    copy. The handle settles to locked first either way: unlocking is a runtime
-    choice the profile doesn't carry, and the samples refresh it runs re-measures
-    every row on screen, so the new profile's look reaches toasts already drawn.
-    Then the incoming profile gets its own introduction, if it is owed one.
-]]
----@return nil
-function ns.ApplyLootToastSettings()
-	ns.SetLootToastsUnlocked(false)
-	ns.ShowLootToastIntro()
-end
-
---[[
-    Switching toasts on raises the handle and its samples, because the player
-    has just turned on something that draws on their screen and has no other way
-    to see where or how big. Switching off puts the handle away. Both panels
-    carrying the switch are told either way, the Loot Toasts panel and
-    the General panel's Features section, since the handle's own Disable button
-    reaches this from outside both.
-]]
----@param enabled boolean
----@return nil
-function ns.SetLootToastsEnabled(enabled)
-	ns.db.profile.lootToasts = enabled and true or false
-	ns.SetLootToastsUnlocked(ns.db.profile.lootToasts)
-	ns.SyncStandardLootMessages()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.LootToasts)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
 end
 
 --------------------------------------------------------------------------------
 -- Toast Frames
 --------------------------------------------------------------------------------
+
+-- The time on screen is a setting, so it is stamped on the animation at play time.
+local function PlayFade(toast)
+	toast.fadeOut:SetStartDelay(ns.db.profile.lootToastDuration)
+	toast.fade:Play()
+end
+
+--[[
+    An item row shows the item's own tooltip on hover, the one chat shows for
+    the same link. It sits against the hovered icon and name, on the side away
+    from where the rows line up. THE TRAP: not against the row's frame, which is
+    RowWidth() wide whatever the text, so a short name left the tooltip stranded
+    far across the screen. The fade pauses while the pointer is on the row and
+    resumes where it left off, so a row can't vanish from under a tooltip being read.
+]]
+local function OnToastEnter(hover)
+	local toast = hover:GetParent()
+	if not toast.itemLink then
+		return
+	end
+	toast.fade:Pause()
+	GameTooltip:SetOwner(hover, "ANCHOR_NONE")
+	GameTooltip:ClearAllPoints()
+	if AlignsRight() then
+		GameTooltip:SetPoint("RIGHT", hover, "LEFT")
+	else
+		GameTooltip:SetPoint("LEFT", hover, "RIGHT")
+	end
+	GameTooltip:SetHyperlink(toast.itemLink)
+	GameTooltip:Show()
+end
+
+local function OnToastLeave(hover)
+	local toast = hover:GetParent()
+	if GameTooltip:IsOwned(hover) then
+		GameTooltip:Hide()
+	end
+	-- Hiding a row under the pointer leaves it too; a pooled row has no fade to resume.
+	if toast.itemLink and not toast.pooled then
+		toast.fade:Play()
+	end
+end
 
 local function AcquireToast()
 	local toast = table.remove(pool)
@@ -456,6 +279,19 @@ local function AcquireToast()
 	-- One line, always. An over-long name truncates rather than breaking the row.
 	toast.text:SetWordWrap(false)
 
+	--[[
+        THE TRAP: the row is far wider than its text (RowWidth is a ceiling), so
+        a mouse-enabled row would put a long invisible strip over the world. The
+        hover area is a child covering only the icon and text (see Measure), it
+        takes the pointer only on an item row (see PushToast), and it never
+        takes clicks, so a click on a toast still reaches whatever is behind it.
+    ]]
+	toast.hover = CreateFrame("Frame", nil, toast)
+	toast.hover:SetMouseClickEnabled(false)
+	toast.hover:SetMouseMotionEnabled(false)
+	toast.hover:SetScript("OnEnter", OnToastEnter)
+	toast.hover:SetScript("OnLeave", OnToastLeave)
+
 	toast.fade = toast:CreateAnimationGroup()
 	toast.fadeOut = toast.fade:CreateAnimation("Alpha")
 	toast.fadeOut:SetFromAlpha(1)
@@ -465,12 +301,6 @@ local function AcquireToast()
 		ns.ReleaseLootToast(group:GetParent())
 	end)
 	return toast
-end
-
--- The time on screen is a setting, so it is stamped on the animation at play time.
-local function PlayFade(toast)
-	toast.fadeOut:SetStartDelay(ns.db.profile.lootToastDuration)
-	toast.fade:Play()
 end
 
 --[[
@@ -495,7 +325,7 @@ local function Restack()
 		Measure(toast, path, size, flags, fallbackPath)
 		toast:ClearAllPoints()
 		local offset = (count - index) * step
-		toast:SetPoint(corner, GetAnchor(), corner, 0, growDown and -offset or offset)
+		toast:SetPoint(corner, ns.GetLootToastAnchor(), corner, 0, growDown and -offset or offset)
 	end
 end
 
@@ -526,6 +356,11 @@ function ns.ReleaseLootToast(toast)
 	if not toast.pooled then
 		toast.pooled = true
 		toast.countItem = nil
+		toast.itemLink = nil
+		toast.hover:SetMouseMotionEnabled(false)
+		if GameTooltip:IsOwned(toast.hover) then
+			GameTooltip:Hide()
+		end
 		toast.fade:Stop()
 		toast:Hide()
 		toast:SetAlpha(1)
@@ -537,80 +372,6 @@ end
 --------------------------------------------------------------------------------
 -- Entry Points
 --------------------------------------------------------------------------------
-
---[[
-    The Filters row an item falls under, by the type the client files it under.
-    A subclass row (Mount, Companion Pets) wins over its class's row, which is
-    how Miscellaneous leaves them out. C_Item.GetItemInfoInstant answers from
-    the client's own database, so the row is known the moment the item drops.
-]]
-local FILTER_ROWS_BY_CLASS, FILTER_ROWS_BY_SUBCLASS = {}, {}
-for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
-	if row.subclassIdentifier then
-		FILTER_ROWS_BY_SUBCLASS[row.classIdentifier .. ":" .. row.subclassIdentifier] = row
-	elseif row.classIdentifier then
-		FILTER_ROWS_BY_CLASS[row.classIdentifier] = row
-	end
-end
-
----@param itemIdentifier number
----@return table|nil
-local function FilterRowFor(itemIdentifier)
-	local _, _, _, _, _, classIdentifier, subclassIdentifier = C_Item.GetItemInfoInstant(itemIdentifier)
-	if not classIdentifier then
-		return nil
-	end
-	return FILTER_ROWS_BY_SUBCLASS[classIdentifier .. ":" .. tostring(subclassIdentifier)]
-		or FILTER_ROWS_BY_CLASS[classIdentifier]
-end
-
---[[
-    Whether an item gets a toast, by the Mine boxes for the player's own loot
-    and the Group boxes for anyone else's. An item counts when its type's box is
-    ticked and, on a rarity row, it reaches the quality beside the box. Three
-    rows reach across types: Openables (an item on the Openables List, whatever
-    it is set to, since the toast is the player's cue that the add-on may be
-    about to act), Bind on Pickup, and Quest, which also takes an item the game
-    binds as a quest item whatever its class (Soft-shelled Clam is a Key), and
-    a quest STARTER, as often an ordinary trinket or blade as a quest item.
-
-    ORDER HERE IS BY COST. The list lookup and the type are free, Bind on Pickup
-    needs the full C_Item.GetItemInfo, which can answer nil on a cold cache;
-    that reads as "not Bind on Pickup", acceptable because the item was just
-    looted, the one moment the client is sure to have it cached. The quest
-    starter costs a tooltip, so it is last. A quality nobody can read passes a
-    rarity row: a toast is a display, and silently swallowing something that
-    was looted is the worse failure.
-]]
----@param quality number|nil
----@param itemIdentifier number|nil
----@param looterName string|nil # nil for the player's own loot
----@return boolean
-local function Wanted(quality, itemIdentifier, looterName)
-	if not itemIdentifier then
-		return true
-	end
-	local profile = ns.db.profile
-	local shown = looterName and profile.lootToastGroup or profile.lootToastMine
-	local qualities = looterName and profile.lootToastGroupQuality or profile.lootToastMineQuality
-	if shown.OPENABLES and ns:GetOpeningAction(itemIdentifier) ~= nil then
-		return true
-	end
-	local row = FilterRowFor(itemIdentifier)
-	if row and shown[row.key] then
-		if not row.rarity or not quality or quality >= (qualities[row.key] or 0) then
-			return true
-		end
-	end
-	local bindType = select(14, C_Item.GetItemInfo(itemIdentifier))
-	if shown.BIND_ON_PICKUP and bindType == ns.BIND_ON_PICKUP then
-		return true
-	end
-	if shown.QUEST and bindType == ns.BIND_QUEST_ITEM then
-		return true
-	end
-	return shown.QUEST and not (row and row.key == "QUEST") and ns.ItemStartsQuest(itemIdentifier) or false
-end
 
 --[[
     Bag Count: how many of the item the player now carries, after the count
@@ -634,21 +395,24 @@ end
     Everything a row does once its icon and text are decided, so an item and a
     coin pile reach the screen the same way. The cap retires the OLDEST toast
     rather than dropping the new one: a burst of loot should show what just
-    arrived. An item of the player's own passes its id and looted count, for
-    Bag Count.
+    arrived. An item row passes its link, for its tooltip; an item of the
+    player's own also passes its id and looted count, for Bag Count.
 ]]
 ---@param icon number|string
 ---@param text string
+---@param itemLink string|nil
 ---@param countItem number|nil
 ---@param countQuantity number|nil
 ---@return nil
-local function PushToast(icon, text, countItem, countQuantity)
+local function PushToast(icon, text, itemLink, countItem, countQuantity)
 	while #active >= MaxVisible() do
 		ns.ReleaseLootToast(active[1])
 	end
 	local toast = AcquireToast()
 	toast.icon:SetTexture(icon)
 	toast.baseText, toast.countItem, toast.countQuantity = text, countItem, countQuantity
+	toast.itemLink = itemLink
+	toast.hover:SetMouseMotionEnabled(itemLink ~= nil)
 	WriteToastText(toast)
 	toast:SetAlpha(1)
 	toast:Show()
@@ -656,6 +420,9 @@ local function PushToast(icon, text, countItem, countQuantity)
 	Restack()
 	PlayFade(toast)
 end
+
+-- The money toasts reach the screen the same way (Features/Loot-Toasts-Money.lua).
+ns.PushLootToast = PushToast
 
 -- Another group member's name, in their class color while the roster still holds them, silver once it doesn't.
 local function LooterNameColor(looterName)
@@ -669,8 +436,8 @@ end
 
     A group member's loot names its looter after the item, so every row's item
     still starts at its icon. An item won on a roll adds the winning roll, in
-    silver, after the looter or straight after the item when it was the
-    player's, while Winning Roll is on for that side.
+    silver, after the looter, or after "You Won" when it was the player's,
+    while Winning Roll is on for that side.
 ]]
 ---@param itemLink string
 ---@param quantity number|nil
@@ -682,13 +449,13 @@ function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll)
 		return
 	end
 	local itemIdentifier = tonumber(string.match(itemLink, "item:(%d+)"))
-	if not Wanted(ns.GetLinkQuality(itemLink), itemIdentifier, looterName) then
+	if not ns.IsLootToastWanted(ns.GetLinkQuality(itemLink), itemIdentifier, looterName) then
 		return
 	end
 	local text = string.gsub(itemLink, "|h%[(.-)%]|h", "|h%1|h")
 	local count = quantity or 1
 	if count > 1 then
-		text = text .. " " .. L["LOOT_TOASTS_QUANTITY"]:format(count)
+		text = text .. " " .. L["ITEM_QUANTITY"]:format(count)
 	end
 	local profile = ns.db.profile
 	local showRoll = winningRoll
@@ -701,108 +468,13 @@ function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll)
 		else
 			text = L["LOOT_TOASTS_LOOTED_BY"]:format(text, name)
 		end
-		PushToast(ns.GetItemIconByID(itemIdentifier), text)
+		PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink)
 		return
 	end
 	if rollText then
-		text = L["LOOT_TOASTS_WON_ROLL"]:format(text, rollText)
+		text = L["LOOT_TOASTS_YOU_WON_ROLL"]:format(text, rollText)
 	end
-	PushToast(ns.GetItemIconByID(itemIdentifier), text, itemIdentifier, count)
-end
-
---------------------------------------------------------------------------------
--- Money
---------------------------------------------------------------------------------
-
-local goldPattern = ns.BuildFormatPattern(GOLD_AMOUNT)
-local silverPattern = ns.BuildFormatPattern(SILVER_AMOUNT)
-local copperPattern = ns.BuildFormatPattern(COPPER_AMOUNT)
-
---[[
-    A coin total out of a money message ("You loot 1 Gold, 24 Silver, 7
-    Copper"). The client hands over the sentence, not the number, and matching
-    its OWN GOLD_AMOUNT, SILVER_AMOUNT and COPPER_AMOUNT formats is what makes
-    that work in every locale. A unit the message doesn't mention simply doesn't
-    match, which is the same as none of it.
-]]
----@param message any
----@return number
-function ns.ParseMoney(message)
-	if type(message) ~= "string" then
-		return 0
-	end
-	local gold = goldPattern and tonumber(string.match(message, goldPattern)) or 0
-	local silver = silverPattern and tonumber(string.match(message, silverPattern)) or 0
-	local copper = copperPattern and tonumber(string.match(message, copperPattern)) or 0
-	return (gold * ns.COPPER_PER_GOLD) + (silver * ns.COPPER_PER_SILVER) + copper
-end
-
-local MONEY_COLORS = {}
-for key, hex in pairs(ns.MONEY_PALETTE) do
-	MONEY_COLORS[key] = "|cff" .. hex
-end
-
---[[
-    One coin: the amount in body white, then its unit in that coin's own color,
-    so a stack of these lines its numbers up as one white column and the eye
-    reads the unit off the color. The symbol is the client's own, so it reads
-    right in a locale that doesn't call them gold, silver and copper.
-]]
-local function Coin(amount, digits, symbol, colorKey)
-	return GetColor("BODY") .. string.format(digits, amount) .. "|r" .. MONEY_COLORS[colorKey] .. symbol .. "|r"
-end
-
---[[
-    "123g 02s 27c": the largest unit the amount reaches, then every unit below
-    it padded to two digits, and nothing above it. Padding the lower units lines
-    the numbers up when several toasts stack; a leading "0g" would be noise.
-]]
-local function FormatMoney(copper)
-	local gold = math.floor(copper / ns.COPPER_PER_GOLD)
-	local silver = math.floor((copper % ns.COPPER_PER_GOLD) / ns.COPPER_PER_SILVER)
-	local remainder = copper % ns.COPPER_PER_SILVER
-	if gold > 0 then
-		return Coin(gold, "%d", GOLD_AMOUNT_SYMBOL, "GOLD")
-			.. " "
-			.. Coin(silver, "%02d", SILVER_AMOUNT_SYMBOL, "SILVER")
-			.. " "
-			.. Coin(remainder, "%02d", COPPER_AMOUNT_SYMBOL, "COPPER")
-	end
-	if silver > 0 then
-		return Coin(silver, "%d", SILVER_AMOUNT_SYMBOL, "SILVER")
-			.. " "
-			.. Coin(remainder, "%02d", COPPER_AMOUNT_SYMBOL, "COPPER")
-	end
-	return Coin(remainder, "%d", COPPER_AMOUNT_SYMBOL, "COPPER")
-end
-
--- The coin pile says the magnitude before the digits are read.
-local function MoneyIcon(copper)
-	if copper >= ns.COPPER_PER_GOLD then
-		return ns.MONEY_ICON_GOLD
-	end
-	if copper >= ns.COPPER_PER_SILVER then
-		return ns.MONEY_ICON_SILVER
-	end
-	return ns.MONEY_ICON_COPPER
-end
-
---[[
-    COIN IS THE ONLY LOOT WITH NO ITEM BEHIND IT: no link, no icon of its own, no
-    quality, so no item-type row or quality could have an opinion about it. It
-    answers to the Money row's Mine box alone, since every kill drops coin and
-    this is the row a player is likeliest to want gone.
-]]
----@param copper number
----@return nil
-function ns.ShowMoneyToast(copper)
-	if not copper or copper <= 0 or not ns.db or not ns.db.profile.lootToasts then
-		return
-	end
-	if not ns.db.profile.lootToastMine.MONEY then
-		return
-	end
-	PushToast(MoneyIcon(copper), FormatMoney(copper))
+	PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink, itemIdentifier, count)
 end
 
 --------------------------------------------------------------------------------
@@ -852,9 +524,9 @@ end
 ---@return nil
 function ns.RefreshLootToastSamples()
 	ReleaseSamples()
-	ApplyHandleLayout()
+	ns.ApplyLootToastHandleLayout()
 	-- Restack still runs while locked, so a change with real toasts on screen re-hangs them too.
-	if ns.db and unlocked then
+	if ns.db and ns.AreLootToastsUnlocked() then
 		local rows = MaxVisible()
 		if rows == math.huge then
 			rows = SAMPLE_COUNT_UNLIMITED
@@ -879,18 +551,14 @@ end
 -- Events
 --------------------------------------------------------------------------------
 
-local function OnPlayerLogin()
-	ns.ApplyLootToastPosition()
-	ns.ShowLootToastIntro()
-end
-
 --[[
     The player's own loot, and the rest of the group's. The client prints loot
     lines only for the player's own party or raid, so a line naming someone else
     is already a group member's; the Group boxes decide whether it shows.
 ]]
 local function OnChatMessageLoot(message)
-	if ns.RecordRollLine(message) then
+	-- Roll lines are read whatever the toasts' switch says: the winner summary needs them too.
+	if ns.RecordRollLine(message) or not ns.db.profile.lootToasts then
 		return
 	end
 	local itemLink, quantity = ns.ParseOwnLootMessage(message)
@@ -904,16 +572,8 @@ local function OnChatMessageLoot(message)
 	end
 end
 
---[[
-    With the loot window hidden, the chat line this event carries is the only
-    record of coin, and the amount comes back out of that sentence.
-]]
-local function OnChatMessageMoney(message)
-	ns.ShowMoneyToast(ns.ParseMoney(message))
-end
-
 -- The bags settled: every own-loot toast on screen re-reads its count (see WriteToastText).
-local function OnBagsSettled()
+local function OnBagUpdateDelayed()
 	local rewritten = false
 	for _, toast in ipairs(active) do
 		if toast.countItem then
@@ -926,7 +586,5 @@ local function OnBagsSettled()
 	end
 end
 
-ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)
 ns:RegisterModuleEvent("CHAT_MSG_LOOT", OnChatMessageLoot)
-ns:RegisterModuleEvent("CHAT_MSG_MONEY", OnChatMessageMoney)
-ns:RegisterModuleEvent("BAG_UPDATE_DELAYED", OnBagsSettled)
+ns:RegisterModuleEvent("BAG_UPDATE_DELAYED", OnBagUpdateDelayed)

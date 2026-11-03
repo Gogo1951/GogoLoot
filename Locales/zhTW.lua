@@ -25,7 +25,7 @@ L["ADDON_TITLE"] = "GogoLoot"
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
-	"版本 %s。設定(包括關閉此訊息的選項)位於 選項 > 插件 > GogoLoot。喜歡這個插件嗎？推薦給朋友吧！(="
+	"版本 %s。設定(包括關閉此訊息的選項)位於 選項 > 插件 > GogoLoot。喜歡這個插件嗎？推薦給朋友、在 CurseForge 加入最愛，或在 GitHub 給個 Star。(="
 L["CHAT_OPTIONS_IN_COMBAT"] = "基於安全考量，戰鬥中無法開啟選項視窗。"
 -- Argument: the game's own name for its Auto Loot setting.
 L["MESSAGE_AUTO_LOOT_SETTING_ON"] = "已開啟遊戲的%s設定，快速拾取與自動開啟都需要它。"
@@ -43,6 +43,15 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s 來自團隊首領或世界首領，自動開啟會保留它不開，讓你交易或出售。"
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s 可能含有唯一物品，自動開啟會留給你自己開啟。"
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s 已留在拾取視窗中，讓你自行拾取。"
+--[[
+    Standard Loot Messages taking the General tab's loot lines off, or putting
+    them back. Arguments: the game's own names for its Item Loot and Money Loot
+    chat settings, then for the General chat tab.
+]]
+L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
+	"已關閉%s和%s在你%s聊天分頁中的顯示，拾取提示開啟期間有效。"
+L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "已重新開啟%s和%s在你%s聊天分頁中的顯示。"
+
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] = "%s 是用來裝備而非開啟的，無法加入可開啟清單。"
 
@@ -101,13 +110,15 @@ L["ERROR_DISTRIBUTION_FAILED"] = "無法將戰利品交給 %s：%s"
 -- Options Tab Names
 --------------------------------------------------------------------------------
 
+-- The first feature panel, holding the one Speedy Loot switch.
+L["TAB_SPEEDY_LOOT"] = "快速拾取"
 L["TAB_AUTOMATED_ROLLS"] = "自動擲骰"
 L["TAB_ITEM_OVERRIDES"] = "指定物品擲骰"
 -- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
 L["TAB_CHARACTER_RULES"] = "角色規則"
--- The panel for everything GogoLoot posts to chat.
-L["TAB_ANNOUNCEMENTS"] = "通報"
--- Headers of the two sections on the Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
+-- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_ANNOUNCEMENTS"] = "戰利品通報"
+-- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "交易通報"
 L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"] = "隊長分配通報"
 L["TAB_LOOT_TOASTS"] = "拾取提示"
@@ -116,13 +127,18 @@ L["TAB_LOOT_TOAST_FILTERS"] = "篩選"
 -- The panel right after Loot Toasts.
 L["TAB_LOOT_SOUNDS"] = "拾取音效"
 L["TAB_AUTOMATED_OPENING"] = "自動開啟"
--- Header of a section on the Automated Opening panel.
+-- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "鎖箱"
 L["TAB_OPENABLE_ITEMS"] = "可開啟清單"
-L["TAB_MASTER_LOOTER"] = "隊長分配"
--- Header of a section on the Master Looter panel.
+-- The last feature panel, named for its switch, Enable Automated Master Looting.
+L["TAB_MASTER_LOOTER"] = "自動隊長分配"
+-- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "戰利品去向"
 L["TAB_IGNORE_LIST"] = "忽略清單"
+-- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
+L["TAB_ROLL_MACRO"] = "擲骰巨集"
+-- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
+L["TAB_LOOT_MASTER"] = "戰利品總管"
 
 -- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
 L["TAB_NESTED_FORMAT"] = "%s: %s"
@@ -137,10 +153,9 @@ L["STATUS_DISABLED"] = "已停用"
 L["STATUS_PAUSED"] = "已暫停"
 
 --[[
-    The tooltip titles each feature with its options-panel name (Automated
-    Master Looting excepted, since its panel is titled Master Looter), and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit a tooltip.
+    The tooltip titles each feature with its options-panel name, and gives
+    each a description of its own, two lines at most: the panels' longer text
+    doesn't fit a tooltip.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "替你對符合條件、不高於所選品質的物品擲骰。"
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "開啟背包中的蚌殼、箱子、錢袋與已開鎖的鎖箱。"
@@ -158,14 +173,23 @@ L["MINIMAP_LEFT_CLICK"] = "左鍵點擊"
 L["MINIMAP_RIGHT_CLICK"] = "右鍵點擊"
 L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + 左鍵點擊"
 L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + 右鍵點擊"
--- The tooltip's title for the Automated Master Looting block, the feature its switch names.
-L["MINIMAP_AUTOMATED_MASTER_LOOTING"] = "自動隊長分配"
 L["MINIMAP_TOGGLE"] = "切換"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "已鎖物品"
 L["MINIMAP_OPTIONS"] = "GogoLoot 選項"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 中鍵點擊"
+
+-- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
+L["MINIMAP_TRADABLE_LOOT"] = "可交易戰利品"
+-- Under the first few of them. Argument: how many more there are.
+L["MINIMAP_TRADABLE_MORE"] = "還有 %d 件"
+-- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
+L["MINIMAP_LOOT_WINDOWS"] = "戰利品總管與戰利品追蹤"
+L["MINIMAP_TO_HAND_OUT"] = "%d 件待分配"
+L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] = "以擲骰分配你仍可交易的物品，並關注每一次擲骰。"
+L["MINIMAP_MIDDLE_CLICK"] = "中鍵點擊"
+L["MINIMAP_OPEN"] = "開啟"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -178,6 +202,11 @@ L["ROLL_MANUAL"] = "手動"
 L["THRESHOLD_ONLY"] = "僅限%s"
 -- Every other Up to Quality choice. Argument: the game's own quality name.
 L["THRESHOLD_AND_LOWER"] = "%s及以下"
+
+-- How many of an item, after its link: on a toast, in a trade summary, in the mini-map's Locked Items and in Add from Bags. Argument: the count.
+L["ITEM_QUANTITY"] = "x%d"
+-- An item and how many, the way the game's own loot lines write it, in the loot windows and their chat lines. Arguments: the item's link, then the count.
+L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
@@ -236,20 +265,17 @@ L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "配方、書籍、坐騎、寵物與傳�
 ]]
 L["OPTIONS_EXAMPLE"] = "範例：%s"
 
--- The muted version line at the foot of the General panel.
-L["OPTIONS_VERSION"] = "版本 %s"
-
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
 L["OPTIONS_DESCRIPTION"] =
-	"快速拾取眨眼間就把屍體搜刮一空，自動擲骰與自動隊長分配決定誰拿什麼，自動開啟撬開每個蚌殼和箱子。拾取提示讓一切盡收眼底，任務物品、配方、坐騎、寵物和傳說物品都安然無恙。別讓戰利品拖慢你衝刺的腳步！"
+	"快速拾取不必開啟拾取視窗就能搜空屍體，自動擲骰依品質選擇需求、貪婪或放棄，自動隊長分配替你分發戰利品。蚌殼、容器與已開鎖的鎖箱會自動開啟。拾取更快，開怪更早。"
 L["WELCOME_MESSAGE"] = "啟用歡迎訊息"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "每次登入時顯示 GogoLoot 的版本，以及這些設定的位置。"
 L["MINIMAP_BUTTON_ENABLE"] = "啟用小地圖按鈕"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"在小地圖上顯示 GogoLoot 按鈕。左鍵點擊切換自動擲骰，右鍵點擊切換自動開啟，Shift + 左鍵點擊切換通報，Shift + 右鍵點擊切換自動隊長分配。"
+	"在小地圖上顯示 GogoLoot 按鈕。左鍵點擊切換自動擲骰，右鍵點擊切換自動開啟，Shift + 左鍵點擊切換戰利品通報，Shift + 右鍵點擊切換自動隊長分配。"
 
 L["OPTIONS_COMMANDS_HEADER"] = "/指令"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -258,6 +284,8 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "開啟此插件的選項視窗。"
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "功能"
 
+-- The opening line of the Speedy Loot panel, above its switch.
+L["SPEEDY_LOOT_DESCRIPTION"] = "打開屍體的瞬間就拿走所有東西，讓你永遠不必等待拾取視窗。"
 L["SPEEDY_LOOT_ENABLE"] = "啟用快速拾取"
 --[[
     Shift is the game's default Auto Loot key; holding it shows the loot window
@@ -267,13 +295,66 @@ L["SPEEDY_LOOT_ENABLE"] = "啟用快速拾取"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"打開屍體的瞬間就拾取一空，不顯示拾取視窗。拾取時按住 Shift 則照常顯示視窗。會開啟遊戲的%s設定，當你負責%s時則暫停運作。"
 
-L["FEEDBACK_SUPPORT"] = "意見回饋與支援"
+--[[
+    The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
+    locale. General Macros is the tab of the game's Macros window that every
+    character on the account shares; /macro is the game's command and stays
+    English.
+]]
+L["ROLL_MACRO_DESCRIPTION"] =
+	"在你的共用巨集中新增一個名為 %s、圖示為金幣的巨集，讓你帳號中的每個角色都能把它拖到快捷列上。"
+--[[
+    The three rows under it, each beside the game's name for a mouse button
+    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    a raid roll picks a number from 1 to the group's size.
+]]
+L["ROLL_MACRO_LEFT_CLICK"] = "擲骰 1-100"
+L["ROLL_MACRO_RIGHT_CLICK"] = "擲骰 1-99"
+L["ROLL_MACRO_MIDDLE_CLICK"] = "團隊擲骰"
+L["ROLL_MACRO_ENABLE"] = "啟用擲骰巨集"
+-- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] =
+	"團隊擲骰會將物品隨機交給某人。它會從 1 擲到你隊伍中的玩家人數，每個數字代表一名玩家：在團隊或隊伍名單中往下數到擲出的數字，就能找到贏家。單人時則擲 1-100。"
+L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
+	"將 %s 巨集保留在你的共用巨集中：左鍵點擊擲 1-100，右鍵點擊擲 1-99，中鍵點擊進行團隊擲骰。關閉此選項會刪除它。"
+--[[
+    Printed to chat when Enable Roll Macro is switched on or off, or the macro
+    can't be made. In ROLL_MACRO_ADDED the second %s is /m, the game's command
+    for its Macros window, drawn in blue.
+]]
+L["ROLL_MACRO_ADDED"] = "%s 巨集已在你的共用巨集中。輸入 %s 並將它拖到快捷列上。"
+L["ROLL_MACRO_REMOVED"] = "%s 巨集已刪除。"
+L["ROLL_MACRO_FULL"] =
+	"無法新增 %s 巨集：你的共用巨集已滿。刪除一個後，下次登入時就會加入。"
 
--- CurseForge / GitHub / Discord / Wago are proper nouns; do not translate.
-L["CURSEFORGE"] = "CurseForge"
-L["GITHUB"] = "GitHub"
-L["DISCORD"] = "Discord"
-L["WAGO"] = "Wago"
+--------------------------------------------------------------------------------
+-- Options: Feedback & Support Panel
+--------------------------------------------------------------------------------
+
+-- "Star" stays GitHub's English button label in every locale; Discord, CurseForge, Wago and GitHub stay as written.
+L["OPTIONS_LEVEL_UP_TITLE"] = "幫助 GogoLoot 升級"
+L["OPTIONS_LEVEL_UP_INTRO"] =
+	"這個插件是由熱愛這款遊戲、希望讓每個人都玩得盡興的玩家打造的。我們絕不會要求捐款。真正的成就感，來自知道我們的成果讓你的遊戲體驗更好一點。如果真是如此，我們很樂意聽你說說！"
+L["OPTIONS_LEVEL_UP_WAYS"] = "以下是幾種能幫助我們觸及更多玩家的方式。"
+L["OPTIONS_LEVEL_UP_FEEDBACK"] =
+	"• 分享意見：發現錯誤或有好點子嗎？到 Discord 告訴我們。你的意見能幫助我們改進插件，也隨時歡迎提交合併請求。"
+L["OPTIONS_LEVEL_UP_FRIEND"] =
+	"• 推薦給朋友：認識可能會喜歡這個插件的人嗎？告訴他們吧。口耳相傳能幫助更多玩家發現好插件。"
+L["OPTIONS_LEVEL_UP_CURSEFORGE"] =
+	"• 在 CurseForge 加入最愛：開啟下方的 CurseForge 連結並登入，然後點擊下載按鈕下方的星號。加入最愛能幫助更多玩家發現這個插件。"
+L["OPTIONS_LEVEL_UP_GITHUB"] =
+	"• 在 GitHub 給個 Star：開啟下方的 GitHub 連結並登入，然後點擊右上角的 Star。Star 能幫助這個專案取得更多免費的開發者工具。"
+L["OPTIONS_LEVEL_UP_THANKS"] = "感謝你選擇 GogoLoot！"
+
+L["OPTIONS_FEEDBACK"] = "意見回饋與支援"
+L["OPTIONS_FEEDBACK_LINKS_HEADER"] = "意見回饋與支援連結"
+L["OPTIONS_CURSEFORGE"] = "CurseForge"
+L["OPTIONS_GITHUB"] = "GitHub"
+L["OPTIONS_DISCORD"] = "Discord"
+L["OPTIONS_WAGO"] = "Wago"
+L["OPTIONS_COPY_LINK"] = "要複製連結，請點擊它的方塊，然後按 Ctrl+A 和 Ctrl+C。"
+-- The version line at the foot of the Feedback & Support panel.
+L["OPTIONS_VERSION"] = "版本 %s"
 
 --------------------------------------------------------------------------------
 -- Options: Master Looter
@@ -374,7 +455,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"為特定物品設定擲骰，優先於品質設定。這是 GogoLoot 對拾取後綁定物品或任務物品擲骰的唯一方式。"
--- Shown on Item Overrides while Automated Rolls is off.
+-- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "自動擲骰已關閉，這些設定暫不生效。"
 L["ITEM_OVERRIDES_ENABLE"] = "啟用指定物品擲骰"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
@@ -412,7 +493,7 @@ L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
 
 L["ANNOUNCEMENTS_DESCRIPTION"] =
 	"將交易摘要和隊長分配結果發送到聊天頻道，讓大家都知道戰利品的去向。"
-L["ANNOUNCEMENTS_ENABLE"] = "啟用通報"
+L["ANNOUNCEMENTS_ENABLE"] = "啟用戰利品通報"
 -- Also the tooltip of the same switch in the General panel's Features section, so it names no position on the panel.
 L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"] =
 	"開啟或關閉所有通報。關閉時，GogoLoot 不會向隊伍或交易對象發送任何訊息，連你自己分配的物品也不會。"
@@ -519,26 +600,25 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
 --[[
     Winning Roll: the roll an item was won with, on its toast. The roll
     reads as the game's own word for Need or Greed, then the number
-    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast it follows the item
-    (LOOT_TOASTS_WON_ROLL); on a group member's, their name
-    (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
+    looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "獲勝擲骰"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
-L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] = "在你贏得的物品的提示上加上獲勝擲骰，例如 (%s)。"
+L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] =
+	"在你贏得的物品的提示上加上獲勝擲骰，例如 (你贏了, %s)。"
 -- Arguments: an example group member, then an example roll ("Need 87").
 L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"] =
 	"在隊友贏得的物品的提示上加上其獲勝擲骰，例如 (%s, %s)。"
 L["LOOT_TOASTS_ROLL_RESULT"] = "%s %d"
-L["LOOT_TOASTS_WON_ROLL"] = "%s (%s)"
+L["LOOT_TOASTS_YOU_WON_ROLL"] = "%s (你贏了, %s)"
 L["LOOT_TOASTS_LOOTED_BY_ROLL"] = "%s (%s, %s)"
 
 -- The Filters row adding how many the player carries to their own loot's toasts.
 L["LOOT_TOASTS_FILTER_BAG_COUNT"] = "背包數量"
 L["LOOT_TOASTS_BAG_COUNT_DESCRIPTION"] =
 	"當你身上的數量多於提示本身的數量時，在你自己戰利品的提示上加上目前持有的總數，例如 x3 (27)。"
--- How many came, after the item on a toast. Argument: the count.
-L["LOOT_TOASTS_QUANTITY"] = "x%d"
 -- Bag Count, after the item and its count. Argument: how many the player carries.
 L["LOOT_TOASTS_BAG_COUNT"] = "(%d)"
 
@@ -591,11 +671,15 @@ L["LOOT_TOASTS_EXAMPLE_ITEM"] = "範例物品"
 -- Argument: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PANEL_DESCRIPTION"] =
 	"拾取達到你所選品質或以上的戰利品時播放提示音，%s 偷到東西時播放背包音效。"
-L["LOOT_SOUNDS_ENABLE"] = "啟用拾取音效"
+-- The Loot Sounds panel's master switch, also in the General panel's Features section; its tooltip names no position on either.
+L["LOOT_SOUNDS_SWITCH"] = "啟用拾取音效"
+L["LOOT_SOUNDS_SWITCH_DESCRIPTION"] = "開啟或關閉 GogoLoot 的所有拾取音效。"
+-- The chime's own toggle, under the master switch.
+L["LOOT_SOUNDS_ENABLE"] = "啟用拾取提示音"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"從屍體或寶箱拾取達到你所選品質或以上的物品時播放提示音。"
-L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "會播放拾取音效的最低物品品質。"
-L["LOOT_SOUNDS_TEST"] = "播放拾取音效。"
+L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "會播放拾取提示音的最低物品品質。"
+L["LOOT_SOUNDS_TEST"] = "播放拾取提示音。"
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "啟用%s音效"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] = "%s 真正偷到東西時播放背包音效。"
@@ -631,13 +715,16 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "啟用鎖箱通知"
 L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"當你拾取一個解鎖後就會開啟的鎖箱時，在聊天視窗中通知你。"
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] = "設定鎖箱通知只對盜賊顯示，還是對所有角色顯示。"
+-- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] = "自動開啟已關閉，鎖箱通知暫不生效。"
 L["LOCKBOXES_FOR_ROGUES"] = "僅限盜賊"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "所有角色"
 
 --[[
     The block a lockbox's own tooltip gains, under the game's own "Requires
-    Lockpicking" line (ITEM_REQ_SKILL), followed by a skill number. Argument:
-    the game's own name for the Lockpicking skill.
+    Lockpicking (225)" line (ITEM_MIN_SKILL), or under GogoLoot's own
+    ITEM_REQ_SKILL line where the client prints none, followed by a skill
+    number. Argument: the game's own name for the Lockpicking skill.
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "你的%s"
 
@@ -652,6 +739,8 @@ L["OPENABLE_ITEMS_DESCRIPTION"] =
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
 	"自動開啟已關閉時只會使用忽略：它仍會讓快速拾取略過這些物品。"
+-- The same while Speedy Loot is off too.
+L["OPENABLE_ITEMS_ALL_OFF_NOTE"] = "自動開啟與快速拾取都已關閉，這些設定暫不生效。"
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"將清單恢復為預設：每件物品回到預設設定，移除的物品會回來，新增的物品會被移除。"
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -689,3 +778,382 @@ L["OPENING_REASON_BIND_ON_PICKUP"] =
 	"可能含有拾取後綁定的戰利品。保持未開啟時仍可交易或出售。"
 L["OPENING_REASON_UNIQUE"] =
 	"可能含有唯一物品。若你身上已有一件，開啟時會失敗並出現錯誤。"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Sent to the Group
+--------------------------------------------------------------------------------
+
+--[[
+    What the Loot Master sends when it calls a roll, in the sent format: no
+    closing period, since the add-on name follows. Item arguments are links.
+    Calls, ties and pauses go to Raid Warning where the player can send one;
+    results go to group chat.
+]]
+-- Arguments: the item, then the roll's length in seconds.
+L["ROLL_CALL_START"] = "請用 /roll 擲骰：%s，限時 %d 秒"
+-- Arguments: the seconds left, then the item.
+L["ROLL_CALL_LAST_SECONDS"] = "剩餘 %d 秒：%s"
+-- +10 Seconds. Arguments: the seconds added, then the item.
+L["ROLL_CALL_EXTENDED"] = "延長 %d 秒：%s"
+-- Arguments: the item, then the rolls that didn't count, each one of the four lines below, joined by commas.
+L["ROLL_CALL_NOT_COUNTED"] = "%s 不計入的擲骰：%s"
+-- Arguments: the player, then their roll.
+L["ROLL_CALL_NOT_COUNTED_EARLY"] = "%s 提早擲骰 (%d)"
+L["ROLL_CALL_NOT_COUNTED_REPEAT"] = "%s 重複擲骰 (%d)"
+-- Arguments: the player, their roll, then the range they rolled in.
+L["ROLL_CALL_NOT_COUNTED_RANGE"] = "%s 的 %d (%d-%d)"
+L["ROLL_CALL_NOT_COUNTED_NOT_TIED"] = "%s 的 %d (未參加平手加骰)"
+-- Arguments: the tied players, the roll they tied at, the item, the tied players again, then the seconds.
+L["ROLL_CALL_TIE"] = "%s 以 %d 平手：%s。僅限 %s 再次 /roll，限時 %d 秒"
+-- With Re-roll Ties off. Arguments: the tied players, the roll they tied at, then the item.
+L["ROLL_CALL_TIE_HELD"] = "%s 以 %d 平手：%s。稍後進行平手加骰"
+-- Arguments: the winner, the item, then the winning roll.
+L["ROLL_CALL_WINS"] = "%s 贏得 %s，點數 %d"
+-- After a disqualification or a restore changed who won. Arguments as above.
+L["ROLL_CALL_NOW_WINS"] = "改由 %s 贏得 %s，點數 %d"
+-- Argument: the item.
+L["ROLL_CALL_NOBODY"] = "沒有人對 %s 擲骰，暫時留在我的清單上"
+L["ROLL_CALL_NOBODY_LEFT"] = "%s 已無有效擲骰，放回我的清單"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_DISQUALIFIED_NO_REASON"] = "我取消了 %s 擲出的 %d 的資格：%s"
+-- The same with a reason. Arguments: the player, their roll, the item, then one of the ROLL_DISQUALIFY_REASON_ lines.
+L["ROLL_CALL_DISQUALIFIED_BECAUSE"] = "我取消了 %s 擲出的 %d 的資格：%s，原因：%s"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_RESTORED"] = "我恢復了 %s 擲出的 %d：%s"
+-- Arguments: the item, then the seconds.
+L["ROLL_CALL_VOIDED"] = "我作廢了 %s 的所有擲骰。請用 /roll 重擲，限時 %d 秒"
+-- Argument: the item.
+L["ROLL_CALL_CANCELED"] = "%s 的擲骰已取消，先別擲骰"
+L["ROLL_CALL_PAUSED"] = "先別擲骰，%s 已暫停"
+-- Arguments: the item, then the seconds left.
+L["ROLL_CALL_RESUMED"] = "%s 恢復擲骰，剩餘 %d 秒"
+-- Each argument: items, joined by commas.
+L["ROLL_CALL_ROLL_ALL"] = "依序擲骰：%s"
+L["ROLL_CALL_UP_FOR_ROLL"] = "開放擲骰：%s"
+L["ROLL_CALL_FLOOR_LOOT"] = "地板戰利品開放擲骰：%s"
+-- Drops by boss posted to the group, a line per boss. Arguments: the boss, then its drops, joined by commas.
+L["DROPS_POST_LINE"] = "%s: %s"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Printed
+--------------------------------------------------------------------------------
+
+-- Outside a group there's nobody to send to. Argument: the line a group would have seen.
+L["ROLL_CALL_SOLO_PREVIEW"] = "你不在隊伍中，因此這則訊息沒有發給任何人：%s"
+-- Arguments: the winner, then the item.
+L["ROLL_CALL_WON_PRINT"] = "%s 贏得了 %s。與對方開啟交易，GogoLoot 就會把它放進交易視窗。"
+
+--------------------------------------------------------------------------------
+-- Roll Tags and Reasons
+--------------------------------------------------------------------------------
+
+-- Beside a roll in the loot windows: why it doesn't count, or where it stands.
+L["ROLL_TAG_EARLY"] = "在開骰前擲骰"
+L["ROLL_TAG_LATE"] = "在截止後擲骰"
+L["ROLL_TAG_REPEAT"] = "重複擲骰，不計入"
+-- Arguments: the range the player rolled in.
+L["ROLL_TAG_RANGE"] = "範圍錯誤 (%d-%d)"
+L["ROLL_TAG_NOT_TIED"] = "未參加平手加骰"
+L["ROLL_TAG_DISQUALIFIED"] = "已取消資格"
+-- Argument: one of the reasons below.
+L["ROLL_TAG_DISQUALIFIED_BECAUSE"] = "已取消資格：%s"
+L["ROLL_TAG_WINNER"] = "贏家"
+L["ROLL_TAG_HIGHEST"] = "目前最高"
+L["ROLL_TAG_TIED"] = "平手"
+
+-- The reasons offered when the loot master disqualifies a roll, also sent after ROLL_CALL_DISQUALIFIED_BECAUSE's colon.
+L["ROLL_DISQUALIFY_REASON_NOT_ELIGIBLE"] = "不符合此物品的資格"
+L["ROLL_DISQUALIFY_REASON_ALREADY_WON"] = "今晚已贏得一件物品"
+L["ROLL_DISQUALIFY_REASON_FOR_SOMEONE_ELSE"] = "替別人擲骰"
+L["ROLL_DISQUALIFY_REASON_NONE"] = "未提供原因"
+
+--------------------------------------------------------------------------------
+-- Loot Master Window
+--------------------------------------------------------------------------------
+
+-- The tabs. Argument: how many items each holds.
+L["LOOT_MASTER_TAB_ROLL_LIST"] = "擲骰清單 (%d)"
+L["LOOT_MASTER_TAB_FLOOR_LOOT"] = "地板戰利品 (%d)"
+L["LOOT_MASTER_TAB_AWARDED"] = "已分配 (%d)"
+L["LOOT_MASTER_TAB_SOFT_RESERVES"] = "軟預約"
+
+-- The Roll List's buttons.
+L["LOOT_MASTER_ROLL"] = "擲骰"
+L["LOOT_MASTER_ROLL_AGAIN"] = "重新擲骰"
+L["LOOT_MASTER_ROLL_ALL"] = "全部擲骰"
+L["LOOT_MASTER_PAUSE"] = "暫停"
+L["LOOT_MASTER_RESUME"] = "繼續"
+L["LOOT_MASTER_STOP"] = "停止"
+L["LOOT_MASTER_LIST_IN_RAID"] = "在團隊中列出"
+L["LOOT_MASTER_MOVE_UP"] = "上移"
+L["LOOT_MASTER_MOVE_DOWN"] = "下移"
+-- Argument: the seconds added.
+L["LOOT_MASTER_EXTEND"] = "+%d 秒"
+L["LOOT_MASTER_CLOSE_NOW"] = "立即截止"
+L["LOOT_MASTER_VOID"] = "作廢所有擲骰"
+L["LOOT_MASTER_CANCEL_ROLL"] = "取消擲骰"
+L["LOOT_MASTER_TAKE_OFF"] = "移出清單"
+-- Argument: the winner.
+L["LOOT_MASTER_GIVE"] = "交給 %s"
+L["LOOT_MASTER_TRADE"] = "與 %s 交易"
+L["LOOT_MASTER_ANNOUNCE_WINNER"] = "通報贏家"
+L["LOOT_MASTER_HANDED_OUT"] = "標記為已分配"
+L["LOOT_MASTER_REROLL_TIED"] = "平手重擲"
+L["LOOT_MASTER_DISQUALIFY"] = "取消資格"
+L["LOOT_MASTER_RESTORE"] = "恢復"
+
+-- A row's trade clock, where it has none to show.
+L["LOOT_MASTER_ON_CORPSE"] = "在屍體上"
+L["LOOT_MASTER_CORPSE_CLOSED"] = "屍體已關閉"
+L["LOOT_MASTER_BOUND"] = "已綁定"
+L["LOOT_MASTER_NO_LIMIT"] = "無時限"
+
+-- A row's state. Argument: how many rolls have landed.
+L["LOOT_MASTER_STATUS_ROLLING"] = "擲骰中，%d 次擲骰"
+L["LOOT_MASTER_STATUS_TIE_BREAK"] = "平手加骰，%d 次擲骰"
+L["LOOT_MASTER_STATUS_ON_HOLD"] = "暫停中，%d 次擲骰"
+-- STATUS_TIED and STATUS_NOBODY also title a finished roll in the Loot Tracker.
+L["LOOT_MASTER_STATUS_TIED"] = "平手"
+L["LOOT_MASTER_STATUS_NOBODY"] = "無人擲骰"
+L["LOOT_MASTER_STATUS_SOULBOUND"] = "已靈魂綁定"
+L["LOOT_MASTER_STATUS_UP_NEXT"] = "下一個"
+
+-- The first line of an opened row.
+L["LOOT_MASTER_HEADLINE_ROLLING"] = "擲骰中，剩餘 %d 秒。"
+L["LOOT_MASTER_HEADLINE_ON_HOLD"] = "暫停中，剩餘 %d 秒。"
+-- Arguments: the tied players, then the seconds left.
+L["LOOT_MASTER_HEADLINE_TIE_BREAK"] = "%s 的平手加骰，剩餘 %d 秒。"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_MASTER_HEADLINE_WON"] = "%s 以 %d 獲勝。"
+-- Arguments: the tied players, then the roll they tied at.
+L["LOOT_MASTER_HEADLINE_TIED"] = "%s 以 %d 平手。"
+L["LOOT_MASTER_HEADLINE_SOULBOUND"] = "已靈魂綁定，無法再交易。"
+-- Argument: the boss. Also under the game's own trade line on a bag item's tooltip while it is on the Roll List.
+L["LOOT_MASTER_LOOTED_FROM"] = "拾取自 %s。"
+L["LOOT_MASTER_FROM_FLOOR_LOOT"] = "來自地板戰利品。"
+-- After the line above. Argument: how long, in the game's own words for time.
+L["LOOT_MASTER_TRADABLE_FOR"] = "還可交易 %s。"
+-- Headings over a row's rolls; ROUND_SO_FAR also heads an open roll in the Loot Tracker.
+L["LOOT_MASTER_ROUND_SO_FAR"] = "目前的擲骰"
+L["LOOT_MASTER_ROUND_ROLLS"] = "擲骰"
+L["LOOT_MASTER_ROUND_FIRST"] = "第一輪擲骰"
+L["LOOT_MASTER_ROUND_TIE_BREAK"] = "平手加骰"
+-- Arguments: how many, then their names. Also in the Loot Tracker.
+L["LOOT_MASTER_HASNT_ROLLED"] = "尚未擲骰 (%d)：%s"
+
+L["LOOT_MASTER_EMPTY"] =
+	"還沒有要分配的物品。你拾取的可交易戰利品會自動出現在這裡；Alt + 點擊其他背包物品即可加入。"
+-- The line beside the Roll List's buttons.
+L["LOOT_MASTER_STATE_PAUSED"] = "已暫停。"
+L["LOOT_MASTER_STATE_ROLL_ALL"] = "全部擲骰：還剩 %d 件。"
+L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "一次擲一件。"
+L["LOOT_MASTER_STATE_WAITING"] = "%d 件等待擲骰。"
+-- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
+L["LOOT_MASTER_FOOTER"] = "%d 件待分配。"
+L["LOOT_MASTER_FOOTER_CLOCK"] = "%d 件待分配，下一件的交易時限剩 %s。"
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + 點擊背包物品即可加入"
+
+-- The Disqualify window.
+L["LOOT_MASTER_DISQUALIFY_TITLE"] = "取消擲骰資格"
+-- Arguments: the player, their roll, then the item.
+L["LOOT_MASTER_DISQUALIFY_BODY"] = "要取消 %s 擲出的 %d 角逐 %s 的資格嗎？之後仍可恢復。"
+L["LOOT_MASTER_DISQUALIFY_REASON"] = "原因"
+L["LOOT_MASTER_DISQUALIFY_TELLS"] = "GogoLoot 會告訴隊伍："
+-- Argument: the item.
+L["LOOT_MASTER_VOID_CONFIRM"] = "要作廢 %s 的所有擲骰並重新開骰嗎？"
+
+-- Printed by the Loot Master.
+L["LOOT_MASTER_ROLL_ALL_DONE"] = "全部擲骰已完成。擲骰清單上的每件物品都已擲過骰。"
+L["LOOT_MASTER_ROLL_ALL_PAUSED"] = "全部擲骰已暫停。在你按下繼續之前，不會開始新的擲骰。"
+L["LOOT_MASTER_ROLL_ALL_RESUMED"] = "全部擲骰已繼續。"
+L["LOOT_MASTER_ROLL_ALL_STOPPED"] = "全部擲骰已停止。進行中的擲骰仍會完成。"
+-- Arguments: the item, then the whole minutes left.
+L["LOOT_MASTER_TRADE_TIME_LOW"] = "%s 還可交易 %d 分鐘。"
+-- Argument: the item.
+L["LOOT_MASTER_TRADE_TIME_OVER"] = "%s 已無法再交易。"
+-- Arguments: the item, the winner, then their winning roll.
+L["LOOT_MASTER_TRADE_FILLED"] = "已將 %s 放入交易視窗，交給 %s，對方以 %d 點贏得。"
+-- Arguments: the winner, then the item.
+L["LOOT_MASTER_NOT_A_CANDIDATE"] = "無法從這具屍體交給 %s：%s。"
+-- Argument: the item.
+L["LOOT_MASTER_ADDED"] = "%s 已加入擲骰清單。"
+L["LOOT_MASTER_NOT_TRADABLE"] = "%s 無法交易，因此不能加入擲骰清單。"
+-- Argument: how many joined.
+L["LOOT_MASTER_FLOOR_ADDED"] = "地板戰利品已加入擲骰清單：%d 件。"
+L["LOOT_MASTER_OFF"] = "戰利品總管已關閉。請在 選項 > 插件 > GogoLoot > 戰利品總管 中開啟。"
+
+-- A bag item's tooltip, under the game's own trade line, while it is on the Roll List.
+L["LOOT_MASTER_TOOLTIP_ON_ROLL_LIST"] = "在擲骰清單上。"
+-- Arguments: the winner, then their winning roll.
+L["LOOT_MASTER_TOOLTIP_WON_BY"] = "由 %s 以 %d 贏得。"
+
+-- Floor Loot. The add box, filter and Add from Bags use the item lists' own words (ITEM_LIST_*).
+L["LOOT_MASTER_FLOOR_DESCRIPTION"] =
+	"沒有交易時限、但你想擲骰分配的戰利品：材料、配方、裝備後綁定的裝備。清單一開始是空的，只有你加入的物品才會擲骰。每一疊擲一次骰。"
+L["LOOT_MASTER_FLOOR_EMPTY"] =
+	'這裡還沒有東西。從"從背包新增"挑選，或將物品拖放到上方的方塊。'
+-- Argument: how many the bags hold.
+L["LOOT_MASTER_FLOOR_IN_BAGS"] = "背包中 %d 件"
+L["LOOT_MASTER_FLOOR_ON_ROLL_LIST"] = "在擲骰清單上"
+L["LOOT_MASTER_FLOOR_REMOVE"] = "將此物品從地板戰利品移除。"
+-- The heading for an item whose kind the game hasn't said yet.
+L["LOOT_MASTER_FLOOR_OTHER"] = "其他"
+L["LOOT_MASTER_FLOOR_ADD_ALL"] = "全部加入擲骰清單"
+-- Add from Bags' two headings.
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "在此副本中拾取"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "也在你的背包中"
+-- Argument: what was typed.
+L["LOOT_MASTER_FLOOR_NOT_FOUND"] = '背包中沒有符合"%s"的可交易物品。'
+
+-- Awarded.
+L["LOOT_MASTER_AWARDED_EMPTY"] =
+	"還沒有分配任何物品。贏得的物品交到贏家手上後，就會出現在這裡。"
+-- Arguments: the winning roll, then the time it was handed out.
+L["LOOT_MASTER_AWARDED_ROLLED"] = "擲出 %d，%s"
+-- Argument: the time it was handed out.
+L["LOOT_MASTER_AWARDED_GIVEN"] = "分配於 %s"
+L["LOOT_MASTER_AWARDED_CLEAR"] = "清除"
+
+-- Soft Reserves, a placeholder for now.
+L["LOOT_MASTER_SOFT_RESERVES_DESCRIPTION"] =
+	"在此貼上軟預約字串，即可查看誰預約了什麼。即將推出：此分頁目前只是預留位置。"
+L["LOOT_MASTER_SOFT_RESERVES_PLACEHOLDER"] = "軟預約匯入功能尚未完成。"
+L["LOOT_MASTER_SOFT_RESERVES_IMPORT"] = "匯入"
+
+--------------------------------------------------------------------------------
+-- Loot Tracker Window
+--------------------------------------------------------------------------------
+
+L["LOOT_TRACKER_TITLE"] = "戰利品追蹤"
+L["LOOT_TRACKER_TAB_ROLLS"] = "擲骰"
+L["LOOT_TRACKER_TAB_DROPS"] = "掉落"
+L["LOOT_TRACKER_NO_ROLL"] = "今晚還沒有擲骰。"
+-- Argument: who called the roll.
+L["LOOT_TRACKER_CALLED_BY"] = "由 %s 開骰"
+L["LOOT_TRACKER_SPOTTED"] = "從 %s 的聊天訊息中偵測到"
+-- Argument: whole seconds left.
+L["LOOT_TRACKER_SECONDS_LEFT"] = "剩 %d 秒"
+-- A roll called without GogoLoot. Argument: who called it.
+L["LOOT_TRACKER_UNSYNCED_NOTE"] =
+	"%s 沒有使用 GogoLoot，因此這些是從聊天中看到的擲骰，依一般規則檢查：1-100，只計第一次擲骰。最終由開骰者決定。"
+L["LOOT_TRACKER_ON_HOLD"] = "暫停中。請等待重新擲骰的通知。"
+L["LOOT_TRACKER_TIE_BREAK_ROLLS"] = "平手加骰"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_TRACKER_WON_WITH"] = "%s 以 %d 獲勝"
+L["LOOT_TRACKER_CLOSED"] = "已截止"
+-- The sort buttons.
+L["LOOT_TRACKER_SORT_HIGH"] = "最高"
+L["LOOT_TRACKER_SORT_TIME"] = "依擲骰順序"
+L["LOOT_TRACKER_ROLL"] = "擲骰 (1-100)"
+-- Beside the player's own roll, and the line beside the Roll and Pass buttons.
+L["LOOT_TRACKER_YOU"] = "你"
+L["LOOT_TRACKER_YOU_ROLLED"] = "你擲出了 %d。"
+L["LOOT_TRACKER_YOU_PASSED"] = "你放棄了。"
+L["LOOT_TRACKER_NOT_ROLLED"] = "你還沒擲骰。"
+L["LOOT_TRACKER_NOT_IN_TIE_BREAK"] = "現在只有平手的玩家擲骰。"
+L["LOOT_TRACKER_EARLIER"] = "今晚稍早"
+--[[
+    The word, in lower case, that marks a group chat line with an item link as
+    a call for rolls by someone without GogoLoot. "roll" is always read too.
+]]
+L["LOOT_TRACKER_ROLL_WORD"] = "骰"
+
+-- Drops.
+L["LOOT_TRACKER_SHOW_WINNERS"] = "顯示誰拿到什麼"
+L["LOOT_TRACKER_DROPS_EMPTY"] =
+	"還沒看到掉落。擊敗首領並拾取屍體後，掉落物就會顯示在這裡。"
+L["LOOT_TRACKER_DROPS_NOTHING_SEEN"] = "還沒有使用 GogoLoot 的人拾取它。"
+L["LOOT_TRACKER_NOT_HANDED_OUT"] = "尚未分配"
+L["LOOT_TRACKER_PRINT"] = "顯示於聊天"
+L["LOOT_TRACKER_POST"] = "發送到團隊"
+L["LOOT_TRACKER_COPY"] = "複製"
+L["LOOT_TRACKER_COPY_TITLE"] = "以 Ctrl+C 複製"
+
+-- Drops by boss, printed and copied.
+L["DROPS_TRASH"] = "小怪"
+L["DROPS_NONE"] = "尚未記錄任何掉落。"
+-- Argument: the instance.
+L["DROPS_PRINT_HEADER"] = "%s 的掉落："
+-- Arguments: the boss, then its drops, joined by commas.
+L["DROPS_PRINT_LINE"] = "%s: %s."
+-- An item and who got it. Arguments: the item, then the winner (with their roll, below).
+L["DROPS_WINNER"] = "%s (%s)"
+-- Arguments: the winner, then their winning roll.
+L["DROPS_WINNER_ROLL"] = "%s %d"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Master
+--------------------------------------------------------------------------------
+
+L["LOOT_MASTER_PANEL_DESCRIPTION"] =
+	"以擲骰分配你仍可交易的物品，每件物品都會顯示交易時限，並在戰利品追蹤中關注每一次擲骰。中鍵點擊小地圖按鈕，或輸入 /gogo master 或 /gogo tracker。"
+L["LOOT_MASTER_ENABLE"] = "啟用戰利品總管"
+L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
+	"追蹤你仍可交易的戰利品並為它開骰。關閉時，戰利品總管與戰利品追蹤都不會開啟，也不會讀取任何擲骰。"
+L["LOOT_MASTER_OPEN"] = "開啟戰利品總管"
+L["LOOT_TRACKER_OPEN"] = "開啟戰利品追蹤"
+-- A dropdown choice. Argument: the number.
+L["LOOT_MASTER_SECONDS"] = "%d 秒"
+L["LOOT_MASTER_MINUTES"] = "%d 分鐘"
+L["LOOT_MASTER_KEEP_RAIDS"] = "%d"
+
+L["LOOT_MASTER_CALLING_HEADER"] = "開骰"
+L["LOOT_MASTER_ROLL_LENGTH"] = "擲骰時間"
+L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "擲骰開放多久。"
+L["LOOT_MASTER_ANNOUNCE_IN"] = "通報頻道"
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "開骰、平手與暫停的訊息要發送到哪裡。"
+L["LOOT_MASTER_CHANNEL_GROUP"] = "隊伍頻道"
+L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
+	"當你不是隊長或助理時，團隊警告會改用隊伍頻道。贏家一律發送到隊伍頻道。"
+-- Argument: the seconds.
+L["LOOT_MASTER_WARN_LAST_SECONDS"] = "剩餘 %d 秒時提醒"
+L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] = "擲骰即將截止時告訴隊伍。"
+-- Argument: the seconds.
+L["LOOT_MASTER_STRETCH_LATE"] = "有人晚擲時增加 %d 秒"
+L["LOOT_MASTER_STRETCH_LATE_DESCRIPTION"] =
+	"在最後幾秒內的擲骰會讓擲骰再開放一下，避免有人因為延遲被截掉。"
+L["LOOT_MASTER_END_EARLY"] = "所有人都擲骰或放棄後提前結束"
+L["LOOT_MASTER_END_EARLY_DESCRIPTION"] = "當每位隊伍成員都已擲骰或輸入 pass 時，立即截止擲骰。"
+L["LOOT_MASTER_REROLL_TIES"] = "平手的玩家之間重擲"
+L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"] =
+	"立即為平手的玩家開啟平手加骰。關閉時，平手會等你按下平手重擲。"
+L["LOOT_MASTER_ROLL_ALL_PAUSE"] = "全部擲骰的物品間隔"
+L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] = "全部擲骰在一次擲骰結束後，要等多久才開下一個。"
+
+L["LOOT_MASTER_COUNTING_HEADER"] = "有效的擲骰"
+-- Argument: the seconds of grace.
+L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
+	"來自你隊伍、在擲骰開放期間的一般 /roll (1-100)，每位玩家只計第一次 (延遲寬限 %d 秒)。不計入的擲骰仍會留在清單中，並註明原因。"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "通報不計入的擲骰"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
+	"擲骰截止時，以一行列出不計入的擲骰及原因。你取消資格的擲骰一律會通報。"
+
+L["LOOT_MASTER_TRADE_HEADER"] = "可交易戰利品"
+L["LOOT_MASTER_OPEN_ON_TRADABLE"] = "拾取可交易物品時開啟"
+L["LOOT_MASTER_OPEN_ON_TRADABLE_DESCRIPTION"] =
+	"在隊伍中時，若仍可交易的拾取後綁定戰利品進入你的背包，就開啟戰利品總管。"
+L["LOOT_MASTER_TRADE_WARN"] = "交易時間快結束時提醒我"
+L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"] =
+	"擲骰清單上的物品即將靈魂綁定時，在聊天中提醒你一次。"
+L["LOOT_MASTER_TRADE_WARN_WHEN"] = "提醒你時剩餘的交易時間。"
+L["LOOT_MASTER_TRADE_AUTO_FILL"] = "將贏得的物品放入交易視窗"
+L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
+	"當你與贏家開啟交易時，會替你放入對方贏得的物品。你仍需自己按下交易。"
+
+L["LOOT_MASTER_FLOOR_HEADER"] = "地板戰利品"
+L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
+	"地板戰利品一開始是空的，只包含你加入的物品。從背包新增會優先列出你在此副本中拾取的物品。"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "物品離開背包後移出"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
+	"當你身上已沒有該物品時 (交易、賣掉或用掉)，將它從地板戰利品移除。"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "離開團隊時清空地板戰利品"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] = "每次團隊都以空的地板戰利品清單開始。"
+
+L["LOOT_TRACKER_OPEN_ON_ROLL"] = "有人開骰時開啟"
+L["LOOT_TRACKER_OPEN_ON_ROLL_DESCRIPTION"] =
+	"當隊伍中有人透過 GogoLoot 或團隊警告開骰時，開啟戰利品追蹤。"
+L["LOOT_TRACKER_AUTO_CLOSE"] = "擲骰結束後自動關閉"
+L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"] =
+	"自動開啟的戰利品追蹤會在擲骰結束 30 秒後關閉，除非你的滑鼠停在上面。"
+L["LOOT_TRACKER_KEEP_DROPS"] = "掉落保留的團隊數"
+L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"] = "掉落分頁要記住幾次團隊。"

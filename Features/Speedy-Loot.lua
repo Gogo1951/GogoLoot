@@ -134,6 +134,7 @@ local function RunSpeedyLoot()
 			elseif availableBagSlots > 0 then
 				local itemLink = GetLootSlotLink(slotIndex)
 				local itemIdentifier = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+				-- Ignore on the Openables List also leaves the item here for the player.
 				if itemIdentifier and ns:IsOpeningIgnored(itemIdentifier) then
 					if ns.db.profile.openingIgnoreNotifications then
 						ns:AnnounceItemOnce("MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW", itemIdentifier, itemLink)
@@ -143,8 +144,12 @@ local function RunSpeedyLoot()
 					LootSlot(slotIndex)
 					availableBagSlots = availableBagSlots - 1
 					tookItem = true
-					if itemLink and select(14, C_Item.GetItemInfo(itemLink)) == ns.BIND_ON_PICKUP then
-						leftBehind = true
+					if itemLink then
+						-- A bind type of nil is an item the client hasn't loaded yet, which may be Bind on Pickup too.
+						local bindType = select(14, C_Item.GetItemInfo(itemLink))
+						if bindType == nil or bindType == ns.BIND_ON_PICKUP then
+							leftBehind = true
+						end
 					end
 				end
 			else

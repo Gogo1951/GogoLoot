@@ -272,9 +272,19 @@ ns.EVENT_NAMES = {
 	"BAG_UPDATE_DELAYED",
 	"BANKFRAME_CLOSED",
 	"CANCEL_LOOT_ROLL",
+	"CHAT_MSG_ADDON",
+	"CHAT_MSG_INSTANCE_CHAT",
+	"CHAT_MSG_INSTANCE_CHAT_LEADER",
 	"CHAT_MSG_LOOT",
 	"CHAT_MSG_MONEY",
+	"CHAT_MSG_PARTY",
+	"CHAT_MSG_PARTY_LEADER",
+	"CHAT_MSG_RAID",
+	"CHAT_MSG_RAID_LEADER",
+	"CHAT_MSG_RAID_WARNING",
+	"CHAT_MSG_SYSTEM",
 	"CONFIRM_LOOT_ROLL",
+	"ENCOUNTER_END",
 	"GET_ITEM_INFO_RECEIVED",
 	"GOSSIP_CLOSED",
 	"GROUP_ROSTER_UPDATE",
@@ -406,8 +416,8 @@ function ns:UnregisterModuleEvent(eventName, handlerFunction)
 end
 
 eventFrame:SetScript("OnEvent", function(self, eventName, ...)
-	-- Diagnostics event-log tap: boolean checks gate all work, so this costs nothing when logging is off.
-	if ns.diagnostics and ns.diagnostics.logging then
+	-- Diagnostics event-log tap: one boolean check gates all work, so this costs nothing when logging is off.
+	if ns.diagnostics.logging then
 		ns:LogEvent(eventName, ...)
 	end
 	local handlers = ns.eventHandlers[eventName]

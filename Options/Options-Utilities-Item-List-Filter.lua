@@ -146,7 +146,7 @@ ns.SetItemListFilter = SetListFilter
 ]]
 ---@param text string
 ---@return string
-function ns.FoldCase(text)
+local function FoldCase(text)
 	local folded = string.lower(text)
 	folded = string.gsub(folded, "\195([\128-\158])", function(secondByte)
 		if secondByte == "\151" then
@@ -169,7 +169,7 @@ end
 ---@return string
 local function GetFilterNeedle(registryName)
 	local text = listFilters[registryName] or ""
-	return ns.FoldCase((string.gsub(string.gsub(text, "^%s+", ""), "%s+$", "")))
+	return FoldCase((string.gsub(string.gsub(text, "^%s+", ""), "%s+$", "")))
 end
 
 --[[
@@ -194,13 +194,13 @@ local function RowMatchesFilter(needle, itemIdentifier, itemName, settingLabel, 
 	if needle == "" or string.find(tostring(itemIdentifier), needle, 1, true) then
 		return true
 	end
-	if itemName ~= "" and string.find(ns.FoldCase(itemName), needle, 1, true) then
+	if itemName ~= "" and string.find(FoldCase(itemName), needle, 1, true) then
 		return true
 	end
-	if tag ~= nil and string.find(ns.FoldCase(tag), needle, 1, true) then
+	if tag ~= nil and string.find(FoldCase(tag), needle, 1, true) then
 		return true
 	end
-	return settingLabel ~= nil and string.find(ns.FoldCase(settingLabel), needle, 1, true) ~= nil
+	return settingLabel ~= nil and string.find(FoldCase(settingLabel), needle, 1, true) ~= nil
 end
 
 --------------------------------------------------------------------------------

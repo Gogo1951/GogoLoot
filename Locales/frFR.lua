@@ -25,7 +25,7 @@ L["ADDON_TITLE"] = "GogoLoot"
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
-	"Version %s. Les paramètres (y compris l'option pour désactiver ce message) se trouvent dans Options > AddOns > GogoLoot. L'add-on vous plaît ? Parlez-en à un ami ! (="
+	"Version %s. Les paramètres (y compris l'option pour désactiver ce message) se trouvent dans Options > AddOns > GogoLoot. L'add-on vous plaît ? Parlez-en à un ami, ajoutez-le à vos favoris sur CurseForge ou donnez-lui une Star sur GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "Par précaution, l'interface des options ne peut pas être ouverte en combat."
 -- Argument: the game's own name for its Auto Loot setting.
 L["MESSAGE_AUTO_LOOT_SETTING_ON"] =
@@ -47,6 +47,15 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s peut contenir un objet unique, l'ouverture automatique vous laisse donc l'ouvrir vous-même."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] =
 	"%s a été laissé dans la fenêtre de butin pour que vous le ramassiez vous-même."
+--[[
+    Standard Loot Messages taking the General tab's loot lines off, or putting
+    them back. Arguments: the game's own names for its Item Loot and Money Loot
+    chat settings, then for the General chat tab.
+]]
+L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
+	"%s et %s ont été désactivés dans votre onglet de discussion %s tant que les notifications de butin sont activées."
+L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "%s et %s ont été réactivés dans votre onglet de discussion %s."
+
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
 	"%s s'équiperait au lieu de s'ouvrir, il ne peut donc pas rejoindre la liste Objets à ouvrir."
@@ -106,13 +115,15 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Impossible de remettre le butin à %s : %s"
 -- Options Tab Names
 --------------------------------------------------------------------------------
 
+-- The first feature panel, holding the one Speedy Loot switch.
+L["TAB_SPEEDY_LOOT"] = "Butin rapide"
 L["TAB_AUTOMATED_ROLLS"] = "Jets automatiques"
 L["TAB_ITEM_OVERRIDES"] = "Exceptions par objet"
 -- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
 L["TAB_CHARACTER_RULES"] = "Règles par personnage"
--- The panel for everything GogoLoot posts to chat.
-L["TAB_ANNOUNCEMENTS"] = "Annonces"
--- Headers of the two sections on the Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
+-- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_ANNOUNCEMENTS"] = "Annonces de butin"
+-- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "Annonces d'échange"
 L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"] = "Annonces du responsable du butin"
 L["TAB_LOOT_TOASTS"] = "Notifications de butin"
@@ -121,13 +132,18 @@ L["TAB_LOOT_TOAST_FILTERS"] = "Filtres"
 -- The panel right after Loot Toasts.
 L["TAB_LOOT_SOUNDS"] = "Sons de butin"
 L["TAB_AUTOMATED_OPENING"] = "Ouverture automatique"
--- Header of a section on the Automated Opening panel.
+-- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "Coffrets"
 L["TAB_OPENABLE_ITEMS"] = "Objets à ouvrir"
-L["TAB_MASTER_LOOTER"] = "Responsable du butin"
--- Header of a section on the Master Looter panel.
+-- The last feature panel, named for its switch, Enable Automated Master Looting.
+L["TAB_MASTER_LOOTER"] = "Distribution automatique"
+-- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "Destinataires du butin"
 L["TAB_IGNORE_LIST"] = "Liste d'ignorés"
+-- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
+L["TAB_ROLL_MACRO"] = "Macro de jet"
+-- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
+L["TAB_LOOT_MASTER"] = "Maître du butin"
 
 -- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
 L["TAB_NESTED_FORMAT"] = "%s: %s"
@@ -142,14 +158,14 @@ L["STATUS_DISABLED"] = "Désactivé"
 L["STATUS_PAUSED"] = "En pause"
 
 --[[
-    The tooltip titles each feature with its options-panel name (Automated
-    Master Looting excepted, since its panel is titled Master Looter), and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit a tooltip.
+    The tooltip titles each feature with its options-panel name, and gives
+    each a description of its own, two lines at most: the panels' longer text
+    doesn't fit a tooltip.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Lance les dés à votre place sur les objets éligibles, jusqu'à la qualité choisie."
-L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Ouvre les palourdes, caisses, bourses et coffrets crochetés de vos sacs."
+L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
+	"Ouvre les palourdes, caisses, bourses et coffrets déverrouillés de vos sacs."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 	"Publie dans la discussion les résumés d'échange et les distributions du responsable du butin."
 L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] = "Distribue le butin aux joueurs choisis pour chaque qualité."
@@ -165,14 +181,23 @@ L["MINIMAP_LEFT_CLICK"] = "Clic gauche"
 L["MINIMAP_RIGHT_CLICK"] = "Clic droit"
 L["MINIMAP_SHIFT_LEFT_CLICK"] = "Maj + Clic gauche"
 L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Maj + Clic droit"
--- The tooltip's title for the Automated Master Looting block, the feature its switch names.
-L["MINIMAP_AUTOMATED_MASTER_LOOTING"] = "Distribution automatique"
 L["MINIMAP_TOGGLE"] = "Activer/désactiver"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Objets verrouillés"
 L["MINIMAP_OPTIONS"] = "Options de GogoLoot"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Maj + Clic central"
+
+-- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
+L["MINIMAP_TRADABLE_LOOT"] = "Butin échangeable"
+-- Under the first few of them. Argument: how many more there are.
+L["MINIMAP_TRADABLE_MORE"] = "%d de plus"
+-- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
+L["MINIMAP_LOOT_WINDOWS"] = "Maître du butin et Suivi du butin"
+L["MINIMAP_TO_HAND_OUT"] = "%d à distribuer"
+L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] = "Distribuez par jet ce que vous pouvez encore échanger, et suivez chaque jet."
+L["MINIMAP_MIDDLE_CLICK"] = "Clic central"
+L["MINIMAP_OPEN"] = "Ouvrir"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -185,6 +210,11 @@ L["ROLL_MANUAL"] = "Manuel"
 L["THRESHOLD_ONLY"] = "%s uniquement"
 -- Every other Up to Quality choice. Argument: the game's own quality name.
 L["THRESHOLD_AND_LOWER"] = "%s et inférieur"
+
+-- How many of an item, after its link: on a toast, in a trade summary, in the mini-map's Locked Items and in Add from Bags. Argument: the count.
+L["ITEM_QUANTITY"] = "x%d"
+-- An item and how many, the way the game's own loot lines write it, in the loot windows and their chat lines. Arguments: the item's link, then the count.
+L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
@@ -244,21 +274,18 @@ L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 ]]
 L["OPTIONS_EXAMPLE"] = "Exemple : %s"
 
--- The muted version line at the foot of the General panel.
-L["OPTIONS_VERSION"] = "Version %s"
-
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
 L["OPTIONS_DESCRIPTION"] =
-	"Le butin rapide vide les cadavres en un clin d'œil, les jets automatiques et la distribution automatique décident qui reçoit quoi, et l'ouverture automatique éventre chaque palourde et chaque caisse. Les notifications de butin vous montrent tout, et les objets de quête, recettes, montures, mascottes et objets légendaires restent à l'abri. Ne laissez pas le butin freiner votre rush !"
+	"Le Butin rapide vide les cadavres sans fenêtre de butin, choisit Besoin, Cupidité ou Passer selon la qualité, et la Distribution automatique attribue le butin pour vous. Palourdes, conteneurs et coffrets déverrouillés s'ouvrent tout seuls. Ramassez plus vite, enchaînez plus tôt."
 L["WELCOME_MESSAGE"] = "Activer le message de bienvenue"
 L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"Affiche la version de GogoLoot et l'emplacement de ces paramètres à chaque connexion."
 L["MINIMAP_BUTTON_ENABLE"] = "Activer le bouton de la minicarte"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Affiche le bouton GogoLoot sur la minicarte. Clic gauche active ou désactive les jets automatiques, Clic droit l'ouverture automatique, Maj + Clic gauche les annonces, et Maj + Clic droit la distribution automatique."
+	"Affiche le bouton GogoLoot sur la minicarte. Clic gauche active ou désactive les jets automatiques, Clic droit l'ouverture automatique, Maj + Clic gauche les annonces de butin, et Maj + Clic droit la distribution automatique."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Commandes"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -267,6 +294,9 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "Ouvre l'interface des options de cet add-on.
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Fonctionnalités"
 
+-- The opening line of the Speedy Loot panel, above its switch.
+L["SPEEDY_LOOT_DESCRIPTION"] =
+	"Prend tout sur un cadavre dès que vous le fouillez, pour ne jamais attendre la fenêtre de butin."
 L["SPEEDY_LOOT_ENABLE"] = "Activer le butin rapide"
 --[[
     Shift is the game's default Auto Loot key; holding it shows the loot window
@@ -276,13 +306,66 @@ L["SPEEDY_LOOT_ENABLE"] = "Activer le butin rapide"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"Vide chaque cadavre dès que vous le fouillez, sans afficher la fenêtre de butin. Maintenez Maj en fouillant pour voir la fenêtre. Active l'option %s du jeu, et se met en retrait quand vous êtes %s."
 
-L["FEEDBACK_SUPPORT"] = "Commentaires et assistance"
+--[[
+    The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
+    locale. General Macros is the tab of the game's Macros window that every
+    character on the account shares; /macro is the game's command and stays
+    English.
+]]
+L["ROLL_MACRO_DESCRIPTION"] =
+	"Ajoute à vos macros générales une macro nommée %s, avec une icône de pièces d'or, pour que chaque personnage de votre compte puisse la glisser sur une barre d'action."
+--[[
+    The three rows under it, each beside the game's name for a mouse button
+    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    a raid roll picks a number from 1 to the group's size.
+]]
+L["ROLL_MACRO_LEFT_CLICK"] = "Jet 1-100"
+L["ROLL_MACRO_RIGHT_CLICK"] = "Jet 1-99"
+L["ROLL_MACRO_MIDDLE_CLICK"] = "Jet de raid"
+L["ROLL_MACRO_ENABLE"] = "Activer la macro de jet"
+-- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] =
+	"Un jet de raid attribue un objet à quelqu'un au hasard. Il tire un nombre de 1 au nombre de joueurs de votre groupe, chaque nombre correspondant à un joueur : comptez dans la liste de votre raid ou de votre groupe jusqu'au nombre tiré pour trouver le gagnant. Seul, il tire de 1 à 100."
+L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
+	"Garde la macro %s dans vos macros générales : Clic gauche tire 1-100, Clic droit 1-99, Clic central un jet de raid. La désactiver la supprime."
+--[[
+    Printed to chat when Enable Roll Macro is switched on or off, or the macro
+    can't be made. In ROLL_MACRO_ADDED the second %s is /m, the game's command
+    for its Macros window, drawn in blue.
+]]
+L["ROLL_MACRO_ADDED"] = "La macro %s est dans vos macros générales. Tapez %s et glissez-la sur une barre d'action."
+L["ROLL_MACRO_REMOVED"] = "La macro %s a été supprimée."
+L["ROLL_MACRO_FULL"] =
+	"Impossible d'ajouter la macro %s : vos macros générales sont pleines. Supprimez-en une, et elle sera ajoutée à votre prochaine connexion."
 
--- CurseForge / GitHub / Discord / Wago are proper nouns; do not translate.
-L["CURSEFORGE"] = "CurseForge"
-L["GITHUB"] = "GitHub"
-L["DISCORD"] = "Discord"
-L["WAGO"] = "Wago"
+--------------------------------------------------------------------------------
+-- Options: Feedback & Support Panel
+--------------------------------------------------------------------------------
+
+-- "Star" stays GitHub's English button label in every locale; Discord, CurseForge, Wago and GitHub stay as written.
+L["OPTIONS_LEVEL_UP_TITLE"] = "Aidez GogoLoot à monter de niveau"
+L["OPTIONS_LEVEL_UP_INTRO"] =
+	"Cet add-on a été créé par des joueurs qui adorent ce jeu et veulent le rendre aussi amusant que possible pour tous. Nous ne demanderons jamais de dons. Notre vraie satisfaction, c'est de savoir que notre travail rend le jeu un peu meilleur pour vous. Si c'est le cas, nous serions ravis de le savoir !"
+L["OPTIONS_LEVEL_UP_WAYS"] = "Voici quelques façons de nous aider à toucher plus de joueurs."
+L["OPTIONS_LEVEL_UP_FEEDBACK"] =
+	"• Donner votre avis : un bug ou une idée ? Dites-le-nous sur Discord. Vos retours nous aident à améliorer l'add-on, et les demandes de fusion sont toujours bienvenues."
+L["OPTIONS_LEVEL_UP_FRIEND"] =
+	"• Parler à un ami : vous connaissez quelqu'un qui pourrait apprécier cet add-on ? Parlez-lui-en. Le bouche-à-oreille aide plus de joueurs à découvrir de bons add-ons."
+L["OPTIONS_LEVEL_UP_CURSEFORGE"] =
+	"• Favori sur CurseForge : ouvrez le lien CurseForge ci-dessous, connectez-vous et cliquez sur l'étoile sous le bouton de téléchargement. Les favoris aident plus de joueurs à découvrir l'add-on."
+L["OPTIONS_LEVEL_UP_GITHUB"] =
+	"• Une Star sur GitHub : ouvrez le lien GitHub ci-dessous, connectez-vous et cliquez sur Star en haut à droite. Les Stars aident le projet à obtenir plus d'outils de développement gratuits."
+L["OPTIONS_LEVEL_UP_THANKS"] = "Merci d'avoir choisi GogoLoot !"
+
+L["OPTIONS_FEEDBACK"] = "Commentaires et assistance"
+L["OPTIONS_FEEDBACK_LINKS_HEADER"] = "Liens d'avis et d'assistance"
+L["OPTIONS_CURSEFORGE"] = "CurseForge"
+L["OPTIONS_GITHUB"] = "GitHub"
+L["OPTIONS_DISCORD"] = "Discord"
+L["OPTIONS_WAGO"] = "Wago"
+L["OPTIONS_COPY_LINK"] = "Pour copier un lien, cliquez dans sa case, puis appuyez sur Ctrl+A et Ctrl+C."
+-- The version line at the foot of the Feedback & Support panel.
+L["OPTIONS_VERSION"] = "Version %s"
 
 --------------------------------------------------------------------------------
 -- Options: Master Looter
@@ -387,7 +470,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Définit le jet pour des objets précis, avant les réglages de qualité. C'est la seule façon pour GogoLoot de lancer les dés sur un objet Lié quand ramassé ou de quête."
--- Shown on Item Overrides while Automated Rolls is off.
+-- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "Ces réglages ne sont pas utilisés tant que les jets automatiques sont désactivés."
 L["ITEM_OVERRIDES_ENABLE"] = "Activer les exceptions par objet"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
@@ -426,7 +509,7 @@ L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
 
 L["ANNOUNCEMENTS_DESCRIPTION"] =
 	"Publie dans la discussion les résumés d'échange et les distributions du responsable du butin, pour que chacun sache où est parti le butin."
-L["ANNOUNCEMENTS_ENABLE"] = "Activer les annonces"
+L["ANNOUNCEMENTS_ENABLE"] = "Activer les annonces de butin"
 -- Also the tooltip of the same switch in the General panel's Features section, so it names no position on the panel.
 L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"] =
 	"Active ou désactive toutes les annonces. Désactivé, GogoLoot n'envoie rien à votre groupe ni à vos partenaires d'échange, pas même les objets que vous distribuez vous-même."
@@ -531,7 +614,7 @@ L["LOOT_TOASTS_FILTER_OPENABLES_MINE_DESCRIPTION"] =
 L["LOOT_TOASTS_FILTER_OPENABLES_GROUP_DESCRIPTION"] =
 	"Affiche les conteneurs ramassés par votre groupe et que GogoLoot peut ouvrir, coffrets compris, quelle que soit leur qualité."
 L["LOOT_TOASTS_FILTER_MONEY_DESCRIPTION"] =
-	"Affiche une notification pour les pièces que vous ramassez. Le jeu ne signale pas l'argent des autres joueurs, il n'y a donc pas de case Groupe."
+	"Affiche une notification pour les pièces que vous ramassez. Le jeu ne signale pas les pièces des autres joueurs, il n'y a donc pas de case Groupe."
 
 -- A group member's loot on a toast. Arguments: the item with its count, then the looter's name.
 L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
@@ -539,27 +622,25 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
 --[[
     Winning Roll: the roll an item was won with, on its toast. The roll
     reads as the game's own word for Need or Greed, then the number
-    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast it follows the item
-    (LOOT_TOASTS_WON_ROLL); on a group member's, their name
-    (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
+    looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "Jet gagnant"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
 L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] =
-	"Ajoute à sa notification le jet avec lequel vous avez gagné un objet, par exemple (%s)."
+	"Ajoute à sa notification le jet avec lequel vous avez gagné un objet, par exemple (Gagné, %s)."
 -- Arguments: an example group member, then an example roll ("Need 87").
 L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"] =
 	"Ajoute à sa notification le jet avec lequel un membre du groupe a gagné un objet, par exemple (%s, %s)."
 L["LOOT_TOASTS_ROLL_RESULT"] = "%s %d"
-L["LOOT_TOASTS_WON_ROLL"] = "%s (%s)"
+L["LOOT_TOASTS_YOU_WON_ROLL"] = "%s (Gagné, %s)"
 L["LOOT_TOASTS_LOOTED_BY_ROLL"] = "%s (%s, %s)"
 
 -- The Filters row adding how many the player carries to their own loot's toasts.
 L["LOOT_TOASTS_FILTER_BAG_COUNT"] = "Quantité en sac"
 L["LOOT_TOASTS_BAG_COUNT_DESCRIPTION"] =
 	"Ajoute aux notifications de votre propre butin la quantité que vous portez désormais, par exemple x3 (27), dès que vous en portez plus que la quantité de la notification."
--- How many came, after the item on a toast. Argument: the count.
-L["LOOT_TOASTS_QUANTITY"] = "x%d"
 -- Bag Count, after the item and its count. Argument: how many the player carries.
 L["LOOT_TOASTS_BAG_COUNT"] = "(%d)"
 
@@ -616,11 +697,15 @@ L["LOOT_TOASTS_EXAMPLE_ITEM"] = "Objet d'exemple"
 -- Argument: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PANEL_DESCRIPTION"] =
 	"Joue un carillon pour le butin de la qualité choisie ou supérieure, et un bruit de sac quand %s dérobe quelque chose."
-L["LOOT_SOUNDS_ENABLE"] = "Activer le son de butin"
+-- The Loot Sounds panel's master switch, also in the General panel's Features section; its tooltip names no position on either.
+L["LOOT_SOUNDS_SWITCH"] = "Activer les sons de butin"
+L["LOOT_SOUNDS_SWITCH_DESCRIPTION"] = "Active ou désactive tous les sons de butin de GogoLoot."
+-- The chime's own toggle, under the master switch.
+L["LOOT_SOUNDS_ENABLE"] = "Activer le carillon de butin"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"Joue un carillon quand vous ramassez sur un cadavre ou dans un coffre un objet de la qualité choisie ou supérieure."
-L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "La qualité d'objet minimale qui déclenche le son de butin."
-L["LOOT_SOUNDS_TEST"] = "Joue le son de butin."
+L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "La qualité d'objet minimale qui déclenche le carillon de butin."
+L["LOOT_SOUNDS_TEST"] = "Joue le carillon de butin."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "Activer le son de %s"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] = "Joue un bruit de sac quand %s dérobe réellement quelque chose."
@@ -632,7 +717,7 @@ L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "Joue le son de %s."
 
 -- Argument: the number of free bag slots opening waits for.
 L["AUTOMATED_OPENING_DESCRIPTION"] =
-	"Ouvre pour vous les palourdes, caisses, bourses et coffrets crochetés de vos sacs, dès que vous avez au moins %d emplacements de sac libres."
+	"Ouvre pour vous les palourdes, caisses, bourses et coffrets déverrouillés de vos sacs, dès que vous avez au moins %d emplacements de sac libres."
 L["AUTOMATED_OPENING_ENABLE"] = "Activer l'ouverture automatique"
 -- Also the tooltip of the same switch in the General panel's Features section. Argument: the game's own name for its Auto Loot setting.
 L["AUTOMATED_OPENING_SWITCH_DESCRIPTION"] =
@@ -657,13 +742,17 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Vous prévient dans la discussion quand vous ramassez un coffret qui s'ouvrira une fois déverrouillé."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"Choisit si les alertes de coffrets s'affichent seulement pour les Voleurs ou pour tous les personnages."
+-- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
+	"Les alertes de coffrets ne sont pas utilisées tant que l'ouverture automatique est désactivée."
 L["LOCKBOXES_FOR_ROGUES"] = "Pour les Voleurs"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Pour tous les personnages"
 
 --[[
     The block a lockbox's own tooltip gains, under the game's own "Requires
-    Lockpicking" line (ITEM_REQ_SKILL), followed by a skill number. Argument:
-    the game's own name for the Lockpicking skill.
+    Lockpicking (225)" line (ITEM_MIN_SKILL), or under GogoLoot's own
+    ITEM_REQ_SKILL line where the client prints none, followed by a skill
+    number. Argument: the game's own name for the Lockpicking skill.
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Votre %s"
 
@@ -678,6 +767,9 @@ L["OPENABLE_ITEMS_DESCRIPTION"] =
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
 	"Seul Ignorer est utilisé tant que l'ouverture automatique est désactivée : il empêche toujours le butin rapide de prendre ces objets."
+-- The same while Speedy Loot is off too.
+L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
+	"Ces réglages ne sont pas utilisés tant que l'ouverture automatique et le butin rapide sont désactivés."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Rétablit la liste par défaut : chaque objet reprend son réglage par défaut, les objets retirés reviennent et les objets ajoutés disparaissent."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -716,3 +808,387 @@ L["OPENING_REASON_BIND_ON_PICKUP"] =
 	"Peut contenir du butin Lié quand ramassé. Fermé, il peut encore être échangé ou vendu."
 L["OPENING_REASON_UNIQUE"] =
 	"Peut contenir un objet unique. L'ouverture échoue avec une erreur si vous en portez déjà un."
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Sent to the Group
+--------------------------------------------------------------------------------
+
+--[[
+    What the Loot Master sends when it calls a roll, in the sent format: no
+    closing period, since the add-on name follows. Item arguments are links.
+    Calls, ties and pauses go to Raid Warning where the player can send one;
+    results go to group chat.
+]]
+-- Arguments: the item, then the roll's length in seconds.
+L["ROLL_CALL_START"] = "Faites /roll pour %s, %d secondes"
+-- Arguments: the seconds left, then the item.
+L["ROLL_CALL_LAST_SECONDS"] = "%d secondes restantes pour %s"
+-- +10 Seconds. Arguments: the seconds added, then the item.
+L["ROLL_CALL_EXTENDED"] = "%d secondes de plus pour %s"
+-- Arguments: the item, then the rolls that didn't count, each one of the four lines below, joined by commas.
+L["ROLL_CALL_NOT_COUNTED"] = "Non comptés pour %s : %s"
+-- Arguments: the player, then their roll.
+L["ROLL_CALL_NOT_COUNTED_EARLY"] = "jet anticipé de %s (%d)"
+L["ROLL_CALL_NOT_COUNTED_REPEAT"] = "jet en trop de %s (%d)"
+-- Arguments: the player, their roll, then the range they rolled in.
+L["ROLL_CALL_NOT_COUNTED_RANGE"] = "%s a fait %d (%d-%d)"
+L["ROLL_CALL_NOT_COUNTED_NOT_TIED"] = "%s a fait %d (hors départage)"
+-- Arguments: the tied players, the roll they tied at, the item, the tied players again, then the seconds.
+L["ROLL_CALL_TIE"] = "%s à égalité avec %d pour %s. %s uniquement, refaites /roll, %d secondes"
+-- With Re-roll Ties off. Arguments: the tied players, the roll they tied at, then the item.
+L["ROLL_CALL_TIE_HELD"] = "%s à égalité avec %d pour %s. Un départage va suivre"
+-- Arguments: the winner, the item, then the winning roll.
+L["ROLL_CALL_WINS"] = "%s remporte %s avec %d"
+-- After a disqualification or a restore changed who won. Arguments as above.
+L["ROLL_CALL_NOW_WINS"] = "%s remporte désormais %s avec %d"
+-- Argument: the item.
+L["ROLL_CALL_NOBODY"] = "Personne n'a fait de jet pour %s. Il reste sur ma liste pour l'instant"
+L["ROLL_CALL_NOBODY_LEFT"] = "Plus aucun jet ne compte pour %s. Il retourne sur ma liste"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_DISQUALIFIED_NO_REASON"] = "J'ai disqualifié le jet de %s (%d) pour %s"
+-- The same with a reason. Arguments: the player, their roll, the item, then one of the ROLL_DISQUALIFY_REASON_ lines.
+L["ROLL_CALL_DISQUALIFIED_BECAUSE"] = "J'ai disqualifié le jet de %s (%d) pour %s : %s"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_RESTORED"] = "J'ai rétabli le jet de %s (%d) pour %s"
+-- Arguments: the item, then the seconds.
+L["ROLL_CALL_VOIDED"] = "J'ai annulé tous les jets pour %s. Refaites /roll, %d secondes"
+-- Argument: the item.
+L["ROLL_CALL_CANCELED"] = "Jet pour %s annulé. Ne lancez pas encore"
+L["ROLL_CALL_PAUSED"] = "Ne lancez pas encore. %s est en pause"
+-- Arguments: the item, then the seconds left.
+L["ROLL_CALL_RESUMED"] = "Les jets reprennent pour %s, %d secondes restantes"
+-- Each argument: items, joined by commas.
+L["ROLL_CALL_ROLL_ALL"] = "Mis en jeu dans l'ordre : %s"
+L["ROLL_CALL_UP_FOR_ROLL"] = "Mis en jeu : %s"
+L["ROLL_CALL_FLOOR_LOOT"] = "Butin au sol mis en jeu : %s"
+-- Drops by boss posted to the group, a line per boss. Arguments: the boss, then its drops, joined by commas.
+L["DROPS_POST_LINE"] = "%s: %s"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Printed
+--------------------------------------------------------------------------------
+
+-- Outside a group there's nobody to send to. Argument: the line a group would have seen.
+L["ROLL_CALL_SOLO_PREVIEW"] = "Vous n'êtes pas en groupe, ceci n'a donc été envoyé à personne : %s"
+-- Arguments: the winner, then the item.
+L["ROLL_CALL_WON_PRINT"] =
+	"%s a gagné %s. Ouvrez un échange avec ce joueur et GogoLoot place l'objet dans la fenêtre."
+
+--------------------------------------------------------------------------------
+-- Roll Tags and Reasons
+--------------------------------------------------------------------------------
+
+-- Beside a roll in the loot windows: why it doesn't count, or where it stands.
+L["ROLL_TAG_EARLY"] = "Jet avant l'appel"
+L["ROLL_TAG_LATE"] = "Jet après la clôture"
+L["ROLL_TAG_REPEAT"] = "Jet en trop, non compté"
+-- Arguments: the range the player rolled in.
+L["ROLL_TAG_RANGE"] = "Mauvaise plage (%d-%d)"
+L["ROLL_TAG_NOT_TIED"] = "Hors départage"
+L["ROLL_TAG_DISQUALIFIED"] = "Disqualifié"
+-- Argument: one of the reasons below.
+L["ROLL_TAG_DISQUALIFIED_BECAUSE"] = "Disqualifié : %s"
+L["ROLL_TAG_WINNER"] = "Gagnant"
+L["ROLL_TAG_HIGHEST"] = "Le plus haut pour l'instant"
+L["ROLL_TAG_TIED"] = "Égalité"
+
+-- The reasons offered when the loot master disqualifies a roll, also sent after ROLL_CALL_DISQUALIFIED_BECAUSE's colon.
+L["ROLL_DISQUALIFY_REASON_NOT_ELIGIBLE"] = "Pas éligible pour cet objet"
+L["ROLL_DISQUALIFY_REASON_ALREADY_WON"] = "A déjà gagné un objet ce soir"
+L["ROLL_DISQUALIFY_REASON_FOR_SOMEONE_ELSE"] = "Jet pour quelqu'un d'autre"
+L["ROLL_DISQUALIFY_REASON_NONE"] = "Aucune raison donnée"
+
+--------------------------------------------------------------------------------
+-- Loot Master Window
+--------------------------------------------------------------------------------
+
+-- The tabs. Argument: how many items each holds.
+L["LOOT_MASTER_TAB_ROLL_LIST"] = "Liste des jets (%d)"
+L["LOOT_MASTER_TAB_FLOOR_LOOT"] = "Butin au sol (%d)"
+L["LOOT_MASTER_TAB_AWARDED"] = "Attribués (%d)"
+L["LOOT_MASTER_TAB_SOFT_RESERVES"] = "Réservations souples"
+
+-- The Roll List's buttons.
+L["LOOT_MASTER_ROLL"] = "Lancer"
+L["LOOT_MASTER_ROLL_AGAIN"] = "Relancer"
+L["LOOT_MASTER_ROLL_ALL"] = "Jets en chaîne"
+L["LOOT_MASTER_PAUSE"] = "Mettre en pause"
+L["LOOT_MASTER_RESUME"] = "Reprendre"
+L["LOOT_MASTER_STOP"] = "Arrêter"
+L["LOOT_MASTER_LIST_IN_RAID"] = "Publier en raid"
+L["LOOT_MASTER_MOVE_UP"] = "Monter"
+L["LOOT_MASTER_MOVE_DOWN"] = "Descendre"
+-- Argument: the seconds added.
+L["LOOT_MASTER_EXTEND"] = "+%d secondes"
+L["LOOT_MASTER_CLOSE_NOW"] = "Clôturer maintenant"
+L["LOOT_MASTER_VOID"] = "Annuler tous les jets"
+L["LOOT_MASTER_CANCEL_ROLL"] = "Annuler le jet"
+L["LOOT_MASTER_TAKE_OFF"] = "Retirer de la liste"
+-- Argument: the winner.
+L["LOOT_MASTER_GIVE"] = "Donner à %s"
+L["LOOT_MASTER_TRADE"] = "Échanger avec %s"
+L["LOOT_MASTER_ANNOUNCE_WINNER"] = "Annoncer le gagnant"
+L["LOOT_MASTER_HANDED_OUT"] = "Marquer comme remis"
+L["LOOT_MASTER_REROLL_TIED"] = "Départager"
+L["LOOT_MASTER_DISQUALIFY"] = "Disqualifier"
+L["LOOT_MASTER_RESTORE"] = "Rétablir"
+
+-- A row's trade clock, where it has none to show.
+L["LOOT_MASTER_ON_CORPSE"] = "Sur le cadavre"
+L["LOOT_MASTER_CORPSE_CLOSED"] = "Cadavre fermé"
+L["LOOT_MASTER_BOUND"] = "Lié"
+L["LOOT_MASTER_NO_LIMIT"] = "Sans limite"
+
+-- A row's state. Argument: how many rolls have landed.
+L["LOOT_MASTER_STATUS_ROLLING"] = "En cours, %d jets"
+L["LOOT_MASTER_STATUS_TIE_BREAK"] = "Départage, %d jets"
+L["LOOT_MASTER_STATUS_ON_HOLD"] = "En attente, %d jets"
+-- STATUS_TIED and STATUS_NOBODY also title a finished roll in the Loot Tracker.
+L["LOOT_MASTER_STATUS_TIED"] = "Égalité"
+L["LOOT_MASTER_STATUS_NOBODY"] = "Aucun jet"
+L["LOOT_MASTER_STATUS_SOULBOUND"] = "Désormais lié"
+L["LOOT_MASTER_STATUS_UP_NEXT"] = "À suivre"
+
+-- The first line of an opened row.
+L["LOOT_MASTER_HEADLINE_ROLLING"] = "Jet en cours, %d secondes restantes."
+L["LOOT_MASTER_HEADLINE_ON_HOLD"] = "En attente, %d secondes restantes."
+-- Arguments: the tied players, then the seconds left.
+L["LOOT_MASTER_HEADLINE_TIE_BREAK"] = "Départage entre %s, %d secondes restantes."
+-- Arguments: the winner, then the winning roll.
+L["LOOT_MASTER_HEADLINE_WON"] = "%s a gagné avec %d."
+-- Arguments: the tied players, then the roll they tied at.
+L["LOOT_MASTER_HEADLINE_TIED"] = "%s à égalité avec %d."
+L["LOOT_MASTER_HEADLINE_SOULBOUND"] = "Désormais lié, il ne peut plus être échangé."
+-- Argument: the boss. Also under the game's own trade line on a bag item's tooltip while it is on the Roll List.
+L["LOOT_MASTER_LOOTED_FROM"] = "Ramassé sur %s."
+L["LOOT_MASTER_FROM_FLOOR_LOOT"] = "Provient du Butin au sol."
+-- After the line above. Argument: how long, in the game's own words for time.
+L["LOOT_MASTER_TRADABLE_FOR"] = "Encore échangeable pendant %s."
+-- Headings over a row's rolls; ROUND_SO_FAR also heads an open roll in the Loot Tracker.
+L["LOOT_MASTER_ROUND_SO_FAR"] = "Jets jusqu'ici"
+L["LOOT_MASTER_ROUND_ROLLS"] = "Jets"
+L["LOOT_MASTER_ROUND_FIRST"] = "Premier jet"
+L["LOOT_MASTER_ROUND_TIE_BREAK"] = "Départage"
+-- Arguments: how many, then their names. Also in the Loot Tracker.
+L["LOOT_MASTER_HASNT_ROLLED"] = "Sans jet (%d) : %s"
+
+L["LOOT_MASTER_EMPTY"] =
+	"Rien à distribuer pour l'instant. Le butin échangeable que vous ramassez arrive ici tout seul ; Alt + Clic sur tout autre objet de vos sacs pour l'ajouter."
+-- The line beside the Roll List's buttons.
+L["LOOT_MASTER_STATE_PAUSED"] = "En pause."
+L["LOOT_MASTER_STATE_ROLL_ALL"] = "Jets en chaîne : %d restants."
+L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "Un jet à la fois."
+L["LOOT_MASTER_STATE_WAITING"] = "%d en attente d'un jet."
+-- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
+L["LOOT_MASTER_FOOTER"] = "%d à distribuer."
+L["LOOT_MASTER_FOOTER_CLOCK"] = "%d à distribuer, le prochain délai d'échange expire dans %s."
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + Clic sur un objet de vos sacs pour l'ajouter"
+
+-- The Disqualify window.
+L["LOOT_MASTER_DISQUALIFY_TITLE"] = "Disqualifier un jet"
+-- Arguments: the player, their roll, then the item.
+L["LOOT_MASTER_DISQUALIFY_BODY"] = "Écarter le jet de %s (%d) pour %s ? Vous pourrez le rétablir plus tard."
+L["LOOT_MASTER_DISQUALIFY_REASON"] = "Raison"
+L["LOOT_MASTER_DISQUALIFY_TELLS"] = "GogoLoot annonce au groupe :"
+-- Argument: the item.
+L["LOOT_MASTER_VOID_CONFIRM"] = "Annuler tous les jets pour %s et relancer l'appel ?"
+
+-- Printed by the Loot Master.
+L["LOOT_MASTER_ROLL_ALL_DONE"] = "Jets en chaîne terminés. Chaque objet de la Liste des jets a eu son jet."
+L["LOOT_MASTER_ROLL_ALL_PAUSED"] =
+	"Jets en chaîne en pause. Rien de nouveau ne démarre tant que vous n'appuyez pas sur Reprendre."
+L["LOOT_MASTER_ROLL_ALL_RESUMED"] = "Jets en chaîne repris."
+L["LOOT_MASTER_ROLL_ALL_STOPPED"] = "Jets en chaîne arrêtés. Un jet en cours se termine quand même."
+-- Arguments: the item, then the whole minutes left.
+L["LOOT_MASTER_TRADE_TIME_LOW"] = "%s peut encore être échangé pendant %d minutes."
+-- Argument: the item.
+L["LOOT_MASTER_TRADE_TIME_OVER"] = "%s ne peut plus être échangé."
+-- Arguments: the item, the winner, then their winning roll.
+L["LOOT_MASTER_TRADE_FILLED"] = "%s placé dans la fenêtre d'échange pour %s, qui l'a gagné avec %d."
+-- Arguments: the winner, then the item.
+L["LOOT_MASTER_NOT_A_CANDIDATE"] = "%s ne peut pas recevoir %s depuis ce cadavre."
+-- Argument: the item.
+L["LOOT_MASTER_ADDED"] = "%s a rejoint la Liste des jets."
+L["LOOT_MASTER_NOT_TRADABLE"] = "%s ne peut pas être échangé, il ne peut donc pas aller dans la Liste des jets."
+-- Argument: how many joined.
+L["LOOT_MASTER_FLOOR_ADDED"] = "Objets du Butin au sol ajoutés à la Liste des jets : %d."
+L["LOOT_MASTER_OFF"] =
+	"Le Maître du butin est désactivé. Activez-le dans Options > AddOns > GogoLoot > Maître du butin."
+
+-- A bag item's tooltip, under the game's own trade line, while it is on the Roll List.
+L["LOOT_MASTER_TOOLTIP_ON_ROLL_LIST"] = "Dans la Liste des jets."
+-- Arguments: the winner, then their winning roll.
+L["LOOT_MASTER_TOOLTIP_WON_BY"] = "Gagné par %s avec %d."
+
+-- Floor Loot. The add box, filter and Add from Bags use the item lists' own words (ITEM_LIST_*).
+L["LOOT_MASTER_FLOOR_DESCRIPTION"] =
+	"Butin sans délai d'échange que vous voulez mettre en jeu : composants, recettes, équipement Lié quand équipé. La liste démarre vide, seul ce que vous ajoutez est donc mis en jeu. Un jet par pile."
+L["LOOT_MASTER_FLOOR_EMPTY"] =
+	"Rien ici pour l'instant. Choisissez dans Ajouter depuis les sacs, ou déposez un objet dans la case ci-dessus."
+-- Argument: how many the bags hold.
+L["LOOT_MASTER_FLOOR_IN_BAGS"] = "%d dans les sacs"
+L["LOOT_MASTER_FLOOR_ON_ROLL_LIST"] = "Dans la Liste des jets"
+L["LOOT_MASTER_FLOOR_REMOVE"] = "Retire cet objet du Butin au sol."
+-- The heading for an item whose kind the game hasn't said yet.
+L["LOOT_MASTER_FLOOR_OTHER"] = "Autre"
+L["LOOT_MASTER_FLOOR_ADD_ALL"] = "Tout ajouter à la Liste des jets"
+-- Add from Bags' two headings.
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "Ramassé dans cette instance"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "Aussi dans vos sacs"
+-- Argument: what was typed.
+L["LOOT_MASTER_FLOOR_NOT_FOUND"] = 'Rien d\'échangeable dans vos sacs ne correspond à "%s".'
+
+-- Awarded.
+L["LOOT_MASTER_AWARDED_EMPTY"] =
+	"Rien de distribué pour l'instant. Un objet gagné arrive ici une fois que son gagnant l'a reçu."
+-- Arguments: the winning roll, then the time it was handed out.
+L["LOOT_MASTER_AWARDED_ROLLED"] = "Jet de %d, à %s"
+-- Argument: the time it was handed out.
+L["LOOT_MASTER_AWARDED_GIVEN"] = "Remis à %s"
+L["LOOT_MASTER_AWARDED_CLEAR"] = "Effacer"
+
+-- Soft Reserves, a placeholder for now.
+L["LOOT_MASTER_SOFT_RESERVES_DESCRIPTION"] =
+	"Collez ici une chaîne de réservations souples pour voir qui a réservé quoi. Bientôt disponible : cet onglet n'est qu'un espace réservé pour l'instant."
+L["LOOT_MASTER_SOFT_RESERVES_PLACEHOLDER"] = "L'import des réservations souples n'est pas encore prêt."
+L["LOOT_MASTER_SOFT_RESERVES_IMPORT"] = "Importer"
+
+--------------------------------------------------------------------------------
+-- Loot Tracker Window
+--------------------------------------------------------------------------------
+
+L["LOOT_TRACKER_TITLE"] = "Suivi du butin"
+L["LOOT_TRACKER_TAB_ROLLS"] = "Jets"
+L["LOOT_TRACKER_TAB_DROPS"] = "Butin"
+L["LOOT_TRACKER_NO_ROLL"] = "Aucun jet ce soir pour l'instant."
+-- Argument: who called the roll.
+L["LOOT_TRACKER_CALLED_BY"] = "Appelé par %s"
+L["LOOT_TRACKER_SPOTTED"] = "Repéré dans la discussion (%s)"
+-- Argument: whole seconds left.
+L["LOOT_TRACKER_SECONDS_LEFT"] = "%d s restantes"
+-- A roll called without GogoLoot. Argument: who called it.
+L["LOOT_TRACKER_UNSYNCED_NOTE"] =
+	"%s n'utilise pas GogoLoot, voici donc les jets vus dans la discussion, vérifiés selon les règles habituelles : 1-100, premier jet seulement. Celui qui a lancé l'appel a le dernier mot."
+L["LOOT_TRACKER_ON_HOLD"] = "En attente. Attendez l'appel pour relancer."
+L["LOOT_TRACKER_TIE_BREAK_ROLLS"] = "Jets de départage"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_TRACKER_WON_WITH"] = "%s a gagné avec %d"
+L["LOOT_TRACKER_CLOSED"] = "Clos"
+-- The sort buttons.
+L["LOOT_TRACKER_SORT_HIGH"] = "Plus haut"
+L["LOOT_TRACKER_SORT_TIME"] = "Ordre des jets"
+L["LOOT_TRACKER_ROLL"] = "Lancer (1-100)"
+-- Beside the player's own roll, and the line beside the Roll and Pass buttons.
+L["LOOT_TRACKER_YOU"] = "Vous"
+L["LOOT_TRACKER_YOU_ROLLED"] = "Vous avez fait %d."
+L["LOOT_TRACKER_YOU_PASSED"] = "Vous avez passé."
+L["LOOT_TRACKER_NOT_ROLLED"] = "Vous n'avez pas encore lancé."
+L["LOOT_TRACKER_NOT_IN_TIE_BREAK"] = "Seuls les joueurs à égalité lancent maintenant."
+L["LOOT_TRACKER_EARLIER"] = "Plus tôt ce soir"
+--[[
+    The word, in lower case, that marks a group chat line with an item link as
+    a call for rolls by someone without GogoLoot. "roll" is always read too.
+]]
+L["LOOT_TRACKER_ROLL_WORD"] = "/rand"
+
+-- Drops.
+L["LOOT_TRACKER_SHOW_WINNERS"] = "Afficher qui a eu quoi"
+L["LOOT_TRACKER_DROPS_EMPTY"] =
+	"Aucun butin vu pour l'instant. Il apparaît ici à mesure que les boss tombent et que les cadavres sont fouillés."
+L["LOOT_TRACKER_DROPS_NOTHING_SEEN"] = "Personne avec GogoLoot ne l'a encore fouillé."
+L["LOOT_TRACKER_NOT_HANDED_OUT"] = "Pas encore distribué"
+L["LOOT_TRACKER_PRINT"] = "Afficher"
+L["LOOT_TRACKER_POST"] = "Publier en raid"
+L["LOOT_TRACKER_COPY"] = "Copier"
+L["LOOT_TRACKER_COPY_TITLE"] = "Copier avec Ctrl+C"
+
+-- Drops by boss, printed and copied.
+L["DROPS_TRASH"] = "Menu fretin"
+L["DROPS_NONE"] = "Aucun butin enregistré pour l'instant."
+-- Argument: the instance.
+L["DROPS_PRINT_HEADER"] = "Butin dans %s :"
+-- Arguments: the boss, then its drops, joined by commas.
+L["DROPS_PRINT_LINE"] = "%s: %s."
+-- An item and who got it. Arguments: the item, then the winner (with their roll, below).
+L["DROPS_WINNER"] = "%s (%s)"
+-- Arguments: the winner, then their winning roll.
+L["DROPS_WINNER_ROLL"] = "%s %d"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Master
+--------------------------------------------------------------------------------
+
+L["LOOT_MASTER_PANEL_DESCRIPTION"] =
+	"Distribuez par jet ce que vous pouvez encore échanger, avec le délai d'échange de chaque objet, et suivez chaque jet dans le Suivi du butin. Clic central sur le bouton de la minicarte, ou tapez /gogo master ou /gogo tracker."
+L["LOOT_MASTER_ENABLE"] = "Activer le Maître du butin"
+L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
+	"Suit le butin que vous pouvez encore échanger et lance les appels aux jets. Désactivé, le Maître du butin et le Suivi du butin ne s'ouvrent jamais et aucun jet n'est lu."
+L["LOOT_MASTER_OPEN"] = "Ouvrir le Maître du butin"
+L["LOOT_TRACKER_OPEN"] = "Ouvrir le Suivi du butin"
+-- A dropdown choice. Argument: the number.
+L["LOOT_MASTER_SECONDS"] = "%d secondes"
+L["LOOT_MASTER_MINUTES"] = "%d minutes"
+L["LOOT_MASTER_KEEP_RAIDS"] = "%d"
+
+L["LOOT_MASTER_CALLING_HEADER"] = "Appel des jets"
+L["LOOT_MASTER_ROLL_LENGTH"] = "Durée du jet"
+L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Combien de temps un jet reste ouvert."
+L["LOOT_MASTER_ANNOUNCE_IN"] = "Annoncer dans"
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Où vont les appels aux jets, les égalités et les pauses."
+L["LOOT_MASTER_CHANNEL_GROUP"] = "Canal de groupe"
+L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
+	"L'avertissement raid bascule sur le canal de groupe quand vous n'êtes ni chef ni assistant. Les gagnants sont toujours annoncés dans le canal de groupe."
+-- Argument: the seconds.
+L["LOOT_MASTER_WARN_LAST_SECONDS"] = "Prévenir à %d secondes de la fin"
+L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] = "Prévient le groupe quand un jet est sur le point de se clore."
+-- Argument: the seconds.
+L["LOOT_MASTER_STRETCH_LATE"] = "Ajouter %d secondes en cas de jet tardif"
+L["LOOT_MASTER_STRETCH_LATE_DESCRIPTION"] =
+	"Un jet dans les dernières secondes garde le jet ouvert un peu plus longtemps, pour que personne ne soit pénalisé par la latence."
+L["LOOT_MASTER_END_EARLY"] = "Clore plus tôt quand tout le monde a lancé ou passé"
+L["LOOT_MASTER_END_EARLY_DESCRIPTION"] =
+	'Clôt le jet dès que chaque membre du groupe a lancé les dés ou tapé "passer".'
+L["LOOT_MASTER_REROLL_TIES"] = "Départager les joueurs à égalité"
+L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"] =
+	"Lance aussitôt un départage pour les joueurs à égalité. Désactivé, une égalité attend que vous appuyiez sur Départager."
+L["LOOT_MASTER_ROLL_ALL_PAUSE"] = "Pause entre les objets en Jets en chaîne"
+L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] =
+	"Combien de temps Jets en chaîne attend après un jet avant d'appeler le suivant."
+
+L["LOOT_MASTER_COUNTING_HEADER"] = "Jets qui comptent"
+-- Argument: the seconds of grace.
+L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
+	"Un simple /roll (1-100), le premier de chaque joueur, venant de votre groupe, pendant que le jet est ouvert (%d seconde de tolérance pour la latence). Les jets qui ne comptent pas restent dans la liste avec leur raison."
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "Annoncer les jets qui ne comptent pas"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
+	"Liste en une ligne les jets qui n'ont pas compté, et pourquoi, à la clôture du jet. Un jet que vous disqualifiez est toujours annoncé."
+
+L["LOOT_MASTER_TRADE_HEADER"] = "Butin échangeable"
+L["LOOT_MASTER_OPEN_ON_TRADABLE"] = "Ouvrir quand je ramasse un objet échangeable"
+L["LOOT_MASTER_OPEN_ON_TRADABLE_DESCRIPTION"] =
+	"Ouvre le Maître du butin quand un butin Lié quand ramassé encore échangeable arrive dans vos sacs alors que vous êtes en groupe."
+L["LOOT_MASTER_TRADE_WARN"] = "Me prévenir quand le délai d'échange s'épuise"
+L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"] =
+	"Vous prévient une fois, dans la discussion, quand un objet de la Liste des jets est sur le point de devenir lié."
+L["LOOT_MASTER_TRADE_WARN_WHEN"] = "Le délai d'échange restant au moment de l'alerte."
+L["LOOT_MASTER_TRADE_AUTO_FILL"] = "Placer les objets gagnés dans la fenêtre d'échange"
+L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
+	"Quand vous ouvrez un échange avec un gagnant, ce qu'il a gagné y est placé pour vous. Vous appuyez toujours vous-même sur Échanger."
+
+L["LOOT_MASTER_FLOOR_HEADER"] = "Butin au sol"
+L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
+	"Le Butin au sol démarre vide et ne contient que ce que vous ajoutez. Ajouter depuis les sacs liste d'abord ce que vous avez ramassé dans cette instance."
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "Retirer les objets quand ils quittent mes sacs"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
+	"Retire un objet du Butin au sol quand il ne vous en reste plus : échangé, vendu ou utilisé."
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "Vider le Butin au sol quand je quitte le raid"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] = "Commence chaque raid avec une liste Butin au sol vide."
+
+L["LOOT_TRACKER_OPEN_ON_ROLL"] = "Ouvrir quand quelqu'un appelle aux jets"
+L["LOOT_TRACKER_OPEN_ON_ROLL_DESCRIPTION"] =
+	"Ouvre le Suivi du butin quand quelqu'un de votre groupe appelle aux jets, avec GogoLoot ou un avertissement raid."
+L["LOOT_TRACKER_AUTO_CLOSE"] = "Se fermer à la fin du jet"
+L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"] =
+	"Un Suivi du butin ouvert tout seul se ferme 30 secondes après la fin du jet, sauf si votre souris est dessus."
+L["LOOT_TRACKER_KEEP_DROPS"] = "Raids conservés dans Butin"
+L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"] = "Combien de raids l'onglet Butin garde en mémoire."

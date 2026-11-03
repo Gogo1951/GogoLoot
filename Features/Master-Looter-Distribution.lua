@@ -3,9 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The automated loot-distribution half of Master Looting, split out from
-    Master-Looter.lua (which keeps the API wrappers, eligibility check, and
-    destination management):
+    The automated loot-distribution half of Master Looting; Master-Looter.lua
+    keeps the API wrappers, the eligibility check and destination management:
       * Manual distribution hook — GiveMasterLoot from the candidate dropdown
         is announced regardless of the announcement threshold.
       * The LOOT_OPENED -> GiveMasterLoot automated distribution engine, its
@@ -524,7 +523,6 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 		return false
 	end
 
-	-- User-configured ignore list
 	if ns.db.profile.ignoredItemsMaster[itemId] then
 		return false
 	end
@@ -591,10 +589,6 @@ local function RunDistributionPass()
 	local lootSlotCount = GetNumLootItems()
 	local distributedAny, stillWaiting = false, false
 
-	--[[
-        Iterate from the bottom upward so that as slots are consumed, the
-        remaining indices we still care about don't shift.
-    ]]
 	for slotIndex = lootSlotCount, 1, -1 do
 		if not distributedSlots[slotIndex] then
 			local distributed, waiting = TryDistributeSlot(slotIndex, candidateMap)
@@ -657,10 +651,8 @@ local function OnLootOpened()
 		return
 	end
 
-	-- Initial pass — handles items whose info is already cached
 	RunDistributionPass()
-
-	-- Retry ticker for cache misses or candidate-map fill-ins
+	-- Items whose info or candidates arrive a moment later are caught on the retry ticker.
 	StartDistributionTicker()
 end
 

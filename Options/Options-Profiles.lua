@@ -4,8 +4,8 @@
 
 --[[
     The stock AceDBOptions-3.0 profiles panel (profile picker, Copy From,
-    Delete a Profile, Reset Profile), registered second-to-last, directly above
-    Diagnostic Tools. The profile-refresh hooks live in Features/Core.lua.
+    Delete a Profile, Reset Profile), registered after the feature panels,
+    directly above Feedback & Support. The profile-refresh hooks live in Features/Core.lua.
 ]]
 local _, ns = ...
 

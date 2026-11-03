@@ -25,7 +25,7 @@ L["ADDON_TITLE"] = "GogoLoot"
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
-	"Версия %s. Настройки (в том числе отключение этого сообщения) находятся в меню Настройки > Модификации > GogoLoot. Нравится аддон? Расскажите о нем друзьям! (="
+	"Версия %s. Настройки (в том числе отключение этого сообщения) находятся в меню Настройки > Модификации > GogoLoot. Нравится аддон? Расскажите о нем друзьям, добавьте его в избранное на CurseForge или поставьте звезду на GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] =
 	"В целях безопасности окно настроек нельзя открыть в бою."
 -- Argument: the game's own name for its Auto Loot setting.
@@ -40,7 +40,8 @@ L["MESSAGE_OPENING_PAUSED"] =
 L["MESSAGE_OPENING_RESUMED"] = "Автооткрытие возобновлено."
 
 -- Argument: the item's link.
-L["MESSAGE_ITEM_WILL_AUTO_OPEN"] = "%s откроется автоматически после взлома."
+L["MESSAGE_ITEM_WILL_AUTO_OPEN"] =
+	"%s откроется автоматически, как только его отопрут."
 L["MESSAGE_ITEM_IGNORED"] =
 	'%s: выбрано "Игнорировать", поэтому Автооткрытие его не трогает.'
 L["MESSAGE_ITEM_IGNORED_RAID"] =
@@ -49,6 +50,15 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: может содержать уникальный предмет, поэтому Автооткрытие оставит его, чтобы вы открыли сами."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] =
 	"%s: оставлено в окне добычи, чтобы вы забрали сами."
+--[[
+    Standard Loot Messages taking the General tab's loot lines off, or putting
+    them back. Arguments: the game's own names for its Item Loot and Money Loot
+    chat settings, then for the General chat tab.
+]]
+L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
+	'Отключены "%s" и "%s" во вкладке чата "%s", пока уведомления о добыче включены.'
+L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = 'Снова включены "%s" и "%s" во вкладке чата "%s".'
+
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
 	'%s: этот предмет надевается, а не открывается, поэтому его нельзя добавить в "Список контейнеров".'
@@ -110,13 +120,15 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Не удалось передать добы�
 -- Options Tab Names
 --------------------------------------------------------------------------------
 
+-- The first feature panel, holding the one Speedy Loot switch.
+L["TAB_SPEEDY_LOOT"] = "Быстрый сбор"
 L["TAB_AUTOMATED_ROLLS"] = "Автоброски"
 L["TAB_ITEM_OVERRIDES"] = "Особые предметы"
 -- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
 L["TAB_CHARACTER_RULES"] = "Правила персонажей"
--- The panel for everything GogoLoot posts to chat.
-L["TAB_ANNOUNCEMENTS"] = "Оповещения"
--- Headers of the two sections on the Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
+-- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_ANNOUNCEMENTS"] = "Оповещения о добыче"
+-- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "Оповещения об обмене"
 L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"] = "Оповещения ответственного"
 L["TAB_LOOT_TOASTS"] = "Уведомления о добыче"
@@ -125,13 +137,18 @@ L["TAB_LOOT_TOAST_FILTERS"] = "Фильтры"
 -- The panel right after Loot Toasts.
 L["TAB_LOOT_SOUNDS"] = "Звуки добычи"
 L["TAB_AUTOMATED_OPENING"] = "Автооткрытие"
--- Header of a section on the Automated Opening panel.
+-- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "Запертые ящики"
 L["TAB_OPENABLE_ITEMS"] = "Список контейнеров"
-L["TAB_MASTER_LOOTER"] = "Ответственный за добычу"
--- Header of a section on the Master Looter panel.
+-- The last feature panel, named for its switch, Enable Automated Master Looting.
+L["TAB_MASTER_LOOTER"] = "Автораздача"
+-- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "Получатели добычи"
 L["TAB_IGNORE_LIST"] = "Список исключений"
+-- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
+L["TAB_ROLL_MACRO"] = "Макрос бросков"
+-- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
+L["TAB_LOOT_MASTER"] = "Распорядитель добычи"
 
 -- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
 L["TAB_NESTED_FORMAT"] = "%s: %s"
@@ -146,15 +163,14 @@ L["STATUS_DISABLED"] = "Отключено"
 L["STATUS_PAUSED"] = "Приостановлено"
 
 --[[
-    The tooltip titles each feature with its options-panel name (Automated
-    Master Looting excepted, since its panel is titled Master Looter), and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit a tooltip.
+    The tooltip titles each feature with its options-panel name, and gives
+    each a description of its own, two lines at most: the panels' longer text
+    doesn't fit a tooltip.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Бросает кубики за вас на подходящие предметы вплоть до выбранного качества."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
-	"Открывает моллюсков, ящики, кошельки и взломанные запертые ящики в сумках."
+	"Открывает в сумках моллюсков, ящики, кошельки, а также запертые ящики, как только их отопрут."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 	"Публикует в чате итоги обменов и раздачу добычи."
 L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] =
@@ -171,14 +187,24 @@ L["MINIMAP_LEFT_CLICK"] = "Левый клик"
 L["MINIMAP_RIGHT_CLICK"] = "Правый клик"
 L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + левый клик"
 L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + правый клик"
--- The tooltip's title for the Automated Master Looting block, the feature its switch names.
-L["MINIMAP_AUTOMATED_MASTER_LOOTING"] = "Автораздача"
 L["MINIMAP_TOGGLE"] = "Переключить"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Запертые предметы"
 L["MINIMAP_OPTIONS"] = "Настройки GogoLoot"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + средний клик"
+
+-- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
+L["MINIMAP_TRADABLE_LOOT"] = "Передаваемая добыча"
+-- Under the first few of them. Argument: how many more there are.
+L["MINIMAP_TRADABLE_MORE"] = "Еще: %d"
+-- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
+L["MINIMAP_LOOT_WINDOWS"] = "Распорядитель добычи и Журнал добычи"
+L["MINIMAP_TO_HAND_OUT"] = "Раздать: %d"
+L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] =
+	"Разыгрывайте то, что еще можно передать, и следите за каждым броском."
+L["MINIMAP_MIDDLE_CLICK"] = "Средний клик"
+L["MINIMAP_OPEN"] = "Открыть"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -191,6 +217,11 @@ L["ROLL_MANUAL"] = "Вручную"
 L["THRESHOLD_ONLY"] = "Только %s"
 -- Every other Up to Quality choice. Argument: the game's own quality name.
 L["THRESHOLD_AND_LOWER"] = "%s и ниже"
+
+-- How many of an item, after its link: on a toast, in a trade summary, in the mini-map's Locked Items and in Add from Bags. Argument: the count.
+L["ITEM_QUANTITY"] = "x%d"
+-- An item and how many, the way the game's own loot lines write it, in the loot windows and their chat lines. Arguments: the item's link, then the count.
+L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
@@ -254,21 +285,18 @@ L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 ]]
 L["OPTIONS_EXAMPLE"] = "Пример: %s"
 
--- The muted version line at the foot of the General panel.
-L["OPTIONS_VERSION"] = "Версия %s"
-
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
 L["OPTIONS_DESCRIPTION"] =
-	"Быстрый сбор опустошает трупы в мгновение ока, Автоброски и Автораздача решают, кому что достанется, а Автооткрытие вскрывает каждого моллюска и каждый ящик. Уведомления о добыче покажут все, а предметы для заданий, рецепты, транспорт, питомцы и легендарные предметы останутся в сохранности. Пусть добыча вас не тормозит!"
+	'Быстрый сбор опустошает трупы без окна добычи, Автоброски выбирают "Нужно", "Не откажусь" или "Отказаться" по качеству, а Автораздача раздает добычу за вас. Моллюски, контейнеры и запертые ящики, как только их отопрут, открываются сами. Собирайте быстрее, начинайте бой раньше.'
 L["WELCOME_MESSAGE"] = "Включить приветствие"
 L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"При каждом входе в игру показывает версию GogoLoot и где найти эти настройки."
 L["MINIMAP_BUTTON_ENABLE"] = "Включить кнопку у миникарты"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Показывает кнопку GogoLoot у миникарты. Левый клик включает и выключает Автоброски, правый клик делает то же с Автооткрытием, Shift + левый клик с оповещениями, а Shift + правый клик с Автораздачей."
+	"Показывает кнопку GogoLoot у миникарты. Левый клик включает и выключает Автоброски, правый клик делает то же с Автооткрытием, Shift + левый клик с оповещениями о добыче, а Shift + правый клик с Автораздачей."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Команды"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -277,6 +305,9 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "Открывает окно настроек
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Функции"
 
+-- The opening line of the Speedy Loot panel, above its switch.
+L["SPEEDY_LOOT_DESCRIPTION"] =
+	"Забирает всю добычу с трупа в момент открытия, так что вам не придется ждать окна добычи."
 L["SPEEDY_LOOT_ENABLE"] = "Включить Быстрый сбор"
 --[[
     Shift is the game's default Auto Loot key; holding it shows the loot window
@@ -286,13 +317,69 @@ L["SPEEDY_LOOT_ENABLE"] = "Включить Быстрый сбор"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	'Забирает всю добычу с трупа сразу, не показывая окно добычи. Удерживайте Shift при сборе, чтобы увидеть окно. Включает игровую настройку "%s" и не срабатывает, пока у вас роль "%s".'
 
-L["FEEDBACK_SUPPORT"] = "Отзывы и поддержка"
+--[[
+    The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
+    locale. General Macros is the tab of the game's Macros window that every
+    character on the account shares; /macro is the game's command and stays
+    English.
+]]
+L["ROLL_MACRO_DESCRIPTION"] =
+	'Добавляет в ваши общие макросы макрос "%s" со значком золотых монет, чтобы любой персонаж вашей учетной записи мог перетащить его на панель команд.'
+--[[
+    The three rows under it, each beside the game's name for a mouse button
+    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    a raid roll picks a number from 1 to the group's size.
+]]
+L["ROLL_MACRO_LEFT_CLICK"] = "Бросок 1-100"
+L["ROLL_MACRO_RIGHT_CLICK"] = "Бросок 1-99"
+L["ROLL_MACRO_MIDDLE_CLICK"] = "Рейдовый бросок"
+L["ROLL_MACRO_ENABLE"] = "Включить макрос бросков"
+-- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] =
+	"Рейдовый бросок отдает предмет случайному игроку. Он бросает от 1 до числа игроков в вашей группе, так что каждое число соответствует одному игроку: отсчитайте по списку рейда или группы выпавшее число, чтобы найти победителя. В одиночку бросает 1-100."
+L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
+	'Хранит макрос "%s" в ваших общих макросах: левый клик бросает 1-100, правый клик 1-99, средний клик делает рейдовый бросок. При выключении макрос удаляется.'
+--[[
+    Printed to chat when Enable Roll Macro is switched on or off, or the macro
+    can't be made. In ROLL_MACRO_ADDED the second %s is /m, the game's command
+    for its Macros window, drawn in blue.
+]]
+L["ROLL_MACRO_ADDED"] =
+	'Макрос "%s" добавлен в общие макросы. Введите %s и перетащите его на панель команд.'
+L["ROLL_MACRO_REMOVED"] = 'Макрос "%s" удален.'
+L["ROLL_MACRO_FULL"] =
+	'Не удалось добавить макрос "%s": общие макросы заполнены. Удалите один, и макрос добавится при следующем входе в игру.'
 
--- CurseForge / GitHub / Discord / Wago are proper nouns; do not translate.
-L["CURSEFORGE"] = "CurseForge"
-L["GITHUB"] = "GitHub"
-L["DISCORD"] = "Discord"
-L["WAGO"] = "Wago"
+--------------------------------------------------------------------------------
+-- Options: Feedback & Support Panel
+--------------------------------------------------------------------------------
+
+-- "Star" stays GitHub's English button label in every locale; Discord, CurseForge, Wago and GitHub stay as written.
+L["OPTIONS_LEVEL_UP_TITLE"] = "Помогите GogoLoot повысить уровень"
+L["OPTIONS_LEVEL_UP_INTRO"] =
+	"Этот аддон создали игроки, которые любят эту игру и хотят сделать ее как можно веселее для всех. Мы никогда не попросим пожертвований. Настоящую радость нам приносит знание, что наша работа делает игру для вас хоть немного лучше. Если это так, мы будем рады об этом услышать!"
+L["OPTIONS_LEVEL_UP_WAYS"] =
+	"Вот несколько способов помочь нам найти больше игроков."
+L["OPTIONS_LEVEL_UP_FEEDBACK"] =
+	"• Поделитесь отзывом: нашли ошибку или есть идея? Расскажите нам в Discord. Ваши отзывы помогают улучшать аддон, а пул-реквесты всегда приветствуются."
+L["OPTIONS_LEVEL_UP_FRIEND"] =
+	"• Расскажите другу: знаете кого-то, кому может понравиться этот аддон? Расскажите ему о нем. Сарафанное радио помогает большему числу игроков находить отличные аддоны."
+L["OPTIONS_LEVEL_UP_CURSEFORGE"] =
+	"• Добавьте в избранное на CurseForge: откройте ссылку на CurseForge ниже, войдите и нажмите на звездочку под кнопкой скачивания. Избранное помогает большему числу игроков найти аддон."
+L["OPTIONS_LEVEL_UP_GITHUB"] =
+	"• Поставьте звезду на GitHub: откройте ссылку на GitHub ниже, войдите и нажмите Star в правом верхнем углу. Звезды помогают проекту получить доступ к бесплатным инструментам для разработчиков."
+L["OPTIONS_LEVEL_UP_THANKS"] = "Спасибо, что выбрали GogoLoot!"
+
+L["OPTIONS_FEEDBACK"] = "Отзывы и поддержка"
+L["OPTIONS_FEEDBACK_LINKS_HEADER"] = "Ссылки для отзывов и поддержки"
+L["OPTIONS_CURSEFORGE"] = "CurseForge"
+L["OPTIONS_GITHUB"] = "GitHub"
+L["OPTIONS_DISCORD"] = "Discord"
+L["OPTIONS_WAGO"] = "Wago"
+L["OPTIONS_COPY_LINK"] =
+	"Чтобы скопировать ссылку, щелкните по ее полю и нажмите Ctrl+A, затем Ctrl+C."
+-- The version line at the foot of the Feedback & Support panel.
+L["OPTIONS_VERSION"] = "Версия %s"
 
 --------------------------------------------------------------------------------
 -- Options: Master Looter
@@ -404,7 +491,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Задает бросок для отдельных предметов в обход настроек качества. Только так GogoLoot будет бросать на предметы, персональные при поднятии, и на предметы для заданий."
--- Shown on Item Overrides while Automated Rolls is off.
+-- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] =
 	"Пока Автоброски выключены, эти настройки не используются."
 L["ITEM_OVERRIDES_ENABLE"] = "Включить Особые предметы"
@@ -446,7 +533,7 @@ L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
 
 L["ANNOUNCEMENTS_DESCRIPTION"] =
 	"Публикует в чате итоги обменов и раздачу добычи, чтобы все знали, куда ушла добыча."
-L["ANNOUNCEMENTS_ENABLE"] = "Включить оповещения"
+L["ANNOUNCEMENTS_ENABLE"] = "Включить оповещения о добыче"
 -- Also the tooltip of the same switch in the General panel's Features section, so it names no position on the panel.
 L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"] =
 	"Включает и выключает все оповещения. Когда они выключены, GogoLoot ничего не отправляет ни группе, ни партнерам по обмену, даже о предметах, которые вы раздаете сами."
@@ -556,7 +643,7 @@ L["LOOT_TOASTS_FILTER_OPENABLES_MINE_DESCRIPTION"] =
 L["LOOT_TOASTS_FILTER_OPENABLES_GROUP_DESCRIPTION"] =
 	"Показывает подбираемые группой контейнеры, которые GogoLoot может открыть, включая запертые ящики, любого качества."
 L["LOOT_TOASTS_FILTER_MONEY_DESCRIPTION"] =
-	'Показывает уведомление о подобранных вами монетах. Игра не сообщает о деньгах других игроков, поэтому флажка "Группа" нет.'
+	'Показывает уведомления о подобранных вами монетах. Игра не сообщает о монетах других игроков, поэтому флажка "Группа" здесь нет.'
 
 -- A group member's loot on a toast. Arguments: the item with its count, then the looter's name.
 L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
@@ -564,27 +651,25 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
 --[[
     Winning Roll: the roll an item was won with, on its toast. The roll
     reads as the game's own word for Need or Greed, then the number
-    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast it follows the item
-    (LOOT_TOASTS_WON_ROLL); on a group member's, their name
-    (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
+    looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "Победный бросок"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
 L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] =
-	"Добавляет к уведомлению бросок, которым вы выиграли предмет, например (%s)."
+	"Добавляет к уведомлению бросок, которым вы выиграли предмет, например (Вы выиграли, %s)."
 -- Arguments: an example group member, then an example roll ("Need 87").
 L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"] =
 	"Добавляет к уведомлению участника группы бросок, которым он выиграл предмет, например (%s, %s)."
 L["LOOT_TOASTS_ROLL_RESULT"] = "%s %d"
-L["LOOT_TOASTS_WON_ROLL"] = "%s (%s)"
+L["LOOT_TOASTS_YOU_WON_ROLL"] = "%s (Вы выиграли, %s)"
 L["LOOT_TOASTS_LOOTED_BY_ROLL"] = "%s (%s, %s)"
 
 -- The Filters row adding how many the player carries to their own loot's toasts.
 L["LOOT_TOASTS_FILTER_BAG_COUNT"] = "Количество в сумках"
 L["LOOT_TOASTS_BAG_COUNT_DESCRIPTION"] =
 	"Добавляет к уведомлениям о вашей добыче, сколько таких предметов у вас теперь с собой, например x3 (27), если их больше, чем указано в самом уведомлении."
--- How many came, after the item on a toast. Argument: the count.
-L["LOOT_TOASTS_QUANTITY"] = "x%d"
 -- Bag Count, after the item and its count. Argument: how many the player carries.
 L["LOOT_TOASTS_BAG_COUNT"] = "(%d)"
 
@@ -644,12 +729,16 @@ L["LOOT_TOASTS_EXAMPLE_ITEM"] = "Пример предмета"
 -- Argument: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PANEL_DESCRIPTION"] =
 	"Проигрывает сигнал при добыче выбранного качества или выше и звук сумки, когда %s приносит добычу."
-L["LOOT_SOUNDS_ENABLE"] = "Включить звук добычи"
+-- The Loot Sounds panel's master switch, also in the General panel's Features section; its tooltip names no position on either.
+L["LOOT_SOUNDS_SWITCH"] = "Включить звуки добычи"
+L["LOOT_SOUNDS_SWITCH_DESCRIPTION"] = "Включает и выключает все звуки добычи GogoLoot."
+-- The chime's own toggle, under the master switch.
+L["LOOT_SOUNDS_ENABLE"] = "Включить сигнал добычи"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"Проигрывает сигнал, когда вы забираете с трупа или из сундука предмет выбранного качества или выше."
 L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] =
-	"Самое низкое качество предмета, для которого проигрывается звук добычи."
-L["LOOT_SOUNDS_TEST"] = "Проигрывает звук добычи."
+	"Самое низкое качество предмета, для которого проигрывается сигнал добычи."
+L["LOOT_SOUNDS_TEST"] = "Проигрывает сигнал добычи."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "Включить звук: %s"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] =
@@ -662,7 +751,7 @@ L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "Проигрывает звук: %s."
 
 -- Argument: the number of free bag slots opening waits for.
 L["AUTOMATED_OPENING_DESCRIPTION"] =
-	"Открывает за вас моллюсков, ящики, кошельки и взломанные запертые ящики в сумках, когда свободных ячеек в сумках не меньше %d."
+	"Открывает за вас в сумках моллюсков, ящики, кошельки, а также запертые ящики, как только их отопрут, если свободных ячеек не меньше %d."
 L["AUTOMATED_OPENING_ENABLE"] = "Включить Автооткрытие"
 -- Also the tooltip of the same switch in the General panel's Features section. Argument: the game's own name for its Auto Loot setting.
 L["AUTOMATED_OPENING_SWITCH_DESCRIPTION"] =
@@ -686,16 +775,20 @@ L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"Показывать подсказки запертых ящиков только разбойникам или всем персонажам."
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "Включить оповещения о запертых ящиках"
 L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
-	"Сообщает в чате, когда вы получаете запертый ящик, который откроется после взлома."
+	"Сообщает в чате, когда вы получаете запертый ящик, который откроется, как только его отопрут."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"Показывать оповещения о запертых ящиках только разбойникам или всем персонажам."
+-- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
+	"Пока Автооткрытие выключено, оповещения о запертых ящиках не используются."
 L["LOCKBOXES_FOR_ROGUES"] = "Для разбойников"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Для всех персонажей"
 
 --[[
     The block a lockbox's own tooltip gains, under the game's own "Requires
-    Lockpicking" line (ITEM_REQ_SKILL), followed by a skill number. Argument:
-    the game's own name for the Lockpicking skill.
+    Lockpicking (225)" line (ITEM_MIN_SKILL), or under GogoLoot's own
+    ITEM_REQ_SKILL line where the client prints none, followed by a skill
+    number. Argument: the game's own name for the Lockpicking skill.
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Ваш навык: %s"
 
@@ -710,6 +803,9 @@ L["OPENABLE_ITEMS_DESCRIPTION"] =
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
 	'Пока Автооткрытие выключено, используется только "Игнорировать": оно по-прежнему не дает Быстрому сбору забирать эти предметы.'
+-- The same while Speedy Loot is off too.
+L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
+	"Пока Автооткрытие и Быстрый сбор выключены, эти настройки не используются."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Возвращает список к исходному виду: у каждого предмета восстанавливается настройка по умолчанию, удаленные предметы возвращаются, а добавленные удаляются."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -750,3 +846,408 @@ L["OPENING_REASON_BIND_ON_PICKUP"] =
 	"Может содержать предметы, персональные при поднятии. Закрытым его еще можно передать или продать."
 L["OPENING_REASON_UNIQUE"] =
 	"Может содержать уникальный предмет. Если такой у вас уже есть, открытие завершится ошибкой."
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Sent to the Group
+--------------------------------------------------------------------------------
+
+--[[
+    What the Loot Master sends when it calls a roll, in the sent format: no
+    closing period, since the add-on name follows. Item arguments are links.
+    Calls, ties and pauses go to Raid Warning where the player can send one;
+    results go to group chat.
+]]
+-- Arguments: the item, then the roll's length in seconds.
+L["ROLL_CALL_START"] = "Бросайте /roll на %s, %d сек"
+-- Arguments: the seconds left, then the item.
+L["ROLL_CALL_LAST_SECONDS"] = "Осталось %d сек на %s"
+-- +10 Seconds. Arguments: the seconds added, then the item.
+L["ROLL_CALL_EXTENDED"] = "Еще %d сек на %s"
+-- Arguments: the item, then the rolls that didn't count, each one of the four lines below, joined by commas.
+L["ROLL_CALL_NOT_COUNTED"] = "Не засчитано на %s: %s"
+-- Arguments: the player, then their roll.
+L["ROLL_CALL_NOT_COUNTED_EARLY"] = "ранний бросок игрока %s (%d)"
+L["ROLL_CALL_NOT_COUNTED_REPEAT"] = "лишний бросок игрока %s (%d)"
+-- Arguments: the player, their roll, then the range they rolled in.
+L["ROLL_CALL_NOT_COUNTED_RANGE"] = "игрок %s: %d (%d-%d)"
+L["ROLL_CALL_NOT_COUNTED_NOT_TIED"] = "игрок %s: %d (не в перебросе)"
+-- Arguments: the tied players, the roll they tied at, the item, the tied players again, then the seconds.
+L["ROLL_CALL_TIE"] = "%s: ничья (%d) на %s. Только %s, снова /roll, %d сек"
+-- With Re-roll Ties off. Arguments: the tied players, the roll they tied at, then the item.
+L["ROLL_CALL_TIE_HELD"] = "%s: ничья (%d) на %s. Будет переброс"
+-- Arguments: the winner, the item, then the winning roll.
+L["ROLL_CALL_WINS"] = "%s выигрывает %s (%d)"
+-- After a disqualification or a restore changed who won. Arguments as above.
+L["ROLL_CALL_NOW_WINS"] = "Теперь %s выигрывает %s (%d)"
+-- Argument: the item.
+L["ROLL_CALL_NOBODY"] =
+	"Никто не бросил на %s. Пока предмет остается в моем списке"
+L["ROLL_CALL_NOBODY_LEFT"] =
+	"На %s не осталось засчитанных бросков. Предмет возвращается в мой список"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_DISQUALIFIED_NO_REASON"] = "Бросок игрока %s (%d) на %s дисквалифицирован"
+-- The same with a reason. Arguments: the player, their roll, the item, then one of the ROLL_DISQUALIFY_REASON_ lines.
+L["ROLL_CALL_DISQUALIFIED_BECAUSE"] = "Бросок игрока %s (%d) на %s дисквалифицирован: %s"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_RESTORED"] = "Бросок игрока %s (%d) на %s восстановлен"
+-- Arguments: the item, then the seconds.
+L["ROLL_CALL_VOIDED"] =
+	"Все броски на %s аннулированы. Бросайте снова /roll, %d сек"
+-- Argument: the item.
+L["ROLL_CALL_CANCELED"] = "Розыгрыш %s отменен. Пока не бросайте"
+L["ROLL_CALL_PAUSED"] = "Пока не бросайте. Розыгрыш %s на паузе"
+-- Arguments: the item, then the seconds left.
+L["ROLL_CALL_RESUMED"] = "Розыгрыш %s продолжается, осталось %d сек"
+-- Each argument: items, joined by commas.
+L["ROLL_CALL_ROLL_ALL"] = "Разыгрываем по порядку: %s"
+L["ROLL_CALL_UP_FOR_ROLL"] = "Разыгрывается: %s"
+L["ROLL_CALL_FLOOR_LOOT"] = "Разыгрывается общая добыча: %s"
+-- Drops by boss posted to the group, a line per boss. Arguments: the boss, then its drops, joined by commas.
+L["DROPS_POST_LINE"] = "%s: %s"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Printed
+--------------------------------------------------------------------------------
+
+-- Outside a group there's nobody to send to. Argument: the line a group would have seen.
+L["ROLL_CALL_SOLO_PREVIEW"] =
+	"Вы не в группе, поэтому это никуда не отправлено: %s"
+-- Arguments: the winner, then the item.
+L["ROLL_CALL_WON_PRINT"] =
+	"%s выигрывает %s. Начните обмен с этим игроком, и GogoLoot положит предмет в окно обмена."
+
+--------------------------------------------------------------------------------
+-- Roll Tags and Reasons
+--------------------------------------------------------------------------------
+
+-- Beside a roll in the loot windows: why it doesn't count, or where it stands.
+L["ROLL_TAG_EARLY"] = "Бросок до объявления"
+L["ROLL_TAG_LATE"] = "Бросок после закрытия"
+L["ROLL_TAG_REPEAT"] = "Лишний бросок, не засчитан"
+-- Arguments: the range the player rolled in.
+L["ROLL_TAG_RANGE"] = "Не тот диапазон (%d-%d)"
+L["ROLL_TAG_NOT_TIED"] = "Не участвует в перебросе"
+L["ROLL_TAG_DISQUALIFIED"] = "Дисквалифицирован"
+-- Argument: one of the reasons below.
+L["ROLL_TAG_DISQUALIFIED_BECAUSE"] = "Дисквалифицирован: %s"
+L["ROLL_TAG_WINNER"] = "Победитель"
+L["ROLL_TAG_HIGHEST"] = "Пока лучший"
+L["ROLL_TAG_TIED"] = "Ничья"
+
+-- The reasons offered when the loot master disqualifies a roll, also sent after ROLL_CALL_DISQUALIFIED_BECAUSE's colon.
+L["ROLL_DISQUALIFY_REASON_NOT_ELIGIBLE"] = "Нет права на этот предмет"
+L["ROLL_DISQUALIFY_REASON_ALREADY_WON"] = "Сегодня уже есть выигрыш"
+L["ROLL_DISQUALIFY_REASON_FOR_SOMEONE_ELSE"] = "Бросок за другого игрока"
+L["ROLL_DISQUALIFY_REASON_NONE"] = "Без указания причины"
+
+--------------------------------------------------------------------------------
+-- Loot Master Window
+--------------------------------------------------------------------------------
+
+-- The tabs. Argument: how many items each holds.
+L["LOOT_MASTER_TAB_ROLL_LIST"] = "Список розыгрыша (%d)"
+L["LOOT_MASTER_TAB_FLOOR_LOOT"] = "Общая добыча (%d)"
+L["LOOT_MASTER_TAB_AWARDED"] = "Выдано (%d)"
+L["LOOT_MASTER_TAB_SOFT_RESERVES"] = "Софт-резервы"
+
+-- The Roll List's buttons.
+L["LOOT_MASTER_ROLL"] = "Разыграть"
+L["LOOT_MASTER_ROLL_AGAIN"] = "Разыграть снова"
+L["LOOT_MASTER_ROLL_ALL"] = "Разыграть все"
+L["LOOT_MASTER_PAUSE"] = "Пауза"
+L["LOOT_MASTER_RESUME"] = "Продолжить"
+L["LOOT_MASTER_STOP"] = "Стоп"
+L["LOOT_MASTER_LIST_IN_RAID"] = "Огласить в рейде"
+L["LOOT_MASTER_MOVE_UP"] = "Выше"
+L["LOOT_MASTER_MOVE_DOWN"] = "Ниже"
+-- Argument: the seconds added.
+L["LOOT_MASTER_EXTEND"] = "+%d сек."
+L["LOOT_MASTER_CLOSE_NOW"] = "Закрыть сейчас"
+L["LOOT_MASTER_VOID"] = "Аннулировать все броски"
+L["LOOT_MASTER_CANCEL_ROLL"] = "Отменить розыгрыш"
+L["LOOT_MASTER_TAKE_OFF"] = "Убрать из списка"
+-- Argument: the winner.
+L["LOOT_MASTER_GIVE"] = "Передать игроку %s"
+L["LOOT_MASTER_TRADE"] = "Обмен: %s"
+L["LOOT_MASTER_ANNOUNCE_WINNER"] = "Объявить победителя"
+L["LOOT_MASTER_HANDED_OUT"] = "Отметить как выданное"
+L["LOOT_MASTER_REROLL_TIED"] = "Переброс ничьей"
+L["LOOT_MASTER_DISQUALIFY"] = "Дисквалифицировать"
+L["LOOT_MASTER_RESTORE"] = "Восстановить"
+
+-- A row's trade clock, where it has none to show.
+L["LOOT_MASTER_ON_CORPSE"] = "На трупе"
+L["LOOT_MASTER_CORPSE_CLOSED"] = "Труп закрыт"
+L["LOOT_MASTER_BOUND"] = "Персональный"
+L["LOOT_MASTER_NO_LIMIT"] = "Без ограничений"
+
+-- A row's state. Argument: how many rolls have landed.
+L["LOOT_MASTER_STATUS_ROLLING"] = "Розыгрыш, бросков: %d"
+L["LOOT_MASTER_STATUS_TIE_BREAK"] = "Переброс, бросков: %d"
+L["LOOT_MASTER_STATUS_ON_HOLD"] = "Пауза, бросков: %d"
+-- STATUS_TIED and STATUS_NOBODY also title a finished roll in the Loot Tracker.
+L["LOOT_MASTER_STATUS_TIED"] = "Ничья"
+L["LOOT_MASTER_STATUS_NOBODY"] = "Никто не бросил"
+L["LOOT_MASTER_STATUS_SOULBOUND"] = "Стал персональным"
+L["LOOT_MASTER_STATUS_UP_NEXT"] = "Следующий"
+
+-- The first line of an opened row.
+L["LOOT_MASTER_HEADLINE_ROLLING"] = "Розыгрыш, осталось %d сек."
+L["LOOT_MASTER_HEADLINE_ON_HOLD"] = "На паузе, осталось %d сек."
+-- Arguments: the tied players, then the seconds left.
+L["LOOT_MASTER_HEADLINE_TIE_BREAK"] = "Переброс для %s, осталось %d сек."
+-- Arguments: the winner, then the winning roll.
+L["LOOT_MASTER_HEADLINE_WON"] = "%s побеждает с броском %d."
+-- Arguments: the tied players, then the roll they tied at.
+L["LOOT_MASTER_HEADLINE_TIED"] = "%s: ничья (%d)."
+L["LOOT_MASTER_HEADLINE_SOULBOUND"] =
+	"Стал персональным, передать его больше нельзя."
+-- Argument: the boss. Also under the game's own trade line on a bag item's tooltip while it is on the Roll List.
+L["LOOT_MASTER_LOOTED_FROM"] = "Добыто: %s."
+L["LOOT_MASTER_FROM_FLOOR_LOOT"] = "Из общей добычи."
+-- After the line above. Argument: how long, in the game's own words for time.
+L["LOOT_MASTER_TRADABLE_FOR"] = "Можно передать еще %s."
+-- Headings over a row's rolls; ROUND_SO_FAR also heads an open roll in the Loot Tracker.
+L["LOOT_MASTER_ROUND_SO_FAR"] = "Броски на данный момент"
+L["LOOT_MASTER_ROUND_ROLLS"] = "Броски"
+L["LOOT_MASTER_ROUND_FIRST"] = "Первый бросок"
+L["LOOT_MASTER_ROUND_TIE_BREAK"] = "Переброс"
+-- Arguments: how many, then their names. Also in the Loot Tracker.
+L["LOOT_MASTER_HASNT_ROLLED"] = "Не бросили (%d): %s"
+
+L["LOOT_MASTER_EMPTY"] =
+	"Раздавать пока нечего. Подобранная добыча, которую можно передать, попадает сюда сама; чтобы добавить любой другой предмет из сумок, щелкните по нему с Alt."
+-- The line beside the Roll List's buttons.
+L["LOOT_MASTER_STATE_PAUSED"] = "Пауза."
+L["LOOT_MASTER_STATE_ROLL_ALL"] = "Разыгрываем все: осталось %d."
+L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "По одному розыгрышу за раз."
+L["LOOT_MASTER_STATE_WAITING"] = "Ждут розыгрыша: %d."
+-- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
+L["LOOT_MASTER_FOOTER"] = "Раздать: %d."
+L["LOOT_MASTER_FOOTER_CLOCK"] =
+	"Раздать: %d, ближайший срок обмена истекает через %s."
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + клик по предмету в сумке, чтобы добавить"
+
+-- The Disqualify window.
+L["LOOT_MASTER_DISQUALIFY_TITLE"] = "Дисквалификация броска"
+-- Arguments: the player, their roll, then the item.
+L["LOOT_MASTER_DISQUALIFY_BODY"] =
+	"Исключить бросок игрока %s (%d) из розыгрыша %s? Позже его можно восстановить."
+L["LOOT_MASTER_DISQUALIFY_REASON"] = "Причина"
+L["LOOT_MASTER_DISQUALIFY_TELLS"] = "GogoLoot сообщит группе:"
+-- Argument: the item.
+L["LOOT_MASTER_VOID_CONFIRM"] =
+	"Аннулировать все броски на %s и объявить розыгрыш заново?"
+
+-- Printed by the Loot Master.
+L["LOOT_MASTER_ROLL_ALL_DONE"] =
+	"Розыгрыш всех предметов завершен. Все предметы из списка розыгрыша разыграны."
+L["LOOT_MASTER_ROLL_ALL_PAUSED"] =
+	'Розыгрыш всех предметов приостановлен. Новые розыгрыши не начнутся, пока вы не нажмете "Продолжить".'
+L["LOOT_MASTER_ROLL_ALL_RESUMED"] = "Розыгрыш всех предметов возобновлен."
+L["LOOT_MASTER_ROLL_ALL_STOPPED"] =
+	"Розыгрыш всех предметов остановлен. Текущий розыгрыш все равно завершится."
+-- Arguments: the item, then the whole minutes left.
+L["LOOT_MASTER_TRADE_TIME_LOW"] = "%s можно передать еще %d мин."
+-- Argument: the item.
+L["LOOT_MASTER_TRADE_TIME_OVER"] = "%s больше нельзя передать."
+-- Arguments: the item, the winner, then their winning roll.
+L["LOOT_MASTER_TRADE_FILLED"] =
+	"В окно обмена положено: %s для игрока %s (победный бросок: %d)."
+-- Arguments: the winner, then the item.
+L["LOOT_MASTER_NOT_A_CANDIDATE"] = "Игроку %s нельзя отдать %s с этого трупа."
+-- Argument: the item.
+L["LOOT_MASTER_ADDED"] = "%s: добавлено в список розыгрыша."
+L["LOOT_MASTER_NOT_TRADABLE"] =
+	"%s: предмет нельзя передать, поэтому его нельзя добавить в список розыгрыша."
+-- Argument: how many joined.
+L["LOOT_MASTER_FLOOR_ADDED"] =
+	"Предметы общей добычи добавлены в список розыгрыша: %d."
+L["LOOT_MASTER_OFF"] =
+	"Распорядитель добычи выключен. Включите его в меню Настройки > Модификации > GogoLoot > Распорядитель добычи."
+
+-- A bag item's tooltip, under the game's own trade line, while it is on the Roll List.
+L["LOOT_MASTER_TOOLTIP_ON_ROLL_LIST"] = "В списке розыгрыша."
+-- Arguments: the winner, then their winning roll.
+L["LOOT_MASTER_TOOLTIP_WON_BY"] = "Победитель: %s, бросок %d."
+
+-- Floor Loot. The add box, filter and Add from Bags use the item lists' own words (ITEM_LIST_*).
+L["LOOT_MASTER_FLOOR_DESCRIPTION"] =
+	"Добыча без таймера обмена, которую вы хотите разыграть: материалы, рецепты, снаряжение, персональное при надевании. Список начинается пустым, так что разыгрывается только то, что вы добавите. Один розыгрыш на стопку."
+L["LOOT_MASTER_FLOOR_EMPTY"] =
+	'Здесь пока пусто. Выберите предмет в меню "Добавить из сумок" или перетащите его в поле выше.'
+-- Argument: how many the bags hold.
+L["LOOT_MASTER_FLOOR_IN_BAGS"] = "В сумках: %d"
+L["LOOT_MASTER_FLOOR_ON_ROLL_LIST"] = "В списке розыгрыша"
+L["LOOT_MASTER_FLOOR_REMOVE"] = "Убирает этот предмет из общей добычи."
+-- The heading for an item whose kind the game hasn't said yet.
+L["LOOT_MASTER_FLOOR_OTHER"] = "Прочее"
+L["LOOT_MASTER_FLOOR_ADD_ALL"] = "Добавить все в список розыгрыша"
+-- Add from Bags' two headings.
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "Подобрано в этом подземелье"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "Также в ваших сумках"
+-- Argument: what was typed.
+L["LOOT_MASTER_FLOOR_NOT_FOUND"] =
+	'В сумках нет передаваемых предметов, подходящих под "%s".'
+
+-- Awarded.
+L["LOOT_MASTER_AWARDED_EMPTY"] =
+	"Пока ничего не выдано. Выигранный предмет появится здесь, когда победитель его получит."
+-- Arguments: the winning roll, then the time it was handed out.
+L["LOOT_MASTER_AWARDED_ROLLED"] = "Бросок %d, %s"
+-- Argument: the time it was handed out.
+L["LOOT_MASTER_AWARDED_GIVEN"] = "Выдано %s"
+L["LOOT_MASTER_AWARDED_CLEAR"] = "Очистить"
+
+-- Soft Reserves, a placeholder for now.
+L["LOOT_MASTER_SOFT_RESERVES_DESCRIPTION"] =
+	"Вставьте сюда строку софт-резервов, чтобы увидеть, кто что зарезервировал. Скоро: пока эта вкладка лишь заготовка."
+L["LOOT_MASTER_SOFT_RESERVES_PLACEHOLDER"] = "Импорт софт-резервов пока не готов."
+L["LOOT_MASTER_SOFT_RESERVES_IMPORT"] = "Импорт"
+
+--------------------------------------------------------------------------------
+-- Loot Tracker Window
+--------------------------------------------------------------------------------
+
+L["LOOT_TRACKER_TITLE"] = "Журнал добычи"
+L["LOOT_TRACKER_TAB_ROLLS"] = "Броски"
+L["LOOT_TRACKER_TAB_DROPS"] = "Добыча"
+L["LOOT_TRACKER_NO_ROLL"] = "Сегодня бросков еще не было."
+-- Argument: who called the roll.
+L["LOOT_TRACKER_CALLED_BY"] = "Объявил: %s"
+L["LOOT_TRACKER_SPOTTED"] = "Замечено в чате, автор: %s"
+-- Argument: whole seconds left.
+L["LOOT_TRACKER_SECONDS_LEFT"] = "Осталось %d с"
+-- A roll called without GogoLoot. Argument: who called it.
+L["LOOT_TRACKER_UNSYNCED_NOTE"] =
+	"%s не использует GogoLoot, поэтому здесь броски, замеченные в чате и проверенные по обычным правилам: 1-100, только первый бросок. Последнее слово за объявившим розыгрыш."
+L["LOOT_TRACKER_ON_HOLD"] = "Пауза. Дождитесь объявления, чтобы бросить снова."
+L["LOOT_TRACKER_TIE_BREAK_ROLLS"] = "Броски переброса"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_TRACKER_WON_WITH"] = "%s побеждает с броском %d"
+L["LOOT_TRACKER_CLOSED"] = "Закрыто"
+-- The sort buttons.
+L["LOOT_TRACKER_SORT_HIGH"] = "Наивысшие"
+L["LOOT_TRACKER_SORT_TIME"] = "По порядку"
+L["LOOT_TRACKER_ROLL"] = "Бросок (1-100)"
+-- Beside the player's own roll, and the line beside the Roll and Pass buttons.
+L["LOOT_TRACKER_YOU"] = "Вы"
+L["LOOT_TRACKER_YOU_ROLLED"] = "Вы выбросили %d."
+L["LOOT_TRACKER_YOU_PASSED"] = "Вы отказались."
+L["LOOT_TRACKER_NOT_ROLLED"] = "Вы еще не бросали."
+L["LOOT_TRACKER_NOT_IN_TIE_BREAK"] = "Сейчас бросают только игроки с ничьей."
+L["LOOT_TRACKER_EARLIER"] = "Ранее сегодня"
+--[[
+    The word, in lower case, that marks a group chat line with an item link as
+    a call for rolls by someone without GogoLoot. "roll" is always read too.
+]]
+L["LOOT_TRACKER_ROLL_WORD"] = "ролл"
+
+-- Drops.
+L["LOOT_TRACKER_SHOW_WINNERS"] = "Показать, кто что получил"
+L["LOOT_TRACKER_DROPS_EMPTY"] =
+	"Добыча пока не замечена. Она появится здесь, когда будут убиты боссы и обысканы трупы."
+L["LOOT_TRACKER_DROPS_NOTHING_SEEN"] = "Никто с GogoLoot его еще не обыскал."
+L["LOOT_TRACKER_NOT_HANDED_OUT"] = "Еще не выдано"
+L["LOOT_TRACKER_PRINT"] = "Вывести"
+L["LOOT_TRACKER_POST"] = "Отправить в рейд"
+L["LOOT_TRACKER_COPY"] = "Копировать"
+L["LOOT_TRACKER_COPY_TITLE"] = "Копировать: Ctrl+C"
+
+-- Drops by boss, printed and copied.
+L["DROPS_TRASH"] = "Трэш"
+L["DROPS_NONE"] = "Добыча еще не записана."
+-- Argument: the instance.
+L["DROPS_PRINT_HEADER"] = "Добыча (%s):"
+-- Arguments: the boss, then its drops, joined by commas.
+L["DROPS_PRINT_LINE"] = "%s: %s."
+-- An item and who got it. Arguments: the item, then the winner (with their roll, below).
+L["DROPS_WINNER"] = "%s (%s)"
+-- Arguments: the winner, then their winning roll.
+L["DROPS_WINNER_ROLL"] = "%s %d"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Master
+--------------------------------------------------------------------------------
+
+L["LOOT_MASTER_PANEL_DESCRIPTION"] =
+	"Разыгрывайте добычу, которую еще можно передать, с таймером обмена у каждого предмета, и следите за каждым броском в Журнале добычи. Средний клик по кнопке у миникарты или команды /gogo master и /gogo tracker."
+L["LOOT_MASTER_ENABLE"] = "Включить Распорядителя добычи"
+L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
+	"Отслеживает добычу, которую еще можно передать, и объявляет на нее розыгрыши. Если выключено, Распорядитель добычи и Журнал добычи не открываются, а броски не считываются."
+L["LOOT_MASTER_OPEN"] = "Открыть Распорядителя добычи"
+L["LOOT_TRACKER_OPEN"] = "Открыть Журнал добычи"
+-- A dropdown choice. Argument: the number.
+L["LOOT_MASTER_SECONDS"] = "%d сек."
+L["LOOT_MASTER_MINUTES"] = "%d мин."
+L["LOOT_MASTER_KEEP_RAIDS"] = "%d"
+
+L["LOOT_MASTER_CALLING_HEADER"] = "Объявление розыгрышей"
+L["LOOT_MASTER_ROLL_LENGTH"] = "Длительность розыгрыша"
+L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Сколько длится розыгрыш."
+L["LOOT_MASTER_ANNOUNCE_IN"] = "Куда объявлять"
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] =
+	"Куда идут объявления розыгрышей, ничьих и пауз."
+L["LOOT_MASTER_CHANNEL_GROUP"] = "Чат группы"
+L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
+	"Если вы не лидер и не помощник, вместо объявления рейду используется чат группы. Победители всегда объявляются в чате группы."
+-- Argument: the seconds.
+L["LOOT_MASTER_WARN_LAST_SECONDS"] = "Предупреждать за %d сек. до конца"
+L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] =
+	"Сообщает группе, что розыгрыш скоро закроется."
+-- Argument: the seconds.
+L["LOOT_MASTER_STRETCH_LATE"] = "Добавлять %d сек. при позднем броске"
+L["LOOT_MASTER_STRETCH_LATE_DESCRIPTION"] =
+	"Бросок в последние секунды немного продлевает розыгрыш, чтобы никого не отрезало из-за задержки."
+L["LOOT_MASTER_END_EARLY"] =
+	"Завершать досрочно, когда все бросили или отказались"
+L["LOOT_MASTER_END_EARLY_DESCRIPTION"] =
+	'Закрывает розыгрыш, как только каждый участник группы бросил или написал "pass".'
+L["LOOT_MASTER_REROLL_TIES"] = "Переброс ничьей между игроками с ничьей"
+L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"] =
+	'Сразу объявляет переброс для игроков с ничьей. Если выключено, ничья ждет, пока вы не нажмете "Переброс ничьей".'
+L["LOOT_MASTER_ROLL_ALL_PAUSE"] = "Пауза между предметами при розыгрыше всех"
+L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] =
+	"Сколько ждать после розыгрыша, прежде чем объявить следующий, при розыгрыше всех предметов."
+
+L["LOOT_MASTER_COUNTING_HEADER"] = "Засчитываемые броски"
+-- Argument: the seconds of grace.
+L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
+	"Обычный /roll (1-100), только первый у каждого игрока вашей группы, пока розыгрыш открыт (запас на задержку: %d сек.). Незасчитанные броски остаются в списке с указанием причины."
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "Объявлять незасчитанные броски"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
+	"Когда розыгрыш закрывается, перечисляет одной строкой незасчитанные броски и причины. О дисквалифицированном вами броске объявляется всегда."
+
+L["LOOT_MASTER_TRADE_HEADER"] = "Передаваемая добыча"
+L["LOOT_MASTER_OPEN_ON_TRADABLE"] =
+	"Открывать, когда я добываю передаваемый предмет"
+L["LOOT_MASTER_OPEN_ON_TRADABLE_DESCRIPTION"] =
+	"Открывает Распорядителя добычи, когда в ваши сумки попадает предмет, персональный при поднятии, который еще можно передать, пока вы в группе."
+L["LOOT_MASTER_TRADE_WARN"] = "Предупреждать, когда время на обмен истекает"
+L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"] =
+	"Один раз сообщает в чате, когда предмет из списка розыгрыша вот-вот станет персональным."
+L["LOOT_MASTER_TRADE_WARN_WHEN"] =
+	"Сколько времени на обмен остается в момент предупреждения."
+L["LOOT_MASTER_TRADE_AUTO_FILL"] = "Класть выигранное в окно обмена"
+L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
+	'Когда вы начинаете обмен с победителем, выигранное им кладется в окно обмена само. Нажать "Обмен" все равно нужно вам.'
+
+L["LOOT_MASTER_FLOOR_HEADER"] = "Общая добыча"
+L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
+	'Общая добыча начинается пустой и содержит только то, что вы добавите. В меню "Добавить из сумок" сначала идет то, что вы подобрали в этом подземелье.'
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] =
+	"Убирать предметы, которых больше нет в сумках"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
+	"Убирает предмет из общей добычи, когда у вас его не осталось: передали, продали или использовали."
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "Очищать общую добычу при выходе из рейда"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] =
+	"Каждый рейд начинается с пустым списком общей добычи."
+
+L["LOOT_TRACKER_OPEN_ON_ROLL"] = "Открывать, когда кто-то объявляет розыгрыш"
+L["LOOT_TRACKER_OPEN_ON_ROLL_DESCRIPTION"] =
+	"Открывает Журнал добычи, когда кто-то в вашей группе объявляет розыгрыш, через GogoLoot или объявлением рейду."
+L["LOOT_TRACKER_AUTO_CLOSE"] = "Закрываться после окончания розыгрыша"
+L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"] =
+	"Журнал добычи, открывшийся сам, закрывается через 30 секунд после окончания розыгрыша, если над ним нет курсора."
+L["LOOT_TRACKER_KEEP_DROPS"] = "Рейдов в истории добычи"
+L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"] = 'Сколько рейдов помнит вкладка "Добыча".'

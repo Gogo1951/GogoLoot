@@ -7,7 +7,8 @@
     player is told one is waiting. It sits under Automated Opening because a
     picked lockbox is one more thing that opens, but it isn't part of opening:
     the tooltips work whether or not anything opens on its own, so nothing here
-    hides behind that switch, and no red line says it is off. Both features
+    hides behind that switch. The notices speak for Automated Opening, so a red
+    line under their row says so while it is off. Both features
     carry a scope on their toggle's line rather than only an on/off, since a
     non-Rogue can't pick a lock and has little use for either; the scope leaves
     the line while its toggle is off (ns.OptionsToggleRow). The scope rule both
@@ -15,6 +16,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local GetColor = ns.GetColor
 
 local function ScopeControl(desc, getScope, setScope)
 	return {
@@ -83,6 +85,15 @@ function ns.BuildLockboxOptions()
 					ns.db.profile.lockboxNotificationsScope = value
 				end),
 			}),
+			notificationsOffNote = {
+				type = "description",
+				name = GetColor("OFF") .. L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] .. "|r",
+				fontSize = "medium",
+				order = 6,
+				hidden = function()
+					return ns.db.profile.autoOpen or not ns.db.profile.lockboxNotifications
+				end,
+			},
 		},
 	}
 end

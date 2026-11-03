@@ -132,6 +132,32 @@ local SHIFT_CLICK_TOGGLES = {
 	RightButton = ToggleAutomatedMasterLooting,
 }
 
+--[[
+    Middle-Click, the one click left, opens the loot windows: the Loot Master
+    for a player with loot to hand out (tradable loot on the Roll List, or
+    Master Looter), the Loot Tracker for everyone else.
+]]
+
+-- The loot windows are parked out of the TOCs for now; with their files unloaded, the button leaves them out.
+local function LootWindowsOn()
+	return ns.db.profile.lootMaster and ns.GetRollListEntries ~= nil
+end
+
+local function HasLootToHandOut()
+	return #ns:GetRollListEntries() > 0 or ns:AreWeMasterLooter()
+end
+
+local function OpenLootWindow()
+	if HasLootToHandOut() then
+		ns:ToggleLootMaster()
+	else
+		ns:ToggleLootTracker()
+	end
+end
+
+-- How many Tradable Loot lines the tooltip lists before it says how many more there are.
+local TRADABLE_TOOLTIP_LINES = 3
+
 --------------------------------------------------------------------------------
 -- Tooltip
 --------------------------------------------------------------------------------
@@ -156,7 +182,6 @@ local function ShowTooltip(anchor)
 	tooltip:SetPoint("TOPRIGHT", anchor, "BOTTOMLEFT")
 	tooltip:ClearLines()
 
-	-- Title and version
 	tooltip:AddDoubleLine(GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r", GetColor("MUTED") .. ns.Version .. "|r")
 	tooltip:AddLine(" ")
 	tooltip:AddLine(" ")
@@ -178,7 +203,40 @@ local function ShowTooltip(anchor)
 			local icon = row.icon and ("|T" .. row.icon .. ":" .. TOOLTIP_ICON_SIZE .. "|t ") or ""
 			local name = row.link and string.gsub(row.link, "|h%[(.-)%]|h", "|h%1|h")
 				or (GetColor("TEXT") .. row.itemIdentifier .. "|r")
-			tooltip:AddLine(icon .. name .. (row.count > 1 and (" x" .. row.count) or ""))
+			tooltip:AddLine(icon .. name .. (row.count > 1 and (" " .. L["ITEM_QUANTITY"]:format(row.count)) or ""))
+		end
+		tooltip:AddLine(" ")
+	end
+
+	--[[
+	    Tradable Loot follows, the same way: only while the Roll List holds
+	    items on a trade clock, soonest first, each with the time left in the
+	    window's colors, and a count of the rest.
+	]]
+	local timed = {}
+	if LootWindowsOn() then
+		for _, entry in ipairs(ns:GetRollListEntries()) do
+			local left = ns:GetEntrySecondsLeft(entry)
+			if left and left > 0 then
+				timed[#timed + 1] = { entry = entry, left = left }
+			end
+		end
+	end
+	if #timed > 0 then
+		table.sort(timed, function(a, b)
+			return a.left < b.left
+		end)
+		ns:AddTooltipLine(tooltip, L["MINIMAP_TRADABLE_LOOT"], "TITLE")
+		for index = 1, math.min(#timed, TRADABLE_TOOLTIP_LINES) do
+			local row = timed[index]
+			local colorKey = row.left < ns.TRADE_RED_SECONDS and "OFF"
+				or row.left < ns.TRADE_YELLOW_SECONDS and "TITLE"
+				or "TEXT"
+			local name = string.gsub(row.entry.link, "|h%[(.-)%]|h", "|h%1|h")
+			tooltip:AddDoubleLine(name, GetColor(colorKey) .. ns.FormatClock(row.left) .. "|r")
+		end
+		if #timed > TRADABLE_TOOLTIP_LINES then
+			ns:AddTooltipLine(tooltip, L["MINIMAP_TRADABLE_MORE"]:format(#timed - TRADABLE_TOOLTIP_LINES), "HELP")
 		end
 		tooltip:AddLine(" ")
 	end
@@ -213,13 +271,26 @@ local function ShowTooltip(anchor)
 	)
 	AddFeatureBlock(
 		tooltip,
-		L["MINIMAP_AUTOMATED_MASTER_LOOTING"],
+		L["TAB_MASTER_LOOTER"],
 		GetStatusText(profile.autoMasterLoot),
 		L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"],
 		L["MINIMAP_SHIFT_RIGHT_CLICK"]
 	)
 
-	-- GogoLoot Options (Shift + Middle-Click opens the options panel)
+	if LootWindowsOn() then
+		local handOut = #ns:GetRollListEntries()
+		tooltip:AddDoubleLine(
+			GetColor("TITLE") .. L["MINIMAP_LOOT_WINDOWS"] .. "|r",
+			handOut > 0 and L["MINIMAP_TO_HAND_OUT"]:format(handOut) or ""
+		)
+		ns:AddTooltipLine(tooltip, L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"], "BODY", true)
+		tooltip:AddDoubleLine(
+			GetColor("INFO") .. L["MINIMAP_MIDDLE_CLICK"] .. "|r",
+			GetColor("INFO") .. L["MINIMAP_OPEN"] .. "|r"
+		)
+		tooltip:AddLine(" ")
+	end
+
 	ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS"], "TITLE")
 	ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS_KEYBIND"], "INFO")
 
@@ -245,6 +316,12 @@ function ns:InitMinimap()
 				end
 				return
 			end
+			if button == "MiddleButton" then
+				if LootWindowsOn() then
+					OpenLootWindow()
+				end
+				return
+			end
 			local toggle = (IsShiftKeyDown() and SHIFT_CLICK_TOGGLES or CLICK_TOGGLES)[button]
 			if toggle then
 				toggle()
@@ -266,16 +343,15 @@ function ns:InitMinimap()
 	LibDBIcon:Register(ADDON_NAME, brokerObject, ns.db.global.minimap)
 
 	--[[
-	    On Retail and WoW Forever, which both report WOW_PROJECT_MAINLINE,
-	    LibDBIcon centers an 18px square icon on the button under a ring
+	    On Retail and WoW Forever, LibDBIcon centers an 18px square icon on the button under a ring
 	    (file 136430, the same art on both clients) whose hole is off-center
 	    and wider than the icon. The square's corners then show against the
 	    ring's lopsided shading and the icon reads as off-center. So the icon
 	    is masked round, grown to 20 so its rim tucks under the gold, and
 	    nudged onto the hole. The nudge was tuned by eye on Forever, where one
 	    unit is about two screen pixels; the texture alone doesn't predict it.
-	    Refresh leaves all of this alone, and a click only changes the icon's
-	    texture coordinates. The icon is sized and anchored by hand rather than
+	    Refresh leaves all of this alone, and a click swaps the icon's texture
+	    (brokerObject.icon), which keeps the size, anchor and mask. The icon is sized and anchored by hand rather than
 	    through SetButtonIcon, whose ResetButtonIcon calls icon:UpdateCoord()
 	    and errors when another add-on has replaced the button's icon.
 	]]

@@ -8,8 +8,8 @@
     Toasts and Loot Sounds panels. Enable Announcements is the panel's master switch,
     and everything below it leaves the panel while it is off: Trade
     Announcements, then Master Looter Announcements, each under its own header.
-    The saved key, lootNotifications, and the locale keys keep the panel's
-    earlier name, Loot Notifications.
+    The saved key, lootNotifications, keeps the panel's earlier name, Loot
+    Notifications.
 
     Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
       lootNotifications
@@ -107,12 +107,8 @@ local function TradeExample()
 	)
 	local received = ns.FormatTradeSummary({}, nil, EXAMPLE_TRADE_COPPER)
 	if ns.db.profile.announceTradeOutput == "self" then
-		local partner = EXAMPLE_PLAYER
-		local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[EXAMPLE_PLAYER_CLASS]
-		if type(classColor) == "table" and type(classColor.colorStr) == "string" then
-			-- The silver after the name keeps the rest of the example line silver.
-			partner = "|c" .. classColor.colorStr .. EXAMPLE_PLAYER .. GetColor("HELP")
-		end
+		-- The silver after the name keeps the rest of the example line silver.
+		local partner = ns.GetClassColor(EXAMPLE_PLAYER_CLASS) .. EXAMPLE_PLAYER .. GetColor("HELP")
 		return ns.OptionsPrintedExample(L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"]:format(gave, partner, received))
 	end
 	return ns:BuildAnnounceMessage("MESSAGE_TRADE_GAVE_RECEIVED", gave, EXAMPLE_PLAYER, received)

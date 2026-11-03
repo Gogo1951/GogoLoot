@@ -22,6 +22,9 @@ function ns:BuildDisplayContextReport()
 	lines[#lines + 1] = ""
 	local LibDBIcon = LibStub("LibDBIcon-1.0")
 	local button = LibDBIcon:GetMinimapButton(ADDON_NAME)
+	-- Without the data object, login never registers a button and every repaint returns early.
+	local brokerObject = LibStub("LibDataBroker-1.1"):GetDataObjectByName(ADDON_NAME)
+	lines[#lines + 1] = string.format("Data broker object: %s", brokerObject and "present" or "MISSING")
 	lines[#lines + 1] = string.format("Minimap button created: %s", button and "yes" or "no")
 
 	local minimap = ns.db and ns.db.global.minimap
@@ -80,12 +83,16 @@ function ns:BuildDisplayContextReport()
 	if anchorFrame then
 		local point, _, relativePoint, x, y = anchorFrame:GetPoint()
 		lines[#lines + 1] = string.format(
-			"Live toast anchor: point=%s relativePoint=%s x=%s y=%s",
+			"Live toast anchor: point=%s relativePoint=%s x=%s y=%s shown=%s",
 			tostring(point),
 			tostring(relativePoint),
 			tostring(x),
-			tostring(y)
+			tostring(y),
+			tostring(anchorFrame:IsShown())
 		)
+		local left, bottom = anchorFrame:GetLeft(), anchorFrame:GetBottom()
+		lines[#lines + 1] =
+			string.format("Live toast anchor on screen at: left=%s bottom=%s", tostring(left), tostring(bottom))
 	else
 		lines[#lines + 1] = "Live toast anchor: not created this session"
 	end
@@ -97,23 +104,13 @@ end
 -- Other Add-ons
 --------------------------------------------------------------------------------
 
---[[
-    Whether each add-on is loaded as well as loadable, which spots Open Sesame
-    still running alongside the GogoLoot that replaced it.
-]]
 function ns:BuildAddOnReport()
 	local lines = { GetClientHeader(), "" }
 	local count = C_AddOns.GetNumAddOns()
 	for index = 1, count do
 		local name, _, _, loadable = C_AddOns.GetAddOnInfo(index)
 		local version = C_AddOns.GetAddOnMetadata(index, "Version") or "?"
-		lines[#lines + 1] = string.format(
-			"%s v%s [%s, %s]",
-			name,
-			version,
-			loadable and "loadable" or "disabled",
-			C_AddOns.IsAddOnLoaded(name) and "loaded" or "not loaded"
-		)
+		lines[#lines + 1] = string.format("%s v%s [%s]", name, version, loadable and "loadable" or "disabled")
 	end
 	return table.concat(lines, "\n")
 end
@@ -149,7 +146,8 @@ end
 --[[
     Dumps the single AceDB-managed table (profiles, profileKeys, char, global)
     so a player can paste their exact configuration: every setting in each
-    profile, and every Item Overrides, Ignore List and Openables List row.
+    profile, each character's own section (Character Rules and its loot lines),
+    and every Item Overrides, Ignore List and Openables List row.
 ]]
 function ns:BuildSavedVariablesReport()
 	local lines = { GetClientHeader(), "", ns.SAVED_VARIABLES_NAME .. " = {" }

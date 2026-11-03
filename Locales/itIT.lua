@@ -25,7 +25,7 @@ L["ADDON_TITLE"] = "GogoLoot"
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
-	"Versione %s. Trovi le impostazioni (compresa l'opzione per disattivare questo messaggio) in Opzioni > Add-on > GogoLoot. Ti piace l'add-on? Parlane a un amico! (="
+	"Versione %s. Trovi le impostazioni (compresa l'opzione per disattivare questo messaggio) in Opzioni > AddOn > GogoLoot. Ti piace questo add-on? Parlane a un amico, aggiungilo ai Preferiti su CurseForge o lasciagli una Star su GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "Per sicurezza, l'interfaccia delle opzioni non può essere aperta in combattimento."
 -- Argument: the game's own name for its Auto Loot setting.
 L["MESSAGE_AUTO_LOOT_SETTING_ON"] =
@@ -45,6 +45,15 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s può contenere un oggetto unico, quindi Apertura automatica lascerà che sia tu ad aprirlo."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s è stato lasciato nella finestra del bottino perché tu lo raccolga."
+--[[
+    Standard Loot Messages taking the General tab's loot lines off, or putting
+    them back. Arguments: the game's own names for its Item Loot and Money Loot
+    chat settings, then for the General chat tab.
+]]
+L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
+	"Disattivati %s e %s nella tua scheda di chat %s finché Avvisi del bottino è attivo."
+L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "Riattivati %s e %s nella tua scheda di chat %s."
+
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
 	"%s verrebbe equipaggiato invece che aperto, quindi non può entrare nell'Elenco apribili."
@@ -104,13 +113,15 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Impossibile consegnare il bottino a %s: %s"
 -- Options Tab Names
 --------------------------------------------------------------------------------
 
+-- The first feature panel, holding the one Speedy Loot switch.
+L["TAB_SPEEDY_LOOT"] = "Bottino rapido"
 L["TAB_AUTOMATED_ROLLS"] = "Tiri automatici"
 L["TAB_ITEM_OVERRIDES"] = "Eccezioni per oggetto"
 -- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
 L["TAB_CHARACTER_RULES"] = "Regole per personaggio"
--- The panel for everything GogoLoot posts to chat.
-L["TAB_ANNOUNCEMENTS"] = "Annunci"
--- Headers of the two sections on the Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
+-- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_ANNOUNCEMENTS"] = "Annunci del bottino"
+-- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "Annunci di scambio"
 L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"] = "Annunci del Responsabile del bottino"
 L["TAB_LOOT_TOASTS"] = "Avvisi del bottino"
@@ -119,13 +130,18 @@ L["TAB_LOOT_TOAST_FILTERS"] = "Filtri"
 -- The panel right after Loot Toasts.
 L["TAB_LOOT_SOUNDS"] = "Suoni del bottino"
 L["TAB_AUTOMATED_OPENING"] = "Apertura automatica"
--- Header of a section on the Automated Opening panel.
+-- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "Cassette"
 L["TAB_OPENABLE_ITEMS"] = "Elenco apribili"
-L["TAB_MASTER_LOOTER"] = "Responsabile del bottino"
--- Header of a section on the Master Looter panel.
+-- The last feature panel, named for its switch, Enable Automated Master Looting.
+L["TAB_MASTER_LOOTER"] = "Consegna automatica del bottino"
+-- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "Destinazioni del bottino"
 L["TAB_IGNORE_LIST"] = "Elenco ignorati"
+-- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
+L["TAB_ROLL_MACRO"] = "Macro dei tiri"
+-- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
+L["TAB_LOOT_MASTER"] = "Gestore del bottino"
 
 -- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
 L["TAB_NESTED_FORMAT"] = "%s: %s"
@@ -140,13 +156,12 @@ L["STATUS_DISABLED"] = "Disattivo"
 L["STATUS_PAUSED"] = "In pausa"
 
 --[[
-    The tooltip titles each feature with its options-panel name (Automated
-    Master Looting excepted, since its panel is titled Master Looter), and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit a tooltip.
+    The tooltip titles each feature with its options-panel name, and gives
+    each a description of its own, two lines at most: the panels' longer text
+    doesn't fit a tooltip.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Tira per te sugli oggetti idonei fino alla qualità che scegli."
-L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Apre vongole, casse, borsellini e cassette scassinate nelle tue sacche."
+L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Apre vongole, casse, borsellini e cassette sbloccate nelle tue sacche."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 	"Pubblica in chat i riepiloghi degli scambi e le consegne del Responsabile del bottino."
 L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] = "Consegna il bottino ai giocatori che hai scelto per ogni qualità."
@@ -162,14 +177,23 @@ L["MINIMAP_LEFT_CLICK"] = "Clic sinistro"
 L["MINIMAP_RIGHT_CLICK"] = "Clic destro"
 L["MINIMAP_SHIFT_LEFT_CLICK"] = "Maiusc + Clic sinistro"
 L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Maiusc + Clic destro"
--- The tooltip's title for the Automated Master Looting block, the feature its switch names.
-L["MINIMAP_AUTOMATED_MASTER_LOOTING"] = "Consegna automatica del bottino"
 L["MINIMAP_TOGGLE"] = "Attiva/Disattiva"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Oggetti chiusi"
 L["MINIMAP_OPTIONS"] = "Opzioni di GogoLoot"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Maiusc + Clic centrale"
+
+-- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
+L["MINIMAP_TRADABLE_LOOT"] = "Bottino scambiabile"
+-- Under the first few of them. Argument: how many more there are.
+L["MINIMAP_TRADABLE_MORE"] = "Altri %d"
+-- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
+L["MINIMAP_LOOT_WINDOWS"] = "Gestore e Monitor del bottino"
+L["MINIMAP_TO_HAND_OUT"] = "%d da consegnare"
+L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] = "Assegna con un tiro ciò che puoi ancora scambiare e segui ogni tiro."
+L["MINIMAP_MIDDLE_CLICK"] = "Clic centrale"
+L["MINIMAP_OPEN"] = "Apri"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -182,6 +206,11 @@ L["ROLL_MANUAL"] = "Manuale"
 L["THRESHOLD_ONLY"] = "Solo %s"
 -- Every other Up to Quality choice. Argument: the game's own quality name.
 L["THRESHOLD_AND_LOWER"] = "%s e inferiore"
+
+-- How many of an item, after its link: on a toast, in a trade summary, in the mini-map's Locked Items and in Add from Bags. Argument: the count.
+L["ITEM_QUANTITY"] = "x%d"
+-- An item and how many, the way the game's own loot lines write it, in the loot windows and their chat lines. Arguments: the item's link, then the count.
+L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
@@ -240,20 +269,17 @@ L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Ricette, libri, cavalcature, mascotte e l
 ]]
 L["OPTIONS_EXAMPLE"] = "Esempio: %s"
 
--- The muted version line at the foot of the General panel.
-L["OPTIONS_VERSION"] = "Versione %s"
-
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
 L["OPTIONS_DESCRIPTION"] =
-	"Bottino rapido svuota i cadaveri in un lampo, Tiri automatici e Consegna automatica del bottino decidono chi prende cosa, e Apertura automatica spalanca ogni vongola e cassa. Avvisi del bottino ti mostrano tutto, mentre oggetti di missione, ricette, cavalcature, mascotte e leggendari restano al sicuro. Non lasciare che il bottino ti rallenti la corsa!"
+	"Bottino rapido svuota i cadaveri senza finestra del bottino, sceglie Necessità, Avidità o Passo in base alla qualità, e la Consegna automatica del bottino distribuisce il bottino per te. Vongole, contenitori e cassette sbloccate si aprono da soli. Raccogli più in fretta, attacca prima."
 L["WELCOME_MESSAGE"] = "Attiva messaggio di benvenuto"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "Mostra la versione di GogoLoot e dove trovare queste impostazioni a ogni accesso."
 L["MINIMAP_BUTTON_ENABLE"] = "Attiva pulsante della minimappa"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Mostra il pulsante di GogoLoot sulla minimappa. Clic sinistro attiva o disattiva Tiri automatici, Clic destro Apertura automatica, Maiusc + Clic sinistro Annunci e Maiusc + Clic destro Consegna automatica del bottino."
+	"Mostra il pulsante di GogoLoot sulla minimappa. Clic sinistro attiva o disattiva Tiri automatici, Clic destro Apertura automatica, Maiusc + Clic sinistro Annunci del bottino e Maiusc + Clic destro Consegna automatica del bottino."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Comandi"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -262,6 +288,9 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "Apre l'interfaccia delle opzioni di questo a
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Funzioni"
 
+-- The opening line of the Speedy Loot panel, above its switch.
+L["SPEEDY_LOOT_DESCRIPTION"] =
+	"Prende tutto da un cadavere appena lo apri, così non aspetti mai la finestra del bottino."
 L["SPEEDY_LOOT_ENABLE"] = "Attiva Bottino rapido"
 --[[
     Shift is the game's default Auto Loot key; holding it shows the loot window
@@ -271,13 +300,66 @@ L["SPEEDY_LOOT_ENABLE"] = "Attiva Bottino rapido"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"Svuota ogni cadavere appena lo apri, senza mostrare la finestra del bottino. Tieni premuto Maiusc mentre raccogli per vedere invece la finestra. Attiva l'opzione %s del gioco e si fa da parte mentre sei %s."
 
-L["FEEDBACK_SUPPORT"] = "Feedback e supporto"
+--[[
+    The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
+    locale. General Macros is the tab of the game's Macros window that every
+    character on the account shares; /macro is the game's command and stays
+    English.
+]]
+L["ROLL_MACRO_DESCRIPTION"] =
+	"Aggiunge alle tue Macro generali una macro chiamata %s, con l'icona delle monete d'oro, così ogni personaggio del tuo account può trascinarla su una barra delle azioni."
+--[[
+    The three rows under it, each beside the game's name for a mouse button
+    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    a raid roll picks a number from 1 to the group's size.
+]]
+L["ROLL_MACRO_LEFT_CLICK"] = "Tira 1-100"
+L["ROLL_MACRO_RIGHT_CLICK"] = "Tira 1-99"
+L["ROLL_MACRO_MIDDLE_CLICK"] = "Tiro d'incursione"
+L["ROLL_MACRO_ENABLE"] = "Attiva Macro dei tiri"
+-- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] =
+	"Un tiro d'incursione assegna un oggetto a qualcuno a caso. Tira da 1 al numero di giocatori del tuo gruppo, quindi ogni numero corrisponde a un giocatore: scorri l'elenco dell'incursione o del gruppo fino al numero uscito per trovare il vincitore. Da solo, tira 1-100."
+L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
+	"Mantiene la macro %s nelle tue Macro generali: Clic sinistro tira 1-100, Clic destro 1-99, Clic centrale un tiro d'incursione. Disattivandola, la macro viene eliminata."
+--[[
+    Printed to chat when Enable Roll Macro is switched on or off, or the macro
+    can't be made. In ROLL_MACRO_ADDED the second %s is /m, the game's command
+    for its Macros window, drawn in blue.
+]]
+L["ROLL_MACRO_ADDED"] = "La macro %s è nelle tue Macro generali. Scrivi %s e trascinala su una barra delle azioni."
+L["ROLL_MACRO_REMOVED"] = "La macro %s è stata eliminata."
+L["ROLL_MACRO_FULL"] =
+	"Impossibile aggiungere la macro %s: le tue Macro generali sono piene. Eliminane una e verrà aggiunta al prossimo accesso."
 
--- CurseForge / GitHub / Discord / Wago are proper nouns; do not translate.
-L["CURSEFORGE"] = "CurseForge"
-L["GITHUB"] = "GitHub"
-L["DISCORD"] = "Discord"
-L["WAGO"] = "Wago"
+--------------------------------------------------------------------------------
+-- Options: Feedback & Support Panel
+--------------------------------------------------------------------------------
+
+-- "Star" stays GitHub's English button label in every locale; Discord, CurseForge, Wago and GitHub stay as written.
+L["OPTIONS_LEVEL_UP_TITLE"] = "Aiuta GogoLoot a salire di livello"
+L["OPTIONS_LEVEL_UP_INTRO"] =
+	"Questo add-on è stato creato da giocatori che amano questo gioco e vogliono renderlo il più divertente possibile per tutti. Non chiederemo mai donazioni. La vera soddisfazione è sapere che il nostro lavoro rende il gioco un po' migliore per te. Se è così, ci piacerebbe saperlo!"
+L["OPTIONS_LEVEL_UP_WAYS"] = "Ecco alcuni modi in cui puoi aiutarci a raggiungere più giocatori."
+L["OPTIONS_LEVEL_UP_FEEDBACK"] =
+	"• Invia un feedback: hai trovato un bug o hai un'idea? Faccelo sapere su Discord. Il tuo parere ci aiuta a migliorare l'add-on, e le pull request sono sempre benvenute."
+L["OPTIONS_LEVEL_UP_FRIEND"] =
+	"• Parlane a un amico: conosci qualcuno a cui potrebbe piacere questo add-on? Raccontaglielo. Il passaparola aiuta più giocatori a scoprire ottimi add-on."
+L["OPTIONS_LEVEL_UP_CURSEFORGE"] =
+	"• Aggiungilo ai Preferiti su CurseForge: apri il link di CurseForge qui sotto, accedi e clicca sulla stella sotto il pulsante Download. I Preferiti aiutano più giocatori a scoprire l'add-on."
+L["OPTIONS_LEVEL_UP_GITHUB"] =
+	"• Lascia una Star su GitHub: apri il link di GitHub qui sotto, accedi e clicca su Star in alto a destra. Le Star aiutano il progetto a ottenere più strumenti gratuiti per sviluppatori."
+L["OPTIONS_LEVEL_UP_THANKS"] = "Grazie per aver scelto GogoLoot!"
+
+L["OPTIONS_FEEDBACK"] = "Feedback e supporto"
+L["OPTIONS_FEEDBACK_LINKS_HEADER"] = "Link per feedback e supporto"
+L["OPTIONS_CURSEFORGE"] = "CurseForge"
+L["OPTIONS_GITHUB"] = "GitHub"
+L["OPTIONS_DISCORD"] = "Discord"
+L["OPTIONS_WAGO"] = "Wago"
+L["OPTIONS_COPY_LINK"] = "Per copiare un link, clicca sulla sua casella, poi premi Ctrl+A e Ctrl+C."
+-- The version line at the foot of the Feedback & Support panel.
+L["OPTIONS_VERSION"] = "Versione %s"
 
 --------------------------------------------------------------------------------
 -- Options: Master Looter
@@ -382,7 +464,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Stabilisce il tiro per oggetti specifici, prima delle impostazioni di qualità. È l'unico modo in cui GogoLoot tira su un oggetto Si vincola alla raccolta o di missione."
--- Shown on Item Overrides while Automated Rolls is off.
+-- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "Queste impostazioni non vengono usate finché la funzione Tiri automatici è disattivata."
 L["ITEM_OVERRIDES_ENABLE"] = "Attiva Eccezioni per oggetto"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
@@ -421,7 +503,7 @@ L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
 
 L["ANNOUNCEMENTS_DESCRIPTION"] =
 	"Pubblica in chat i riepiloghi degli scambi e le consegne del Responsabile del bottino, così tutti sanno dove è finito il bottino."
-L["ANNOUNCEMENTS_ENABLE"] = "Attiva annunci"
+L["ANNOUNCEMENTS_ENABLE"] = "Attiva Annunci del bottino"
 -- Also the tooltip of the same switch in the General panel's Features section, so it names no position on the panel.
 L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"] =
 	"Attiva o disattiva tutti gli annunci. Quando è disattivo, GogoLoot non invia nulla al gruppo o ai partner di scambio, nemmeno per gli oggetti che consegni tu."
@@ -532,27 +614,25 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
 --[[
     Winning Roll: the roll an item was won with, on its toast. The roll
     reads as the game's own word for Need or Greed, then the number
-    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast it follows the item
-    (LOOT_TOASTS_WON_ROLL); on a group member's, their name
-    (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
+    looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "Tiro vincente"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
 L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] =
-	"Aggiunge all'avviso il tiro con cui hai vinto un oggetto, ad esempio (%s)."
+	"Aggiunge al suo avviso il tiro con cui hai vinto un oggetto, ad esempio (Hai vinto, %s)."
 -- Arguments: an example group member, then an example roll ("Need 87").
 L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"] =
 	"Aggiunge all'avviso di un membro del gruppo il tiro con cui ha vinto un oggetto, ad esempio (%s, %s)."
 L["LOOT_TOASTS_ROLL_RESULT"] = "%s %d"
-L["LOOT_TOASTS_WON_ROLL"] = "%s (%s)"
+L["LOOT_TOASTS_YOU_WON_ROLL"] = "%s (Hai vinto, %s)"
 L["LOOT_TOASTS_LOOTED_BY_ROLL"] = "%s (%s, %s)"
 
 -- The Filters row adding how many the player carries to their own loot's toasts.
 L["LOOT_TOASTS_FILTER_BAG_COUNT"] = "Quantità nelle sacche"
 L["LOOT_TOASTS_BAG_COUNT_DESCRIPTION"] =
 	"Aggiunge agli avvisi del tuo bottino quanti ne porti ora con te, ad esempio x3 (27), quando ne porti più della quantità indicata dall'avviso."
--- How many came, after the item on a toast. Argument: the count.
-L["LOOT_TOASTS_QUANTITY"] = "x%d"
 -- Bag Count, after the item and its count. Argument: how many the player carries.
 L["LOOT_TOASTS_BAG_COUNT"] = "(%d)"
 
@@ -608,11 +688,16 @@ L["LOOT_TOASTS_EXAMPLE_ITEM"] = "Oggetto di esempio"
 -- Argument: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PANEL_DESCRIPTION"] =
 	"Riproduce un rintocco per il bottino di qualità pari o superiore a quella che scegli, e un suono di sacca quando %s ottiene qualcosa."
-L["LOOT_SOUNDS_ENABLE"] = "Attiva suono del bottino"
+-- The Loot Sounds panel's master switch, also in the General panel's Features section; its tooltip names no position on either.
+L["LOOT_SOUNDS_SWITCH"] = "Attiva Suoni del bottino"
+L["LOOT_SOUNDS_SWITCH_DESCRIPTION"] = "Attiva o disattiva tutti i suoni del bottino di GogoLoot."
+-- The chime's own toggle, under the master switch.
+L["LOOT_SOUNDS_ENABLE"] = "Attiva rintocco del bottino"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"Riproduce un rintocco quando raccogli da un cadavere o da un forziere un oggetto di qualità pari o superiore a quella che scegli."
-L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "La qualità minima degli oggetti che riproduce il suono del bottino."
-L["LOOT_SOUNDS_TEST"] = "Riproduce il suono del bottino."
+L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] =
+	"La qualità minima degli oggetti che fa suonare il rintocco del bottino."
+L["LOOT_SOUNDS_TEST"] = "Riproduce il rintocco del bottino."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "Attiva suono di %s"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] = "Riproduce un suono di sacca quando %s ottiene davvero qualcosa."
@@ -624,7 +709,7 @@ L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "Riproduce il suono di %s."
 
 -- Argument: the number of free bag slots opening waits for.
 L["AUTOMATED_OPENING_DESCRIPTION"] =
-	"Apre per te vongole, casse, borsellini e cassette scassinate nelle tue sacche, ogni volta che hai almeno %d spazi liberi."
+	"Apre per te vongole, casse, borsellini e cassette sbloccate nelle tue sacche, ogni volta che hai almeno %d spazi liberi nelle sacche."
 L["AUTOMATED_OPENING_ENABLE"] = "Attiva Apertura automatica"
 -- Also the tooltip of the same switch in the General panel's Features section. Argument: the game's own name for its Auto Loot setting.
 L["AUTOMATED_OPENING_SWITCH_DESCRIPTION"] =
@@ -649,13 +734,17 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Ti avvisa in chat quando raccogli una cassetta che si aprirà una volta sbloccata."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"Stabilisce se le notifiche delle cassette compaiono solo per i Ladri o per tutti i personaggi."
+-- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
+	"Le notifiche delle cassette non vengono usate finché la funzione Apertura automatica è disattivata."
 L["LOCKBOXES_FOR_ROGUES"] = "Per i Ladri"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Per tutti i personaggi"
 
 --[[
     The block a lockbox's own tooltip gains, under the game's own "Requires
-    Lockpicking" line (ITEM_REQ_SKILL), followed by a skill number. Argument:
-    the game's own name for the Lockpicking skill.
+    Lockpicking (225)" line (ITEM_MIN_SKILL), or under GogoLoot's own
+    ITEM_REQ_SKILL line where the client prints none, followed by a skill
+    number. Argument: the game's own name for the Lockpicking skill.
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Il tuo livello di %s"
 
@@ -670,6 +759,9 @@ L["OPENABLE_ITEMS_DESCRIPTION"] =
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
 	"Finché la funzione Apertura automatica è disattivata si usa solo Ignora: impedisce comunque a Bottino rapido di prenderli."
+-- The same while Speedy Loot is off too.
+L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
+	"Queste impostazioni non vengono usate finché Apertura automatica e Bottino rapido sono disattivati."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Riporta l'elenco ai valori predefiniti: ogni oggetto torna alla sua impostazione predefinita, gli oggetti rimossi ritornano e quelli aggiunti spariscono."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -707,3 +799,383 @@ L["OPENING_REASON_RAID"] =
 L["OPENING_REASON_BIND_ON_PICKUP"] =
 	"Può contenere bottino Si vincola alla raccolta. Sigillato, si può ancora scambiare o vendere."
 L["OPENING_REASON_UNIQUE"] = "Può contenere un oggetto unico. Aprirlo fallisce con un errore se ne porti già uno."
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Sent to the Group
+--------------------------------------------------------------------------------
+
+--[[
+    What the Loot Master sends when it calls a roll, in the sent format: no
+    closing period, since the add-on name follows. Item arguments are links.
+    Calls, ties and pauses go to Raid Warning where the player can send one;
+    results go to group chat.
+]]
+-- Arguments: the item, then the roll's length in seconds.
+L["ROLL_CALL_START"] = "Tirate per %s con /roll, %d secondi"
+-- Arguments: the seconds left, then the item.
+L["ROLL_CALL_LAST_SECONDS"] = "Restano %d secondi per %s"
+-- +10 Seconds. Arguments: the seconds added, then the item.
+L["ROLL_CALL_EXTENDED"] = "%d secondi in più per %s"
+-- Arguments: the item, then the rolls that didn't count, each one of the four lines below, joined by commas.
+L["ROLL_CALL_NOT_COUNTED"] = "Non validi per %s: %s"
+-- Arguments: the player, then their roll.
+L["ROLL_CALL_NOT_COUNTED_EARLY"] = "%s, tiro anticipato (%d)"
+L["ROLL_CALL_NOT_COUNTED_REPEAT"] = "%s, tiro extra (%d)"
+-- Arguments: the player, their roll, then the range they rolled in.
+L["ROLL_CALL_NOT_COUNTED_RANGE"] = "%s, %d (%d-%d)"
+L["ROLL_CALL_NOT_COUNTED_NOT_TIED"] = "%s, %d (fuori dallo spareggio)"
+-- Arguments: the tied players, the roll they tied at, the item, the tied players again, then the seconds.
+L["ROLL_CALL_TIE"] = "%s pari con %d per %s. Solo %s, /roll di nuovo, %d secondi"
+-- With Re-roll Ties off. Arguments: the tied players, the roll they tied at, then the item.
+L["ROLL_CALL_TIE_HELD"] = "%s pari con %d per %s. Ci sarà uno spareggio"
+-- Arguments: the winner, the item, then the winning roll.
+L["ROLL_CALL_WINS"] = "%s vince %s con %d"
+-- After a disqualification or a restore changed who won. Arguments as above.
+L["ROLL_CALL_NOW_WINS"] = "Ora %s vince %s con %d"
+-- Argument: the item.
+L["ROLL_CALL_NOBODY"] = "Nessuno ha tirato per %s. Per ora resta nella mia lista"
+L["ROLL_CALL_NOBODY_LEFT"] = "Nessun tiro per %s è ancora valido. Torna nella mia lista"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_DISQUALIFIED_NO_REASON"] = "Ho squalificato il tiro di %s (%d) per %s"
+-- The same with a reason. Arguments: the player, their roll, the item, then one of the ROLL_DISQUALIFY_REASON_ lines.
+L["ROLL_CALL_DISQUALIFIED_BECAUSE"] = "Ho squalificato il tiro di %s (%d) per %s: %s"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_RESTORED"] = "Ho ripristinato il tiro di %s (%d) per %s"
+-- Arguments: the item, then the seconds.
+L["ROLL_CALL_VOIDED"] = "Ho annullato tutti i tiri per %s. Tirate di nuovo con /roll, %d secondi"
+-- Argument: the item.
+L["ROLL_CALL_CANCELED"] = "Tiro per %s annullato. Aspettate a tirare"
+L["ROLL_CALL_PAUSED"] = "Aspettate a tirare. %s è in pausa"
+-- Arguments: the item, then the seconds left.
+L["ROLL_CALL_RESUMED"] = "Tiri riaperti per %s, restano %d secondi"
+-- Each argument: items, joined by commas.
+L["ROLL_CALL_ROLL_ALL"] = "Si tira per questi, in ordine: %s"
+L["ROLL_CALL_UP_FOR_ROLL"] = "In palio: %s"
+L["ROLL_CALL_FLOOR_LOOT"] = "Bottino comune in palio: %s"
+-- Drops by boss posted to the group, a line per boss. Arguments: the boss, then its drops, joined by commas.
+L["DROPS_POST_LINE"] = "%s: %s"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Printed
+--------------------------------------------------------------------------------
+
+-- Outside a group there's nobody to send to. Argument: the line a group would have seen.
+L["ROLL_CALL_SOLO_PREVIEW"] = "Non sei in un gruppo, quindi questo messaggio non è arrivato a nessuno: %s"
+-- Arguments: the winner, then the item.
+L["ROLL_CALL_WON_PRINT"] =
+	"%s ha vinto %s. Apri uno scambio con questo giocatore e GogoLoot lo metterà nella finestra."
+
+--------------------------------------------------------------------------------
+-- Roll Tags and Reasons
+--------------------------------------------------------------------------------
+
+-- Beside a roll in the loot windows: why it doesn't count, or where it stands.
+L["ROLL_TAG_EARLY"] = "Tirato prima della chiamata"
+L["ROLL_TAG_LATE"] = "Tirato dopo la chiusura"
+L["ROLL_TAG_REPEAT"] = "Tiro extra, non vale"
+-- Arguments: the range the player rolled in.
+L["ROLL_TAG_RANGE"] = "Intervallo sbagliato (%d-%d)"
+L["ROLL_TAG_NOT_TIED"] = "Fuori dallo spareggio"
+L["ROLL_TAG_DISQUALIFIED"] = "Squalificato"
+-- Argument: one of the reasons below.
+L["ROLL_TAG_DISQUALIFIED_BECAUSE"] = "Squalificato: %s"
+L["ROLL_TAG_WINNER"] = "Vincitore"
+L["ROLL_TAG_HIGHEST"] = "Il più alto finora"
+L["ROLL_TAG_TIED"] = "In parità"
+
+-- The reasons offered when the loot master disqualifies a roll, also sent after ROLL_CALL_DISQUALIFIED_BECAUSE's colon.
+L["ROLL_DISQUALIFY_REASON_NOT_ELIGIBLE"] = "Non idoneo per questo oggetto"
+L["ROLL_DISQUALIFY_REASON_ALREADY_WON"] = "Ha già vinto un oggetto stasera"
+L["ROLL_DISQUALIFY_REASON_FOR_SOMEONE_ELSE"] = "Ha tirato per qualcun altro"
+L["ROLL_DISQUALIFY_REASON_NONE"] = "Nessun motivo indicato"
+
+--------------------------------------------------------------------------------
+-- Loot Master Window
+--------------------------------------------------------------------------------
+
+-- The tabs. Argument: how many items each holds.
+L["LOOT_MASTER_TAB_ROLL_LIST"] = "Elenco tiri (%d)"
+L["LOOT_MASTER_TAB_FLOOR_LOOT"] = "Bottino comune (%d)"
+L["LOOT_MASTER_TAB_AWARDED"] = "Assegnati (%d)"
+L["LOOT_MASTER_TAB_SOFT_RESERVES"] = "Prenotazioni"
+
+-- The Roll List's buttons.
+L["LOOT_MASTER_ROLL"] = "Tira"
+L["LOOT_MASTER_ROLL_AGAIN"] = "Tira di nuovo"
+L["LOOT_MASTER_ROLL_ALL"] = "Tira tutto"
+L["LOOT_MASTER_PAUSE"] = "Pausa"
+L["LOOT_MASTER_RESUME"] = "Riprendi"
+L["LOOT_MASTER_STOP"] = "Ferma"
+L["LOOT_MASTER_LIST_IN_RAID"] = "Elenca in incursione"
+L["LOOT_MASTER_MOVE_UP"] = "Sposta su"
+L["LOOT_MASTER_MOVE_DOWN"] = "Sposta giù"
+-- Argument: the seconds added.
+L["LOOT_MASTER_EXTEND"] = "+%d secondi"
+L["LOOT_MASTER_CLOSE_NOW"] = "Chiudi ora"
+L["LOOT_MASTER_VOID"] = "Annulla tutti i tiri"
+L["LOOT_MASTER_CANCEL_ROLL"] = "Annulla tiro"
+L["LOOT_MASTER_TAKE_OFF"] = "Togli dall'elenco"
+-- Argument: the winner.
+L["LOOT_MASTER_GIVE"] = "Dai a %s"
+L["LOOT_MASTER_TRADE"] = "Scambia con %s"
+L["LOOT_MASTER_ANNOUNCE_WINNER"] = "Annuncia vincitore"
+L["LOOT_MASTER_HANDED_OUT"] = "Segna come consegnato"
+L["LOOT_MASTER_REROLL_TIED"] = "Spareggio tra pari"
+L["LOOT_MASTER_DISQUALIFY"] = "Squalifica"
+L["LOOT_MASTER_RESTORE"] = "Ripristina"
+
+-- A row's trade clock, where it has none to show.
+L["LOOT_MASTER_ON_CORPSE"] = "Sul cadavere"
+L["LOOT_MASTER_CORPSE_CLOSED"] = "Cadavere chiuso"
+L["LOOT_MASTER_BOUND"] = "Vincolato"
+L["LOOT_MASTER_NO_LIMIT"] = "Nessun limite"
+
+-- A row's state. Argument: how many rolls have landed.
+L["LOOT_MASTER_STATUS_ROLLING"] = "Tiri in corso, %d tiri"
+L["LOOT_MASTER_STATUS_TIE_BREAK"] = "Spareggio, %d tiri"
+L["LOOT_MASTER_STATUS_ON_HOLD"] = "In attesa, %d tiri"
+-- STATUS_TIED and STATUS_NOBODY also title a finished roll in the Loot Tracker.
+L["LOOT_MASTER_STATUS_TIED"] = "In parità"
+L["LOOT_MASTER_STATUS_NOBODY"] = "Nessuno ha tirato"
+L["LOOT_MASTER_STATUS_SOULBOUND"] = "Ora vincolato all'anima"
+L["LOOT_MASTER_STATUS_UP_NEXT"] = "Il prossimo"
+
+-- The first line of an opened row.
+L["LOOT_MASTER_HEADLINE_ROLLING"] = "Tiri in corso, restano %d secondi."
+L["LOOT_MASTER_HEADLINE_ON_HOLD"] = "In attesa, con %d secondi rimasti."
+-- Arguments: the tied players, then the seconds left.
+L["LOOT_MASTER_HEADLINE_TIE_BREAK"] = "Spareggio per %s, restano %d secondi."
+-- Arguments: the winner, then the winning roll.
+L["LOOT_MASTER_HEADLINE_WON"] = "%s ha vinto con %d."
+-- Arguments: the tied players, then the roll they tied at.
+L["LOOT_MASTER_HEADLINE_TIED"] = "%s in parità con %d."
+L["LOOT_MASTER_HEADLINE_SOULBOUND"] = "Ora è vincolato all'anima, quindi non si può più scambiare."
+-- Argument: the boss. Also under the game's own trade line on a bag item's tooltip while it is on the Roll List.
+L["LOOT_MASTER_LOOTED_FROM"] = "Raccolto da %s."
+L["LOOT_MASTER_FROM_FLOOR_LOOT"] = "Dal Bottino comune."
+-- After the line above. Argument: how long, in the game's own words for time.
+L["LOOT_MASTER_TRADABLE_FOR"] = "Scambiabile per altri %s."
+-- Headings over a row's rolls; ROUND_SO_FAR also heads an open roll in the Loot Tracker.
+L["LOOT_MASTER_ROUND_SO_FAR"] = "Tiri finora"
+L["LOOT_MASTER_ROUND_ROLLS"] = "Tiri"
+L["LOOT_MASTER_ROUND_FIRST"] = "Primo tiro"
+L["LOOT_MASTER_ROUND_TIE_BREAK"] = "Spareggio"
+-- Arguments: how many, then their names. Also in the Loot Tracker.
+L["LOOT_MASTER_HASNT_ROLLED"] = "Non hanno tirato (%d): %s"
+
+L["LOOT_MASTER_EMPTY"] =
+	"Ancora niente da consegnare. Il bottino scambiabile che raccogli arriva qui da solo; usa Alt + Clic su qualsiasi altro oggetto nelle sacche per aggiungerlo."
+-- The line beside the Roll List's buttons.
+L["LOOT_MASTER_STATE_PAUSED"] = "In pausa."
+L["LOOT_MASTER_STATE_ROLL_ALL"] = "Tira tutto: ne mancano %d."
+L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "Un tiro alla volta."
+L["LOOT_MASTER_STATE_WAITING"] = "%d in attesa di un tiro."
+-- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
+L["LOOT_MASTER_FOOTER"] = "%d da consegnare."
+L["LOOT_MASTER_FOOTER_CLOCK"] = "%d da consegnare, il prossimo tempo di scambio scade tra %s."
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + Clic su un oggetto nelle sacche per aggiungerlo"
+
+-- The Disqualify window.
+L["LOOT_MASTER_DISQUALIFY_TITLE"] = "Squalifica un tiro"
+-- Arguments: the player, their roll, then the item.
+L["LOOT_MASTER_DISQUALIFY_BODY"] = "Escludere il tiro di %s (%d) dalla corsa per %s? Potrai ripristinarlo in seguito."
+L["LOOT_MASTER_DISQUALIFY_REASON"] = "Motivo"
+L["LOOT_MASTER_DISQUALIFY_TELLS"] = "GogoLoot dice al gruppo:"
+-- Argument: the item.
+L["LOOT_MASTER_VOID_CONFIRM"] = "Scartare tutti i tiri per %s e chiedere di tirare di nuovo?"
+
+-- Printed by the Loot Master.
+L["LOOT_MASTER_ROLL_ALL_DONE"] = "Tira tutto è terminato. Ogni oggetto dell'Elenco tiri ha avuto il suo tiro."
+L["LOOT_MASTER_ROLL_ALL_PAUSED"] = "Tira tutto è in pausa. Non parte nulla di nuovo finché non premi Riprendi."
+L["LOOT_MASTER_ROLL_ALL_RESUMED"] = "Tira tutto è ripreso."
+L["LOOT_MASTER_ROLL_ALL_STOPPED"] = "Tira tutto è fermo. Un tiro in corso arriva comunque alla fine."
+-- Arguments: the item, then the whole minutes left.
+L["LOOT_MASTER_TRADE_TIME_LOW"] = "%s si può scambiare per altri %d minuti."
+-- Argument: the item.
+L["LOOT_MASTER_TRADE_TIME_OVER"] = "%s non si può più scambiare."
+-- Arguments: the item, the winner, then their winning roll.
+L["LOOT_MASTER_TRADE_FILLED"] = "Messo %s nella finestra di scambio per %s, che l'ha vinto con %d."
+-- Arguments: the winner, then the item.
+L["LOOT_MASTER_NOT_A_CANDIDATE"] = "A %s non si può dare %s da questo cadavere."
+-- Argument: the item.
+L["LOOT_MASTER_ADDED"] = "%s è entrato nell'Elenco tiri."
+L["LOOT_MASTER_NOT_TRADABLE"] = "%s non è scambiabile, quindi non può entrare nell'Elenco tiri."
+-- Argument: how many joined.
+L["LOOT_MASTER_FLOOR_ADDED"] = "Oggetti del Bottino comune entrati nell'Elenco tiri: %d."
+L["LOOT_MASTER_OFF"] =
+	"Il Gestore del bottino è disattivato. Attivalo in Opzioni > AddOn > GogoLoot > Gestore del bottino."
+
+-- A bag item's tooltip, under the game's own trade line, while it is on the Roll List.
+L["LOOT_MASTER_TOOLTIP_ON_ROLL_LIST"] = "Nell'Elenco tiri."
+-- Arguments: the winner, then their winning roll.
+L["LOOT_MASTER_TOOLTIP_WON_BY"] = "Vinto da %s con %d."
+
+-- Floor Loot. The add box, filter and Add from Bags use the item lists' own words (ITEM_LIST_*).
+L["LOOT_MASTER_FLOOR_DESCRIPTION"] =
+	"Bottino senza tempo di scambio che vuoi mettere in palio: materiali, ricette, equipaggiamento Si vincola all'equipaggiamento. Parte vuoto, quindi si tira solo per ciò che aggiungi. Un tiro per pila."
+L["LOOT_MASTER_FLOOR_EMPTY"] =
+	"Ancora niente qui. Scegli da Aggiungi dalle sacche, o trascina un oggetto nella casella qui sopra."
+-- Argument: how many the bags hold.
+L["LOOT_MASTER_FLOOR_IN_BAGS"] = "%d nelle sacche"
+L["LOOT_MASTER_FLOOR_ON_ROLL_LIST"] = "Nell'Elenco tiri"
+L["LOOT_MASTER_FLOOR_REMOVE"] = "Toglie questo oggetto dal Bottino comune."
+-- The heading for an item whose kind the game hasn't said yet.
+L["LOOT_MASTER_FLOOR_OTHER"] = "Altro"
+L["LOOT_MASTER_FLOOR_ADD_ALL"] = "Aggiungi tutto all'Elenco tiri"
+-- Add from Bags' two headings.
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "Raccolti in questa istanza"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "Anche nelle tue sacche"
+-- Argument: what was typed.
+L["LOOT_MASTER_FLOOR_NOT_FOUND"] = 'Nelle tue sacche nessun oggetto scambiabile corrisponde a "%s".'
+
+-- Awarded.
+L["LOOT_MASTER_AWARDED_EMPTY"] = "Ancora niente consegnato. Un oggetto vinto arriva qui quando il vincitore lo riceve."
+-- Arguments: the winning roll, then the time it was handed out.
+L["LOOT_MASTER_AWARDED_ROLLED"] = "Tirato %d, %s"
+-- Argument: the time it was handed out.
+L["LOOT_MASTER_AWARDED_GIVEN"] = "Consegnato %s"
+L["LOOT_MASTER_AWARDED_CLEAR"] = "Svuota"
+
+-- Soft Reserves, a placeholder for now.
+L["LOOT_MASTER_SOFT_RESERVES_DESCRIPTION"] =
+	"Incolla qui una stringa di prenotazioni per vedere chi ha prenotato cosa. In arrivo: per ora questa scheda è solo un segnaposto."
+L["LOOT_MASTER_SOFT_RESERVES_PLACEHOLDER"] = "L'importazione delle prenotazioni non è ancora pronta."
+L["LOOT_MASTER_SOFT_RESERVES_IMPORT"] = "Importa"
+
+--------------------------------------------------------------------------------
+-- Loot Tracker Window
+--------------------------------------------------------------------------------
+
+L["LOOT_TRACKER_TITLE"] = "Monitor del bottino"
+L["LOOT_TRACKER_TAB_ROLLS"] = "Tiri"
+L["LOOT_TRACKER_TAB_DROPS"] = "Bottini"
+L["LOOT_TRACKER_NO_ROLL"] = "Ancora nessun tiro stasera."
+-- Argument: who called the roll.
+L["LOOT_TRACKER_CALLED_BY"] = "Chiamato da %s"
+L["LOOT_TRACKER_SPOTTED"] = "Visto in chat da %s"
+-- Argument: whole seconds left.
+L["LOOT_TRACKER_SECONDS_LEFT"] = "%ds rimasti"
+-- A roll called without GogoLoot. Argument: who called it.
+L["LOOT_TRACKER_UNSYNCED_NOTE"] =
+	"%s non usa GogoLoot, quindi questi sono i tiri visti in chat, controllati con le regole solite: 1-100, solo il primo tiro. L'ultima parola spetta a chi ha chiamato il tiro."
+L["LOOT_TRACKER_ON_HOLD"] = "In attesa. Aspetta la chiamata per tirare di nuovo."
+L["LOOT_TRACKER_TIE_BREAK_ROLLS"] = "Tiri di spareggio"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_TRACKER_WON_WITH"] = "%s ha vinto con %d"
+L["LOOT_TRACKER_CLOSED"] = "Chiuso"
+-- The sort buttons.
+L["LOOT_TRACKER_SORT_HIGH"] = "Più alti"
+L["LOOT_TRACKER_SORT_TIME"] = "In ordine di tiro"
+L["LOOT_TRACKER_ROLL"] = "Tira (1-100)"
+-- Beside the player's own roll, and the line beside the Roll and Pass buttons.
+L["LOOT_TRACKER_YOU"] = "Tu"
+L["LOOT_TRACKER_YOU_ROLLED"] = "Hai tirato %d."
+L["LOOT_TRACKER_YOU_PASSED"] = "Hai passato."
+L["LOOT_TRACKER_NOT_ROLLED"] = "Non hai tirato."
+L["LOOT_TRACKER_NOT_IN_TIE_BREAK"] = "Ora tirano solo i giocatori in parità."
+L["LOOT_TRACKER_EARLIER"] = "Prima, stasera"
+--[[
+    The word, in lower case, that marks a group chat line with an item link as
+    a call for rolls by someone without GogoLoot. "roll" is always read too.
+]]
+L["LOOT_TRACKER_ROLL_WORD"] = "tirate"
+
+-- Drops.
+L["LOOT_TRACKER_SHOW_WINNERS"] = "Mostra chi ha preso cosa"
+L["LOOT_TRACKER_DROPS_EMPTY"] =
+	"Ancora nessun bottino visto. Comparirà qui man mano che i boss muoiono e i cadaveri vengono saccheggiati."
+L["LOOT_TRACKER_DROPS_NOTHING_SEEN"] = "Nessuno con GogoLoot l'ha ancora saccheggiato."
+L["LOOT_TRACKER_NOT_HANDED_OUT"] = "Non ancora consegnato"
+L["LOOT_TRACKER_PRINT"] = "Scrivi"
+L["LOOT_TRACKER_POST"] = "Pubblica in incursione"
+L["LOOT_TRACKER_COPY"] = "Copia"
+L["LOOT_TRACKER_COPY_TITLE"] = "Copia con Ctrl+C"
+
+-- Drops by boss, printed and copied.
+L["DROPS_TRASH"] = "Nemici minori"
+L["DROPS_NONE"] = "Ancora nessun bottino registrato."
+-- Argument: the instance.
+L["DROPS_PRINT_HEADER"] = "Bottini in %s:"
+-- Arguments: the boss, then its drops, joined by commas.
+L["DROPS_PRINT_LINE"] = "%s: %s."
+-- An item and who got it. Arguments: the item, then the winner (with their roll, below).
+L["DROPS_WINNER"] = "%s (%s)"
+-- Arguments: the winner, then their winning roll.
+L["DROPS_WINNER_ROLL"] = "%s %d"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Master
+--------------------------------------------------------------------------------
+
+L["LOOT_MASTER_PANEL_DESCRIPTION"] =
+	"Assegna con un tiro ciò che puoi ancora scambiare, con il tempo di scambio di ogni oggetto, e segui ogni tiro nel Monitor del bottino. Clic centrale sul pulsante della minimappa, oppure scrivi /gogo master o /gogo tracker."
+L["LOOT_MASTER_ENABLE"] = "Attiva Gestore del bottino"
+L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
+	"Tiene traccia del bottino che puoi ancora scambiare e chiede di tirare per assegnarlo. Se è disattivato, Gestore e Monitor del bottino non si aprono mai e nessun tiro viene letto."
+L["LOOT_MASTER_OPEN"] = "Apri Gestore del bottino"
+L["LOOT_TRACKER_OPEN"] = "Apri Monitor del bottino"
+-- A dropdown choice. Argument: the number.
+L["LOOT_MASTER_SECONDS"] = "%d secondi"
+L["LOOT_MASTER_MINUTES"] = "%d minuti"
+L["LOOT_MASTER_KEEP_RAIDS"] = "%d"
+
+L["LOOT_MASTER_CALLING_HEADER"] = "Chiamata dei tiri"
+L["LOOT_MASTER_ROLL_LENGTH"] = "Durata del tiro"
+L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Per quanto tempo resta aperto un tiro."
+L["LOOT_MASTER_ANNOUNCE_IN"] = "Annuncia in"
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Dove vanno le chiamate dei tiri, i pareggi e le pause."
+L["LOOT_MASTER_CHANNEL_GROUP"] = "Chat di gruppo"
+L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
+	"Avviso incursione ripiega sulla chat di gruppo quando non sei capo o assistente. I vincitori vanno sempre nella chat di gruppo."
+-- Argument: the seconds.
+L["LOOT_MASTER_WARN_LAST_SECONDS"] = "Avvisa quando restano %d secondi"
+L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] = "Avvisa il gruppo quando un tiro sta per chiudersi."
+-- Argument: the seconds.
+L["LOOT_MASTER_STRETCH_LATE"] = "Aggiungi %d secondi quando qualcuno tira in ritardo"
+L["LOOT_MASTER_STRETCH_LATE_DESCRIPTION"] =
+	"Un tiro negli ultimi secondi tiene il tiro aperto un po' più a lungo, così il lag non taglia fuori nessuno."
+L["LOOT_MASTER_END_EARLY"] = "Chiudi prima quando tutti hanno tirato o passato"
+L["LOOT_MASTER_END_EARLY_DESCRIPTION"] = "Chiude il tiro appena ogni membro del gruppo ha tirato o scritto passo."
+L["LOOT_MASTER_REROLL_TIES"] = "Spareggio tra i giocatori in parità"
+L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"] =
+	"Chiama subito uno spareggio per i giocatori in parità. Se è disattivato, un pareggio aspetta che tu prema Spareggio tra pari."
+L["LOOT_MASTER_ROLL_ALL_PAUSE"] = "Pausa tra gli oggetti in Tira tutto"
+L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] = "Quanto aspetta Tira tutto dopo un tiro prima di chiamare il successivo."
+
+L["LOOT_MASTER_COUNTING_HEADER"] = "Tiri validi"
+-- Argument: the seconds of grace.
+L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
+	"Un semplice /roll (1-100), solo il primo di ogni giocatore, dal tuo gruppo, mentre il tiro è aperto (%d secondo di tolleranza per il lag). I tiri non validi restano nell'elenco con il motivo."
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "Annuncia i tiri non validi"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
+	"Elenca i tiri non validi, e il motivo, in una sola riga quando il tiro si chiude. Un tiro che squalifichi viene sempre annunciato."
+
+L["LOOT_MASTER_TRADE_HEADER"] = "Bottino scambiabile"
+L["LOOT_MASTER_OPEN_ON_TRADABLE"] = "Apri quando raccolgo qualcosa di scambiabile"
+L["LOOT_MASTER_OPEN_ON_TRADABLE_DESCRIPTION"] =
+	"Apre il Gestore del bottino quando nelle tue sacche arriva bottino Si vincola alla raccolta ancora scambiabile mentre sei in gruppo."
+L["LOOT_MASTER_TRADE_WARN"] = "Avvisami quando il tempo di scambio sta per scadere"
+L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"] =
+	"Ti avvisa una volta, in chat, quando un oggetto dell'Elenco tiri sta per diventare vincolato all'anima."
+L["LOOT_MASTER_TRADE_WARN_WHEN"] = "Quanto tempo di scambio resta quando vieni avvisato."
+L["LOOT_MASTER_TRADE_AUTO_FILL"] = "Metti gli oggetti vinti nella finestra di scambio"
+L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
+	"Quando apri uno scambio con un vincitore, ciò che ha vinto viene inserito per te. Devi comunque premere Scambia."
+
+L["LOOT_MASTER_FLOOR_HEADER"] = "Bottino comune"
+L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
+	"Il Bottino comune parte vuoto e contiene solo ciò che aggiungi. Aggiungi dalle sacche elenca per primo ciò che hai raccolto in questa istanza."
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "Togli gli oggetti quando lasciano le mie sacche"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
+	"Toglie un oggetto dal Bottino comune quando non te ne resta più nessuno: scambiato, venduto o usato."
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "Svuota il Bottino comune quando lascio l'incursione"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] = "Inizia ogni incursione con l'elenco del Bottino comune vuoto."
+
+L["LOOT_TRACKER_OPEN_ON_ROLL"] = "Apri quando qualcuno chiama i tiri"
+L["LOOT_TRACKER_OPEN_ON_ROLL_DESCRIPTION"] =
+	"Apre il Monitor del bottino quando qualcuno del tuo gruppo chiama i tiri, con GogoLoot o con un avviso incursione."
+L["LOOT_TRACKER_AUTO_CLOSE"] = "Chiudi da solo dopo la fine del tiro"
+L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"] =
+	"Un Monitor del bottino che si è aperto da solo si chiude 30 secondi dopo la fine del tiro, a meno che non ci sia sopra il mouse."
+L["LOOT_TRACKER_KEEP_DROPS"] = "Incursioni da conservare in Bottini"
+L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"] = "Quante incursioni ricorda la scheda Bottini."

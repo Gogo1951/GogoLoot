@@ -65,18 +65,22 @@ end
     A child panel's line saying the feature it belongs to is off, so a page of
     settings nothing is using doesn't read as live. Its trailing spacer comes
     with it, and both leave while the feature is on. The whole line takes the
-    Off red, which keeps each sentence one string in every locale. Returns the
-    next free order.
+    Off red, which keeps each sentence one string in every locale. `text` may
+    be a function, for a line whose wording depends on other settings. Returns
+    the next free order.
 ]]
 ---@param args table
 ---@param order number
----@param text string
+---@param text string|function
 ---@param featureOn function # true while the parent feature's switch is on
 ---@return number
 function ns.AddFeatureOffNote(args, order, text, featureOn)
+	local name = type(text) == "function" and function()
+		return GetColor("OFF") .. text() .. "|r"
+	end or GetColor("OFF") .. text .. "|r"
 	args.featureOffNote = {
 		type = "description",
-		name = GetColor("OFF") .. text .. "|r",
+		name = name,
 		fontSize = "medium",
 		order = order,
 		hidden = featureOn,
@@ -291,34 +295,10 @@ function ns.OptionsToggleWidth(caption)
 end
 
 --[[
-    A speaker that plays a sound: an execute carrying an image, which AceGUI
-    draws as a bare icon, with its label in the tooltip. Control Freak's icon at
-    Control Freak's size, so the two add-ons' sound rows match.
-]]
-local PREVIEW_ICON = "Interface\\COMMON\\VoiceChat-Speaker"
-local PREVIEW_ICON_SIZE = 18
-
----@param desc string
----@param play function
----@return table
-function ns.OptionsSoundPreview(desc, play)
-	return {
-		type = "execute",
-		name = "",
-		desc = desc,
-		image = PREVIEW_ICON,
-		imageWidth = PREVIEW_ICON_SIZE,
-		imageHeight = PREVIEW_ICON_SIZE,
-		width = ns.OPTIONS_SPEAKER_WIDTH,
-		func = play,
-	}
-end
-
---[[
     A primary toggle with what rides on its line: `extras.control`, its one
     setting (a select or range, given its tooltip in `desc`; its name and width
     are set here) in the control column, then `extras.preview`, a speaker from
-    ns.OptionsSoundPreview, past the end of the row. A speaker with no setting
+    Options-Loot-Sounds.lua's SoundPreview, past the end of the row. A speaker with no setting
     beside it gets a blank cell the control column's width in the setting's
     place, so it lands where every other speaker does. Everything after the
     toggle leaves the line while the toggle is off. One unnamed inline group,

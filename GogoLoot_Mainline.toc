@@ -61,12 +61,13 @@ Data/Mainline/Lockbox-Skill-Levels-Mainline.lua
 Data/Mainline/Openable-Items-Mainline.lua
 Data/Mainline/Spells-Mainline.lua
 Data/Mainline/Game-IDs-Mainline.lua
-Data/Mainline/Item-Stats-Mainline.lua
 Data/Default-Settings.lua
 
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Scan-Tooltip.lua
+Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua
 Features/Announcements-Trade.lua
 Features/Auto-Loot.lua
@@ -76,13 +77,17 @@ Features/Speedy-Loot.lua
 Features/Automated-Opening.lua
 Features/Lockbox-Tooltips.lua
 Features/Loot-Toasts-Winning-Rolls.lua
+Features/Loot-Toasts-Filters.lua
 Features/Loot-Toasts.lua
+Features/Loot-Toasts-Handle.lua
+Features/Loot-Toasts-Money.lua
 Features/Standard-Loot-Messages.lua
 Features/Master-Looter.lua
 Features/Master-Looter-Distribution.lua
 Features/Character-Rules.lua
 Features/Roll-Messages.lua
 Features/Automated-Rolls.lua
+Features/Roll-Macro.lua
 Features/Minimap-Button.lua
 
 # Diagnostics
@@ -92,6 +97,7 @@ Diagnostics/Event-Log.lua
 Diagnostics/Code-Reports.lua
 Diagnostics/Settings-Reports.lua
 Diagnostics/Validate-Data.lua
+Diagnostics/Localization-Reports.lua
 Diagnostics/Report-Runner.lua
 
 # Options
@@ -101,12 +107,14 @@ Options/Options-Utilities-Item-List-Filter.lua
 Options/Options-Utilities-Item-Lists.lua
 Options/Options-Utilities-Item-List-Widgets.lua
 Options/Options-General.lua
+Options/Options-Speedy-Loot.lua
 Options/Options-Automated-Rolls.lua
 Options/Options-Item-Overrides.lua
 Options/Options-Character-Rules.lua
 Options/Options-Master-Looter.lua
 Options/Options-Master-Looter-Ignore-List.lua
 Options/Options-Master-Looter-Popup.lua
+Options/Options-Roll-Macro.lua
 Options/Options-Automated-Opening.lua
 Options/Options-Openable-Items.lua
 Options/Options-Lockboxes.lua
@@ -115,6 +123,7 @@ Options/Options-Loot-Toast-Filters.lua
 Options/Options-Loot-Sounds.lua
 Options/Options-Announcements.lua
 Options/Options-Profiles.lua
+Options/Options-Feedback-Support.lua
 Diagnostics/Options-Diagnostics.lua
 Options/Options.lua
 

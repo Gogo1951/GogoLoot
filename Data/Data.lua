@@ -81,6 +81,20 @@ ns.PALETTE = {
 	MUTED = "808080", -- Dark Gray: Meta-data, Version Numbers
 }
 
+-- Class colors through Wrath, so every flavor draws a class in the same color.
+ns.CLASS_COLORS = {
+	DEATHKNIGHT = "C41E3A",
+	DRUID = "FF7C0A",
+	HUNTER = "AAD372",
+	MAGE = "3FC7EB",
+	PALADIN = "F48CBA",
+	PRIEST = "FFFFFF",
+	ROGUE = "FFF468",
+	SHAMAN = "0070DD",
+	WARLOCK = "8788EE",
+	WARRIOR = "C69B6D",
+}
+
 --------------------------------------------------------------------------------
 -- Target Marker
 --------------------------------------------------------------------------------
@@ -167,75 +181,63 @@ ns.CHARACTER_RULE_GROUPS = {
     The stats a rule can name. `group` is the panel section a stat sits in:
     the primary attributes in the character sheet's order, as listed here, and
     the secondary ones A to Z by their name in the player's language, which
-    the panel sorts as it builds. `bit` is the stat's flag in the
-    generated Data/{Folder}/Item-Stats-{Folder}.lua tables, so it never changes
-    once shipped. `itemMods` are the GetItemStats keys that carry the stat, and
-    `label` is the game's own name for it, already in the player's language.
-    Spell Power on later clients is damage and healing in one stat, so it
-    counts for both rules, as the Classic gear that says "damage and healing"
-    does.
+    the panel sorts as it builds. `itemMods` are the GetItemStats keys that
+    carry the stat, and `label` is the game's own name for it, already in the
+    player's language. Spell Power is damage and healing in one stat, so it
+    counts for both rules.
 ]]
 ns.CHARACTER_RULE_STATS = {
 	{
 		key = "STRENGTH",
 		group = "PRIMARY",
-		bit = 1,
 		label = ITEM_MOD_STRENGTH_SHORT,
 		itemMods = { "ITEM_MOD_STRENGTH_SHORT" },
 	},
 	{
 		key = "AGILITY",
 		group = "PRIMARY",
-		bit = 2,
 		label = ITEM_MOD_AGILITY_SHORT,
 		itemMods = { "ITEM_MOD_AGILITY_SHORT" },
 	},
 	{
 		key = "STAMINA",
 		group = "PRIMARY",
-		bit = 16,
 		label = ITEM_MOD_STAMINA_SHORT,
 		itemMods = { "ITEM_MOD_STAMINA_SHORT" },
 	},
 	{
 		key = "INTELLECT",
 		group = "PRIMARY",
-		bit = 4,
 		label = ITEM_MOD_INTELLECT_SHORT,
 		itemMods = { "ITEM_MOD_INTELLECT_SHORT" },
 	},
 	{
 		key = "SPIRIT",
 		group = "PRIMARY",
-		bit = 8,
 		label = ITEM_MOD_SPIRIT_SHORT,
 		itemMods = { "ITEM_MOD_SPIRIT_SHORT" },
 	},
 	{
 		key = "SPELL_POWER",
 		group = "SECONDARY",
-		bit = 32,
 		label = ITEM_MOD_SPELL_POWER_SHORT,
 		itemMods = { "ITEM_MOD_SPELL_POWER_SHORT", "ITEM_MOD_SPELL_DAMAGE_DONE_SHORT" },
 	},
 	{
 		key = "HEALING_POWER",
 		group = "SECONDARY",
-		bit = 64,
 		label = ITEM_MOD_SPELL_HEALING_DONE_SHORT,
 		itemMods = { "ITEM_MOD_SPELL_POWER_SHORT", "ITEM_MOD_SPELL_HEALING_DONE_SHORT" },
 	},
 	{
 		key = "ATTACK_POWER",
 		group = "SECONDARY",
-		bit = 128,
 		label = ITEM_MOD_ATTACK_POWER_SHORT,
 		itemMods = { "ITEM_MOD_ATTACK_POWER_SHORT" },
 	},
 	{
 		key = "CRIT",
 		group = "SECONDARY",
-		bit = 256,
 		label = ITEM_MOD_CRIT_RATING_SHORT,
 		itemMods = {
 			"ITEM_MOD_CRIT_RATING_SHORT",
@@ -247,7 +249,6 @@ ns.CHARACTER_RULE_STATS = {
 	{
 		key = "HIT",
 		group = "SECONDARY",
-		bit = 512,
 		label = ITEM_MOD_HIT_RATING_SHORT,
 		itemMods = {
 			"ITEM_MOD_HIT_RATING_SHORT",
@@ -259,11 +260,30 @@ ns.CHARACTER_RULE_STATS = {
 	{
 		key = "MP5",
 		group = "SECONDARY",
-		bit = 1024,
 		label = ITEM_MOD_POWER_REGEN0_SHORT,
 		itemMods = { "ITEM_MOD_MANA_REGENERATION_SHORT", "ITEM_MOD_POWER_REGEN0_SHORT" },
 	},
 }
+
+--[[
+    Classic Era and TBC carry spell power, healing, attack power, crit, hit and
+    mana regeneration as "Equip:" spells, which GetItemStats doesn't report and
+    the tooltip words differently in every language. Rather than ship a table
+    of every such item, Character Rules offers only the primary attributes
+    there; a rule saved for a secondary stat is simply never read.
+]]
+if ns.FLAVOR == "Vanilla" or ns.FLAVOR == "TBC" then
+	for index = #ns.CHARACTER_RULE_STATS, 1, -1 do
+		if ns.CHARACTER_RULE_STATS[index].group ~= "PRIMARY" then
+			table.remove(ns.CHARACTER_RULE_STATS, index)
+		end
+	end
+	for index = #ns.CHARACTER_RULE_GROUPS, 1, -1 do
+		if ns.CHARACTER_RULE_GROUPS[index].key ~= "PRIMARY" then
+			table.remove(ns.CHARACTER_RULE_GROUPS, index)
+		end
+	end
+end
 
 -- The highest quality a group context's automated roll reaches, as the Up to Quality rows and the mini-map tooltip name it.
 ns.ROLL_THRESHOLD_LABELS = {
@@ -275,9 +295,10 @@ ns.ROLL_THRESHOLD_LABELS = {
 }
 
 --[[
-    The game's own word for each kind of winning roll, as the client reads the
-    roll lines it prints (ns.ParseRollResultMessage): what a toast shows beside
-    its number. Disenchant exists only where the client offers it.
+    Which kind of roll won, as ns.ParseRollResultMessage reads it off the
+    client's roll lines. Features/Loot-Toasts-Winning-Rolls.lua turns each into
+    the game's own word (NEED, GREED, ROLL_DISENCHANT) for the toast.
+    Disenchant exists only where the client offers it.
 ]]
 ns.ROLL_KIND_NEED = "NEED"
 ns.ROLL_KIND_GREED = "GREED"
@@ -616,6 +637,19 @@ ns.MONEY_ICON_GOLD = "Interface\\Icons\\INV_Misc_Coin_02"
 ns.MONEY_ICON_SILVER = "Interface\\Icons\\INV_Misc_Coin_04"
 ns.MONEY_ICON_COPPER = "Interface\\Icons\\INV_Misc_Coin_06"
 
+--[[
+    The Roll Macro (Features/Roll-Macro.lua), a General macro so every character
+    on the account shares it. Left-click rolls 1-100, right-click 1-99 for an
+    off-spec roll, middle-click 1 to the group's size for a raid roll (1-100
+    alone). The name is the same in every locale, and the icon is a stack of
+    gold coins: no dice icon exists on every client. The icon is a file ID
+    because GetMacroInfo answers with one, so it can be compared.
+]]
+ns.ROLL_MACRO_NAME = "- Roll"
+ns.ROLL_MACRO_ICON = 133784 -- Interface\Icons\INV_Misc_Coin_01
+ns.ROLL_MACRO_BODY =
+	'/run local b,n=GetMouseButtonClicked(),GetNumGroupMembers() RandomRoll(1,b=="MiddleButton" and n>0 and n or b=="RightButton" and 99 or 100)'
+
 ns.COPPER_PER_SILVER = 100
 ns.COPPER_PER_GOLD = 10000
 
@@ -643,6 +677,100 @@ ns.TRADE_OUTPUT_LABELS = {
 }
 
 --------------------------------------------------------------------------------
+-- Loot Master & Loot Tracker
+--------------------------------------------------------------------------------
+
+-- The add-on message prefix the loot master's rolls travel under, so raiders' Loot Trackers follow them.
+ns.ADDON_MESSAGE_PREFIX = "GogoLoot"
+
+-- The only roll that counts: a plain /roll.
+ns.ROLL_LOW = 1
+ns.ROLL_HIGH = 100
+
+-- Roll Length, in seconds.
+ns.ROLL_LENGTHS = { 10, 15, 20, 30, 45, 60 }
+-- Pause Between Items in Roll All, in seconds.
+ns.ROLL_ALL_PAUSES = { 0, 3, 5, 10, 15 }
+-- Warn Me When Trade Time Runs Low, in minutes.
+ns.TRADE_WARN_MINUTES = { 5, 10, 15, 20, 30 }
+-- Keep Drops by Boss For, in raids.
+ns.DROPS_KEEP_RAIDS = { 1, 3, 5, 10 }
+
+-- Announce In: where calls for rolls, ties and pauses go. Winners always go to group chat.
+ns.ROLL_CHANNEL_RAID_WARNING = "RAID_WARNING"
+ns.ROLL_CHANNEL_GROUP = "GROUP"
+
+--[[
+    Seconds of grace after a roll closes in which a roll still counts, for lag.
+    Rolls just before a call or just after the grace show in the list as not
+    counted, for this many seconds either side, so the raid can see why.
+]]
+ns.ROLL_GRACE_SECONDS = 1
+ns.ROLL_EARLY_SECONDS = 5
+ns.ROLL_LATE_SECONDS = 5
+-- When the last-call warning goes out, and how much a late roll stretches the timer.
+ns.ROLL_WARNING_SECONDS = 5
+ns.ROLL_STRETCH_SECONDS = 5
+-- What +10 Seconds adds.
+ns.ROLL_EXTEND_SECONDS = 10
+-- How often a live roll and the windows' clocks are checked.
+ns.ROLL_TICK_SECONDS = 0.25
+ns.WINDOW_TICK_SECONDS = 1
+
+-- Why a roll doesn't count. The automatic ones; a disqualification by hand is ROLL_REJECT_MANUAL.
+ns.ROLL_REJECT_EARLY = "EARLY"
+ns.ROLL_REJECT_LATE = "LATE"
+ns.ROLL_REJECT_REPEAT = "REPEAT"
+ns.ROLL_REJECT_RANGE = "RANGE"
+ns.ROLL_REJECT_NOT_TIED = "NOT_TIED"
+ns.ROLL_REJECT_MANUAL = "MANUAL"
+
+-- The reasons offered when the loot master disqualifies a roll, in the order offered.
+ns.ROLL_DISQUALIFY_REASONS = { "NOT_ELIGIBLE", "ALREADY_WON", "FOR_SOMEONE_ELSE", "NONE" }
+
+-- Where a Roll List entry came from: a tradable item in the bags, Floor Loot, or a corpse's loot window.
+ns.LOOT_SOURCE_BAGS = "BAGS"
+ns.LOOT_SOURCE_FLOOR = "FLOOR"
+ns.LOOT_SOURCE_CORPSE = "CORPSE"
+
+-- A Roll List entry's state.
+ns.ENTRY_WAITING = "WAITING"
+ns.ENTRY_ROLLING = "ROLLING"
+ns.ENTRY_TIED = "TIED"
+ns.ENTRY_WON = "WON"
+ns.ENTRY_NOBODY = "NOBODY"
+ns.ENTRY_EXPIRED = "EXPIRED"
+
+--[[
+    The trade clock's colors: yellow under half an hour, red under ten minutes.
+    The row's bar is scaled to the two-hour window the Classic clients give; a
+    clock read longer than that just fills the bar.
+]]
+ns.TRADE_YELLOW_SECONDS = 1800
+ns.TRADE_RED_SECONDS = 600
+ns.TRADE_WINDOW_SECONDS = 7200
+-- A rescan moves an entry's clock only when the tooltip disagrees by more than this, since it reads whole minutes.
+ns.TRADE_RESYNC_SECONDS = 60
+-- A burst of bag events waits this long to become one trade-clock scan, and a slow scan runs this often anyway.
+ns.TRADE_SCAN_DEBOUNCE = 1
+ns.TRADE_SAFETY_SCAN = 60
+-- Seconds after TRADE_SHOW before won items go into the window, so the window has drawn.
+ns.TRADE_FILL_DELAY = 0.3
+
+-- Roll List rows only offer tradable loot at or above this quality.
+ns.TRADABLE_MIN_QUALITY = 2
+
+-- How many finished rolls the Loot Tracker keeps under Earlier tonight.
+ns.ROLL_HISTORY_LIMIT = 30
+
+-- A boss's corpse is told apart from trash by being the first corpse looted within this many seconds of the kill.
+ns.BOSS_LOOT_WINDOW = 600
+-- Drops by boss records trash loot at or above this quality.
+ns.DROPS_TRASH_MIN_QUALITY = 3
+-- Drops by boss records boss loot at or above this quality.
+ns.DROPS_BOSS_MIN_QUALITY = 2
+
+--------------------------------------------------------------------------------
 -- AceConfig Registry Names
 --------------------------------------------------------------------------------
 
@@ -655,6 +783,7 @@ ns.TRADE_OUTPUT_LABELS = {
 
 ns.OPTIONS_REGISTRY = {
 	General = ADDON_NAME,
+	SpeedyLoot = ADDON_NAME .. "_SpeedyLoot",
 	AutomatedRolls = ADDON_NAME .. "_AutomatedRolls",
 	ItemOverrides = ADDON_NAME .. "_ItemOverrides",
 	CharacterRules = ADDON_NAME .. "_CharacterRules",
@@ -667,9 +796,12 @@ ns.OPTIONS_REGISTRY = {
 	LootToastFilters = ADDON_NAME .. "_LootToastFilters",
 	LootSounds = ADDON_NAME .. "_LootSounds",
 	Announcements = ADDON_NAME .. "_Announcements",
+	RollMacro = ADDON_NAME .. "_RollMacro",
+	LootMaster = ADDON_NAME .. "_LootMaster",
 	-- Registered but never added to the Blizzard tree: it opens as its own window.
 	MasterLooterPopup = ADDON_NAME .. "_MasterLooterPopup",
 	Profiles = ADDON_NAME .. "_Profiles",
+	FeedbackSupport = ADDON_NAME .. "_FeedbackSupport",
 	Diagnostics = ADDON_NAME .. "_Diagnostics",
 }
 
@@ -690,10 +822,12 @@ ns.ITEM_LIST_ADD_WIDGET_TYPE = ADDON_NAME .. "_ItemListAdd"
 -- URL Constants
 --------------------------------------------------------------------------------
 
-ns.URL_CURSEFORGE = "https://www.curseforge.com/wow/addons/gogoloot"
-ns.URL_GITHUB = "https://github.com/Gogo1951/GogoLoot"
-ns.URL_DISCORD = "https://discord.gg/eh8hKq992Q"
-ns.URL_WAGO = "https://addons.wago.io/addons/gogoloot"
+ns.LINKS = {
+	CURSEFORGE = "https://www.curseforge.com/wow/addons/gogoloot",
+	GITHUB = "https://github.com/Gogo1951/GogoLoot",
+	DISCORD = "https://discord.gg/eh8hKq992Q",
+	WAGO = "https://addons.wago.io/addons/gogoloot",
+}
 
 --------------------------------------------------------------------------------
 -- Minimap

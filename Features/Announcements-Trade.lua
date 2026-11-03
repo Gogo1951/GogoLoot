@@ -52,7 +52,6 @@ end
 -- API Helpers
 --------------------------------------------------------------------------------
 
--- Returns the stack count for a trade slot on our side, defaulting to 1.
 local function GetOurTradeSlotCount(slotIndex)
 	if type(GetTradePlayerItemInfo) ~= "function" then
 		return 1
@@ -61,7 +60,6 @@ local function GetOurTradeSlotCount(slotIndex)
 	return quantity or 1
 end
 
--- Returns the stack count for a trade slot on their side, defaulting to 1.
 local function GetTheirTradeSlotCount(slotIndex)
 	if type(GetTradeTargetItemInfo) ~= "function" then
 		return 1
@@ -154,7 +152,7 @@ local function BuildItemListStrings(itemTable)
 	for _, link in ipairs(itemOrder) do
 		local count = itemCounts[link]
 		if count > 1 then
-			table.insert(finalStrings, link .. " x" .. count)
+			table.insert(finalStrings, link .. " " .. L["ITEM_QUANTITY"]:format(count))
 		else
 			table.insert(finalStrings, link)
 		end
@@ -224,6 +222,9 @@ local function SnapshotTradeItems()
 	end
 
 	local enchantSlot = ns.TRADE_ENCHANT_SLOT
+	-- Each snapshot reads the enchant slots afresh: one emptied since the last accept carries no enchant.
+	tradeState.theirEnchantDescription = nil
+	tradeState.ourEnchantDescription = nil
 
 	--[[
         Our enchant slot has an item: they are performing a service on our item
@@ -275,9 +276,9 @@ local function PrintTradeSummary()
 	local ourSummary, theirSummary = table.concat(ourParts, ", "), table.concat(theirParts, ", ")
 	-- Printed only, so the partner takes their class color; a sent summary keeps the plain name.
 	local theirName = tradeState.player
-	local classColor = tradeState.playerClass and RAID_CLASS_COLORS and RAID_CLASS_COLORS[tradeState.playerClass]
-	if type(classColor) == "table" and type(classColor.colorStr) == "string" then
-		theirName = "|c" .. classColor.colorStr .. theirName .. "|r"
+	local classColor = ns.GetClassColor(tradeState.playerClass)
+	if classColor then
+		theirName = classColor .. theirName .. "|r"
 	end
 
 	if #ourParts > 0 and #theirParts > 0 then
@@ -300,7 +301,6 @@ local function AnnounceTradeComplete()
 	local condition = ns.db.profile.announceTradeCondition
 	local output = ns.db.profile.announceTradeOutput
 
-	-- Condition gate: should we announce at all?
 	if condition == "party_or_raid" then
 		if not IsInGroup() then
 			return
@@ -316,7 +316,6 @@ local function AnnounceTradeComplete()
 		return
 	end
 
-	-- Determine chat channel from output setting
 	local chatChannel, whisperTarget
 	if output == "whisper" then
 		chatChannel = "WHISPER"
@@ -469,11 +468,19 @@ local function GetTradeResult(messageId, informationMessage)
 end
 
 local function OnUiInfoMessage(messageId, informationMessage)
+	-- Every quest update and discovery lands here too; only an open trade has a result to read.
+	if not tradeState.player then
+		return
+	end
 	local tradeResult = GetTradeResult(messageId, informationMessage)
 	if tradeResult == "cancelled" then
 		ResetTradeState()
 	elseif tradeResult == "complete" then
 		AnnounceTradeComplete()
+		-- The Loot Master moves what a winner just received to Awarded.
+		if ns.OnLootMasterTradeCompleted then
+			ns.OnLootMasterTradeCompleted(tradeState.player, tradeState.ourItems)
+		end
 		ResetTradeState()
 	end
 end
@@ -486,9 +493,27 @@ ns:RegisterModuleEvent("UI_INFO_MESSAGE", OnUiInfoMessage)
 -- Trade Window Checkbox
 --------------------------------------------------------------------------------
 
--- Mirrors the "Enable Trade Announcements" toggle directly on the trade frame.
+--[[
+    Mirrors the "Enable Trade Announcements" toggle beside the trade window. It
+    is parented to UIParent and only anchored to TradeFrame, so nothing is
+    written to Blizzard's panel; it shows while a trade is open and leaves with
+    TRADE_CLOSED.
+]]
 
 local tradeAnnounceCheckbox = nil
+local tradeWindowOpen = false
+
+---@param tooltip table
+---@param leftText any
+---@param rightText any
+---@param leftColorKey string|nil
+---@param rightColorKey string|nil
+---@return nil
+local function AddTooltipDoubleLine(tooltip, leftText, rightText, leftColorKey, rightColorKey)
+	local leftRed, leftGreen, leftBlue = ns.GetColorRGB(leftColorKey or "TEXT")
+	local rightRed, rightGreen, rightBlue = ns.GetColorRGB(rightColorKey or "TEXT")
+	tooltip:AddDoubleLine(leftText, rightText, leftRed, leftGreen, leftBlue, rightRed, rightGreen, rightBlue)
+end
 
 local function CreateTradeAnnounceCheckbox()
 	if tradeAnnounceCheckbox then
@@ -498,7 +523,8 @@ local function CreateTradeAnnounceCheckbox()
 		return
 	end
 
-	local checkbox = CreateFrame("CheckButton", "GogoLootTradeAnnounceCheckbox", TradeFrame, "UICheckButtonTemplate")
+	local checkbox = CreateFrame("CheckButton", "GogoLootTradeAnnounceCheckbox", UIParent, "UICheckButtonTemplate")
+	checkbox:Hide()
 	checkbox:SetSize(26, 26)
 	checkbox:SetPoint("BOTTOMLEFT", TradeFrame, "BOTTOMLEFT", 8, 4)
 
@@ -520,7 +546,7 @@ local function CreateTradeAnnounceCheckbox()
 		ns:AddTooltipLine(GameTooltip, L["TAB_TRADE_ANNOUNCEMENTS"], "TITLE")
 		ns:AddTooltipLine(GameTooltip, L["TRADE_TOOLTIP_DESCRIPTION"], "BODY", true)
 		GameTooltip:AddLine(" ")
-		ns:AddTooltipDoubleLine(GameTooltip, L["TRADE_CHANNEL"], currentOutput, "BODY", "TEXT")
+		AddTooltipDoubleLine(GameTooltip, L["TRADE_CHANNEL"], currentOutput, "BODY", "TEXT")
 		GameTooltip:Show()
 	end)
 
@@ -541,7 +567,10 @@ function ns:SyncTradeCheckbox()
 	if not tradeAnnounceCheckbox then
 		return
 	end
-	if ns.db.profile.lootNotifications then
+	if tradeWindowOpen and ns.db.profile.lootNotifications then
+		-- Drawn just above the trade window, whose level can change while it is open.
+		tradeAnnounceCheckbox:SetFrameStrata(TradeFrame:GetFrameStrata())
+		tradeAnnounceCheckbox:SetFrameLevel(TradeFrame:GetFrameLevel() + 10)
 		tradeAnnounceCheckbox:Show()
 	else
 		tradeAnnounceCheckbox:Hide()
@@ -551,8 +580,15 @@ end
 
 local function OnTradeShow()
 	BeginTrade()
+	tradeWindowOpen = true
 	CreateTradeAnnounceCheckbox()
 	ns:SyncTradeCheckbox()
 end
 
+local function OnTradeClosed()
+	tradeWindowOpen = false
+	ns:SyncTradeCheckbox()
+end
+
 ns:RegisterModuleEvent("TRADE_SHOW", OnTradeShow)
+ns:RegisterModuleEvent("TRADE_CLOSED", OnTradeClosed)

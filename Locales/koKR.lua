@@ -25,7 +25,7 @@ L["ADDON_TITLE"] = "GogoLoot"
 --------------------------------------------------------------------------------
 
 L["CHAT_LOADED"] =
-	"버전 %s. 설정(이 메시지를 끄는 옵션 포함)은 설정 > 애드온 > GogoLoot에서 찾을 수 있습니다. 애드온이 마음에 드시나요? 친구에게도 알려 주세요! (="
+	"버전 %s. 설정(이 메시지를 끄는 옵션 포함)은 설정 > 애드온 > GogoLoot에서 찾을 수 있습니다. 애드온이 마음에 드시나요? 친구에게 알리거나, CurseForge에서 즐겨찾기하거나, GitHub에서 Star를 눌러 주세요. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "안전을 위해 전투 중에는 설정 창을 열 수 없습니다."
 -- Argument: the game's own name for its Auto Loot setting.
 L["MESSAGE_AUTO_LOOT_SETTING_ON"] = "빠른 획득과 자동 열기에 필요한 게임의 %s 설정을 켰습니다."
@@ -44,6 +44,15 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: 고유 아이템이 들어 있을 수 있어, 직접 열 수 있도록 자동 열기가 열지 않고 남겨 둡니다."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s: 직접 획득할 수 있도록 전리품 창에 남겨 두었습니다."
+--[[
+    Standard Loot Messages taking the General tab's loot lines off, or putting
+    them back. Arguments: the game's own names for its Item Loot and Money Loot
+    chat settings, then for the General chat tab.
+]]
+L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
+	"획득 알림이 켜져 있는 동안 %s 및 %s 설정을 %s 대화 탭에서 껐습니다."
+L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "%s 및 %s 설정을 %s 대화 탭에서 다시 켰습니다."
+
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
 	"%s: 열지 않고 착용하는 아이템이므로 열기 목록에 추가할 수 없습니다."
@@ -105,13 +114,15 @@ L["ERROR_DISTRIBUTION_FAILED"] = "%s님에게 전리품을 주지 못했습니�
 -- Options Tab Names
 --------------------------------------------------------------------------------
 
+-- The first feature panel, holding the one Speedy Loot switch.
+L["TAB_SPEEDY_LOOT"] = "빠른 획득"
 L["TAB_AUTOMATED_ROLLS"] = "자동 주사위"
 L["TAB_ITEM_OVERRIDES"] = "아이템별 설정"
 -- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
 L["TAB_CHARACTER_RULES"] = "캐릭터별 규칙"
--- The panel for everything GogoLoot posts to chat.
-L["TAB_ANNOUNCEMENTS"] = "공지"
--- Headers of the two sections on the Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
+-- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_ANNOUNCEMENTS"] = "전리품 공지"
+-- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "거래 공지"
 L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"] = "전리품 전담 공지"
 L["TAB_LOOT_TOASTS"] = "획득 알림"
@@ -120,13 +131,18 @@ L["TAB_LOOT_TOAST_FILTERS"] = "필터"
 -- The panel right after Loot Toasts.
 L["TAB_LOOT_SOUNDS"] = "획득 소리"
 L["TAB_AUTOMATED_OPENING"] = "자동 열기"
--- Header of a section on the Automated Opening panel.
+-- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "잠긴 상자"
 L["TAB_OPENABLE_ITEMS"] = "열기 목록"
-L["TAB_MASTER_LOOTER"] = "전리품 전담"
--- Header of a section on the Master Looter panel.
+-- The last feature panel, named for its switch, Enable Automated Master Looting.
+L["TAB_MASTER_LOOTER"] = "자동 전리품 분배"
+-- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "전리품 받을 사람"
 L["TAB_IGNORE_LIST"] = "무시 목록"
+-- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
+L["TAB_ROLL_MACRO"] = "주사위 매크로"
+-- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
+L["TAB_LOOT_MASTER"] = "전리품 관리자"
 
 -- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
 L["TAB_NESTED_FORMAT"] = "%s: %s"
@@ -141,15 +157,14 @@ L["STATUS_DISABLED"] = "사용 안 함"
 L["STATUS_PAUSED"] = "일시 중지"
 
 --[[
-    The tooltip titles each feature with its options-panel name (Automated
-    Master Looting excepted, since its panel is titled Master Looter), and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit a tooltip.
+    The tooltip titles each feature with its options-panel name, and gives
+    each a description of its own, two lines at most: the panels' longer text
+    doesn't fit a tooltip.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"선택한 품질까지 대상 아이템에 대신 주사위를 굴립니다."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
-	"가방 속 조개, 상자, 동전 주머니, 자물쇠를 딴 잠긴 상자를 엽니다."
+	"가방에 있는 조개, 상자, 동전 주머니, 잠금 해제된 잠긴 상자를 엽니다."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "거래 요약과 전리품 분배 내역을 대화창에 게시합니다."
 L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] =
 	"품질별로 지정한 플레이어에게 전리품을 분배합니다."
@@ -165,14 +180,24 @@ L["MINIMAP_LEFT_CLICK"] = "왼쪽 클릭"
 L["MINIMAP_RIGHT_CLICK"] = "오른쪽 클릭"
 L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + 왼쪽 클릭"
 L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + 오른쪽 클릭"
--- The tooltip's title for the Automated Master Looting block, the feature its switch names.
-L["MINIMAP_AUTOMATED_MASTER_LOOTING"] = "자동 전리품 분배"
 L["MINIMAP_TOGGLE"] = "켜기/끄기"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "잠긴 아이템"
 L["MINIMAP_OPTIONS"] = "GogoLoot 설정"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 가운데 클릭"
+
+-- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
+L["MINIMAP_TRADABLE_LOOT"] = "거래 가능 전리품"
+-- Under the first few of them. Argument: how many more there are.
+L["MINIMAP_TRADABLE_MORE"] = "외 %d개"
+-- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
+L["MINIMAP_LOOT_WINDOWS"] = "전리품 관리자 및 전리품 추적기"
+L["MINIMAP_TO_HAND_OUT"] = "분배할 아이템 %d개"
+L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] =
+	"아직 거래할 수 있는 전리품을 주사위로 분배하고, 모든 주사위를 지켜봅니다."
+L["MINIMAP_MIDDLE_CLICK"] = "가운데 클릭"
+L["MINIMAP_OPEN"] = "열기"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -185,6 +210,11 @@ L["ROLL_MANUAL"] = "수동"
 L["THRESHOLD_ONLY"] = "%s만"
 -- Every other Up to Quality choice. Argument: the game's own quality name.
 L["THRESHOLD_AND_LOWER"] = "%s 이하"
+
+-- How many of an item, after its link: on a toast, in a trade summary, in the mini-map's Locked Items and in Add from Bags. Argument: the count.
+L["ITEM_QUANTITY"] = "x%d"
+-- An item and how many, the way the game's own loot lines write it, in the loot windows and their chat lines. Arguments: the item's link, then the count.
+L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
@@ -246,21 +276,18 @@ L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 ]]
 L["OPTIONS_EXAMPLE"] = "예시: %s"
 
--- The muted version line at the foot of the General panel.
-L["OPTIONS_VERSION"] = "버전 %s"
-
 --------------------------------------------------------------------------------
 -- Options: General
 --------------------------------------------------------------------------------
 
 L["OPTIONS_DESCRIPTION"] =
-	"빠른 획득은 시체를 눈 깜짝할 새에 비우고, 자동 주사위와 자동 전리품 분배는 누가 무엇을 가질지 정해 주며, 자동 열기는 조개와 상자를 모조리 열어젖힙니다. 획득 알림이 이 모든 것을 보여 주고, 퀘스트 아이템, 제조법, 탈것, 애완동물, 전설 아이템은 안전하게 지켜집니다. 전리품 때문에 질주를 늦추지 마세요!"
+	"빠른 획득은 전리품 창 없이 시체를 비우고, 품질에 따라 입찰, 차비, 포기를 자동으로 고르며, 자동 전리품 분배가 전리품을 대신 나눠 줍니다. 조개, 용기, 잠금 해제된 잠긴 상자는 저절로 열립니다. 더 빨리 줍고, 더 빨리 다음 몹을 당기세요."
 L["WELCOME_MESSAGE"] = "환영 메시지 사용"
 L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"접속할 때마다 GogoLoot의 버전과 이 설정을 찾는 위치를 표시합니다."
 L["MINIMAP_BUTTON_ENABLE"] = "미니맵 버튼 사용"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"미니맵에 GogoLoot 버튼을 표시합니다. 왼쪽 클릭은 자동 주사위, 오른쪽 클릭은 자동 열기, Shift + 왼쪽 클릭은 공지, Shift + 오른쪽 클릭은 자동 전리품 분배를 켜거나 끕니다."
+	"미니맵에 GogoLoot 버튼을 표시합니다. 왼쪽 클릭은 자동 주사위, 오른쪽 클릭은 자동 열기, Shift + 왼쪽 클릭은 전리품 공지, Shift + 오른쪽 클릭은 자동 전리품 분배를 켜거나 끕니다."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/명령어"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -269,6 +296,9 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "이 애드온의 설정 창을 엽니다."
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "기능"
 
+-- The opening line of the Speedy Loot panel, above its switch.
+L["SPEEDY_LOOT_DESCRIPTION"] =
+	"시체를 여는 즉시 모든 것을 가져오므로, 전리품 창을 기다릴 필요가 없습니다."
 L["SPEEDY_LOOT_ENABLE"] = "빠른 획득 사용"
 --[[
     Shift is the game's default Auto Loot key; holding it shows the loot window
@@ -278,13 +308,68 @@ L["SPEEDY_LOOT_ENABLE"] = "빠른 획득 사용"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"시체를 여는 즉시 전리품 창 없이 모두 획득합니다. 전리품 창을 보려면 Shift 키를 누른 채 획득하세요. 게임의 %s 설정을 켜며, %s 역할을 맡는 동안에는 작동하지 않습니다."
 
-L["FEEDBACK_SUPPORT"] = "피드백 및 지원"
+--[[
+    The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
+    locale. General Macros is the tab of the game's Macros window that every
+    character on the account shares; /macro is the game's command and stays
+    English.
+]]
+L["ROLL_MACRO_DESCRIPTION"] =
+	"금화 아이콘이 붙은 %s 매크로를 일반 매크로에 추가해, 계정의 모든 캐릭터가 행동 단축바로 끌어다 놓을 수 있게 합니다."
+--[[
+    The three rows under it, each beside the game's name for a mouse button
+    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    a raid roll picks a number from 1 to the group's size.
+]]
+L["ROLL_MACRO_LEFT_CLICK"] = "1-100 굴리기"
+L["ROLL_MACRO_RIGHT_CLICK"] = "1-99 굴리기"
+L["ROLL_MACRO_MIDDLE_CLICK"] = "공격대 주사위"
+L["ROLL_MACRO_ENABLE"] = "주사위 매크로 사용"
+-- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] =
+	"공격대 주사위는 아이템을 무작위로 한 사람에게 줍니다. 1부터 파티 인원 수까지 굴리므로 숫자 하나가 플레이어 한 명을 뜻합니다: 공격대나 파티 목록을 위에서부터 나온 숫자만큼 세어 승자를 찾으세요. 혼자일 때는 1-100을 굴립니다."
+L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
+	"%s 매크로를 일반 매크로에 유지합니다: 왼쪽 클릭은 1-100, 오른쪽 클릭은 1-99, 가운데 클릭은 공격대 주사위를 굴립니다. 끄면 매크로를 삭제합니다."
+--[[
+    Printed to chat when Enable Roll Macro is switched on or off, or the macro
+    can't be made. In ROLL_MACRO_ADDED the second %s is /m, the game's command
+    for its Macros window, drawn in blue.
+]]
+L["ROLL_MACRO_ADDED"] =
+	"%s 매크로가 일반 매크로에 있습니다. %s 입력 후 행동 단축바로 끌어다 놓으세요."
+L["ROLL_MACRO_REMOVED"] = "%s 매크로를 삭제했습니다."
+L["ROLL_MACRO_FULL"] =
+	"%s 매크로를 추가하지 못했습니다: 일반 매크로가 가득 찼습니다. 하나를 삭제하면 다음 접속 때 추가됩니다."
 
--- CurseForge / GitHub / Discord / Wago are proper nouns; do not translate.
-L["CURSEFORGE"] = "CurseForge"
-L["GITHUB"] = "GitHub"
-L["DISCORD"] = "Discord"
-L["WAGO"] = "Wago"
+--------------------------------------------------------------------------------
+-- Options: Feedback & Support Panel
+--------------------------------------------------------------------------------
+
+-- "Star" stays GitHub's English button label in every locale; Discord, CurseForge, Wago and GitHub stay as written.
+L["OPTIONS_LEVEL_UP_TITLE"] = "GogoLoot의 레벨 업을 도와주세요"
+L["OPTIONS_LEVEL_UP_INTRO"] =
+	"이 애드온은 이 게임을 사랑하고 모두가 최대한 즐겁게 플레이하기를 바라는 플레이어들이 만들었습니다. 후원을 요청하는 일은 절대 없을 겁니다. 우리의 작업이 여러분의 게임을 조금이라도 더 낫게 만든다는 것이 진정한 보람입니다. 그렇다면 꼭 이야기를 들려주세요!"
+L["OPTIONS_LEVEL_UP_WAYS"] =
+	"더 많은 플레이어에게 다가갈 수 있도록 도와주는 방법을 몇 가지 소개합니다."
+L["OPTIONS_LEVEL_UP_FEEDBACK"] =
+	"• 피드백 공유: 버그를 찾았거나 아이디어가 있나요? Discord에서 알려 주세요. 여러분의 피드백은 애드온을 개선하는 데 도움이 되며, 풀 리퀘스트도 언제나 환영합니다."
+L["OPTIONS_LEVEL_UP_FRIEND"] =
+	"• 친구에게 알리기: 이 애드온을 좋아할 만한 사람이 있나요? 소개해 주세요. 입소문은 더 많은 플레이어가 좋은 애드온을 발견하는 데 도움이 됩니다."
+L["OPTIONS_LEVEL_UP_CURSEFORGE"] =
+	"• CurseForge에서 즐겨찾기: 아래 CurseForge 링크를 열고 로그인한 뒤, 다운로드 버튼 아래의 별을 클릭하세요. 즐겨찾기는 더 많은 플레이어가 이 애드온을 발견하는 데 도움이 됩니다."
+L["OPTIONS_LEVEL_UP_GITHUB"] =
+	"• GitHub에서 Star 누르기: 아래 GitHub 링크를 열고 로그인한 뒤, 오른쪽 위의 Star를 클릭하세요. Star는 프로젝트가 더 많은 무료 개발자 도구를 받을 자격을 얻는 데 도움이 됩니다."
+L["OPTIONS_LEVEL_UP_THANKS"] = "GogoLoot를 선택해 주셔서 감사합니다!"
+
+L["OPTIONS_FEEDBACK"] = "피드백 및 지원"
+L["OPTIONS_FEEDBACK_LINKS_HEADER"] = "피드백 및 지원 링크"
+L["OPTIONS_CURSEFORGE"] = "CurseForge"
+L["OPTIONS_GITHUB"] = "GitHub"
+L["OPTIONS_DISCORD"] = "Discord"
+L["OPTIONS_WAGO"] = "Wago"
+L["OPTIONS_COPY_LINK"] = "링크를 복사하려면 상자를 클릭한 다음 Ctrl+A, Ctrl+C를 누르세요."
+-- The version line at the foot of the Feedback & Support panel.
+L["OPTIONS_VERSION"] = "버전 %s"
 
 --------------------------------------------------------------------------------
 -- Options: Master Looter
@@ -390,7 +475,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"특정 아이템의 주사위를 품질 설정보다 우선하여 정합니다. GogoLoot가 획득 시 귀속 아이템이나 퀘스트 아이템에 주사위를 굴리는 유일한 방법입니다."
--- Shown on Item Overrides while Automated Rolls is off.
+-- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "자동 주사위가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
 L["ITEM_OVERRIDES_ENABLE"] = "아이템별 설정 사용"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
@@ -430,7 +515,7 @@ L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
 
 L["ANNOUNCEMENTS_DESCRIPTION"] =
 	"거래 요약과 전리품 분배 내역을 대화창에 게시해, 전리품이 어디로 갔는지 모두가 알 수 있게 합니다."
-L["ANNOUNCEMENTS_ENABLE"] = "공지 사용"
+L["ANNOUNCEMENTS_ENABLE"] = "전리품 공지 사용"
 -- Also the tooltip of the same switch in the General panel's Features section, so it names no position on the panel.
 L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"] =
 	"모든 공지를 켜거나 끕니다. 꺼져 있으면 GogoLoot는 직접 분배한 아이템을 포함해 파티나 거래 상대에게 아무것도 보내지 않습니다."
@@ -534,7 +619,7 @@ L["LOOT_TOASTS_FILTER_OPENABLES_MINE_DESCRIPTION"] =
 L["LOOT_TOASTS_FILTER_OPENABLES_GROUP_DESCRIPTION"] =
 	"품질에 관계없이, 파티가 획득한 상자 중 GogoLoot가 열 수 있는 것을 잠긴 상자를 포함해 표시합니다."
 L["LOOT_TOASTS_FILTER_MONEY_DESCRIPTION"] =
-	"내가 획득한 돈을 알림으로 표시합니다. 게임이 다른 플레이어가 획득한 돈을 알려 주지 않으므로 '파티' 확인란은 없습니다."
+	"획득한 돈을 알림으로 표시합니다. 게임이 다른 플레이어의 돈은 알려 주지 않으므로 파티 확인란은 없습니다."
 
 -- A group member's loot on a toast. Arguments: the item with its count, then the looter's name.
 L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
@@ -542,27 +627,25 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
 --[[
     Winning Roll: the roll an item was won with, on its toast. The roll
     reads as the game's own word for Need or Greed, then the number
-    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast it follows the item
-    (LOOT_TOASTS_WON_ROLL); on a group member's, their name
-    (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
+    looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "승리 주사위"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
 L["LOOT_TOASTS_WINNING_ROLL_MINE_TOOLTIP"] =
-	"아이템을 차지할 때 이긴 주사위를 (%s)처럼 그 알림에 추가합니다."
+	"아이템을 차지할 때 이긴 주사위를 (내가 획득, %s)처럼 알림에 추가합니다."
 -- Arguments: an example group member, then an example roll ("Need 87").
 L["LOOT_TOASTS_WINNING_ROLL_GROUP_TOOLTIP"] =
 	"파티원이 아이템을 차지할 때 이긴 주사위를 (%s, %s)처럼 그 사람의 알림에 추가합니다."
 L["LOOT_TOASTS_ROLL_RESULT"] = "%s %d"
-L["LOOT_TOASTS_WON_ROLL"] = "%s (%s)"
+L["LOOT_TOASTS_YOU_WON_ROLL"] = "%s (내가 획득, %s)"
 L["LOOT_TOASTS_LOOTED_BY_ROLL"] = "%s (%s, %s)"
 
 -- The Filters row adding how many the player carries to their own loot's toasts.
 L["LOOT_TOASTS_FILTER_BAG_COUNT"] = "소지 개수"
 L["LOOT_TOASTS_BAG_COUNT_DESCRIPTION"] =
 	"알림에 표시된 수량보다 많이 가지고 있으면, 내 전리품 알림에 지금 가진 개수를 x3 (27)처럼 추가합니다."
--- How many came, after the item on a toast. Argument: the count.
-L["LOOT_TOASTS_QUANTITY"] = "x%d"
 -- Bag Count, after the item and its count. Argument: how many the player carries.
 L["LOOT_TOASTS_BAG_COUNT"] = "(%d)"
 
@@ -617,11 +700,16 @@ L["LOOT_TOASTS_EXAMPLE_ITEM"] = "예시 아이템"
 -- Argument: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PANEL_DESCRIPTION"] =
 	"선택한 품질 이상의 전리품에는 알림음을 재생하고, %s에 성공해 무언가를 얻으면 가방 소리를 재생합니다."
-L["LOOT_SOUNDS_ENABLE"] = "획득 소리 사용"
+-- The Loot Sounds panel's master switch, also in the General panel's Features section; its tooltip names no position on either.
+L["LOOT_SOUNDS_SWITCH"] = "획득 소리 사용"
+L["LOOT_SOUNDS_SWITCH_DESCRIPTION"] = "GogoLoot의 모든 획득 소리를 켜거나 끕니다."
+-- The chime's own toggle, under the master switch.
+L["LOOT_SOUNDS_ENABLE"] = "획득 알림음 사용"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"시체나 상자에서 선택한 품질 이상의 아이템을 획득하면 알림음을 재생합니다."
-L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "획득 소리를 재생하는 가장 낮은 아이템 품질입니다."
-L["LOOT_SOUNDS_TEST"] = "획득 소리를 재생합니다."
+L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] =
+	"획득 알림음을 재생하는 가장 낮은 아이템 품질입니다."
+L["LOOT_SOUNDS_TEST"] = "획득 알림음을 재생합니다."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "%s 소리 사용"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] =
@@ -634,7 +722,7 @@ L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "%s 소리를 재생합니다."
 
 -- Argument: the number of free bag slots opening waits for.
 L["AUTOMATED_OPENING_DESCRIPTION"] =
-	"가방 빈 칸이 %d칸 이상이면 가방 속 조개, 상자, 동전 주머니, 자물쇠를 딴 잠긴 상자를 대신 엽니다."
+	"가방 빈 칸이 %d칸 이상일 때마다 가방에 있는 조개, 상자, 동전 주머니, 잠금 해제된 잠긴 상자를 대신 열어 줍니다."
 L["AUTOMATED_OPENING_ENABLE"] = "자동 열기 사용"
 -- Also the tooltip of the same switch in the General panel's Features section. Argument: the game's own name for its Auto Loot setting.
 L["AUTOMATED_OPENING_SWITCH_DESCRIPTION"] =
@@ -660,13 +748,17 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"잠금이 풀리면 열리게 될 잠긴 상자를 획득하면 대화창으로 알려 줍니다."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"잠긴 상자 알림을 도적에게만 표시할지 모든 캐릭터에게 표시할지 정합니다."
+-- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
+	"자동 열기가 꺼져 있는 동안에는 잠긴 상자 알림이 사용되지 않습니다."
 L["LOCKBOXES_FOR_ROGUES"] = "도적만"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "모든 캐릭터"
 
 --[[
     The block a lockbox's own tooltip gains, under the game's own "Requires
-    Lockpicking" line (ITEM_REQ_SKILL), followed by a skill number. Argument:
-    the game's own name for the Lockpicking skill.
+    Lockpicking (225)" line (ITEM_MIN_SKILL), or under GogoLoot's own
+    ITEM_REQ_SKILL line where the client prints none, followed by a skill
+    number. Argument: the game's own name for the Lockpicking skill.
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "내 %s"
 
@@ -681,6 +773,9 @@ L["OPENABLE_ITEMS_DESCRIPTION"] =
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
 	"자동 열기가 꺼져 있는 동안에는 무시 설정만 사용됩니다. 무시로 설정한 아이템은 여전히 빠른 획득이 가져가지 않습니다."
+-- The same while Speedy Loot is off too.
+L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
+	"자동 열기와 빠른 획득이 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"목록을 기본값으로 되돌립니다: 모든 아이템이 기본 설정으로 돌아가고, 제거한 아이템은 다시 나타나며, 추가한 아이템은 사라집니다."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -720,3 +815,391 @@ L["OPENING_REASON_BIND_ON_PICKUP"] =
 	"획득 시 귀속 아이템이 들어 있을 수 있습니다. 열지 않으면 거래하거나 판매할 수 있습니다."
 L["OPENING_REASON_UNIQUE"] =
 	"고유 아이템이 들어 있을 수 있습니다. 이미 가지고 있으면 열 때 오류가 발생합니다."
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Sent to the Group
+--------------------------------------------------------------------------------
+
+--[[
+    What the Loot Master sends when it calls a roll, in the sent format: no
+    closing period, since the add-on name follows. Item arguments are links.
+    Calls, ties and pauses go to Raid Warning where the player can send one;
+    results go to group chat.
+]]
+-- Arguments: the item, then the roll's length in seconds.
+L["ROLL_CALL_START"] = "%s: /roll로 주사위를 굴리세요, %d초"
+-- Arguments: the seconds left, then the item.
+L["ROLL_CALL_LAST_SECONDS"] = "%d초 남음: %s"
+-- +10 Seconds. Arguments: the seconds added, then the item.
+L["ROLL_CALL_EXTENDED"] = "%d초 연장: %s"
+-- Arguments: the item, then the rolls that didn't count, each one of the four lines below, joined by commas.
+L["ROLL_CALL_NOT_COUNTED"] = "%s 집계 제외: %s"
+-- Arguments: the player, then their roll.
+L["ROLL_CALL_NOT_COUNTED_EARLY"] = "%s님 호출 전 주사위 (%d)"
+L["ROLL_CALL_NOT_COUNTED_REPEAT"] = "%s님 추가 주사위 (%d)"
+-- Arguments: the player, their roll, then the range they rolled in.
+L["ROLL_CALL_NOT_COUNTED_RANGE"] = "%s님 %d (%d-%d)"
+L["ROLL_CALL_NOT_COUNTED_NOT_TIED"] = "%s님 %d (동점 재굴림 대상 아님)"
+-- Arguments: the tied players, the roll they tied at, the item, the tied players again, then the seconds.
+L["ROLL_CALL_TIE"] = "%s님 %d 동점: %s. %s님만 /roll 다시, %d초"
+-- With Re-roll Ties off. Arguments: the tied players, the roll they tied at, then the item.
+L["ROLL_CALL_TIE_HELD"] = "%s님 %d 동점: %s. 동점 재굴림 예정"
+-- Arguments: the winner, the item, then the winning roll.
+L["ROLL_CALL_WINS"] = "%s님 획득: %s (%d)"
+-- After a disqualification or a restore changed who won. Arguments as above.
+L["ROLL_CALL_NOW_WINS"] = "변경, %s님 획득: %s (%d)"
+-- Argument: the item.
+L["ROLL_CALL_NOBODY"] = "%s: 아무도 굴리지 않음. 일단 내 목록에 남겨 둠"
+L["ROLL_CALL_NOBODY_LEFT"] = "%s: 유효한 주사위 없음. 다시 내 목록으로"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_DISQUALIFIED_NO_REASON"] = "%s님의 주사위 %d 실격 처리: %s"
+-- The same with a reason. Arguments: the player, their roll, the item, then one of the ROLL_DISQUALIFY_REASON_ lines.
+L["ROLL_CALL_DISQUALIFIED_BECAUSE"] = "%s님의 주사위 %d 실격 처리: %s, 사유: %s"
+-- Arguments: the player, their roll, then the item.
+L["ROLL_CALL_RESTORED"] = "%s님의 주사위 %d 복원: %s"
+-- Arguments: the item, then the seconds.
+L["ROLL_CALL_VOIDED"] = "%s: 모든 주사위 무효. /roll로 다시 굴리세요, %d초"
+-- Argument: the item.
+L["ROLL_CALL_CANCELED"] = "%s 주사위 취소. 굴리지 말고 대기"
+L["ROLL_CALL_PAUSED"] = "굴리지 말고 대기. %s 일시 중지"
+-- Arguments: the item, then the seconds left.
+L["ROLL_CALL_RESUMED"] = "%s 주사위 재개, %d초 남음"
+-- Each argument: items, joined by commas.
+L["ROLL_CALL_ROLL_ALL"] = "순서대로 주사위 진행: %s"
+L["ROLL_CALL_UP_FOR_ROLL"] = "주사위 대상: %s"
+L["ROLL_CALL_FLOOR_LOOT"] = "기타 전리품 주사위 대상: %s"
+-- Drops by boss posted to the group, a line per boss. Arguments: the boss, then its drops, joined by commas.
+L["DROPS_POST_LINE"] = "%s: %s"
+
+--------------------------------------------------------------------------------
+-- Roll Calls: Printed
+--------------------------------------------------------------------------------
+
+-- Outside a group there's nobody to send to. Argument: the line a group would have seen.
+L["ROLL_CALL_SOLO_PREVIEW"] = "파티에 속해 있지 않아 아무에게도 보내지 않았습니다: %s"
+-- Arguments: the winner, then the item.
+L["ROLL_CALL_WON_PRINT"] =
+	"%s님이 차지했습니다: %s. 그 플레이어와 거래를 열면 GogoLoot가 아이템을 거래 창에 넣어 줍니다."
+
+--------------------------------------------------------------------------------
+-- Roll Tags and Reasons
+--------------------------------------------------------------------------------
+
+-- Beside a roll in the loot windows: why it doesn't count, or where it stands.
+L["ROLL_TAG_EARLY"] = "호출 전에 굴림"
+L["ROLL_TAG_LATE"] = "마감 후에 굴림"
+L["ROLL_TAG_REPEAT"] = "추가 주사위, 집계 안 됨"
+-- Arguments: the range the player rolled in.
+L["ROLL_TAG_RANGE"] = "잘못된 범위 (%d-%d)"
+L["ROLL_TAG_NOT_TIED"] = "동점 재굴림 대상 아님"
+L["ROLL_TAG_DISQUALIFIED"] = "실격"
+-- Argument: one of the reasons below.
+L["ROLL_TAG_DISQUALIFIED_BECAUSE"] = "실격: %s"
+L["ROLL_TAG_WINNER"] = "승자"
+L["ROLL_TAG_HIGHEST"] = "현재 최고"
+L["ROLL_TAG_TIED"] = "동점"
+
+-- The reasons offered when the loot master disqualifies a roll, also sent after ROLL_CALL_DISQUALIFIED_BECAUSE's colon.
+L["ROLL_DISQUALIFY_REASON_NOT_ELIGIBLE"] = "이 아이템을 받을 자격 없음"
+L["ROLL_DISQUALIFY_REASON_ALREADY_WON"] = "오늘 밤 이미 아이템 획득"
+L["ROLL_DISQUALIFY_REASON_FOR_SOMEONE_ELSE"] = "다른 사람 대신 굴림"
+L["ROLL_DISQUALIFY_REASON_NONE"] = "사유 없음"
+
+--------------------------------------------------------------------------------
+-- Loot Master Window
+--------------------------------------------------------------------------------
+
+-- The tabs. Argument: how many items each holds.
+L["LOOT_MASTER_TAB_ROLL_LIST"] = "주사위 목록 (%d)"
+L["LOOT_MASTER_TAB_FLOOR_LOOT"] = "기타 전리품 (%d)"
+L["LOOT_MASTER_TAB_AWARDED"] = "분배 완료 (%d)"
+L["LOOT_MASTER_TAB_SOFT_RESERVES"] = "소프트 예약"
+
+-- The Roll List's buttons.
+L["LOOT_MASTER_ROLL"] = "주사위 시작"
+L["LOOT_MASTER_ROLL_AGAIN"] = "주사위 다시 시작"
+L["LOOT_MASTER_ROLL_ALL"] = "전체 주사위"
+L["LOOT_MASTER_PAUSE"] = "일시 중지"
+L["LOOT_MASTER_RESUME"] = "재개"
+L["LOOT_MASTER_STOP"] = "중단"
+L["LOOT_MASTER_LIST_IN_RAID"] = "공격대에 목록 게시"
+L["LOOT_MASTER_MOVE_UP"] = "위로 이동"
+L["LOOT_MASTER_MOVE_DOWN"] = "아래로 이동"
+-- Argument: the seconds added.
+L["LOOT_MASTER_EXTEND"] = "+%d초"
+L["LOOT_MASTER_CLOSE_NOW"] = "지금 마감"
+L["LOOT_MASTER_VOID"] = "모든 주사위 무효화"
+L["LOOT_MASTER_CANCEL_ROLL"] = "주사위 취소"
+L["LOOT_MASTER_TAKE_OFF"] = "목록에서 제거"
+-- Argument: the winner.
+L["LOOT_MASTER_GIVE"] = "%s님에게 주기"
+L["LOOT_MASTER_TRADE"] = "%s님과 거래"
+L["LOOT_MASTER_ANNOUNCE_WINNER"] = "승자 공지"
+L["LOOT_MASTER_HANDED_OUT"] = "분배 완료로 표시"
+L["LOOT_MASTER_REROLL_TIED"] = "동점자 재굴림"
+L["LOOT_MASTER_DISQUALIFY"] = "실격"
+L["LOOT_MASTER_RESTORE"] = "복원"
+
+-- A row's trade clock, where it has none to show.
+L["LOOT_MASTER_ON_CORPSE"] = "시체에 있음"
+L["LOOT_MASTER_CORPSE_CLOSED"] = "시체 닫힘"
+L["LOOT_MASTER_BOUND"] = "귀속됨"
+L["LOOT_MASTER_NO_LIMIT"] = "제한 없음"
+
+-- A row's state. Argument: how many rolls have landed.
+L["LOOT_MASTER_STATUS_ROLLING"] = "진행 중, 주사위 %d개"
+L["LOOT_MASTER_STATUS_TIE_BREAK"] = "동점 재굴림, 주사위 %d개"
+L["LOOT_MASTER_STATUS_ON_HOLD"] = "보류, 주사위 %d개"
+-- STATUS_TIED and STATUS_NOBODY also title a finished roll in the Loot Tracker.
+L["LOOT_MASTER_STATUS_TIED"] = "동점"
+L["LOOT_MASTER_STATUS_NOBODY"] = "아무도 굴리지 않음"
+L["LOOT_MASTER_STATUS_SOULBOUND"] = "이제 귀속됨"
+L["LOOT_MASTER_STATUS_UP_NEXT"] = "다음 차례"
+
+-- The first line of an opened row.
+L["LOOT_MASTER_HEADLINE_ROLLING"] = "주사위 진행 중, %d초 남았습니다."
+L["LOOT_MASTER_HEADLINE_ON_HOLD"] = "%d초 남은 상태로 보류 중입니다."
+-- Arguments: the tied players, then the seconds left.
+L["LOOT_MASTER_HEADLINE_TIE_BREAK"] = "%s님 동점 재굴림 중, %d초 남았습니다."
+-- Arguments: the winner, then the winning roll.
+L["LOOT_MASTER_HEADLINE_WON"] = "%s님이 승리했습니다: %d."
+-- Arguments: the tied players, then the roll they tied at.
+L["LOOT_MASTER_HEADLINE_TIED"] = "%s님이 동점입니다: %d."
+L["LOOT_MASTER_HEADLINE_SOULBOUND"] = "이제 귀속되어 더 이상 거래할 수 없습니다."
+-- Argument: the boss. Also under the game's own trade line on a bag item's tooltip while it is on the Roll List.
+L["LOOT_MASTER_LOOTED_FROM"] = "획득처: %s."
+L["LOOT_MASTER_FROM_FLOOR_LOOT"] = "출처: 기타 전리품."
+-- After the line above. Argument: how long, in the game's own words for time.
+L["LOOT_MASTER_TRADABLE_FOR"] = "앞으로 %s 동안 거래할 수 있습니다."
+-- Headings over a row's rolls; ROUND_SO_FAR also heads an open roll in the Loot Tracker.
+L["LOOT_MASTER_ROUND_SO_FAR"] = "지금까지의 주사위"
+L["LOOT_MASTER_ROUND_ROLLS"] = "주사위"
+L["LOOT_MASTER_ROUND_FIRST"] = "첫 주사위"
+L["LOOT_MASTER_ROUND_TIE_BREAK"] = "동점 재굴림"
+-- Arguments: how many, then their names. Also in the Loot Tracker.
+L["LOOT_MASTER_HASNT_ROLLED"] = "굴리지 않음 (%d): %s"
+
+L["LOOT_MASTER_EMPTY"] =
+	"아직 분배할 것이 없습니다. 획득한 거래 가능 전리품은 자동으로 여기에 추가되며, 다른 가방 아이템은 Alt + 클릭으로 추가하세요."
+-- The line beside the Roll List's buttons.
+L["LOOT_MASTER_STATE_PAUSED"] = "일시 중지됨."
+L["LOOT_MASTER_STATE_ROLL_ALL"] = "전체 주사위: %d개 남음."
+L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "한 번에 하나씩 진행합니다."
+L["LOOT_MASTER_STATE_WAITING"] = "%d개가 주사위를 기다리는 중."
+-- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
+L["LOOT_MASTER_FOOTER"] = "분배할 아이템 %d개."
+L["LOOT_MASTER_FOOTER_CLOCK"] = "분배할 아이템 %d개, 다음 거래 기한은 %s 후 만료됩니다."
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "가방 아이템을 Alt + 클릭하여 추가"
+
+-- The Disqualify window.
+L["LOOT_MASTER_DISQUALIFY_TITLE"] = "주사위 실격"
+-- Arguments: the player, their roll, then the item.
+L["LOOT_MASTER_DISQUALIFY_BODY"] =
+	"%s님의 주사위(%d)를 %s 경쟁에서 제외하시겠습니까? 나중에 복원할 수 있습니다."
+L["LOOT_MASTER_DISQUALIFY_REASON"] = "사유"
+L["LOOT_MASTER_DISQUALIFY_TELLS"] = "GogoLoot가 파티에 알릴 내용:"
+-- Argument: the item.
+L["LOOT_MASTER_VOID_CONFIRM"] =
+	"%s에 대한 모든 주사위를 무효화하고 다시 주사위를 요청하시겠습니까?"
+
+-- Printed by the Loot Master.
+L["LOOT_MASTER_ROLL_ALL_DONE"] =
+	"전체 주사위가 끝났습니다. 주사위 목록의 모든 아이템에 주사위를 굴렸습니다."
+L["LOOT_MASTER_ROLL_ALL_PAUSED"] =
+	"전체 주사위를 일시 중지했습니다. 재개를 누를 때까지 새 주사위를 시작하지 않습니다."
+L["LOOT_MASTER_ROLL_ALL_RESUMED"] = "전체 주사위를 재개했습니다."
+L["LOOT_MASTER_ROLL_ALL_STOPPED"] =
+	"전체 주사위를 중단했습니다. 진행 중인 주사위는 끝까지 진행됩니다."
+-- Arguments: the item, then the whole minutes left.
+L["LOOT_MASTER_TRADE_TIME_LOW"] = "%s: 앞으로 %d분 동안 거래할 수 있습니다."
+-- Argument: the item.
+L["LOOT_MASTER_TRADE_TIME_OVER"] = "%s: 더 이상 거래할 수 없습니다."
+-- Arguments: the item, the winner, then their winning roll.
+L["LOOT_MASTER_TRADE_FILLED"] = "%s 아이템을 거래 창에 넣었습니다: %s님, 승리 주사위 %d."
+-- Arguments: the winner, then the item.
+L["LOOT_MASTER_NOT_A_CANDIDATE"] = "%s님에게 이 시체의 %s 아이템을 줄 수 없습니다."
+-- Argument: the item.
+L["LOOT_MASTER_ADDED"] = "%s: 주사위 목록에 추가되었습니다."
+L["LOOT_MASTER_NOT_TRADABLE"] = "%s: 거래할 수 없어 주사위 목록에 추가할 수 없습니다."
+-- Argument: how many joined.
+L["LOOT_MASTER_FLOOR_ADDED"] = "기타 전리품 아이템이 주사위 목록에 추가되었습니다: %d개."
+L["LOOT_MASTER_OFF"] =
+	"전리품 관리자가 꺼져 있습니다. 설정 > 애드온 > GogoLoot > 전리품 관리자에서 켜세요."
+
+-- A bag item's tooltip, under the game's own trade line, while it is on the Roll List.
+L["LOOT_MASTER_TOOLTIP_ON_ROLL_LIST"] = "주사위 목록에 있음."
+-- Arguments: the winner, then their winning roll.
+L["LOOT_MASTER_TOOLTIP_WON_BY"] = "획득자: %s, 주사위 %d."
+
+-- Floor Loot. The add box, filter and Add from Bags use the item lists' own words (ITEM_LIST_*).
+L["LOOT_MASTER_FLOOR_DESCRIPTION"] =
+	"거래 기한이 없지만 주사위로 나누고 싶은 전리품: 재료, 제조법, 착용 시 귀속 장비. 처음엔 비어 있어 추가한 것만 주사위를 굴립니다. 묶음당 주사위 한 번."
+L["LOOT_MASTER_FLOOR_EMPTY"] =
+	"아직 아무것도 없습니다. '가방에서 추가'에서 고르거나, 위 칸에 아이템을 끌어다 놓으세요."
+-- Argument: how many the bags hold.
+L["LOOT_MASTER_FLOOR_IN_BAGS"] = "가방에 %d개"
+L["LOOT_MASTER_FLOOR_ON_ROLL_LIST"] = "주사위 목록에 있음"
+L["LOOT_MASTER_FLOOR_REMOVE"] = "기타 전리품에서 이 아이템을 제거합니다."
+-- The heading for an item whose kind the game hasn't said yet.
+L["LOOT_MASTER_FLOOR_OTHER"] = "기타"
+L["LOOT_MASTER_FLOOR_ADD_ALL"] = "모두 주사위 목록에 추가"
+-- Add from Bags' two headings.
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "이 인스턴스에서 획득"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "가방에 있는 다른 아이템"
+-- Argument: what was typed.
+L["LOOT_MASTER_FLOOR_NOT_FOUND"] = '가방에 "%s"에 맞는 거래 가능 아이템이 없습니다.'
+
+-- Awarded.
+L["LOOT_MASTER_AWARDED_EMPTY"] =
+	"아직 분배한 것이 없습니다. 승자가 아이템을 받으면 여기에 표시됩니다."
+-- Arguments: the winning roll, then the time it was handed out.
+L["LOOT_MASTER_AWARDED_ROLLED"] = "주사위 %d, %s"
+-- Argument: the time it was handed out.
+L["LOOT_MASTER_AWARDED_GIVEN"] = "분배: %s"
+L["LOOT_MASTER_AWARDED_CLEAR"] = "지우기"
+
+-- Soft Reserves, a placeholder for now.
+L["LOOT_MASTER_SOFT_RESERVES_DESCRIPTION"] =
+	"누가 무엇을 예약했는지 보려면 여기에 소프트 예약 문자열을 붙여 넣으세요. 준비 중: 이 탭은 아직 자리만 잡아 둔 상태입니다."
+L["LOOT_MASTER_SOFT_RESERVES_PLACEHOLDER"] = "소프트 예약 가져오기는 아직 준비되지 않았습니다."
+L["LOOT_MASTER_SOFT_RESERVES_IMPORT"] = "가져오기"
+
+--------------------------------------------------------------------------------
+-- Loot Tracker Window
+--------------------------------------------------------------------------------
+
+L["LOOT_TRACKER_TITLE"] = "전리품 추적기"
+L["LOOT_TRACKER_TAB_ROLLS"] = "주사위"
+L["LOOT_TRACKER_TAB_DROPS"] = "드롭 목록"
+L["LOOT_TRACKER_NO_ROLL"] = "오늘 밤에는 아직 주사위가 없습니다."
+-- Argument: who called the roll.
+L["LOOT_TRACKER_CALLED_BY"] = "요청자: %s"
+L["LOOT_TRACKER_SPOTTED"] = "%s님의 대화에서 발견"
+-- Argument: whole seconds left.
+L["LOOT_TRACKER_SECONDS_LEFT"] = "%d초 남음"
+-- A roll called without GogoLoot. Argument: who called it.
+L["LOOT_TRACKER_UNSYNCED_NOTE"] =
+	"%s님은 GogoLoot를 사용하지 않으므로, 대화창에서 본 주사위를 일반 규칙(1-100, 첫 주사위만)으로 확인한 결과입니다. 최종 결정은 요청자에게 있습니다."
+L["LOOT_TRACKER_ON_HOLD"] = "보류 중입니다. 다시 굴리라는 요청을 기다리세요."
+L["LOOT_TRACKER_TIE_BREAK_ROLLS"] = "동점 재굴림 주사위"
+-- Arguments: the winner, then the winning roll.
+L["LOOT_TRACKER_WON_WITH"] = "%s님 승리: %d"
+L["LOOT_TRACKER_CLOSED"] = "마감"
+-- The sort buttons.
+L["LOOT_TRACKER_SORT_HIGH"] = "높은 순"
+L["LOOT_TRACKER_SORT_TIME"] = "굴린 순"
+L["LOOT_TRACKER_ROLL"] = "주사위 (1-100)"
+-- Beside the player's own roll, and the line beside the Roll and Pass buttons.
+L["LOOT_TRACKER_YOU"] = "나"
+L["LOOT_TRACKER_YOU_ROLLED"] = "주사위 결과: %d."
+L["LOOT_TRACKER_YOU_PASSED"] = "포기했습니다."
+L["LOOT_TRACKER_NOT_ROLLED"] = "아직 굴리지 않았습니다."
+L["LOOT_TRACKER_NOT_IN_TIE_BREAK"] = "지금은 동점자만 굴립니다."
+L["LOOT_TRACKER_EARLIER"] = "오늘 밤 이전 기록"
+--[[
+    The word, in lower case, that marks a group chat line with an item link as
+    a call for rolls by someone without GogoLoot. "roll" is always read too.
+]]
+L["LOOT_TRACKER_ROLL_WORD"] = "주사위"
+
+-- Drops.
+L["LOOT_TRACKER_SHOW_WINNERS"] = "누가 무엇을 받았는지 표시"
+L["LOOT_TRACKER_DROPS_EMPTY"] =
+	"아직 본 드롭이 없습니다. 우두머리를 처치하고 시체에서 전리품을 획득하면 여기에 표시됩니다."
+L["LOOT_TRACKER_DROPS_NOTHING_SEEN"] = "GogoLoot를 사용하는 사람이 아직 획득하지 않았습니다."
+L["LOOT_TRACKER_NOT_HANDED_OUT"] = "아직 분배 안 됨"
+L["LOOT_TRACKER_PRINT"] = "대화창에 표시"
+L["LOOT_TRACKER_POST"] = "공격대에 게시"
+L["LOOT_TRACKER_COPY"] = "복사"
+L["LOOT_TRACKER_COPY_TITLE"] = "Ctrl+C로 복사"
+
+-- Drops by boss, printed and copied.
+L["DROPS_TRASH"] = "일반 몹"
+L["DROPS_NONE"] = "아직 기록된 드롭이 없습니다."
+-- Argument: the instance.
+L["DROPS_PRINT_HEADER"] = "%s 드롭 목록:"
+-- Arguments: the boss, then its drops, joined by commas.
+L["DROPS_PRINT_LINE"] = "%s: %s."
+-- An item and who got it. Arguments: the item, then the winner (with their roll, below).
+L["DROPS_WINNER"] = "%s (%s)"
+-- Arguments: the winner, then their winning roll.
+L["DROPS_WINNER_ROLL"] = "%s %d"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Master
+--------------------------------------------------------------------------------
+
+L["LOOT_MASTER_PANEL_DESCRIPTION"] =
+	"아직 거래할 수 있는 전리품을 아이템별 거래 기한과 함께 주사위로 분배하고, 전리품 추적기에서 모든 주사위를 지켜보세요. 미니맵 버튼을 가운데 클릭하거나 /gogo master 또는 /gogo tracker를 입력하세요."
+L["LOOT_MASTER_ENABLE"] = "전리품 관리자 사용"
+L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
+	"아직 거래할 수 있는 전리품을 추적하고 주사위를 요청합니다. 끄면 전리품 관리자와 전리품 추적기가 열리지 않고 주사위도 읽지 않습니다."
+L["LOOT_MASTER_OPEN"] = "전리품 관리자 열기"
+L["LOOT_TRACKER_OPEN"] = "전리품 추적기 열기"
+-- A dropdown choice. Argument: the number.
+L["LOOT_MASTER_SECONDS"] = "%d초"
+L["LOOT_MASTER_MINUTES"] = "%d분"
+L["LOOT_MASTER_KEEP_RAIDS"] = "%d"
+
+L["LOOT_MASTER_CALLING_HEADER"] = "주사위 요청"
+L["LOOT_MASTER_ROLL_LENGTH"] = "주사위 시간"
+L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "주사위가 열려 있는 시간입니다."
+L["LOOT_MASTER_ANNOUNCE_IN"] = "공지 채널"
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "주사위 요청, 동점, 일시 중지를 알릴 곳입니다."
+L["LOOT_MASTER_CHANNEL_GROUP"] = "파티 대화"
+L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
+	"공격대장이나 부공격대장이 아니면 공격대 경보 대신 파티 대화로 보냅니다. 승자는 항상 파티 대화로 알립니다."
+-- Argument: the seconds.
+L["LOOT_MASTER_WARN_LAST_SECONDS"] = "%d초 남았을 때 경고"
+L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] = "주사위가 곧 마감될 때 파티에 알립니다."
+-- Argument: the seconds.
+L["LOOT_MASTER_STRETCH_LATE"] = "늦게 굴리면 %d초 추가"
+L["LOOT_MASTER_STRETCH_LATE_DESCRIPTION"] =
+	"마지막 몇 초 안에 누가 주사위를 굴리면 주사위를 조금 더 열어 두어, 지연 때문에 놓치는 사람이 없게 합니다."
+L["LOOT_MASTER_END_EARLY"] = "모두 굴리거나 포기하면 조기 마감"
+L["LOOT_MASTER_END_EARLY_DESCRIPTION"] =
+	"모든 파티원이 주사위를 굴리거나 pass를 입력하면 바로 마감합니다."
+L["LOOT_MASTER_REROLL_TIES"] = "동점자끼리 재굴림"
+L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"] =
+	"동점이 나오면 바로 동점자에게 재굴림을 요청합니다. 끄면 '동점자 재굴림'을 누를 때까지 기다립니다."
+L["LOOT_MASTER_ROLL_ALL_PAUSE"] = "전체 주사위의 아이템 간 대기 시간"
+L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] =
+	"전체 주사위가 주사위 하나를 끝내고 다음 주사위를 요청하기 전까지 기다리는 시간입니다."
+
+L["LOOT_MASTER_COUNTING_HEADER"] = "집계되는 주사위"
+-- Argument: the seconds of grace.
+L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
+	"주사위가 열려 있는 동안 파티원이 굴린 일반 /roll (1-100) 중 플레이어별 첫 주사위만 집계합니다(지연을 고려해 %d초 유예). 집계되지 않는 주사위도 사유와 함께 목록에 남습니다."
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "집계되지 않은 주사위 공지"
+L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
+	"주사위가 마감되면 집계되지 않은 주사위와 그 이유를 한 줄로 알립니다. 실격 처리한 주사위는 항상 공지합니다."
+
+L["LOOT_MASTER_TRADE_HEADER"] = "거래 가능 전리품"
+L["LOOT_MASTER_OPEN_ON_TRADABLE"] = "거래 가능 전리품 획득 시 열기"
+L["LOOT_MASTER_OPEN_ON_TRADABLE_DESCRIPTION"] =
+	"파티에 있는 동안 아직 거래할 수 있는 획득 시 귀속 전리품이 가방에 들어오면 전리품 관리자를 엽니다."
+L["LOOT_MASTER_TRADE_WARN"] = "거래 시간이 얼마 남지 않으면 경고"
+L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"] =
+	"주사위 목록의 아이템이 곧 귀속될 때 대화창으로 한 번 알려 줍니다."
+L["LOOT_MASTER_TRADE_WARN_WHEN"] = "경고할 때 남은 거래 시간입니다."
+L["LOOT_MASTER_TRADE_AUTO_FILL"] = "차지한 아이템을 거래 창에 넣기"
+L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
+	"승자와 거래를 열면 승자가 차지한 아이템을 대신 넣어 줍니다. 거래 버튼은 직접 누르세요."
+
+L["LOOT_MASTER_FLOOR_HEADER"] = "기타 전리품"
+L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
+	"기타 전리품은 처음엔 비어 있고 추가한 것만 담습니다. '가방에서 추가'는 이 인스턴스에서 획득한 아이템을 먼저 보여 줍니다."
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "가방에서 없어지면 목록에서 제거"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
+	"거래, 판매, 사용으로 아이템이 하나도 남지 않으면 기타 전리품에서 제거합니다."
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "공격대를 떠나면 기타 전리품 비우기"
+L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] = "공격대마다 빈 기타 전리품 목록으로 시작합니다."
+
+L["LOOT_TRACKER_OPEN_ON_ROLL"] = "누군가 주사위를 요청하면 열기"
+L["LOOT_TRACKER_OPEN_ON_ROLL_DESCRIPTION"] =
+	"파티의 누군가가 GogoLoot나 공격대 경보로 주사위를 요청하면 전리품 추적기를 엽니다."
+L["LOOT_TRACKER_AUTO_CLOSE"] = "주사위가 끝나면 자동으로 닫기"
+L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"] =
+	"자동으로 열린 전리품 추적기는 주사위가 끝나고 30초 뒤에 닫힙니다. 단, 마우스를 올려 두고 있으면 닫히지 않습니다."
+L["LOOT_TRACKER_KEEP_DROPS"] = "드롭 목록에 보관할 공격대 수"
+L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"] = "드롭 목록 탭에 기억할 공격대 수입니다."

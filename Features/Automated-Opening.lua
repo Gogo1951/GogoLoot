@@ -26,7 +26,10 @@ local L = ns.L
 local isPaused = false
 -- What the player was last told, so a held status message prints once the window closes.
 local announcedPaused = false
+-- True while a tick is scheduled; only StartOpenTick sets it and only OpenTick clears it, so two chains never run.
 local openTimerLive = false
+-- False until ns.WORLD_LOAD_DELAY has passed after a login or reload: no scan runs before it.
+local worldReady = false
 local scanPending = false
 local scanDueAt = 0
 local lastBagFullAt = nil
@@ -108,11 +111,16 @@ end
 
 --[[
     The player is busy with something no event reports the end of: an item
-    under the cursor, or an open confirmation pop-up. The tick waits these out
-    itself rather than stopping, since nothing would start it again.
+    under the cursor or held on it, a spell waiting for its target, or an open
+    confirmation pop-up. The tick waits these out itself rather than stopping,
+    since nothing would start it again.
 ]]
 local function IsWaitingOnPlayer()
 	if StaticPopup1 and StaticPopup1:IsShown() then
+		return true
+	end
+	-- A held spell would land on the container, and a held item would be dropped into its slot.
+	if SpellIsTargeting() or CursorHasItem() then
 		return true
 	end
 	-- The player is looking at an item; opening under the cursor would move it.
@@ -151,9 +159,11 @@ local function IsSafeToOpen()
 	if C_Secrets.ShouldUnitSpellCastingBeSecret("player") then
 		return false
 	end
-	if UnitCastingInfo("player") or UnitChannelInfo("player") then
-		return false
-	end
+	--[[
+        A cast doesn't stop opening here: no event reports an ordinary cast
+        ending or being interrupted, so the tick starts anyway and waits the
+        cast out itself (OpenTick).
+    ]]
 
 	return ns.CountFreeBagSlots() >= ns.MIN_FREE_SLOTS
 end
@@ -170,12 +180,16 @@ local function AnnounceStatus()
 	if IsInteractionActive() or isPaused == announcedPaused then
 		return
 	end
+	local told
 	if isPaused then
-		ns:StatusPrint(L["MESSAGE_OPENING_PAUSED"]:format(ns.MIN_FREE_SLOTS))
+		told = ns:StatusPrint(L["MESSAGE_OPENING_PAUSED"]:format(ns.MIN_FREE_SLOTS))
 	else
-		ns:StatusPrint(L["MESSAGE_OPENING_RESUMED"])
+		told = ns:StatusPrint(L["MESSAGE_OPENING_RESUMED"])
 	end
-	announcedPaused = isPaused
+	-- A line the quiet window held back is still owed, and goes out on a later scan.
+	if told then
+		announcedPaused = isPaused
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -387,9 +401,6 @@ local function RunScan()
 		local shouldPause = ns.CountFreeBagSlots() < ns.MIN_FREE_SLOTS
 		if shouldPause ~= isPaused then
 			isPaused = shouldPause
-			if shouldPause then
-				openTimerLive = false
-			end
 		end
 		AnnounceStatus()
 	end
@@ -418,6 +429,9 @@ end
 ---@param force? boolean
 ---@return nil
 function ns.ScheduleOpeningScan(force)
+	if not worldReady then
+		return
+	end
 	if force then
 		RunScan()
 		return
@@ -435,6 +449,7 @@ end
 --------------------------------------------------------------------------------
 
 local function OnWorldLoaded()
+	worldReady = true
 	if IsAutomatedOpeningOn() then
 		isPaused = ns.CountFreeBagSlots() < ns.MIN_FREE_SLOTS
 		announcedPaused = isPaused
@@ -457,13 +472,13 @@ local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
 	end
 end
 
-local function OnCombatEnded()
+local function OnPlayerRegenEnabled()
 	if IsAutomatedOpeningOn() then
 		ns.ScheduleOpeningScan(true)
 	end
 end
 
-local function OnStealthChanged()
+local function OnUpdateStealth()
 	if UnitAffectingCombat("player") then
 		return
 	end
@@ -510,7 +525,6 @@ local function OnUiErrorMessage(errorIdentifier)
 	lastBagFullAt = now
 	isPaused = true
 	announcedPaused = true
-	openTimerLive = false
 	ns:StatusPrint(ERR_INV_FULL)
 	PlayBagFullSound()
 end
@@ -532,9 +546,9 @@ local IGNORED_NOTICES = {
 --[[
     What the player is told about a container they just looted: a lockbox set to
     Open that will open itself once its lock is picked, or an item set to Ignore
-    that Automated Opening will leave alone. The first promises automatic
-    opening, so it needs Automated Opening on as well as its own toggle in the
-    panel's Lockboxes section.
+    that Automated Opening will leave alone. Both speak for Automated Opening,
+    so both need it on, as well as their own toggles: the Lockboxes panel's,
+    and the Ignore notice's on the Automated Opening panel.
 ]]
 local function AnnounceLootedContainer(itemIdentifier, itemLink)
 	local action = ns:GetOpeningAction(itemIdentifier)
@@ -543,7 +557,7 @@ local function AnnounceLootedContainer(itemIdentifier, itemLink)
 		if default == ns.OPENING_UNLOCKED and IsAutomatedOpeningOn() and LockboxNotificationsEnabled() then
 			ns:PrintMessage(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(itemLink))
 		end
-	elseif action == ns.OPENING_IGNORE and ns.db.profile.openingIgnoreNotifications then
+	elseif action == ns.OPENING_IGNORE and IsAutomatedOpeningOn() and ns.db.profile.openingIgnoreNotifications then
 		ns:AnnounceItemOnce(IGNORED_NOTICES[default] or "MESSAGE_ITEM_IGNORED", itemIdentifier, itemLink)
 	end
 end
@@ -583,16 +597,35 @@ local function OnTradeClosed()
 	ns.RescanAfterUnlock()
 end
 
+-- Whether the loot window now open answers one of GogoLoot's own opens.
+local lootWindowFromOpen = false
+
 -- A loot window answers the last open, so the game took it.
 local function OnLootOpened()
+	lootWindowFromOpen = pendingOpenItem ~= nil
 	if pendingOpenItem then
 		refusedOpenCounts[pendingOpenItem] = nil
 		pendingOpenItem = nil
 	end
 end
 
+--[[
+    Closing the window an open brought up rescans at once, so the next
+    container follows without a pause. A corpse or chest window only schedules
+    the debounced scan: its loot's bag events land in the same burst.
+]]
+local function OnLootClosed()
+	if lootWindowFromOpen then
+		lootWindowFromOpen = false
+		OnInteractionClosed()
+		return
+	end
+	ns.ScheduleOpeningScan()
+	C_Timer.After(ns.STATUS_FLUSH_DELAY, AnnounceStatus)
+end
+
 -- A level-up can lift a level requirement, so every item set aside gets another try.
-local function OnLevelUp()
+local function OnPlayerLevelUp()
 	wipe(refusedItems)
 	wipe(refusedOpenCounts)
 	if IsAutomatedOpeningOn() then
@@ -601,8 +634,8 @@ local function OnLevelUp()
 end
 
 ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnPlayerEnteringWorld)
-ns:RegisterModuleEvent("PLAYER_REGEN_ENABLED", OnCombatEnded)
-ns:RegisterModuleEvent("UPDATE_STEALTH", OnStealthChanged)
+ns:RegisterModuleEvent("PLAYER_REGEN_ENABLED", OnPlayerRegenEnabled)
+ns:RegisterModuleEvent("UPDATE_STEALTH", OnUpdateStealth)
 ns:RegisterModuleEvent("UNIT_SPELLCAST_SUCCEEDED", OnSpellcastSucceeded, "player")
 ns:RegisterModuleEvent("UI_ERROR_MESSAGE", OnUiErrorMessage)
 ns:RegisterModuleEvent("CHAT_MSG_LOOT", OnChatMessageLoot)
@@ -615,8 +648,8 @@ ns:RegisterModuleEvent("GOSSIP_CLOSED", OnInteractionClosed)
 ns:RegisterModuleEvent("MAIL_CLOSED", OnInteractionClosed)
 ns:RegisterModuleEvent("MERCHANT_CLOSED", OnInteractionClosed)
 ns:RegisterModuleEvent("QUEST_FINISHED", OnInteractionClosed)
-ns:RegisterModuleEvent("LOOT_CLOSED", OnInteractionClosed)
+ns:RegisterModuleEvent("LOOT_CLOSED", OnLootClosed)
 ns:RegisterModuleEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", OnInteractionClosed)
 ns:RegisterModuleEvent("TRADE_CLOSED", OnTradeClosed)
 ns:RegisterModuleEvent("LOOT_OPENED", OnLootOpened)
-ns:RegisterModuleEvent("PLAYER_LEVEL_UP", OnLevelUp)
+ns:RegisterModuleEvent("PLAYER_LEVEL_UP", OnPlayerLevelUp)
