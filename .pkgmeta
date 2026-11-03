@@ -39,3 +39,4 @@ ignore:
   - README-Testing.md
   - Tests
   - Data/Wrath
+  - Data/Mainline
