@@ -42,26 +42,6 @@ function ns.GetLockpickingSkillName()
 end
 
 --[[
-    A skill line's current rank, found by its localized name. WoW Forever has no
-    skill-line API, so there this answers nil, which every caller already treats
-    as unknown.
-]]
----@param skillName string|nil
----@return number|nil
-local function GetSkillLineRank(skillName)
-	if not skillName or not GetNumSkillLines or not GetSkillLineInfo then
-		return nil
-	end
-	for skillIndex = 1, GetNumSkillLines() do
-		local lineName, isHeader, _, rank = GetSkillLineInfo(skillIndex)
-		if not isHeader and lineName == skillName then
-			return rank
-		end
-	end
-	return nil
-end
-
---[[
     Nil when the rank can't be read: a non-Rogue, an untrained Rogue, a client
     that hasn't named the skill line yet, or a client with no skill-line API at
     all (WoW Forever). Every caller treats nil as unknown and falls back to
@@ -69,7 +49,7 @@ end
 ]]
 ---@return number|nil
 function ns.GetPlayerLockpickingSkill()
-	return GetSkillLineRank(ns.GetLockpickingSkillName())
+	return ns.GetSkillLineRankByName(ns.GetLockpickingSkillName())
 end
 
 --------------------------------------------------------------------------------
@@ -227,7 +207,7 @@ end
 ]]
 local hookInstalled = false
 
-local function InstallTooltipHook()
+local function OnPlayerLogin()
 	if hookInstalled then
 		return
 	end
@@ -237,4 +217,4 @@ local function InstallTooltipHook()
 	end)
 end
 
-ns:RegisterModuleEvent("PLAYER_LOGIN", InstallTooltipHook)
+ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)

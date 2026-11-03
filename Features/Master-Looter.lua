@@ -275,9 +275,20 @@ function ns:GetGroupMemberSorting()
 end
 
 --[[
-    The destination shared by every quality tier, or nil when they disagree.
-    Backs the Send All Loot To dropdown, which shows blank rather than picking
-    one tier's answer to stand for all of them.
+    Whether the loot threshold reaches a quality, so master loot hands it out at
+    all. A quality below it never reaches the master looter, so the Master
+    Looter panel hides its row and Send All Loot To leaves it out.
+]]
+---@param quality number
+---@return boolean
+function ns:IsQualityReachable(quality)
+	return quality >= ns:SafeGetLootThreshold()
+end
+
+--[[
+    The destination shared by every quality tier the loot threshold reaches,
+    or nil when they disagree. Backs the Send All Loot To dropdown, which shows
+    blank rather than picking one tier's answer to stand for all of them.
 ]]
 ---@return string|nil
 function ns:GetSharedDestination()
@@ -286,7 +297,7 @@ function ns:GetSharedDestination()
 
 	for quality = 0, 4 do
 		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
-		if qualityKey then
+		if qualityKey and ns:IsQualityReachable(quality) then
 			local destination = ns.db.profile.destinations[qualityKey]
 			--[[
                 An explicit "no destination" is a value in its own right, so the
@@ -327,45 +338,15 @@ end
 function ns:GetSharedDestinationChoice()
 	for quality = 0, 4 do
 		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
-		if qualityKey and ns:GetDestinationChoice(qualityKey) ~= ns.DESTINATION_LOOT_WINDOW then
+		if
+			qualityKey
+			and ns:IsQualityReachable(quality)
+			and ns:GetDestinationChoice(qualityKey) ~= ns.DESTINATION_LOOT_WINDOW
+		then
 			return ns:GetSharedDestination()
 		end
 	end
 	return ns.DESTINATION_LOOT_WINDOW
-end
-
---[[
-    Writes one destination to every tier and announces once, not once per tier.
-    Loot Window clears every tier instead, and says nothing: nobody is holding
-    anything for the group, and the loot window is where the master looter
-    hands it out by hand.
-]]
----@param targetPlayerName string
----@return nil
-function ns:SetAllDestinations(targetPlayerName)
-	local destination = targetPlayerName ~= ns.DESTINATION_LOOT_WINDOW and targetPlayerName or nil
-	for quality = 0, 4 do
-		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
-		if qualityKey then
-			ns.db.profile.destinations[qualityKey] = destination
-		end
-	end
-	if not destination then
-		return
-	end
-
-	if not IsInGroup() then
-		return
-	end
-	if not ns.db.profile.announceDestinations then
-		return
-	end
-	ns:Announce(
-		ns:GetGroupChatChannel(),
-		nil,
-		"MESSAGE_DESTINATION_SET_ALL",
-		ns:GetDestinationDisplayName(targetPlayerName)
-	)
 end
 
 ---@param targetPlayerName string
@@ -387,11 +368,45 @@ end
 ]]
 ---@param targetPlayerName string
 ---@return string
-function ns:GetDestinationDisplayName(targetPlayerName)
+local function GetDestinationDisplayName(targetPlayerName)
 	if not IsNonSelfDestination(targetPlayerName) then
 		return ns:FormatPlayerName(ns:GetCleanUnitName("player"))
 	end
 	return ns:FormatPlayerName(targetPlayerName)
+end
+
+--[[
+    Writes one destination to every tier the loot threshold reaches and
+    announces once, not once per tier. Loot Window clears every tier instead,
+    and says nothing: nobody is holding anything for the group, and the loot
+    window is where the master looter hands it out by hand.
+]]
+---@param targetPlayerName string
+---@return nil
+function ns:SetAllDestinations(targetPlayerName)
+	local destination = targetPlayerName ~= ns.DESTINATION_LOOT_WINDOW and targetPlayerName or nil
+	for quality = 0, 4 do
+		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
+		if qualityKey and (not destination or ns:IsQualityReachable(quality)) then
+			ns.db.profile.destinations[qualityKey] = destination
+		end
+	end
+	if not destination then
+		return
+	end
+
+	if not IsInGroup() then
+		return
+	end
+	if not ns.db.profile.announceDestinations then
+		return
+	end
+	ns:Announce(
+		ns:GetGroupChatChannel(),
+		nil,
+		"MESSAGE_DESTINATION_SET_ALL",
+		GetDestinationDisplayName(targetPlayerName)
+	)
 end
 
 ---@param targetPlayerName string
@@ -404,7 +419,7 @@ function ns:AnnounceDestinationSet(targetPlayerName, qualityKey)
 	if not ns.db.profile.announceDestinations then
 		return
 	end
-	local displayName = ns:GetDestinationDisplayName(targetPlayerName)
+	local displayName = GetDestinationDisplayName(targetPlayerName)
 	local qualityLabel = ns.QUALITY_DISPLAY_NAMES[qualityKey] or ns:CapitalizeFirstLetter(qualityKey)
 	ns:Announce(ns:GetGroupChatChannel(), nil, "MESSAGE_DESTINATION_SET", displayName, qualityLabel)
 end
@@ -462,15 +477,26 @@ local function CheckDestinationsForLeavers()
 	local masterLooterDisplayName = ns:FormatPlayerName(myName)
 	local chatChannel = ns:GetGroupChatChannel()
 
-	-- One line per leaver, naming every quality they held, rather than one per quality.
+	--[[
+        One line per leaver, naming every quality they held, rather than one per
+        quality. A quality the threshold doesn't reach falls back to the master
+        looter unannounced: the panel doesn't show it, so the line won't name it.
+    ]]
 	local leavers, leaverOrder = {}, {}
 	local tierCount = 0
 	for quality = 0, 4 do
 		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
-		if qualityKey then
+		local reachable = qualityKey and ns:IsQualityReachable(quality)
+		if reachable then
 			tierCount = tierCount + 1
+		end
+		if qualityKey then
 			local targetPlayerName = ns.db.profile.destinations[qualityKey]
-			if IsNonSelfDestination(targetPlayerName) then
+			if IsNonSelfDestination(targetPlayerName) and not reachable then
+				if not groupMembers[strlower(targetPlayerName)] then
+					ns.db.profile.destinations[qualityKey] = "self"
+				end
+			elseif IsNonSelfDestination(targetPlayerName) then
 				local targetLower = strlower(targetPlayerName)
 				if not groupMembers[targetLower] then
 					local leaver = leavers[targetLower]

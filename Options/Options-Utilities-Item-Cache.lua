@@ -22,8 +22,8 @@ local GetColor = ns.GetColor
     triggers a server request and GET_ITEM_INFO_RECEIVED fires when the data
     arrives. A debounced NotifyChange repaints the item lists as answers
     stream in. The watcher is registered on demand — at login when a saved
-    list contains uncached items, or when the user adds an uncached item ID
-    — and unregisters itself once every list item has resolved or turned out
+    list contains uncached items, when a list panel is built with an uncached
+    row, or when the user adds an uncached item ID — and unregisters itself once every list item has resolved or turned out
     not to exist on this client, so it does not keep running for the rest of
     the session.
 ]]

@@ -13,9 +13,9 @@ local _, ns = ...
     Automated Opening, lockbox, loot sound and loot toast settings; the
     presentation keys and the two account-wide records live in global, per the
     comment on that table below, and the chat tab state Loot Toasts changes
-    lives in char, per character. AceDB physically copies
-    these defaults into the saved table rather than resolving them through a
-    metatable, so there is no manual merge anywhere. The empty
+    lives in char, per character. AceDB serves these defaults through
+    metatables and strips them from the saved table at logout, so there is no
+    manual merge anywhere. The empty
     ignoredItemsMaster / ignoredItemsSolo lists are seeded from this client's
     Data/{Folder}/Default-Item-Lists-{Folder}.lua by Core's refill-on-empty
     rule, never here.
@@ -59,7 +59,7 @@ ns.DATABASE_DEFAULTS = {
 		hideRollMessages = true,
 		-- With Hide Roll Messages on, one GogoLoot line per win in place of the game's won line.
 		winnerSummary = "PRINT",
-		-- Off by default (maintainer, 2026-10-05).
+		-- Off by default (maintainer, 2026-10-05), with no migration: a profile that never set it reads off after updating.
 		autoMasterLoot = false,
 		autoMasterLootOutsideInstances = false,
 		--[[
@@ -94,6 +94,8 @@ ns.DATABASE_DEFAULTS = {
 		lockboxNotifications = true,
 		-- "ROGUES" | "ALL"
 		lockboxNotificationsScope = "ROGUES",
+		-- The Loot Sounds panel's master switch; lootSounds below is the chime alone.
+		lootSoundsEnabled = true,
 		lootSounds = true,
 		lootSoundThreshold = 2,
 		-- Rogues only in practice; nothing else can cast Pick Pocket.
@@ -179,6 +181,35 @@ ns.DATABASE_DEFAULTS = {
 		lootToastFontSize = 16,
 		-- One of ns.LOOT_TOAST_FONT_FLAGS.
 		lootToastFontFlags = "OUTLINE",
+		--[[
+            Loot Master: the window for handing out tradable loot by roll, and
+            the Loot Tracker every raider sees. Off, neither window opens and
+            no roll is read. Off while the windows are parked out of the TOCs.
+        ]]
+		lootMaster = false,
+		-- Seconds a roll stays open; one of ns.ROLL_LENGTHS.
+		rollLength = 20,
+		-- ns.ROLL_CHANNEL_RAID_WARNING | ns.ROLL_CHANNEL_GROUP, for calls, ties and pauses.
+		rollChannel = "RAID_WARNING",
+		rollWarnLastSeconds = true,
+		-- A roll in the last few seconds adds a few more. Off: the timer is what was called.
+		rollStretchLate = false,
+		rollEndWhenAllRolled = false,
+		rollRerollTies = true,
+		-- Seconds Roll All waits between items; one of ns.ROLL_ALL_PAUSES.
+		rollAllPause = 5,
+		rollAnnounceNotCounted = true,
+		lootMasterOpenOnTradable = true,
+		tradeWarnLow = true,
+		-- One of ns.TRADE_WARN_MINUTES.
+		tradeWarnMinutes = 10,
+		tradeAutoFill = true,
+		floorLootDropWhenGone = true,
+		floorLootClearOnLeave = false,
+		lootTrackerOpenOnRoll = true,
+		lootTrackerAutoClose = true,
+		-- One of ns.DROPS_KEEP_RAIDS.
+		dropsKeepRaids = 5,
 	},
 	--[[
 		Account-wide: how GogoLoot presents itself and what it does to the
@@ -188,7 +219,10 @@ ns.DATABASE_DEFAULTS = {
 	]]
 	global = {
 		showWelcome = true,
+		-- It changes how the client's loot window behaves rather than loot policy, so a profile switch or Reset Profile leaves it.
 		speedyLoot = true,
+		-- The Roll Macro is a General macro, shared by every character, so its switch is too.
+		rollMacro = false,
 		minimap = {},
 		--[[
             The player's Openables List changes, { [itemId] = action }: the
@@ -202,9 +236,25 @@ ns.DATABASE_DEFAULTS = {
 		openingActions = {},
 		-- Where the loot toasts sit on screen: a decision about the screen, not the loot.
 		lootToastPosition = {},
+		-- Where the Loot Master and Loot Tracker windows were left, by frame name, for the same reason.
+		lootWindowPositions = {},
 	},
 	char = {
 		-- The General tab's message groups GogoLoot took off it, per character because chat settings are.
 		lootGroupsHiddenByGogoLoot = {},
+		--[[
+            The Loot Master's lists, per character because they are what this
+            character carries: the Roll List's entries in the player's order,
+            the Floor Loot item IDs, what was handed out, and the drops by boss
+            of the last few raids. Kept across a /reload, which a raid leader
+            does mid-raid.
+        ]]
+		rollList = {},
+		floorLoot = {},
+		awarded = {},
+		dropRaids = {},
+		-- Item IDs picked up in the current instance, which Add from Bags lists first, and the instance they belong to.
+		pickedUp = {},
+		pickedUpInstance = "",
 	},
 }

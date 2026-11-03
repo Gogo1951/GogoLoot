@@ -200,7 +200,7 @@ local function EvaluateRoll(rollIdentifier)
             tooltip read is the costliest and a rule can only leave a roll
             alone; Item Overrides, which name one item, still come first.
         ]]
-		if ns.CharacterRulesLeaveToPlayer(rollItemLink, parsedItemLink.itemIdentifier) then
+		if ns.CharacterRulesLeaveToPlayer(rollItemLink) then
 			return true
 		end
 		ExecuteRollOverride(rollIdentifier, rollItemLink, contextRollAction, rollGreedAllowed, rollNeedAllowed)

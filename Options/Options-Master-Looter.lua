@@ -13,12 +13,13 @@ local GetQualityColor = ns.GetQualityColor
 --[[
     Rows drawn on the Master Looter panel and again in the master looter pop-up
     (Options-Master-Looter-Popup.lua) are built once here and added to whichever
-    args table asks for them: the pop-up toggle, the Enable Automated Master
-    Looting switch, the leader note, loot method, loot threshold and Send All
-    Loot To. The pop-up's remaining shared row, the
+    args table asks for them: the pop-up toggle, the leader note, loot method,
+    loot threshold and Send All Loot To, each taking (args, order) and
+    returning the next free order. The Enable Automated Master Looting switch
+    (ns.AutomatedMasterLootingSwitch) takes nothing and returns a bare entry
+    for the caller to place. The pop-up's remaining shared row, the
     destination-messages toggle, is built in Options-Announcements.lua, which
-    owns that setting. Every builder takes (args, order) and returns the next
-    free order.
+    owns that setting.
 ]]
 
 local function BuildLootTypeValues()
@@ -314,7 +315,7 @@ local DESTINATION_QUALITIES = {
 ---@param quality number
 ---@return boolean
 local function IsBelowLootThreshold(quality)
-	return quality < ns:SafeGetLootThreshold()
+	return not ns:IsQualityReachable(quality)
 end
 
 --[[

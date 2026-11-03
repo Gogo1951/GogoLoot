@@ -270,6 +270,9 @@ function Fake.newEnvironment()
 				state.brokerObjects[name] = object
 				return object
 			end,
+			GetDataObjectByName = function(_, name)
+				return state.brokerObjects[name]
+			end,
 		},
 		["LibDBIcon-1.0"] = stub("LibDBIcon"),
 		["LibSharedMedia-3.0"] = {
@@ -328,7 +331,12 @@ function Fake.newEnvironment()
 		state.hooks = state.hooks or {}
 		if type(target) == "table" then
 			local postHooks = rawget(target, "__postHooks") or {}
-			postHooks[methodOrHook] = hook
+			-- Two add-on files can hook the same method; the client runs both, in the order hooked.
+			local earlier = postHooks[methodOrHook]
+			postHooks[methodOrHook] = earlier and function(...)
+				earlier(...)
+				hook(...)
+			end or hook
 			rawset(target, "__postHooks", postHooks)
 			return
 		end
@@ -428,6 +436,42 @@ function Fake.newEnvironment()
 	env.GetNumGroupMembers = function()
 		return state.groupMembers
 	end
+
+	--[[
+	    The General macros, in order: { name, icon, body }. CreateMacro errors
+	    once state.macroLimit are made, as the real client does when the tab is
+	    full, and the body comes back with a trailing newline, as it can there.
+	]]
+	state.macros = {}
+	state.macroLimit = 120
+	env.GetMacroIndexByName = function(name)
+		for index, macro in ipairs(state.macros) do
+			if macro.name == name then
+				return index
+			end
+		end
+		return 0
+	end
+	env.GetMacroInfo = function(index)
+		local macro = state.macros[index]
+		if macro then
+			return macro.name, macro.icon, macro.body .. "\n"
+		end
+	end
+	env.CreateMacro = function(name, icon, body)
+		if #state.macros >= state.macroLimit then
+			error("CreateMacro: macro limit reached")
+		end
+		table.insert(state.macros, { name = name, icon = icon, body = body })
+		return #state.macros
+	end
+	env.EditMacro = function(index, name, icon, body)
+		state.macros[index] = { name = name, icon = icon, body = body }
+		return index
+	end
+	env.DeleteMacro = function(index)
+		table.remove(state.macros, index)
+	end
 	--[[
 	    True only for the unit that actually leads, so the options rows can tell
 	    a leader from a member. Answering true for everything would hide the
@@ -473,8 +517,34 @@ function Fake.newEnvironment()
 		table.insert(state.setLootMethodCalls, { method = enumValue, masterLooter = masterLooterName })
 		state.lootMethod = enumValue
 	end
-	env.SendChatMessage = function(message, channel, _, target)
-		table.insert(state.chat, { message = message, channel = channel, target = target })
+	env.C_ChatInfo = {
+		SendChatMessage = function(message, channel, _, target)
+			table.insert(state.chat, { message = message, channel = channel, target = target })
+		end,
+		-- Every add-on message sent, in order: { prefix, message, channel }.
+		SendAddonMessage = function(prefix, message, channel)
+			state.addonMessages = state.addonMessages or {}
+			table.insert(state.addonMessages, { prefix = prefix, message = message, channel = channel })
+		end,
+		RegisterAddonMessagePrefix = function()
+			return true
+		end,
+	}
+	-- Only the unit a test names assists; the leader is state.leaderUnit, as above.
+	env.UnitIsGroupAssistant = function(unitIdentifier)
+		return state.inGroup and state.assistantUnit ~= nil and unitIdentifier == state.assistantUnit
+	end
+	-- The realm's clock, in whole seconds; a test moves it with state.serverTime.
+	env.GetServerTime = function()
+		return state.serverTime or 1700000000
+	end
+	-- Trading: every item picked up from the bags and every trade slot clicked, in order.
+	env.ClickTradeButton = function(tradeSlot)
+		state.tradeClicks = state.tradeClicks or {}
+		table.insert(state.tradeClicks, tradeSlot)
+	end
+	env.InitiateTrade = function(unitIdentifier)
+		state.tradeInitiatedWith = unitIdentifier
 	end
 
 	-- Loot window
@@ -570,6 +640,7 @@ function Fake.newEnvironment()
 		GetCVarBool = function()
 			return true
 		end,
+		SetCVar = function() end,
 	}
 	env.GetBuildInfo = function()
 		return "1.15.9", "68940", nil, 11509
@@ -625,6 +696,10 @@ function Fake.newEnvironment()
 		end,
 		UseContainerItem = function(bagIndex, slotIndex)
 			table.insert(state.usedContainerItems, { bag = bagIndex, slot = slotIndex })
+		end,
+		PickupContainerItem = function(bagIndex, slotIndex)
+			state.pickedUpItems = state.pickedUpItems or {}
+			table.insert(state.pickedUpItems, { bag = bagIndex, slot = slotIndex })
 		end,
 		GetContainerItemInfo = function(bagIndex, slotIndex)
 			local slot = bagSlot(bagIndex, slotIndex)
@@ -889,6 +964,18 @@ function Fake.newEnvironment()
 	function frameMethods:Hide()
 		self.shown = false
 	end
+	function frameMethods:GetFrameStrata()
+		return self.frameStrata or "MEDIUM"
+	end
+	function frameMethods:SetFrameStrata(strata)
+		self.frameStrata = strata
+	end
+	function frameMethods:GetFrameLevel()
+		return self.frameLevel or 1
+	end
+	function frameMethods:SetFrameLevel(level)
+		self.frameLevel = level
+	end
 	function frameMethods:IsShown()
 		if self.frameName and state.shownFrames[self.frameName] ~= nil then
 			return state.shownFrames[self.frameName]
@@ -897,6 +984,13 @@ function Fake.newEnvironment()
 	end
 	function frameMethods:GetName()
 		return self.frameName
+	end
+	function frameMethods:GetParent()
+		return self.parent
+	end
+	-- Whether the frame takes the pointer, so a test can tell a hover area that answers from one that doesn't.
+	function frameMethods:SetMouseMotionEnabled(enabled)
+		self.mouseMotionEnabled = enabled and true or false
 	end
 	-- An edit box's or a button's own text, kept apart from the `text` field code hangs a font string on.
 	function frameMethods:SetText(text)
@@ -955,6 +1049,10 @@ function Fake.newEnvironment()
 			if slot.locked then
 				lines[#lines + 1] = env.LOCKED
 			end
+			-- Any more lines a test gives the slot, such as the trade clock's.
+			for _, extra in ipairs(slot.tooltipLines or {}) do
+				lines[#lines + 1] = extra
+			end
 		end
 		self:SetLines(lines)
 		self.shown = true
@@ -983,9 +1081,20 @@ function Fake.newEnvironment()
 	function tooltipMethods:GetItem()
 		return nil
 	end
+	function tooltipMethods:SetOwner(owner)
+		self.owner = owner
+	end
+	function tooltipMethods:IsOwned(frame)
+		return self.owner == frame
+	end
+	function tooltipMethods:Hide()
+		self.shown = false
+		self.owner = nil
+	end
 
-	env.CreateFrame = function(frameType, frameName)
-		local frame = { scripts = {}, scriptHooks = {}, events = {}, frameName = frameName, lines = {} }
+	env.CreateFrame = function(frameType, frameName, parent)
+		local frame =
+			{ scripts = {}, scriptHooks = {}, events = {}, frameName = frameName, parent = parent, lines = {} }
 		table.insert(state.createdFrames, frame)
 		local methods = frameMethods
 		if frameType == "GameTooltip" then
@@ -1001,6 +1110,7 @@ function Fake.newEnvironment()
 		})
 	end
 
+	env.UIParent = env.CreateFrame("Frame", "UIParent")
 	env.GameTooltip = env.CreateFrame("GameTooltip", "GameTooltip")
 	env.LootFrame = env.CreateFrame("Frame", "LootFrame")
 	-- The interaction windows opening waits on; hidden unless a test sets state.shownFrames[name].
@@ -1030,6 +1140,12 @@ function Fake.newEnvironment()
 	end
 	env.UnitChannelInfo = function()
 		return nil
+	end
+	env.SpellIsTargeting = function()
+		return state.spellTargeting or false
+	end
+	env.CursorHasItem = function()
+		return state.cursorItem or false
 	end
 	env.IsStealthed = function()
 		return state.stealthed
@@ -1156,6 +1272,13 @@ function Fake.newEnvironment()
 	env.ITEM_MOD_HIT_RATING = "Increases your hit by %s."
 	env.ITEM_MOD_MANA_REGENERATION = "Restores %s mana per 5 sec."
 	env.PASS = "Pass"
+	env.RAID_WARNING = "Raid Warning"
+	env.RANDOM_ROLL_RESULT = "%s rolls %d (%d-%d)"
+	env.BIND_TRADE_TIME_REMAINING =
+		"You may trade this item with players that were also eligible to loot this item for the next %s."
+	env.INT_SPELL_DURATION_HOURS = "%d |4hour:hrs;"
+	env.INT_SPELL_DURATION_MIN = "%d min"
+	env.INT_SPELL_DURATION_SEC = "%d sec"
 	env.LOCALIZED_CLASS_NAMES_MALE = { ROGUE = "Rogue", WARRIOR = "Warrior" }
 	env.ITEM_QUALITY0_DESC = "Poor"
 	env.ITEM_QUALITY1_DESC = "Common"
@@ -1229,6 +1352,10 @@ function Fake.newEnvironment()
 		GetSkillLineInfo = true,
 		GuildBankFrame = true,
 		AuctionFrame = true,
+		-- Secret values exist only on WoW Forever and Retail; a stub here would make every roll line read secret.
+		issecretvalue = true,
+		-- Classic has no item GUIDs through ItemLocation in this fake: bag items are keyed by where they sit.
+		ItemLocation = true,
 	}
 
 	-- Anything not named above resolves to a permissive stub.

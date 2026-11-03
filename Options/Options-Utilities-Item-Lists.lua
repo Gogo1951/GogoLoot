@@ -10,8 +10,8 @@
     filters in Options-Utilities-Item-List-Filter.lua, and the
     GogoLoot_ItemLink, GogoLoot_ItemListFilter and GogoLoot_ItemListAdd AceGUI
     widgets in Options-Utilities-Item-List-Widgets.lua, which reaches what it
-    shares through ns.IsItemOnClient, ns.SetItemListFilter and
-    ns.ITEM_LIST_REMOVE_ICON.
+    shares through ns.IsItemOnClient, ns.SetItemListFilter,
+    ns.ITEM_LIST_REMOVE_ICON, ns.MeasureCaptionPixels and ns:GetItemDisplayName.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -24,8 +24,8 @@ local GetColor = ns.GetColor
 --------------------------------------------------------------------------------
 
 --[[
-    Accepts a numeric item ID string or a full item link; returns the numeric
-    item ID or nil.
+    Accepts a typed item ID (digits only) or a full item link; returns the
+    item ID, or nil for anything else, a zero ID included.
 ]]
 
 ---@param rawInput any
@@ -35,16 +35,11 @@ local function ParseItemInput(rawInput)
 		return nil
 	end
 
-	local numericIdentifier = tonumber(rawInput)
-	if numericIdentifier then
-		return numericIdentifier
+	local digits = string.match(rawInput, "^%s*(%d+)%s*$") or string.match(rawInput, "item:(%d+)")
+	local itemIdentifier = digits and tonumber(digits)
+	if itemIdentifier and itemIdentifier > 0 then
+		return itemIdentifier
 	end
-
-	local fromLink = string.match(rawInput, "item:(%d+)")
-	if fromLink then
-		return tonumber(fromLink)
-	end
-
 	return nil
 end
 
@@ -139,7 +134,8 @@ local function GetAddableBagItems(sourceTable, canAdd)
 	local values = {}
 	for _, itemIdentifier in ipairs(sorting) do
 		local count = counts[itemIdentifier]
-		values[itemIdentifier] = ns:GetItemDisplayName(itemIdentifier) .. (count > 1 and (" x" .. count) or "")
+		values[itemIdentifier] = ns:GetItemDisplayName(itemIdentifier)
+			.. (count > 1 and (" " .. L["ITEM_QUANTITY"]:format(count)) or "")
 	end
 	return values, sorting
 end
@@ -304,7 +300,14 @@ end
 local function AddAddRow(args, order, spec)
 	local labels = spec.labels
 	local function AddItem(itemIdentifier)
-		spec.onAdd(itemIdentifier)
+		-- An ID this client lacks would be saved with no row to show it or remove it.
+		if not C_Item.DoesItemExistByID(itemIdentifier) then
+			return
+		end
+		-- An item already listed keeps its setting; it only comes to the top.
+		if spec.getSourceTable()[itemIdentifier] == nil then
+			spec.onAdd(itemIdentifier)
+		end
 		if spec.getSourceTable()[itemIdentifier] ~= nil then
 			ns.RememberNewListItem(spec.notifyKey, itemIdentifier)
 		end
@@ -457,7 +460,7 @@ local function WithNewSection(spec, sections)
 			remaining[#remaining + 1] = section
 		end
 	end
-	table.insert(remaining, 1, { heading = L["ITEM_LIST_NEW"], identifiers = newIdentifiers })
+	table.insert(remaining, 1, { heading = L["ITEM_LIST_NEW"], identifiers = newIdentifiers, isNew = true })
 	return remaining
 end
 
@@ -465,8 +468,9 @@ end
     Each section's header, with the space above and below it that every
     panel's headers get, then its rows (see Item Kind Sections in
     Options-Utilities-Item-List-Filter.lua). With a kind
-    picked, only its section shows. A section the filter empties loses its
-    header too. The first header needs no space above it, having
+    picked, only its section shows, beside New: what the player just added
+    shows whatever the kind and the filter text say, or an add could land out
+    of sight. A section the filter empties loses its header too. The first header needs no space above it, having
     spacerBeforeItems.
 ]]
 ---@return number # the next free order
@@ -481,12 +485,13 @@ local function AddSectionRows(args, order, spec, sections, itemNames, chosenKind
 	local shownRows = 0
 	for sectionIndex, section in ipairs(sections) do
 		local matches = {}
-		if chosenKind == ns.ITEM_LIST_ALL_KINDS or section.heading == chosenKind then
+		if section.isNew or chosenKind == ns.ITEM_LIST_ALL_KINDS or section.heading == chosenKind then
 			for _, itemIdentifier in ipairs(section.identifiers) do
 				local settingLabel = settingLabels and settingLabels[spec.actionColumn.get(itemIdentifier)]
 				local tag = spec.tagFor and spec.tagFor(itemIdentifier)
 				if
-					ns.ItemListRowMatchesFilter(needle, itemIdentifier, itemNames[itemIdentifier], settingLabel, tag)
+					section.isNew
+					or ns.ItemListRowMatchesFilter(needle, itemIdentifier, itemNames[itemIdentifier], settingLabel, tag)
 				then
 					matches[#matches + 1] = itemIdentifier
 				end

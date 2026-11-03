@@ -17,8 +17,10 @@ local L = ns.L
     (Automated Rolls' winner summary).
     While a roll is open the client prints each player's roll, then who won,
     then the winner's loot line; with its roll spam turned down, only a won line
-    that carries the winning roll, then the loot line. Rolls are kept by item
-    link and player until the won line names the winner, whose roll then waits
+    that carries the winning roll, then the loot line. Rolls are kept per roll,
+    by the roll's own "[Loot]" link (two copies of one item rolled at once are
+    two rolls), or by item link on a line without one, and by player until the
+    won line names the winner, whose roll then waits
     for that player's loot line. Anything a loot line never claims (a roll the
     whole group passed, a win the loot window kept) ages out, so nothing
     collects over a long session.
@@ -40,9 +42,9 @@ end
 
 local function PruneRolls()
 	local oldest = GetTime() - ROLL_RECORD_SECONDS
-	for itemLink, rolls in pairs(openRolls) do
+	for rollKey, rolls in pairs(openRolls) do
 		if rolls.recordedAt < oldest then
-			openRolls[itemLink] = nil
+			openRolls[rollKey] = nil
 		end
 	end
 	for key, entry in pairs(winningRolls) do
@@ -68,27 +70,29 @@ end
 ---@return boolean
 function ns.RecordRollLine(message)
 	PruneRolls()
-	local playerName, rollKind, roll, itemLink = ns.ParseRollResultMessage(message)
+	local playerName, rollKind, roll, itemLink, historyLink = ns.ParseRollResultMessage(message)
 	if itemLink then
-		local rolls = openRolls[itemLink] or {}
+		local rollKey = historyLink or itemLink
+		local rolls = openRolls[rollKey] or {}
 		rolls[ns:NormalizePlayerName(playerName) or ""] = { kind = rollKind, roll = roll }
 		rolls.recordedAt = GetTime()
-		openRolls[itemLink] = rolls
+		openRolls[rollKey] = rolls
 		return true
 	end
-	local isWon, winnerName, wonItemLink, wonKind, wonRoll = ns.ParseRollWonMessage(message)
+	local isWon, winnerName, wonItemLink, wonKind, wonRoll, wonHistoryLink = ns.ParseRollWonMessage(message)
 	if not isWon then
 		return false
 	end
 	local name = winnerName or ns:GetCleanUnitName("player")
+	local wonRollKey = wonHistoryLink or wonItemLink
 	if not wonRoll then
-		local rolls = openRolls[wonItemLink]
+		local rolls = openRolls[wonRollKey]
 		local record = rolls and rolls[ns:NormalizePlayerName(name) or ""]
 		if record then
 			wonKind, wonRoll = record.kind, record.roll
 		end
 	end
-	openRolls[wonItemLink] = nil
+	openRolls[wonRollKey] = nil
 	local text = RollText(wonKind, wonRoll)
 	if text then
 		winningRolls[WinnerKey(name, wonItemLink)] = { text = text, recordedAt = GetTime() }

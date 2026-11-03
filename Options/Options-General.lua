@@ -7,54 +7,28 @@ local LibDBIcon = LibStub("LibDBIcon-1.0")
 
 local GetColor = ns.GetColor
 
---[[
-    The four link rows split ns.OPTIONS_ROW_WIDTH unevenly: their labels are one
-    short word, while the box beside them holds a full URL the player is meant
-    to select and copy, so the label takes 0.6 and the box the rest of the row.
-]]
-local LINK_LABEL_WIDTH = 0.6
-local LINK_URL_WIDTH = ns.OPTIONS_ROW_WIDTH - LINK_LABEL_WIDTH
-
 --------------------------------------------------------------------------------
 -- Features
 --------------------------------------------------------------------------------
-
---[[
-    Speedy Loot has no panel of its own, so its switch is built here, where it
-    lives: in the Features section with every other feature's.
-]]
----@return table
-local function SpeedyLootSwitch()
-	return {
-		type = "toggle",
-		name = L["SPEEDY_LOOT_ENABLE"],
-		desc = L["SPEEDY_LOOT_SWITCH_DESCRIPTION"]:format(AUTO_LOOT_DEFAULT_TEXT, MASTER_LOOTER),
-		get = function()
-			return ns.db.global.speedyLoot
-		end,
-		set = function(_, value)
-			ns.db.global.speedyLoot = value
-			if value then
-				ns.EnsureAutoLoot()
-			end
-		end,
-	}
-end
 
 --[[
     The Features section: every feature's own switch, gathered so the front page
     shows at a glance what GogoLoot is doing. Each is the same setting as the
     switch on its feature's panel, built by that panel's file so the two can
     never drift. A feature whose file this flavor's TOC leaves out is left out
-    here too. The keys are the saved settings each switch reads.
+    here too. The keys are the saved settings each switch reads, listed in the
+    order of the feature panels in the Settings tree (FEATURE_PANELS in
+    Options.lua), reading across each line.
 ]]
 local FEATURE_SWITCHES = {
-	{ key = "speedyLoot", build = SpeedyLootSwitch },
+	{ key = "speedyLoot", builder = "SpeedyLootSwitch" },
 	{ key = "autoGreed", builder = "AutomatedRollsSwitch" },
-	{ key = "autoMasterLoot", builder = "AutomatedMasterLootingSwitch" },
 	{ key = "autoOpen", builder = "AutomatedOpeningSwitch" },
 	{ key = "lootToasts", builder = "LootToastsSwitch" },
+	{ key = "lootSoundsEnabled", builder = "LootSoundsSwitch" },
 	{ key = "lootNotifications", builder = "AnnouncementsSwitch" },
+	{ key = "autoMasterLoot", builder = "AutomatedMasterLootingSwitch" },
+	{ key = "rollMacro", builder = "RollMacroSwitch" },
 }
 
 --[[
@@ -68,7 +42,7 @@ local FEATURE_SWITCHES = {
 local function BuildFeatureSwitches(order)
 	local switches = {}
 	for _, entry in ipairs(FEATURE_SWITCHES) do
-		local build = entry.build or ns[entry.builder]
+		local build = ns[entry.builder]
 		if build then
 			switches[#switches + 1] = { key = entry.key, toggle = build() }
 		end
@@ -147,68 +121,6 @@ function ns.BuildGeneralOptions()
 				GetColor("INFO") .. L["OPTIONS_COMMAND"] .. "|r" .. "  " .. L["OPTIONS_COMMAND_DESCRIPTION"],
 				83
 			),
-			spacerFeedbackSection = ns.OptionsSpacer(89),
-			feedbackHeader = ns.OptionsHeader(L["FEEDBACK_SUPPORT"], 90),
-			spacerAfterFeedback = ns.OptionsSpacer(91),
-			discordLabel = ns.OptionsRowLabel(GetColor("TITLE") .. L["DISCORD"] .. "|r", 92, LINK_LABEL_WIDTH),
-			discordUrl = {
-				type = "input",
-				name = "",
-				order = 93,
-				width = LINK_URL_WIDTH,
-				get = function()
-					return ns.URL_DISCORD
-				end,
-				set = function() end,
-			},
-			spacerBetweenLinks1 = ns.OptionsSpacer(94),
-			githubLabel = ns.OptionsRowLabel(GetColor("TITLE") .. L["GITHUB"] .. "|r", 95, LINK_LABEL_WIDTH),
-			githubUrl = {
-				type = "input",
-				name = "",
-				order = 96,
-				width = LINK_URL_WIDTH,
-				get = function()
-					return ns.URL_GITHUB
-				end,
-				set = function() end,
-			},
-			spacerBetweenLinks2 = ns.OptionsSpacer(97),
-			curseforgeLabel = ns.OptionsRowLabel(GetColor("TITLE") .. L["CURSEFORGE"] .. "|r", 98, LINK_LABEL_WIDTH),
-			curseforgeUrl = {
-				type = "input",
-				name = "",
-				order = 99,
-				width = LINK_URL_WIDTH,
-				get = function()
-					return ns.URL_CURSEFORGE
-				end,
-				set = function() end,
-			},
-			spacerBetweenLinks3 = ns.OptionsSpacer(100),
-			wagoLabel = ns.OptionsRowLabel(GetColor("TITLE") .. L["WAGO"] .. "|r", 101, LINK_LABEL_WIDTH),
-			wagoUrl = {
-				type = "input",
-				name = "",
-				order = 102,
-				width = LINK_URL_WIDTH,
-				get = function()
-					return ns.URL_WAGO
-				end,
-				set = function() end,
-			},
-			spaceVersion0 = {
-				type = "description",
-				name = " ",
-				width = "full",
-				order = 998,
-			},
-			versionLine = {
-				type = "description",
-				name = GetColor("MUTED") .. L["OPTIONS_VERSION"]:format(ns.Version) .. "|r",
-				fontSize = "medium",
-				order = 999,
-			},
 		},
 	}
 end

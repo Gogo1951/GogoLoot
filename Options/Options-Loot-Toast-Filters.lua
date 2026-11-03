@@ -179,15 +179,15 @@ local function FilterRowGroups()
 	return { rarity, types, own }
 end
 
--- A Filters-grid row about what a toast says: its caption, then a box per side it applies to, each its own setting.
----@param captionKey string
----@param boxes table[] # { side = "Mine" | "Group", setting = string, desc = string }
----@return table
 -- The made-up wins the Winning Roll tooltips show, worded as a toast words them.
 local EXAMPLE_PLAYER = "Aero"
 local EXAMPLE_MINE_ROLL = 54
 local EXAMPLE_GROUP_ROLL = 87
 
+-- A Filters-grid row about what a toast says: its caption, then a box per side it applies to, each its own setting.
+---@param captionKey string
+---@param boxes table[] # { side = "Mine" | "Group", setting = string, desc = string, descText? = string }
+---@return table
 local function ToastTextRow(captionKey, boxes)
 	local cells = { ns.OptionsRowLabel(L[captionKey], 0, ns.OPTIONS_FILTER_LABEL_WIDTH) }
 	for _, box in ipairs(boxes) do

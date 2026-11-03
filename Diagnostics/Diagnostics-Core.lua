@@ -22,7 +22,8 @@ local _, ns = ...
     don't exist until the client loads them. This is a plain namespace table, so
     it starts false at every login and is never persisted.
 
-    outputs holds each report tab's one output box (settings, code, data),
+    outputs holds each report tab's one output box (settings, code, data,
+    localization),
     status each report's last run state, and running the tab whose run is in
     flight, or nil.
 ]]
@@ -60,9 +61,11 @@ ns.DiagnosticsStrings = {
 	TAB_SETTINGS = "Settings",
 	TAB_CODE = "Code",
 	TAB_DATA = "Data",
+	TAB_LOCALIZATION = "Localization",
 	SECTION_SETTINGS = "Settings & Configuration",
 	SECTION_CODE = "Code",
 	SECTION_DATA = "Data",
+	SECTION_LOCALIZATION = "Localization",
 
 	RUN_TESTS_INTRO = "Live tools for catching a problem as it happens. Turn on what you need, reproduce the problem, then copy what they caught.",
 	EVENT_LOG_TITLE = "Event Log",
@@ -78,6 +81,7 @@ ns.DiagnosticsStrings = {
 	EVENT_LOG_STOP_DESCRIPTION = "Stops capturing and keeps what was captured, ready to show.",
 	EVENT_LOG_SHOW = "Show",
 	EVENT_LOG_SHOW_DESCRIPTION = "Prints the captured events in the box below, ready to copy.",
+	EVENT_LOG_PRIVACY = "The log includes the text of chat messages it catches, whispers too. Read it through before you paste it anywhere.",
 	TAINT_TITLE = "Taint Log",
 	TAINT_INTRO = 'Seeing "action blocked" or "interface action failed" errors? Turn this on and the game records the cause to a file. Send the file along with your bug report.',
 	TAINT_STATE = "Taint logging is currently set to level %d (0 = off, 2 = verbose).",
@@ -117,6 +121,10 @@ ns.DiagnosticsStrings = {
 	CODE_RUN_ALL = "Run All Code Reports",
 	DATA_INTRO = "Checks every item and spell the add-on ships against this client. Paste a result into a spreadsheet and sort by STATUS to find what needs pruning.",
 	DATA_RUN_ALL = "Validate All Data Files",
+	LOCALIZATION_INTRO = "Playing in a language other than English and a name or prompt reads wrong? These show what your client calls everything "
+		.. TITLE
+		.. " names.",
+	LOCALIZATION_RUN_ALL = "Run All Localization Reports",
 	RUN_ALL_DESCRIPTION = "Runs %s, one after another.",
 
 	EVENTS_TITLE = "Event Registration",
@@ -126,21 +134,36 @@ ns.DiagnosticsStrings = {
 	API_TITLE = "API Endpoints",
 	API_DESCRIPTION = "Checks that every game function " .. TITLE .. " calls exists on this client.",
 	LOOT_TITLE = "Loot Method",
-	LOOT_DESCRIPTION = "Shows what the game reports for your group's loot method, how GogoLoot reads it, and which message IDs resolved.",
-	CVARS_TITLE = "Relevant CVars",
-	CVARS_DESCRIPTION = "Shows the game settings " .. TITLE .. " reads.",
-	PLAYER_TITLE = "Player & Spells",
-	PLAYER_DESCRIPTION = "Shows your class, level and the Rogue spells " .. TITLE .. " watches.",
+	LOOT_DESCRIPTION = "Shows what the game reports for your group's loot method and threshold, how GogoLoot reads it, the Automated Master Looting settings and destinations, why each slot in an open loot window would or wouldn't be handed out, and which message IDs resolved.",
+	LOOTING_TITLE = "Speedy Loot Context",
+	LOOTING_DESCRIPTION = "Shows whether Speedy Loot can take loot right now: its switch, the game's Auto Loot setting and modifier key, the master looter stand-down, free bag space and the loot window. Then what the Loot Sounds read: their switches, where the open loot came from, and the game's sound settings.",
+	OPENING_TITLE = "Automated Opening Context",
+	OPENING_DESCRIPTION = "Shows every check that can hold Automated Opening back right now: its switch and hold-offs, combat, stealth, open windows, casting, free bag space, the Openables List, the lockbox switches, and whether Open Sesame is running too.",
 	LOCKED_TITLE = "Locked Boxes",
-	LOCKED_DESCRIPTION = "Lists every openable item in your bags with its action and whether "
+	LOCKED_DESCRIPTION = "Lists every openable item in your bags with its action, the level it needs, whether "
 		.. TITLE
-		.. " reads it as locked. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
+		.. " reads it as locked, and whether it would open. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
+	ROLLS_TITLE = "Automated Rolls Context",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, and this character's Character Rules.",
+	VERDICTS_TITLE = "Roll Verdicts",
+	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
-	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Rules reads on each, where each came from (ITEM, EQUIP_TABLE, SUFFIX_TABLE or TOOLTIP), and whether this character's rules leave it to you.",
+	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Rules reads on each, where each came from (ITEM or TOOLTIP), and whether this character's rules leave it to you.",
+	TOASTS_TITLE = "Loot Toasts Context",
+	TOASTS_DESCRIPTION = "Shows the Loot Toasts switch and look, every Filters row for Mine and Group, and whether the General chat tab still shows the game's own loot and money lines.",
+	LINES_TITLE = "Loot Line Reading",
+	LINES_DESCRIPTION = "Builds the game's own loot, money and roll lines with an item from your bags and shows whether "
+		.. TITLE
+		.. " reads each one back, which every toast, loot sound, opening, winning roll and hidden roll message depends on. Nothing is sent.",
+	ANNOUNCE_TITLE = "Announcements Context",
+	ANNOUNCE_DESCRIPTION = "Shows the Enable Announcements switch, the trade and master loot announcement settings, and the chat channel "
+		.. TITLE
+		.. " would send to right now.",
+	PLAYER_TITLE = "Player & Spells",
+	PLAYER_DESCRIPTION = "Shows your class, race, level and the Rogue spells " .. TITLE .. " watches.",
 	VALIDATE_TITLE = "Validate Data: %s",
 	VALIDATE_DESCRIPTION = "Checks every id in this data file against this client and exports the results as tab-separated text.",
 	VALIDATE_PROGRESS = "%s / %s IDs",
-	VALIDATE_HINT = "Checks every item and spell id a data file ships against this client and exports what the client knows about each one as tab-separated text, ready to paste into a spreadsheet. Item rows carry every item API return, the file's own values in the DATA columns so you can sort for mismatches, everything the client knows about the item's spell including its tooltip in SPELL_TOOLTIP, and the whole item tooltip in one TOOLTIP cell, its lines joined by // and a right-hand text after >>. Spell rows carry every spell API return the client has, the same way. STATUS reads OK, NOT ON CLIENT for an id this client does not have or never answers for, INCOMPLETE when an id loaded but its tooltip or spell text never did, ERROR with the message in the name cell when a read throws, or TABLE MISSING when this client's folder never built a table. Spell ids follow in a block of their own.",
 	DISPLAY_TITLE = "Display Context",
 	DISPLAY_DESCRIPTION = "Shows your screen size, UI scale, the mini-map button's saved position and the loot toast anchor.",
 	ADDONS_TITLE = "Other Add-ons",
@@ -149,6 +172,18 @@ ns.DiagnosticsStrings = {
 	SAVED_DESCRIPTION = "Prints " .. TITLE .. "'s saved settings and lists as readable text.",
 	LIBS_TITLE = "Library Versions",
 	LIBS_DESCRIPTION = "Lists the version of every library " .. TITLE .. " loaded.",
+	LOCALE_TITLE = "Locale Context",
+	LOCALE_DESCRIPTION = "Shows your client's language, its text and audio language settings, and how many of "
+		.. TITLE
+		.. "'s own strings loaded.",
+	NAMES_TITLE = "Game Names",
+	NAMES_DESCRIPTION = "Shows the name your client gives every game string " .. TITLE .. " shows or matches.",
+	NAMES_ALL_FOUND = "all found",
+	NAMES_SOME_NIL = "%d NIL",
+	MESSAGES_TITLE = "Message Length",
+	MESSAGES_DESCRIPTION = "Builds each message "
+		.. TITLE
+		.. " can send to the group or a trade partner, with the longest item link in your bags and the longest name in your group, and shows each one's length against the chat limit. Nothing is sent.",
 
 	STATUS_WAITING = "Waiting",
 	STATUS_RUNNING = "Running",

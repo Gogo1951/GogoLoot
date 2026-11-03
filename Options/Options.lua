@@ -27,16 +27,19 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 ]]
 
 --[[
-    The feature panels in Settings-tree order: the features that act on loot
-    first, in the order loot meets them (rolls, master loot, opening), then the
-    three that report it, what the player sees, what they hear, then what the
-    group is told. A row with a `parent` belongs to that panel: it nests beneath it where
-    ns.OPTIONS_NESTED_PANELS allows, and otherwise follows it as a sibling
-    titled "Parent: Child". A parent is always listed before its children, so
-    its category ID is captured by the time they need it. Profiles and
-    Diagnostic Tools come after all of these, last.
+    The feature panels in Settings-tree order, which is the order of the General
+    panel's Features section (FEATURE_SWITCHES in Options-General.lua): the
+    features every player uses first (looting, rolls, opening), then the three
+    that report loot, what the player sees, what they hear, then what the group
+    is told, then the master looter's own, and last the Roll Macro. A row with a `parent` belongs to
+    that panel: it nests beneath it where ns.OPTIONS_NESTED_PANELS allows, and
+    otherwise follows it as a sibling titled "Parent: Child". A parent is always
+    listed before its children, so its category ID is captured by the time they
+    need it. Profiles, Feedback & Support and Diagnostic Tools come after all of
+    these, in that order.
 ]]
 local FEATURE_PANELS = {
+	{ key = "SpeedyLoot", builder = "BuildSpeedyLootOptions", title = "TAB_SPEEDY_LOOT" },
 	{ key = "AutomatedRolls", builder = "BuildAutomatedRollOptions", title = "TAB_AUTOMATED_ROLLS" },
 	{
 		key = "ItemOverrides",
@@ -50,13 +53,6 @@ local FEATURE_PANELS = {
 		title = "TAB_CHARACTER_RULES",
 		parent = "AutomatedRolls",
 		onRegistered = "OnCharacterRulesRegistered",
-	},
-	{ key = "MasterLooter", builder = "BuildMasterLooterOptions", title = "TAB_MASTER_LOOTER" },
-	{
-		key = "MasterLooterIgnoreList",
-		builder = "BuildMasterLooterIgnoreListOptions",
-		title = "TAB_IGNORE_LIST",
-		parent = "MasterLooter",
 	},
 	{ key = "AutomatedOpening", builder = "BuildAutomatedOpeningOptions", title = "TAB_AUTOMATED_OPENING" },
 	{
@@ -80,6 +76,15 @@ local FEATURE_PANELS = {
 	},
 	{ key = "LootSounds", builder = "BuildLootSoundOptions", title = "TAB_LOOT_SOUNDS" },
 	{ key = "Announcements", builder = "BuildAnnouncementOptions", title = "TAB_ANNOUNCEMENTS" },
+	{ key = "MasterLooter", builder = "BuildMasterLooterOptions", title = "TAB_MASTER_LOOTER" },
+	{
+		key = "MasterLooterIgnoreList",
+		builder = "BuildMasterLooterIgnoreListOptions",
+		title = "TAB_IGNORE_LIST",
+		parent = "MasterLooter",
+	},
+	{ key = "RollMacro", builder = "BuildRollMacroOptions", title = "TAB_ROLL_MACRO" },
+	{ key = "LootMaster", builder = "BuildLootMasterOptions", title = "TAB_LOOT_MASTER" },
 }
 
 --[[
@@ -134,6 +139,10 @@ function ns.RegisterOptionsPanels()
 		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.Profiles, ns.BuildProfilesOptions)
 	end
 
+	if ns.BuildFeedbackSupportOptions then
+		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.FeedbackSupport, ns.BuildFeedbackSupportOptions)
+	end
+
 	--[[
         On clients with the Settings API, AddToBlizOptions returns the panel
         frame and, as a second value, the Settings category ID. Capture it so
@@ -166,10 +175,14 @@ function ns.RegisterOptionsPanels()
 		AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Profiles, profilesDisplayName, L["ADDON_TITLE"])
 	end
 
+	if ns.BuildFeedbackSupportOptions then
+		AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.FeedbackSupport, L["OPTIONS_FEEDBACK"], L["ADDON_TITLE"])
+	end
+
 	--[[
-	    Diagnostics added last so it sits at the bottom of the settings tree. Its
-	    display name is a developer-facing string (never localized) from
-	    ns.DiagnosticsStrings.
+	    Diagnostics added last, after Feedback & Support, so it sits at the
+	    bottom of the settings tree. Its display name is a developer-facing
+	    string (never localized) from ns.DiagnosticsStrings.
 	]]
 	if ns.BuildDiagnosticsOptions then
 		AceConfigDialog:AddToBlizOptions(ns.OPTIONS_REGISTRY.Diagnostics, ns.DiagnosticsStrings.TAB, L["ADDON_TITLE"])
@@ -216,7 +229,29 @@ end
 -- Slash Commands
 --------------------------------------------------------------------------------
 
+--[[
+    /gogo opens Options. Three words after it open the loot windows or print
+    tonight's drops; they stay English in every locale, like the command.
+]]
+local SLASH_SUBCOMMANDS = {
+	master = function()
+		ns:ShowLootMaster()
+	end,
+	tracker = function()
+		ns:ShowLootTracker()
+	end,
+	drops = function()
+		ns:PrintDrops()
+	end,
+}
+
 SLASH_GOGOLOOT1 = "/gogo"
-SlashCmdList["GOGOLOOT"] = function()
+SlashCmdList["GOGOLOOT"] = function(input)
+	local subcommand = SLASH_SUBCOMMANDS[string.lower(string.match(input or "", "^%s*(%S*)") or "")]
+	-- The loot windows are parked out of the TOCs for now; unloaded, their words fall through to Options.
+	if subcommand and ns.ShowLootMaster then
+		subcommand()
+		return
+	end
 	ns:OpenOptionsPanel()
 end

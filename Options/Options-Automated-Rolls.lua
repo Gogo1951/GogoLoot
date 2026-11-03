@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
+local GetColor = ns.GetColor
 local GetQualityColor = ns.GetQualityColor
 
 --------------------------------------------------------------------------------
@@ -76,11 +77,7 @@ local EXAMPLE_PLAYER_CLASS = "WARRIOR"
 local EXAMPLE_ROLL = 95
 
 local function WinnerSummaryExample()
-	local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[EXAMPLE_PLAYER_CLASS]
-	local winner = EXAMPLE_PLAYER
-	if type(classColor) == "table" and type(classColor.colorStr) == "string" then
-		winner = "|c" .. classColor.colorStr .. EXAMPLE_PLAYER .. ns.GetColor("HELP")
-	end
+	local winner = ns.GetClassColor(EXAMPLE_PLAYER_CLASS) .. EXAMPLE_PLAYER .. GetColor("HELP")
 	local rollText = L["LOOT_TOASTS_ROLL_RESULT"]:format(GREED, EXAMPLE_ROLL)
 	return ns.OptionsPrintedExample(
 		L["MESSAGE_ROLL_WON_PRINT"]:format(winner, ns.OptionsExampleItem(EXAMPLE_ITEM_QUALITY), rollText)

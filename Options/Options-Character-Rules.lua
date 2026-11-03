@@ -70,9 +70,9 @@ local function GetCharacterDisplayName(characterKey)
 		local data = characters and characters[characterKey]
 		classFile = type(data) == "table" and data.classFile or nil
 	end
-	local classColor = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
-	if type(classColor) == "table" and type(classColor.colorStr) == "string" then
-		return "|c" .. classColor.colorStr .. characterKey .. "|r"
+	local classColor = ns.GetClassColor(classFile)
+	if classColor then
+		return classColor .. characterKey .. "|r"
 	end
 	return characterKey
 end

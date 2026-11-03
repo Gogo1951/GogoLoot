@@ -22,7 +22,8 @@ local GetColor = ns.GetColor
         add-on name first, in the branded colors:
           "GogoLoot // <body>"
         The body ends the line, so it carries its own end punctuation.
-      * Announce sends a chat message to other players via SendChatMessage,
+      * Announce sends a chat message to other players via
+        C_ChatInfo.SendChatMessage,
         pulling the body template from L[formatKey] and decorating it with
         the target marker and add-on name. Every channel GogoLoot sends to
         uses the one format, on every flavor:
@@ -73,7 +74,7 @@ function ns:BuildAnnounceMessage(formatKey, ...)
 		return nil
 	end
 	local body = string.format(template, ...)
-	-- No pipe-stripping: bodies carry item links (|Hitem...), which survive SendChatMessage and would break if stripped.
+	-- No pipe-stripping: bodies carry item links (|Hitem...), which survive sent chat and would break if stripped.
 	return ns.TARGET_MARKER .. " " .. body .. " // " .. L["ADDON_TITLE"]
 end
 
@@ -90,7 +91,7 @@ function ns:Announce(channel, target, formatKey, ...)
 	if not message then
 		return
 	end
-	SendChatMessage(message, channel, nil, target)
+	C_ChatInfo.SendChatMessage(message, channel, nil, target)
 end
 
 --[[
@@ -152,7 +153,9 @@ end
     rather than straight to PrintMessage, for two reasons. A quiet window holds
     them back across a loading screen and the moments after, when bags and group
     state churn and a pause and its resume can land a second apart. And an
-    identical line within ns.STATUS_REPEAT_COOLDOWN prints once.
+    identical line within ns.STATUS_REPEAT_COOLDOWN prints once. StatusPrint
+    returns whether the player has been told: false only for a line the quiet
+    window held back, which the caller still owes.
 ]]
 local quietUntil = 0
 local lastStatusText = nil
@@ -168,17 +171,18 @@ function ns:SetQuiet(seconds)
 end
 
 ---@param text string
----@return nil
+---@return boolean
 function ns:StatusPrint(text)
 	local now = GetTime()
 	if now < quietUntil then
-		return
+		return false
 	end
 	if text == lastStatusText and (now - lastStatusAt) < ns.STATUS_REPEAT_COOLDOWN then
-		return
+		return true
 	end
 	lastStatusText, lastStatusAt = text, now
 	ns:PrintMessage(text)
+	return true
 end
 
 --[[

@@ -4,11 +4,11 @@
 
 --[[
     Shared utilities used across feature modules and the options panels: the
-    API compatibility shims, the scan tooltip, named timers, derived color
-    tables and accessors, tooltip line helpers, player-name and item-link
-    parsing, item lookups, bag space, the client's own format strings and the
-    loot messages read with them, item quality, and small game-state
-    predicates.
+    API compatibility shims, named timers, derived color tables and accessors,
+    tooltip line helpers, player-name and item-link parsing, item lookups, bag
+    space, and small game-state predicates. The scan tooltip lives in
+    Utilities-Scan-Tooltip.lua, and the client's own format strings, the chat
+    lines read with them and link quality live in Utilities-Chat-Lines.lua.
 ]]
 local _, ns = ...
 
@@ -114,186 +114,39 @@ end
 ]]
 ns.GetItemStats = C_Item.GetItemStats or GetItemStats
 
---------------------------------------------------------------------------------
--- Scan Tooltip
---------------------------------------------------------------------------------
-
 --[[
-    One hidden tooltip answers every question only a tooltip can: whether a bag
-    slot's container is still locked (Automated Opening, the mini-map's Locked
-    Items, Diagnostics' Locked Boxes), whether an item starts a quest (Loot
-    Toasts), and an item's or spell's lines for Validate Data where the client
-    has no C_TooltipInfo. Made on first use, since a session may never ask.
-
-    THE OWNER IS SET ON EVERY CALL, not once, and that is load-bearing: hiding a
-    tooltip drops its owner, and an unowned tooltip takes a SetBagItem without
-    complaint and populates NOTHING, so every box would read as unlocked.
-    Setting a tooltip also shows it, hence the Hide after every read: shown and
-    hidden inside a single frame, it never renders.
-
-    A GameTooltipTemplate tooltip's lines are only reachable through the frame's
-    name.
+    A skill line's current rank, found by its name in the player's language, or
+    nil when it can't be read. Resolved once, here. WoW Forever has no
+    skill-line API, and other add-ons put look-alike globals back there
+    (Questie restores GetSkillLineInfo), so on Forever it is always nil, and a
+    skill count that isn't a number reads as unknown on every client.
 ]]
-local SCAN_TOOLTIP_NAME = "GogoLootScanTooltip"
-local scanTooltip
-
----@return table
-local function PrepareScanTooltip()
-	if not scanTooltip then
-		scanTooltip = CreateFrame("GameTooltip", SCAN_TOOLTIP_NAME, nil, "GameTooltipTemplate")
-	end
-	scanTooltip:SetOwner(WorldFrame, "ANCHOR_NONE")
-	scanTooltip:ClearLines()
-	return scanTooltip
+local SkillLineRankByName = function()
+	return nil
 end
-
---[[
-    Matched against the WHOLE line, never as a substring: LOCKED is a short word,
-    and other add-ons write lines that contain it without meaning it.
-]]
----@param needle string
----@return boolean
-local function ScanTooltipHasLine(needle)
-	for lineIndex = 1, scanTooltip:NumLines() do
-		local line = _G[SCAN_TOOLTIP_NAME .. "TextLeft" .. lineIndex]
-		if line and line:GetText() == needle then
-			return true
+if ns.FLAVOR ~= "Camelot" and GetNumSkillLines and GetSkillLineInfo then
+	SkillLineRankByName = function(skillName)
+		local skillCount = GetNumSkillLines()
+		if type(skillCount) ~= "number" then
+			return nil
 		end
-	end
-	return false
-end
-
---[[
-    Whether a bag slot's container still waits on a lock. The second return is
-    the tooltip's line count, for Diagnostics' Locked Boxes probe: zero lines
-    means the tooltip read nothing, which also answers "not locked", and is the
-    failure to look for on a client whose tooltips build differently.
-]]
----@param bagIndex number
----@param slotIndex number
----@return boolean locked
----@return number lineCount
-function ns.IsItemLocked(bagIndex, slotIndex)
-	local tooltip = PrepareScanTooltip()
-	tooltip:SetBagItem(bagIndex, slotIndex)
-	local locked = ScanTooltipHasLine(LOCKED)
-	local lineCount = tooltip:NumLines()
-	tooltip:Hide()
-	return locked, lineCount
-end
-
---[[
-    "Does this item begin a quest", which the client says in a tooltip and
-    nowhere else: no API on any target client flags it, and the item's class does
-    not give it away either, since quest starters are ordinary weapons, armor and
-    trinkets as often as they are class 12. Read by hyperlink, because this is
-    asked of loot, which may never reach the bags at all.
-
-    The scan is the most expensive question Loot Toasts asks, so it is also the
-    last one asked.
-]]
----@param itemIdentifier number|nil
----@return boolean
-function ns.ItemStartsQuest(itemIdentifier)
-	if not itemIdentifier then
-		return false
-	end
-	local tooltip = PrepareScanTooltip()
-	tooltip:SetHyperlink("item:" .. itemIdentifier)
-	local startsQuest = ScanTooltipHasLine(ITEM_STARTS_QUEST)
-	tooltip:Hide()
-	return startsQuest
-end
-
---[[
-    An item's or spell's tooltip as plain lines, for Validate Data, a right-hand
-    column kept after " >> ". kind is "item" or "spell". C_TooltipInfo hands the
-    lines over as data where the client ships both its GetItemByID and
-    GetSpellByID getters (WoW Forever); elsewhere they are read off the scan
-    tooltip. Color escapes are stripped so each line reads as its words. A read
-    can throw on an odd id, so callers protect it.
-]]
-local TOOLTIP_DATA_GETTERS = C_TooltipInfo
-	and C_TooltipInfo.GetItemByID
-	and C_TooltipInfo.GetSpellByID
-	and { item = C_TooltipInfo.GetItemByID, spell = C_TooltipInfo.GetSpellByID }
-
----@param text any
----@return string|nil
-local function PlainText(text)
-	if type(text) ~= "string" then
+		for skillIndex = 1, skillCount do
+			local lineName, isHeader, _, rank = GetSkillLineInfo(skillIndex)
+			if not isHeader and lineName == skillName then
+				return rank
+			end
+		end
 		return nil
 	end
-	return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[^:]*:", ""):gsub("|r", ""))
 end
 
----@param left any
----@param right any
----@return string
-local function JoinTooltipLine(left, right)
-	left = PlainText(left) or ""
-	right = PlainText(right)
-	if right and right ~= "" then
-		return left .. " >> " .. right
+---@param skillName string|nil
+---@return number|nil
+function ns.GetSkillLineRankByName(skillName)
+	if not skillName then
+		return nil
 	end
-	return left
-end
-
----@param kind string
----@param identifier number
----@return string[]
-local function ReadTooltipData(kind, identifier)
-	local lines = {}
-	local data = TOOLTIP_DATA_GETTERS[kind](identifier)
-	for _, line in ipairs(data and data.lines or {}) do
-		lines[#lines + 1] = JoinTooltipLine(line.leftText, line.rightText)
-	end
-	return lines
-end
-
----@param kind string
----@param identifier number
----@return string[]
-local function ReadScanTooltip(kind, identifier)
-	local tooltip = PrepareScanTooltip()
-	tooltip:SetHyperlink(kind .. ":" .. identifier)
-	local lines = {}
-	for lineIndex = 1, tooltip:NumLines() do
-		local left = _G[SCAN_TOOLTIP_NAME .. "TextLeft" .. lineIndex]
-		local right = _G[SCAN_TOOLTIP_NAME .. "TextRight" .. lineIndex]
-		lines[#lines + 1] = JoinTooltipLine(left and left:GetText(), right and right:IsShown() and right:GetText())
-	end
-	tooltip:Hide()
-	return lines
-end
-
-ns.GetTooltipLines = TOOLTIP_DATA_GETTERS and ReadTooltipData or ReadScanTooltip
-
---[[
-    An item's tooltip read from its whole link rather than its id, so a random
-    suffix ("of the Owl") shows the stats it rolled, for Character Rules. Left
-    lines only, color escapes stripped. C_TooltipInfo.GetHyperlink where the
-    client has it (WoW Forever); the scan tooltip elsewhere.
-]]
----@param itemLink string
----@return string[]
-function ns.GetItemLinkTooltipLines(itemLink)
-	local lines = {}
-	if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
-		local data = C_TooltipInfo.GetHyperlink(itemLink)
-		for _, line in ipairs(data and data.lines or {}) do
-			lines[#lines + 1] = PlainText(line.leftText) or ""
-		end
-		return lines
-	end
-	local tooltip = PrepareScanTooltip()
-	tooltip:SetHyperlink(itemLink)
-	for lineIndex = 1, tooltip:NumLines() do
-		local left = _G[SCAN_TOOLTIP_NAME .. "TextLeft" .. lineIndex]
-		lines[#lines + 1] = PlainText(left and left:GetText()) or ""
-	end
-	tooltip:Hide()
-	return lines
+	return SkillLineRankByName(skillName)
 end
 
 --------------------------------------------------------------------------------
@@ -399,6 +252,21 @@ function ns.GetQualityColor(quality)
 	return "|cff" .. hex
 end
 
+-- A class's color escape from its token ("WARRIOR"), or nil for a token ns.CLASS_COLORS doesn't hold.
+---@param classFile string|nil
+---@return string|nil
+function ns.GetClassColor(classFile)
+	local hex = classFile and ns.CLASS_COLORS[classFile]
+	return hex and "|cff" .. hex or nil
+end
+
+-- A coin's color escape (ns.MONEY_PALETTE: GOLD, SILVER or COPPER).
+---@param key string
+---@return string
+function ns.GetMoneyColor(key)
+	return "|cff" .. (ns.MONEY_PALETTE[key] or ns.PALETTE.TEXT)
+end
+
 local GetColorRGB = ns.GetColorRGB
 
 --------------------------------------------------------------------------------
@@ -428,18 +296,6 @@ end
 function ns:AddTooltipLine(tooltip, text, colorKey, wrap)
 	local r, g, b = GetColorRGB(colorKey or "TEXT")
 	tooltip:AddLine(text, r, g, b, wrap)
-end
-
----@param tooltip table
----@param leftText any
----@param rightText any
----@param leftColorKey string|nil
----@param rightColorKey string|nil
----@return nil
-function ns:AddTooltipDoubleLine(tooltip, leftText, rightText, leftColorKey, rightColorKey)
-	local leftRed, leftGreen, leftBlue = GetColorRGB(leftColorKey or "TEXT")
-	local rightRed, rightGreen, rightBlue = GetColorRGB(rightColorKey or "TEXT")
-	tooltip:AddDoubleLine(leftText, rightText, leftRed, leftGreen, leftBlue, rightRed, rightGreen, rightBlue)
 end
 
 --------------------------------------------------------------------------------
@@ -501,11 +357,7 @@ function ns:GetGroupMemberClassColor(playerName)
 		local unitIdentifier = unitPrefix .. memberIndex
 		if ns:GetLowercaseUnitName(unitIdentifier) == wantedName then
 			local _, classFile = UnitClass(unitIdentifier)
-			local classColor = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
-			if type(classColor) == "table" and type(classColor.colorStr) == "string" then
-				return "|c" .. classColor.colorStr
-			end
-			return nil
+			return ns.GetClassColor(classFile)
 		end
 	end
 	return nil
@@ -755,348 +607,6 @@ end
 ---@return boolean
 function ns.IsBagFullErrorID(errorIdentifier)
 	return errorIdentifier == LE_GAME_ERR_INV_FULL
-end
-
---------------------------------------------------------------------------------
--- Client Format Strings
---------------------------------------------------------------------------------
-
---[[
-    Turns one of the client's own format strings into a Lua pattern that
-    captures what the client filled in. This is how the add-on reads the game's
-    words in any locale without shipping a translation of them: LOOT_ITEM_SELF
-    becomes the player's own loot line, GOLD_AMOUNT the coin count in a money
-    message, ITEM_MIN_SKILL a lockbox's requirement line.
-
-    The magic characters are escaped first, leaving % alone so the format's own
-    %s and %d survive to become captures on the next two lines.
-]]
----@param format any
----@return string|nil
-function ns.BuildFormatPattern(format)
-	if type(format) ~= "string" then
-		return nil
-	end
-	local pattern = format:gsub("([%^%$%(%)%.%[%]%*%+%-%?])", "%%%1")
-	pattern = pattern:gsub("%%s", "(.+)")
-	pattern = pattern:gsub("%%d", "(%%d+)")
-	return pattern
-end
-
---[[
-    The player's own loot lines, each matched whole. The counted forms go first:
-    "You receive loot: %s." would also match "[Linen Cloth]x2." and swallow the
-    count into the item. Matching the full format rather than a prefix is what
-    keeps this right in locales whose line doesn't end with the item, such as
-    zhCN's, which closes on its own full stop.
-]]
-local OWN_LOOT_FORMATS = {
-	{ format = LOOT_ITEM_SELF_MULTIPLE, counted = true },
-	{ format = LOOT_ITEM_PUSHED_SELF_MULTIPLE, counted = true },
-	{ format = LOOT_ITEM_SELF, counted = false },
-	{ format = LOOT_ITEM_PUSHED_SELF, counted = false },
-}
-
---[[
-    Another group member's loot lines, in the same counted-first order. Every
-    locale's format names the looter before the item, so the captures come back
-    in that order everywhere.
-]]
-local GROUP_LOOT_FORMATS = {
-	{ format = LOOT_ITEM_MULTIPLE, counted = true },
-	{ format = LOOT_ITEM_PUSHED_MULTIPLE, counted = true },
-	{ format = LOOT_ITEM, counted = false },
-	{ format = LOOT_ITEM_PUSHED, counted = false },
-}
-
-local function BuildLootPatterns(formats)
-	local patterns = {}
-	for _, entry in ipairs(formats) do
-		local pattern = ns.BuildFormatPattern(entry.format)
-		if pattern then
-			patterns[#patterns + 1] = { pattern = "^" .. pattern .. "$", counted = entry.counted }
-		end
-	end
-	return patterns
-end
-
-local ownLootPatterns = BuildLootPatterns(OWN_LOOT_FORMATS)
-local groupLootPatterns = BuildLootPatterns(GROUP_LOOT_FORMATS)
-
---[[
-    The link's color may be a hex code or, on a Retail-engine client, a named
-    quality color; either way it runs from |c to the link's closing |r.
-]]
-local function FindItemLink(text)
-	return string.match(text, "|c[^|]+|Hitem:.-|h%[.-%]|h|r")
-end
-
---[[
-    The item link out of one of the player's own loot messages, and how many
-    came. Nil for anyone else's loot and for anything that is not a loot line.
-]]
----@param message any
----@return string|nil itemLink
----@return number|nil quantity
-function ns.ParseOwnLootMessage(message)
-	if type(message) ~= "string" then
-		return nil
-	end
-	for _, entry in ipairs(ownLootPatterns) do
-		local itemText, count = string.match(message, entry.pattern)
-		local itemLink = itemText and FindItemLink(itemText)
-		if itemLink then
-			return itemLink, entry.counted and tonumber(count) or 1
-		end
-	end
-	return nil
-end
-
---[[
-    Who looted what out of another group member's loot line, and how many came.
-
-    ASK ns.ParseOwnLootMessage FIRST: in zhCN the player's own line
-    ("你获得了物品：%s。") also reads as a looter called 你 under the group format
-    ("%s获得了物品：%s。"), so only a line that isn't the player's own may come
-    here.
-]]
----@param message any
----@return string|nil looterName
----@return string|nil itemLink
----@return number|nil quantity
-function ns.ParseGroupLootMessage(message)
-	if type(message) ~= "string" then
-		return nil
-	end
-	for _, entry in ipairs(groupLootPatterns) do
-		local looterName, itemText, count = string.match(message, entry.pattern)
-		local itemLink = itemText and FindItemLink(itemText)
-		if itemLink then
-			return looterName, itemLink, entry.counted and tonumber(count) or 1
-		end
-	end
-	return nil
-end
-
---------------------------------------------------------------------------------
--- Roll Messages
---------------------------------------------------------------------------------
-
---[[
-    The game's loot-roll lines, read the way the loot lines are: from the
-    client's own formats, so every locale works. Most of them open on a hidden
-    "[Loot]" history link carrying a number of its own, so the matcher drops
-    that link from the format and the message alike, which leaves the roll as
-    the only number to find.
-
-    Captures are read by what they hold rather than where they sit, since a
-    translation may put its arguments in another order: the one carrying an
-    item link is the item, the number is the roll, and the other text is the
-    player.
-]]
-local LEADING_HISTORY_LINK = "^|H.-|h.-|h:?%s*"
-
----@param format any
----@param rollKind? string
----@param isSelf? boolean
----@return table|nil
-local function BuildRollMatcher(format, rollKind, isSelf)
-	if type(format) ~= "string" then
-		return nil
-	end
-	format = string.gsub(format, LEADING_HISTORY_LINK, "")
-	local kinds = {}
-	for kind in string.gmatch(format, "%%%d*%$?([sd])") do
-		kinds[#kinds + 1] = kind
-	end
-	local pattern = string.gsub(format, "([%^%$%(%)%.%[%]%*%+%-%?])", "%%%1")
-	pattern = string.gsub(pattern, "%%%d+%%%$s", "(.+)")
-	pattern = string.gsub(pattern, "%%%d+%%%$d", "(%%d+)")
-	pattern = string.gsub(pattern, "%%s", "(.+)")
-	pattern = string.gsub(pattern, "%%d", "(%%d+)")
-	return { pattern = "^" .. pattern .. "$", kinds = kinds, rollKind = rollKind, isSelf = isSelf }
-end
-
----@param entries table[] # { format, rollKind?, isSelf? }
----@return table[]
-local function BuildRollMatchers(entries)
-	local matchers = {}
-	for _, entry in ipairs(entries) do
-		local matcher = BuildRollMatcher(entry[1], entry[2], entry[3])
-		if matcher then
-			matchers[#matchers + 1] = matcher
-		end
-	end
-	return matchers
-end
-
--- Each player's roll and its number, printed while a roll is open.
-local rollResultMatchers = BuildRollMatchers({
-	{ LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, ns.ROLL_KIND_NEED },
-	{ LOOT_ROLL_ROLLED_NEED, ns.ROLL_KIND_NEED },
-	{ LOOT_ROLL_ROLLED_GREED, ns.ROLL_KIND_GREED },
-	{ LOOT_ROLL_ROLLED_DE, ns.ROLL_KIND_DISENCHANT },
-})
-
---[[
-    Who won. With the game's roll spam turned down it prints no roll lines at
-    all, only a won line carrying the winning roll, so those forms go first: the
-    plain form would match them too and lose the roll.
-]]
-local rollWonMatchers = BuildRollMatchers({
-	{ LOOT_ROLL_YOU_WON_NO_SPAM_NEED, ns.ROLL_KIND_NEED, true },
-	{ LOOT_ROLL_YOU_WON_NO_SPAM_GREED, ns.ROLL_KIND_GREED, true },
-	{ LOOT_ROLL_YOU_WON_NO_SPAM_DE, ns.ROLL_KIND_DISENCHANT, true },
-	{ LOOT_ROLL_WON_NO_SPAM_NEED, ns.ROLL_KIND_NEED },
-	{ LOOT_ROLL_WON_NO_SPAM_GREED, ns.ROLL_KIND_GREED },
-	{ LOOT_ROLL_WON_NO_SPAM_DE, ns.ROLL_KIND_DISENCHANT },
-	{ LOOT_ROLL_YOU_WON, nil, true },
-	{ LOOT_ROLL_WON },
-})
-
--- The lines Hide Roll Messages keeps out of chat: every pick and every number, never who won.
-local rollChatterMatchers = BuildRollMatchers({
-	{ LOOT_ROLL_NEED },
-	{ LOOT_ROLL_NEED_SELF },
-	{ LOOT_ROLL_NEED_SELF_OFF_SPEC },
-	{ LOOT_ROLL_GREED },
-	{ LOOT_ROLL_GREED_SELF },
-	{ LOOT_ROLL_DISENCHANT },
-	{ LOOT_ROLL_DISENCHANT_SELF },
-	{ LOOT_ROLL_PASSED },
-	{ LOOT_ROLL_PASSED_SELF },
-	{ LOOT_ROLL_PASSED_AUTO },
-	{ LOOT_ROLL_PASSED_AUTO_FEMALE },
-	{ LOOT_ROLL_PASSED_SELF_AUTO },
-	{ LOOT_ROLL_LOST_ROLL },
-})
-for _, matcher in ipairs(rollResultMatchers) do
-	rollChatterMatchers[#rollChatterMatchers + 1] = matcher
-end
-
----@param matchers table[]
----@param message any
----@return table|nil # { matcher, itemLink, roll?, playerName? }
-local function MatchRollLine(matchers, message)
-	if type(message) ~= "string" then
-		return nil
-	end
-	local text = (string.gsub(message, LEADING_HISTORY_LINK, ""))
-	for _, matcher in ipairs(matchers) do
-		-- The find allocates nothing, so only a line that matches pays for the captures table.
-		local captures = string.find(text, matcher.pattern) and { string.match(text, matcher.pattern) }
-		if captures and captures[1] then
-			local found = { matcher = matcher }
-			for index, kind in ipairs(matcher.kinds) do
-				local value = captures[index]
-				local itemLink = kind == "s" and not found.itemLink and FindItemLink(value)
-				if kind == "d" then
-					found.roll = tonumber(value)
-				elseif itemLink then
-					found.itemLink = itemLink
-				else
-					found.playerName = value
-				end
-			end
-			if found.itemLink then
-				return found
-			end
-		end
-	end
-	return nil
-end
-
---[[
-    True for a roll line that says only who picked what or rolled what. A roll
-    opening prints its history link then the item alone (LOOT_ROLL_STARTED),
-    which as a format is nothing but "%s", so it is recognised by that shape
-    instead, and never by a pattern that would match any line with a link in
-    it.
-]]
----@param message any
----@return boolean
-function ns.IsRollChatterMessage(message)
-	if type(message) ~= "string" then
-		return false
-	end
-	local rest = string.match(message, LEADING_HISTORY_LINK .. "(.*)$")
-	if rest and rest ~= "" and FindItemLink(rest) == rest then
-		return true
-	end
-	return MatchRollLine(rollChatterMatchers, message) ~= nil
-end
-
----@param message any
----@return string|nil playerName
----@return string|nil rollKind # ns.ROLL_KIND_*
----@return number|nil roll
----@return string|nil itemLink
-function ns.ParseRollResultMessage(message)
-	local found = MatchRollLine(rollResultMatchers, message)
-	if not found or not found.roll or not found.playerName then
-		return nil
-	end
-	return found.playerName, found.matcher.rollKind, found.roll, found.itemLink
-end
-
---[[
-    Who won an item: the winner's name (nil when it was the player), then the
-    item, then the winning roll where the line carries one. Only the forms
-    printed with the roll spam turned down do.
-]]
----@param message any
----@return boolean|nil isWon
----@return string|nil winnerName
----@return string|nil itemLink
----@return string|nil rollKind
----@return number|nil roll
-function ns.ParseRollWonMessage(message)
-	local found = MatchRollLine(rollWonMatchers, message)
-	if not found then
-		return nil
-	end
-	local winnerName = not found.matcher.isSelf and found.playerName or nil
-	if not found.matcher.isSelf and not winnerName then
-		return nil
-	end
-	return true, winnerName, found.itemLink, found.matcher.rollKind, found.roll
-end
-
---------------------------------------------------------------------------------
--- Item Quality
---------------------------------------------------------------------------------
-
--- ns.QUALITY_COLORS read the other way: lowercase hex -> quality.
-local QUALITY_BY_HEX = {}
-for quality, hex in pairs(ns.QUALITY_COLORS) do
-	QUALITY_BY_HEX[string.lower(hex)] = quality
-end
-
---[[
-    An item link's quality, for the loot sound and the loot toasts. The link's
-    own color answers without a C_Item.GetItemInfo round trip: a hex code on
-    Classic, or a named quality color ("|cnIQ4:") on a Retail-engine client.
-    Anything else falls back to C_Item.GetItemInfo, which has the item cached the
-    moment it is looted; nil means nobody knows, and each caller decides what
-    unknown means.
-]]
----@param itemLink any
----@return number|nil
-function ns.GetLinkQuality(itemLink)
-	if type(itemLink) ~= "string" then
-		return nil
-	end
-	local colorSequence = string.match(itemLink, "|c(%x%x%x%x%x%x%x%x)|H")
-	local quality = colorSequence and QUALITY_BY_HEX[string.lower(string.sub(colorSequence, 3))]
-	if quality then
-		return quality
-	end
-	local namedQuality = string.match(itemLink, "|cnIQ(%d+):|H")
-	if namedQuality then
-		return tonumber(namedQuality)
-	end
-	local _, _, itemQuality = C_Item.GetItemInfo(itemLink)
-	return itemQuality
 end
 
 --------------------------------------------------------------------------------

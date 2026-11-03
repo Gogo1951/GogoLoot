@@ -2,6 +2,7 @@
 -- GogoLoot Standard Loot Messages
 --------------------------------------------------------------------------------
 local _, ns = ...
+local L = ns.L
 
 --[[
     The game's own Item Loot and Money Loot checkboxes for the General chat tab
@@ -17,7 +18,9 @@ local _, ns = ...
     of General (a Loot tab, say) keeps it out. Chat settings are per character,
     so the marks live in ns.db.char. GogoLoot acts only when the wanted state
     changes, never on an ordinary login, so a box ticked back in Blizzard's
-    window sticks. A character's first sync counts as a change.
+    window sticks. A character's first sync counts as a change. A sync that
+    actually takes the lines off or puts them back says so in one line, since
+    the change outlasts the session.
 ]]
 local STANDARD_LOOT_MESSAGE_GROUPS = { "LOOT", "MONEY" }
 local STANDARD_LOOT_SYNC_TIMER = "GogoLoot.StandardLootSync"
@@ -49,17 +52,24 @@ function ns.SyncStandardLootMessages()
 	end
 	character.standardLootMessagesHidden = hidden
 	local taken = character.lootGroupsHiddenByGogoLoot
+	local changed = false
 	for _, group in ipairs(STANDARD_LOOT_MESSAGE_GROUPS) do
 		local shown = chatFrame:ContainsMessageGroup(group)
 		if hidden and shown then
 			chatFrame:RemoveMessageGroup(group)
 			taken[group] = true
+			changed = true
 		elseif not hidden and taken[group] then
 			if not shown then
 				chatFrame:AddMessageGroup(group)
+				changed = true
 			end
 			taken[group] = nil
 		end
+	end
+	if changed then
+		local messageKey = hidden and "MESSAGE_STANDARD_LOOT_MESSAGES_OFF" or "MESSAGE_STANDARD_LOOT_MESSAGES_ON"
+		ns:PrintMessage(L[messageKey]:format(ITEM_LOOT, MONEY_LOOT, GENERAL))
 	end
 end
 
@@ -67,5 +77,13 @@ local function ScheduleStandardLootSync()
 	ns:After(STANDARD_LOOT_SYNC_TIMER, STANDARD_LOOT_SYNC_DELAY, ns.SyncStandardLootMessages)
 end
 
-ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", ScheduleStandardLootSync)
-ns:RegisterModuleEvent("UPDATE_CHAT_WINDOWS", ScheduleStandardLootSync)
+local function OnPlayerEnteringWorld()
+	ScheduleStandardLootSync()
+end
+
+local function OnUpdateChatWindows()
+	ScheduleStandardLootSync()
+end
+
+ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnPlayerEnteringWorld)
+ns:RegisterModuleEvent("UPDATE_CHAT_WINDOWS", OnUpdateChatWindows)

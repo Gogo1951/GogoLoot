@@ -23,9 +23,9 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 --[[
     Sized to the window's tallest state: the three toggles, the leader note and
-    its spacer, and all three label-plus-dropdown rows. That state is also the common
-    one — the note shows precisely when somebody else handed you the role, which
-    is the usual way this window opens.
+    its spacer, and all three label-plus-dropdown rows. The note always shows,
+    naming the group leader in a group and saying why the dropdowns are greyed
+    out while solo, so only the rows below it change the height.
 
     One height serves every open. Rows that do not apply to the current loot
     method hide rather than shrink the window, because AceConfigDialog takes the
@@ -65,7 +65,7 @@ function ns.BuildMasterLooterPopupOptions()
 	args.spacerAfterToggles = ns.OptionsSpacer(order)
 	order = order + 1
 
-	-- Says who controls the two dropdowns below when it isn't you.
+	-- Says who controls the two dropdowns below: the group leader, you included, or the solo line.
 	order = ns.AddLeaderNoteRow(args, order)
 	order = ns.AddLootMethodRow(args, order)
 	args.spacerAfterLootType = ns.OptionsSpacer(order, ns.IsLootThresholdIrrelevant)
@@ -75,8 +75,8 @@ function ns.BuildMasterLooterPopupOptions()
 	order = order + 1
 	--[[
 	    The destination only means anything under master loot with the
-	    automation on, so it is hidden outright rather than left visible and
-	    inert otherwise, as it is on the panel.
+	    automation on, so here it hides outright otherwise rather than sitting
+	    there inert. The panel hides it only while the automation is off.
 	]]
 	ns.AddSendAllDestinationRow(args, order, function()
 		return ns:SafeGetLootMethod() ~= "master" or not ns.db.profile.autoMasterLoot

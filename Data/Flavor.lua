@@ -6,7 +6,7 @@ local ADDON_NAME, ns = ...
 
 --[[
 	The TOC the client chose names the flavor. Never work it out from the client:
-	WoW Forever reports WOW_PROJECT_MAINLINE, the same as Retail.
+	WoW Forever's WOW_PROJECT_ID has already changed value once.
 ]]
 ns.FLAVOR = C_AddOns.GetAddOnMetadata(ADDON_NAME, "X-Flavor")
 

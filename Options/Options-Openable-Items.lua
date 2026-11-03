@@ -89,7 +89,10 @@ function ns.BuildOpenableItemsOptions()
 		description = ns.OptionsDesc(L["OPENABLE_ITEMS_DESCRIPTION"], 1),
 		spacerAfterDesc = ns.OptionsSpacer(2),
 	}
-	local order = ns.AddFeatureOffNote(args, 3, L["OPENABLE_ITEMS_OFF_NOTE"], AutomatedOpeningOn)
+	-- Ignore still holds Speedy Loot back while Automated Opening is off, unless Speedy Loot is off too.
+	local order = ns.AddFeatureOffNote(args, 3, function()
+		return ns.db.global.speedyLoot and L["OPENABLE_ITEMS_OFF_NOTE"] or L["OPENABLE_ITEMS_ALL_OFF_NOTE"]
+	end, AutomatedOpeningOn)
 	args.itemList = {
 		type = "group",
 		name = "",

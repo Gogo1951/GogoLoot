@@ -21,12 +21,12 @@ end
 
 --[[
     Called at login when either feature is on, whenever either is switched on,
-    and on a profile switch that brings Automated Opening with it.
+    and on any profile change while either is on.
 ]]
 ---@return nil
 function ns.EnsureAutoLoot()
 	if not ns:IsAutoLootCVarEnabled() then
-		SetCVar("autoLootDefault", "1")
+		C_CVar.SetCVar("autoLootDefault", "1")
 		ns:PrintMessage(L["MESSAGE_AUTO_LOOT_SETTING_ON"]:format(AUTO_LOOT_DEFAULT_TEXT))
 	end
 end

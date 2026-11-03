@@ -10,7 +10,7 @@
 
     Beside the toggle sits the dropdown that takes the game's own loot lines
     out of the General chat tab while the toasts are on (Standard Loot
-    Messages in Loot-Toasts.lua). Below the toasts' toggle come the position buttons, then two sections
+    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come the position buttons, then two sections
     under headers of their own, Stack (how many, how long, which way) and Text
     (face, size, outline), their rows at the panel's own level rather than
     indented under the toggle. All of it, headers and spacers included, leaves
