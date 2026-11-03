@@ -4,6 +4,10 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 **TL;DR:** You can't click corpses and pull the next pack at the same time. Don't let loot slow down your zug!
 
+<img width="800" src="https://github.com/user-attachments/assets/8a232a0d-ad85-4108-b4dd-a04f4afd49b0" />
+
+<img width="800" src="https://github.com/user-attachments/assets/bd1ca322-a1b4-4e1e-b325-91d2cfbb4eb0" />
+
 ### Example Messages
 
 > **Loot a Raid Boss Container, Self:** GogoLoot // [Blue Sack of Gems] comes from a raid or world boss, so Automated Opening will leave it unopened for you to trade or sell.
