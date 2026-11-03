@@ -539,13 +539,17 @@ local function CreateTradeAnnounceCheckbox()
 
 	checkbox:SetScript("OnEnter", function(self)
 		local currentOutput = ns.TRADE_OUTPUT_LABELS[ns.db.profile.announceTradeOutput] or WHISPER
+		local currentCondition = ns.TRADE_CONDITION_LABELS[ns.db.profile.announceTradeCondition]
+			or ns.TRADE_CONDITION_LABELS.always
 
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		ns:AddTooltipLine(GameTooltip, L["ADDON_TITLE"], "TITLE")
+		ns:AddTooltipLine(GameTooltip, L["ADDON_SHORT_NAME"], "TITLE")
 		GameTooltip:AddLine(" ")
 		ns:AddTooltipLine(GameTooltip, L["TAB_TRADE_ANNOUNCEMENTS"], "TITLE")
 		ns:AddTooltipLine(GameTooltip, L["TRADE_TOOLTIP_DESCRIPTION"], "BODY", true)
 		GameTooltip:AddLine(" ")
+		-- When comes first: a ticked box under When in Raid stays silent in a party, and this says why.
+		AddTooltipDoubleLine(GameTooltip, L["TRADE_WHEN"], currentCondition, "BODY", "TEXT")
 		AddTooltipDoubleLine(GameTooltip, L["TRADE_CHANNEL"], currentOutput, "BODY", "TEXT")
 		GameTooltip:Show()
 	end)

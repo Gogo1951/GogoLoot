@@ -8,15 +8,10 @@
     Features/Automated-Opening.lua reads: autoOpenWhere is "ALWAYS" or
     "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY".
 
-    Enable Ignore Notifications follows as a peer of the switch, not indented
-    under it. It lives here rather than on the Openables List, whose first
-    checkbox would otherwise read as the list's own switch. An example of the
-    notice sits under it and stays on show while the notice is off, the way the
-    announcements' examples do.
-
-    Everything below the switch leaves the panel while it is off, the Ignore
-    notice included (maintainer, 2026-10-05), even though Speedy Loot gives the
-    notice too. Lockboxes, whose tooltips work with nothing opening, is a child
+    Everything below the switch leaves the panel while it is off. Enable Ignore
+    Notifications lives on the Openables List (Options-Openable-Items.lua),
+    since Speedy Loot gives that notice with opening off too (maintainer,
+    2026-11-03). Lockboxes, whose tooltips work with nothing opening, is a child
     panel of its own (Options-Lockboxes.lua).
 ]]
 local _, ns = ...
@@ -54,19 +49,6 @@ function ns.AutomatedOpeningSwitch()
 	}
 end
 
---[[
-    What Enable Ignore Notifications prints, drawn by ns.OptionsExampleRow
-    (Message Examples in Options-Utilities.lua): the plain notice, the one a
-    container the player sets to Ignore gets, run through its real template and
-    laid out as printed. The stand-in is green so it stands out from the silver
-    line the way a link does in chat.
-]]
-local EXAMPLE_CONTAINER_QUALITY = 2
-
-local function IgnoreNotificationExample()
-	return ns.OptionsPrintedExample(L["MESSAGE_ITEM_IGNORED"]:format(ns.OptionsExampleItem(EXAMPLE_CONTAINER_QUALITY)))
-end
-
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
@@ -76,8 +58,6 @@ function ns.BuildAutomatedOpeningOptions()
 	local autoOpen = ns.AutomatedOpeningSwitch()
 	autoOpen.width = "full"
 	autoOpen.order = 3
-	local ignoreExample = ns.OptionsExampleRow(8, IgnoreNotificationExample)
-	ignoreExample.hidden = AutomatedOpeningOff
 	return {
 		type = "group",
 		name = L["TAB_AUTOMATED_OPENING"],
@@ -109,22 +89,6 @@ function ns.BuildAutomatedOpeningOptions()
 					ns.ScheduleOpeningScan(true)
 				end,
 			}),
-			spacerBeforeIgnoreNotifications = ns.OptionsSpacer(6, AutomatedOpeningOff),
-			ignoreNotifications = {
-				type = "toggle",
-				name = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"],
-				desc = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"],
-				width = "full",
-				order = 7,
-				hidden = AutomatedOpeningOff,
-				get = function()
-					return ns.db.profile.openingIgnoreNotifications
-				end,
-				set = function(_, value)
-					ns.db.profile.openingIgnoreNotifications = value
-				end,
-			},
-			ignoreNotificationsExampleRow = ignoreExample,
 		},
 	}
 end

@@ -1,46 +1,20 @@
--- Data/Mists/Openable-Items-Mists.lua
 local _, ns = ...
 
---[[
-    Every item this client can open, and what Automated Opening does with
-    each by default. The player's own changes, and the items they added or
-    removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
-
-    Pulled from the MoP Classic client's own tables on wago.tools, build
-    5.5.4.69934: every ItemSparse row flagged Openable (Flags_0 & 0x4, the
-    flag behind "<Right Click to Open>"), less bags and equippable items
-    (InventoryType set), and less placeholders named "Test", "QATest",
-    "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated".
-    https://wago.tools/db2/ItemSparse?build=5.5.4.69934
-
-    Each row's default follows the maintainer's rules, in this order:
-    ns.OPENING_IGNORE_RAID for a container that drops only from raid or world
-    bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE
-    for one holding a Unique item that isn't gear; ns.OPENING_IGNORE for one
-    holding a Bind on Pickup item while it can itself be traded; ns.OPENING_OPEN
-    for the rest. No client table records
-    what a container holds or drops from, so those come from the CMaNGOS Wrath
-    world DB (WoTLKDB_1_9_14092), the newest open one, for the items Wrath has,
-    with the maintainer's earlier call where it can't tell; a later item's
-    default rests on its lock alone. README-Technical describes the method.
-
-    -- TODO: Add SQL Query
-]]
 -- { [itemId] = defaultAction }
 ns.OPENABLE_ITEMS = {
 	[10456] = ns.OPENING_OPEN, -- A Bulging Coin Purse
 	[15902] = ns.OPENING_OPEN, -- A Crazy Grab Bag
 	[11883] = ns.OPENING_OPEN, -- A Dingy Fanny Pack
-	[5335] = ns.OPENING_IGNORE_UNIQUE, -- A Sack of Coins (unique: Old Moneybag)
-	[6755] = ns.OPENING_IGNORE_UNIQUE, -- A Small Container of Gems (unique: Jewelry Box)
-	[11107] = ns.OPENING_IGNORE_UNIQUE, -- A Small Pack (unique: Large Compass, Curled Map Parchment, Lion-headed Key, ...)
+	[5335] = ns.OPENING_OPEN, -- A Sack of Coins
+	[6755] = ns.OPENING_OPEN, -- A Small Container of Gems
+	[11107] = ns.OPENING_OPEN, -- A Small Pack
 	[44663] = ns.OPENING_OPEN, -- Abandoned Adventurer's Satchel
 	[21509] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
 	[21510] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
 	[21511] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
 	[21512] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
 	[21513] = ns.OPENING_OPEN, -- Ahn'Qiraj War Effort Supplies
-	[46110] = ns.OPENING_IGNORE_RAID, -- Alchemist's Cache (raid boss drop)
+	[46110] = ns.OPENING_OPEN, -- Alchemist's Cache
 	[34583] = ns.OPENING_OPEN, -- Aldor Supplies Package
 	[34587] = ns.OPENING_OPEN, -- Aldor Supplies Package
 	[34592] = ns.OPENING_OPEN, -- Aldor Supplies Package
@@ -58,7 +32,7 @@ ns.OPENABLE_ITEMS = {
 	[44161] = ns.OPENING_OPEN, -- Arcane Tarot
 	[94219] = ns.OPENING_OPEN, -- Arcane Trove
 	[98560] = ns.OPENING_OPEN, -- Arcane Trove
-	[31955] = ns.OPENING_IGNORE_UNIQUE, -- Arelion's Knapsack (unique: Arelion's Journal)
+	[31955] = ns.OPENING_OPEN, -- Arelion's Knapsack
 	[39903] = ns.OPENING_OPEN, -- Argent Crusade Gratuity
 	[39904] = ns.OPENING_OPEN, -- Argent Crusade Gratuity
 	[49294] = ns.OPENING_IGNORE_RAID, -- Ashen Sack of Gems (raid bosses: Onyxia)
@@ -109,7 +83,7 @@ ns.OPENABLE_ITEMS = {
 	[6643] = ns.OPENING_OPEN, -- Bloated Smallfish
 	[8366] = ns.OPENING_IGNORE, -- Bloated Trout (Bind on Pickup: Pendant of Myzrael)
 	[77501] = ns.OPENING_OPEN, -- Blue Blizzcon Bag
-	[17962] = ns.OPENING_IGNORE_RAID, -- Blue Sack of Gems (raid bosses: Azuregos, Nefarian, Lord Kazzak, Highlord Kruul, ...)
+	[17962] = ns.OPENING_OPEN, -- Blue Sack of Gems
 	[28135] = ns.OPENING_OPEN, -- Bomb Crate
 	[40308] = ns.OPENING_OPEN, -- Bonework Soul Jar
 	[46809] = ns.OPENING_OPEN, -- Bountiful Cookbook
@@ -121,7 +95,7 @@ ns.OPENABLE_ITEMS = {
 	[44951] = ns.OPENING_OPEN, -- Box of Bombs
 	[21812] = ns.OPENING_OPEN, -- Box of Chocolates
 	[49909] = ns.OPENING_OPEN, -- Box of Chocolates
-	[10695] = ns.OPENING_IGNORE_UNIQUE, -- Box of Empty Vials (unique: Empty Vial Labeled #1, Empty Vial Labeled #2, Empty Vial Labeled #3, ...)
+	[10695] = ns.OPENING_OPEN, -- Box of Empty Vials
 	[9541] = ns.OPENING_OPEN, -- Box of Goodies
 	[9539] = ns.OPENING_OPEN, -- Box of Rations
 	[90903] = ns.OPENING_OPEN, -- Box of Skins
@@ -164,7 +138,7 @@ ns.OPENABLE_ITEMS = {
 	[265316] = ns.OPENING_OPEN, -- Cache of the Golden Challenger
 	[265257] = ns.OPENING_OPEN, -- Cache of the Ivory Challenger
 	[265305] = ns.OPENING_OPEN, -- Cache of the Ivory Challenger
-	[52676] = ns.OPENING_IGNORE_UNIQUE, -- Cache of the Ley-Guardian (unique: Reins of the Blue Drake)
+	[52676] = ns.OPENING_OPEN, -- Cache of the Ley-Guardian
 	[265109] = ns.OPENING_OPEN, -- Cache of the Obsidian Challenger
 	[265110] = ns.OPENING_OPEN, -- Cache of the Obsidian Challenger
 	[265113] = ns.OPENING_OPEN, -- Cache of the Obsidian Challenger
@@ -192,11 +166,11 @@ ns.OPENABLE_ITEMS = {
 	[21528] = ns.OPENING_OPEN, -- Colossal Bag of Loot
 	[20808] = ns.OPENING_OPEN, -- Combat Assignment
 	[15103] = ns.OPENING_OPEN, -- Corrupt Tested Sample
-	[5738] = ns.OPENING_IGNORE_UNIQUE, -- Covert Ops Pack (unique: Remote Detonator (Red), Remote Detonator (Blue), NG-5 Explosives (Red), ...)
-	[39883] = ns.OPENING_IGNORE_UNIQUE, -- Cracked Egg (unique: Reins of the Green Proto-Drake)
+	[5738] = ns.OPENING_OPEN, -- Covert Ops Pack
+	[39883] = ns.OPENING_OPEN, -- Cracked Egg
 	[94296] = ns.OPENING_OPEN, -- Cracked Primal Egg
 	[50238] = ns.OPENING_OPEN, -- Cracked Un'Goro Coconut
-	[34871] = ns.OPENING_IGNORE_UNIQUE, -- Crafty's Sack (unique: Warsong Banner, Warsong Orc Disguise)
+	[34871] = ns.OPENING_OPEN, -- Crafty's Sack
 	[87534] = ns.OPENING_OPEN, -- Crate of Draenei Archaeology Fragments
 	[89609] = ns.OPENING_OPEN, -- Crate of Dust
 	[87533] = ns.OPENING_OPEN, -- Crate of Dwarven Archaeology Fragments
@@ -217,7 +191,7 @@ ns.OPENABLE_ITEMS = {
 	[104112] = ns.OPENING_OPEN, -- Curious Ticking Parcel
 	[104114] = ns.OPENING_OPEN, -- Curious Ticking Parcel
 	[23022] = ns.OPENING_OPEN, -- Curmudgeon's Payoff
-	[19422] = ns.OPENING_IGNORE_UNIQUE, -- Darkmoon Faire Fortune (unique: Sayge's Fortune #23, Sayge's Fortune #24, Sayge's Fortune #25, ...)
+	[19422] = ns.OPENING_OPEN, -- Darkmoon Faire Fortune
 	[93724] = ns.OPENING_OPEN, -- Darkmoon Game Prize
 	[91086] = ns.OPENING_OPEN, -- Darkmoon Pet Supplies
 	[20469] = ns.OPENING_OPEN, -- Decoded True Believer Clippings
@@ -226,21 +200,21 @@ ns.OPENABLE_ITEMS = {
 	[20230] = ns.OPENING_OPEN, -- Defiler's Standard Care Package
 	[12849] = ns.OPENING_OPEN, -- Demon Kissed Sack
 	[6351] = ns.OPENING_OPEN, -- Dented Crate
-	[30650] = ns.OPENING_IGNORE_UNIQUE, -- Dertrok's Wand Case (unique: Dertrok's First Wand, Dertrok's Second Wand, Dertrok's Third Wand, ...)
+	[30650] = ns.OPENING_OPEN, -- Dertrok's Wand Case
 	[50161] = ns.OPENING_OPEN, -- Dinner Suit Box
 	[89808] = ns.OPENING_OPEN, -- Dividends of the Everlasting Spring
 	[89857] = ns.OPENING_OPEN, -- Dividends of the Everlasting Spring
 	[95617] = ns.OPENING_OPEN, -- Dividends of the Everlasting Spring
 	[52274] = ns.OPENING_OPEN, -- Earthen Ring Supplies
 	[52344] = ns.OPENING_OPEN, -- Earthen Ring Supplies
-	[8647] = ns.OPENING_IGNORE_UNIQUE, -- Egg Crate (unique: Extraordinary Egg, Fine Egg, Ordinary Egg, ...)
+	[8647] = ns.OPENING_OPEN, -- Egg Crate
 	[68729] = ns.OPENING_UNLOCKED, -- Elementium Lockbox
 	[10752] = ns.OPENING_OPEN, -- Emerald Encrusted Chest
 	[85223] = ns.OPENING_OPEN, -- Enigma Seed Pack
 	[187714] = ns.OPENING_OPEN, -- Enlistment Bonus
 	[187799] = ns.OPENING_OPEN, -- Enlistment Bonus
 	[98101] = ns.OPENING_OPEN, -- Enormous Sack of Coins
-	[11617] = ns.OPENING_IGNORE_UNIQUE, -- Eridan's Supplies (unique: Book of Aquor, Irontree Heart)
+	[11617] = ns.OPENING_OPEN, -- Eridan's Supplies
 	[5760] = ns.OPENING_UNLOCKED, -- Eternium Lockbox
 	[11024] = ns.OPENING_OPEN, -- Evergreen Herb Casing
 	[90395] = ns.OPENING_OPEN, -- Facets of Research
@@ -251,17 +225,17 @@ ns.OPENABLE_ITEMS = {
 	[90401] = ns.OPENING_OPEN, -- Facets of Research
 	[90406] = ns.OPENING_OPEN, -- Facets of Research
 	[11937] = ns.OPENING_IGNORE, -- Fat Sack of Coins (Bind on Pickup: Fire Opal Necklace)
-	[10834] = ns.OPENING_IGNORE_UNIQUE, -- Felhound Tracker Kit (unique: Fel Orb)
+	[10834] = ns.OPENING_OPEN, -- Felhound Tracker Kit
 	[21363] = ns.OPENING_OPEN, -- Festive Gift
 	[52304] = ns.OPENING_OPEN, -- Fire Prism
-	[24336] = ns.OPENING_IGNORE_UNIQUE, -- Fireproof Satchel (unique: Ritual Torch, Orb of Returning)
+	[24336] = ns.OPENING_OPEN, -- Fireproof Satchel
 	[104273] = ns.OPENING_OPEN, -- Flame-Scarred Cache of Offerings
 	[63349] = ns.OPENING_UNLOCKED, -- Flame-Scarred Junkbox
 	[39014] = ns.OPENING_UNLOCKED, -- Floral Foundations
 	[21131] = ns.OPENING_OPEN, -- Followup Combat Assignment
-	[20805] = ns.OPENING_IGNORE_UNIQUE, -- Followup Logistics Assignment (unique: Logistics Task Briefing I, Logistics Task Briefing II, Logistics Task Briefing III, ...)
-	[21386] = ns.OPENING_IGNORE_UNIQUE, -- Followup Logistics Assignment (unique: Logistics Task Briefing I, Logistics Task Briefing II, Logistics Task Briefing III, ...)
-	[21133] = ns.OPENING_IGNORE_UNIQUE, -- Followup Tactical Assignment (unique: Tactical Task Briefing X, Tactical Task Briefing II, Tactical Task Briefing IV, ...)
+	[20805] = ns.OPENING_OPEN, -- Followup Logistics Assignment
+	[21386] = ns.OPENING_OPEN, -- Followup Logistics Assignment
+	[21133] = ns.OPENING_OPEN, -- Followup Tactical Assignment
 	[94566] = ns.OPENING_OPEN, -- Fortuitous Coffer
 	[43622] = ns.OPENING_UNLOCKED, -- Froststeel Lockbox
 	[8484] = ns.OPENING_OPEN, -- Gadgetzan Water Co. Care Package
@@ -342,10 +316,10 @@ ns.OPENABLE_ITEMS = {
 	[90635] = ns.OPENING_OPEN, -- Hero's Purse
 	[61387] = ns.OPENING_OPEN, -- Hidden Stash
 	[69817] = ns.OPENING_OPEN, -- Hive Queen's Honeycomb
-	[22648] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Ashi Dossier (unique: Combat Task Briefing XII, Combat Task Briefing III, Combat Task Briefing I, ...)
-	[22649] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Regal Dossier (unique: Combat Task Briefing VIII, Combat Task Briefing IX, Combat Task Briefing X, ...)
-	[22650] = ns.OPENING_IGNORE_UNIQUE, -- Hive'Zora Dossier (unique: Combat Task Briefing IV, Combat Task Briefing V, Combat Task Briefing VI, ...)
-	[10569] = ns.OPENING_IGNORE_UNIQUE, -- Hoard of the Black Dragonflight (unique: Preserved Threshadon Meat, Preserved Pheromone Mixture)
+	[22648] = ns.OPENING_OPEN, -- Hive'Ashi Dossier
+	[22649] = ns.OPENING_OPEN, -- Hive'Regal Dossier
+	[22650] = ns.OPENING_OPEN, -- Hive'Zora Dossier
+	[10569] = ns.OPENING_OPEN, -- Hoard of the Black Dragonflight
 	[33928] = ns.OPENING_OPEN, -- Hollowed Bone Decanter
 	[98097] = ns.OPENING_OPEN, -- Huge Sack of Coins
 	[98100] = ns.OPENING_OPEN, -- Humongous Sack of Coins
@@ -366,10 +340,10 @@ ns.OPENABLE_ITEMS = {
 	[31952] = ns.OPENING_UNLOCKED, -- Khorium Lockbox
 	[105751] = ns.OPENING_OPEN, -- Kor'kron Shaman's Treasure
 	[10479] = ns.OPENING_OPEN, -- Kovic's Trading Satchel
-	[32777] = ns.OPENING_IGNORE_UNIQUE, -- Kronk's Grab Bag (unique: Darkrune)
+	[32777] = ns.OPENING_OPEN, -- Kronk's Grab Bag
 	[10595] = ns.OPENING_OPEN, -- Kum'isha's Junk
 	[12122] = ns.OPENING_OPEN, -- Kum'isha's Junk
-	[54218] = ns.OPENING_IGNORE_UNIQUE, -- Landro's Gift Box (unique: Big Battle Bear, Reins of the Spectral Tiger, Reins of the Swift Spectral Tiger, ...)
+	[54218] = ns.OPENING_OPEN, -- Landro's Gift Box
 	[235404] = ns.OPENING_OPEN, -- Landro's Loot Box
 	[246901] = ns.OPENING_OPEN, -- Landro's Loot Box
 	[50301] = ns.OPENING_OPEN, -- Landro's Pet Box
@@ -381,18 +355,18 @@ ns.OPENABLE_ITEMS = {
 	[21742] = ns.OPENING_OPEN, -- Large Rocket Recipes
 	[98096] = ns.OPENING_OPEN, -- Large Sack of Coins
 	[45878] = ns.OPENING_OPEN, -- Large Sack of Ulduar Spoils
-	[43346] = ns.OPENING_IGNORE_RAID, -- Large Satchel of Spoils (raid bosses: Sartharion)
+	[43346] = ns.OPENING_OPEN, -- Large Satchel of Spoils
 	[32628] = ns.OPENING_OPEN, -- Large Silver Metamorphosis Geode
 	[19297] = ns.OPENING_OPEN, -- Lesser Darkmoon Prize
-	[21132] = ns.OPENING_IGNORE_UNIQUE, -- Logistics Assignment (unique: Logistics Task Briefing X, Logistics Task Briefing IV, Logistics Task Briefing V, ...)
-	[21266] = ns.OPENING_IGNORE_UNIQUE, -- Logistics Assignment (unique: Logistics Task Briefing IV, Logistics Task Briefing VI, Logistics Task Briefing VII, ...)
+	[21132] = ns.OPENING_OPEN, -- Logistics Assignment
+	[21266] = ns.OPENING_OPEN, -- Logistics Assignment
 	[54516] = ns.OPENING_OPEN, -- Loot-Filled Pumpkin
 	[18804] = ns.OPENING_OPEN, -- Lord Grayson's Satchel
 	[50160] = ns.OPENING_OPEN, -- Lovely Dress Box
 	[103632] = ns.OPENING_OPEN, -- Lucky Box of Greatness
 	[21746] = ns.OPENING_OPEN, -- Lucky Red Envelope
 	[21640] = ns.OPENING_OPEN, -- Lunar Festival Fireworks Pack
-	[35792] = ns.OPENING_IGNORE_UNIQUE, -- Mage Hunter Personal Effects (unique: Moonrest Gardens Plans)
+	[35792] = ns.OPENING_OPEN, -- Mage Hunter Personal Effects
 	[41426] = ns.OPENING_OPEN, -- Magically Wrapped Gift
 	[104198] = ns.OPENING_OPEN, -- Mantid Artifact Hunter's Kit
 	[90840] = ns.OPENING_OPEN, -- Marauder's Gleaming Sack of Gold
@@ -406,13 +380,13 @@ ns.OPENABLE_ITEMS = {
 	[8506] = ns.OPENING_OPEN, -- Mithril Lotterybox
 	[69999] = ns.OPENING_OPEN, -- Moat Monster Feeding Kit
 	[68384] = ns.OPENING_OPEN, -- Moonkin Egg
-	[32462] = ns.OPENING_IGNORE_UNIQUE, -- Morthis' Materials (unique: Essence-Infused Moonstone, Arthorn's Research)
+	[32462] = ns.OPENING_OPEN, -- Morthis' Materials
 	[27446] = ns.OPENING_OPEN, -- Mr. Pinchy's Gift
 	[22320] = ns.OPENING_OPEN, -- Mux's Quality Goods
 	[19425] = ns.OPENING_OPEN, -- Mysterious Lockbox
 	[37168] = ns.OPENING_OPEN, -- Mysterious Tarot
 	[21042] = ns.OPENING_OPEN, -- Narain's Special Kit
-	[15876] = ns.OPENING_IGNORE_UNIQUE, -- Nathanos' Chest (unique: Rotten Apple)
+	[15876] = ns.OPENING_OPEN, -- Nathanos' Chest
 	[9537] = ns.OPENING_OPEN, -- Neatly Wrapped Box
 	[23895] = ns.OPENING_OPEN, -- Netted Goods
 	[85277] = ns.OPENING_OPEN, -- Nicely Packed Lunch
@@ -465,7 +439,7 @@ ns.OPENABLE_ITEMS = {
 	[78903] = ns.OPENING_OPEN, -- Pouch o' Tokens
 	[78904] = ns.OPENING_OPEN, -- Pouch o' Tokens
 	[37605] = ns.OPENING_OPEN, -- Pouch of Pennies
-	[31522] = ns.OPENING_IGNORE_UNIQUE, -- Primal Mooncloth Supplies (unique: Square of Imbued Netherweave, Vial of Primal Reagents)
+	[31522] = ns.OPENING_OPEN, -- Primal Mooncloth Supplies
 	[104268] = ns.OPENING_OPEN, -- Pristine Stalker Hide
 	[32064] = ns.OPENING_OPEN, -- Protectorate Treasure Cache
 	[104034] = ns.OPENING_OPEN, -- Purse of Timeless Coins
@@ -476,7 +450,7 @@ ns.OPENABLE_ITEMS = {
 	[43575] = ns.OPENING_UNLOCKED, -- Reinforced Junkbox
 	[13918] = ns.OPENING_UNLOCKED, -- Reinforced Locked Chest
 	[4638] = ns.OPENING_UNLOCKED, -- Reinforced Steel Lockbox
-	[33045] = ns.OPENING_IGNORE_UNIQUE, -- Renn's Supplies (unique: Repaired Diving Gear)
+	[33045] = ns.OPENING_OPEN, -- Renn's Supplies
 	[92788] = ns.OPENING_OPEN, -- Ride Ticket Book
 	[92789] = ns.OPENING_OPEN, -- Ride Ticket Book
 	[92790] = ns.OPENING_OPEN, -- Ride Ticket Book
@@ -530,7 +504,7 @@ ns.OPENABLE_ITEMS = {
 	[268931] = ns.OPENING_OPEN, -- Satchel of Bracers of Constant Implosion
 	[268936] = ns.OPENING_OPEN, -- Satchel of Bracers of the Midnight Comet
 	[268930] = ns.OPENING_OPEN, -- Satchel of Caustic Spike Bracers
-	[54536] = ns.OPENING_IGNORE_UNIQUE, -- Satchel of Chilled Goods (unique: Ice Chip)
+	[54536] = ns.OPENING_OPEN, -- Satchel of Chilled Goods
 	[104260] = ns.OPENING_OPEN, -- Satchel of Cosmic Mysteries
 	[69903] = ns.OPENING_OPEN, -- Satchel of Exotic Mysteries
 	[68813] = ns.OPENING_OPEN, -- Satchel of Freshly-Picked Herbs
@@ -547,7 +521,7 @@ ns.OPENABLE_ITEMS = {
 	[268933] = ns.OPENING_OPEN, -- Satchel of Loa-Ridden Bracers
 	[265330] = ns.OPENING_OPEN, -- Satchel of Shining Curiosities
 	[277650] = ns.OPENING_OPEN, -- Satchel of Shining Curiosities
-	[43347] = ns.OPENING_IGNORE_RAID, -- Satchel of Spoils (raid bosses: Sartharion)
+	[43347] = ns.OPENING_OPEN, -- Satchel of Spoils
 	[232947] = ns.OPENING_OPEN, -- Satchel of the Cloudburst Cloak
 	[232948] = ns.OPENING_OPEN, -- Satchel of the Cloudburst Necklace
 	[232949] = ns.OPENING_OPEN, -- Satchel of the Cloudburst Ring
@@ -632,7 +606,7 @@ ns.OPENABLE_ITEMS = {
 	[95601] = ns.OPENING_OPEN, -- Shiny Pile of Refuse
 	[92960] = ns.OPENING_OPEN, -- Silkworm Cocoon
 	[20766] = ns.OPENING_OPEN, -- Slimy Bag
-	[32724] = ns.OPENING_IGNORE_UNIQUE, -- Sludge-Covered Object (unique: Murkblood Escape Plans)
+	[32724] = ns.OPENING_OPEN, -- Sludge-Covered Object
 	[87217] = ns.OPENING_OPEN, -- Small Bag of Goods
 	[94159] = ns.OPENING_OPEN, -- Small Bag of Zandalari Supplies
 	[15699] = ns.OPENING_OPEN, -- Small Brown-Wrapped Package
@@ -650,7 +624,7 @@ ns.OPENABLE_ITEMS = {
 	[17727] = ns.OPENING_OPEN, -- Smokywood Pastures Gift Pack
 	[17685] = ns.OPENING_OPEN, -- Smokywood Pastures Sampler
 	[17726] = ns.OPENING_OPEN, -- Smokywood Pastures Special Gift
-	[21315] = ns.OPENING_IGNORE_UNIQUE, -- Smokywood Satchel (unique: Pouch of Reindeer Dust, Metzen's Letters and Notes)
+	[21315] = ns.OPENING_OPEN, -- Smokywood Satchel
 	[52331] = ns.OPENING_OPEN, -- Snufflenose Starter Kit
 	[85498] = ns.OPENING_OPEN, -- Songbell Seed Pack
 	[50409] = ns.OPENING_OPEN, -- Spark's Fossil Finding Kit
@@ -659,7 +633,7 @@ ns.OPENABLE_ITEMS = {
 	[77956] = ns.OPENING_OPEN, -- Spectral Mount Crate
 	[97153] = ns.OPENING_OPEN, -- Spoils of the Thunder King
 	[90041] = ns.OPENING_OPEN, -- Spoils of Theramore
-	[49631] = ns.OPENING_IGNORE_UNIQUE, -- Standard Apothecary Serving Kit (unique: Perfume Neutralizer, Cologne Neutralizer, Court Subpoena)
+	[49631] = ns.OPENING_OPEN, -- Standard Apothecary Serving Kit
 	[4637] = ns.OPENING_UNLOCKED, -- Steel Lockbox
 	[68795] = ns.OPENING_OPEN, -- Stendel's Bane
 	[73792] = ns.OPENING_OPEN, -- Stolen Present
@@ -686,7 +660,7 @@ ns.OPENABLE_ITEMS = {
 	[97956] = ns.OPENING_OPEN, -- Surplus Supplies
 	[97957] = ns.OPENING_OPEN, -- Surplus Supplies
 	[54467] = ns.OPENING_OPEN, -- Tabard Lost & Found
-	[20809] = ns.OPENING_IGNORE_UNIQUE, -- Tactical Assignment (unique: Tactical Task Briefing IX, Tactical Task Briefing VI, Tactical Task Briefing VII, ...)
+	[20809] = ns.OPENING_OPEN, -- Tactical Assignment
 	[7209] = ns.OPENING_UNLOCKED, -- Tazan's Satchel
 	[7870] = ns.OPENING_OPEN, -- Thaumaturgy Vessel Lockbox
 	[12033] = ns.OPENING_UNLOCKED, -- Thaurissan Family Jewels
@@ -702,7 +676,7 @@ ns.OPENABLE_ITEMS = {
 	[93199] = ns.OPENING_OPEN, -- Tome of the Crane
 	[93200] = ns.OPENING_OPEN, -- Tome of the Serpent
 	[93198] = ns.OPENING_OPEN, -- Tome of the Tiger
-	[11568] = ns.OPENING_IGNORE_UNIQUE, -- Torwa's Pouch (unique: Preserved Threshadon Meat, Preserved Pheromone Mixture)
+	[11568] = ns.OPENING_OPEN, -- Torwa's Pouch
 	[66943] = ns.OPENING_OPEN, -- Treasures from Grim Batol
 	[95343] = ns.OPENING_OPEN, -- Treasures of the Thunder King
 	[90625] = ns.OPENING_OPEN, -- Treasures of the Vale
@@ -716,7 +690,7 @@ ns.OPENABLE_ITEMS = {
 	[102137] = ns.OPENING_OPEN, -- Unclaimed Black Market Container
 	[25419] = ns.OPENING_OPEN, -- Unmarked Bag of Gems
 	[51316] = ns.OPENING_OPEN, -- Unsealed Chest
-	[12339] = ns.OPENING_IGNORE_UNIQUE, -- Vaelan's Gift (unique: Orb of Draconic Energy, Unforged Seal of Ascension)
+	[12339] = ns.OPENING_OPEN, -- Vaelan's Gift
 	[68798] = ns.OPENING_OPEN, -- Venture Co. Archaeology Crate
 	[68799] = ns.OPENING_OPEN, -- Venture Co. Archaeology Crate
 	[68800] = ns.OPENING_OPEN, -- Venture Co. Archaeology Crate
@@ -728,14 +702,14 @@ ns.OPENABLE_ITEMS = {
 	[68598] = ns.OPENING_OPEN, -- Very Fat Sack of Coins
 	[88165] = ns.OPENING_UNLOCKED, -- Vine-Cracked Junkbox
 	[68133] = ns.OPENING_OPEN, -- Violet Chest
-	[30260] = ns.OPENING_IGNORE_UNIQUE, -- Voren'thal's Package (unique: Socrethar's Teleportation Stone, Voren'thal's Presence)
+	[30260] = ns.OPENING_OPEN, -- Voren'thal's Package
 	[70719] = ns.OPENING_OPEN, -- Water-Filled Gills
 	[6352] = ns.OPENING_IGNORE, -- Waterlogged Crate (Bind on Pickup: Hammer of the Vesper)
 	[21113] = ns.OPENING_IGNORE, -- Watertight Trunk (Bind on Pickup: Weather-Beaten Journal)
 	[90537] = ns.OPENING_OPEN, -- Winner's Reward
 	[34426] = ns.OPENING_OPEN, -- Winter Veil Gift
 	[43504] = ns.OPENING_OPEN, -- Winter Veil Gift
-	[46740] = ns.OPENING_IGNORE_UNIQUE, -- Winter Veil Gift (unique: Red Rider Air Rifle)
+	[46740] = ns.OPENING_OPEN, -- Winter Veil Gift
 	[67443] = ns.OPENING_OPEN, -- Winter Veil Gift
 	[70938] = ns.OPENING_OPEN, -- Winter Veil Gift
 	[90892] = ns.OPENING_OPEN, -- Winter Veil Gift
@@ -745,3 +719,33 @@ ns.OPENABLE_ITEMS = {
 	[22137] = ns.OPENING_OPEN, -- Ysida's Satchel
 	[71631] = ns.OPENING_OPEN, -- Zen'Vorka's Cache
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, MoP Classic 5.5.4.70631
+
+Notes
+	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
+	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". README-Technical, Openable Items Data, gives the exact test. They come from this client's own tables, never from a private-server database or Wowhead listings.
+	- Pulled from this client's own tables at build 5.5.4.69934.
+	- Clams are left out: from Wrath on they open through a spell the player casts, not the loot flag, and no add-on can cast it.
+	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
+	- No client table records what a container holds or drops from, so those come from the CMaNGOS Wrath world DB (WoTLKDB_1_9_14092), the newest open one, for the items Wrath has, with the maintainer's earlier call where it can't tell; a later item's default rests on its lock alone. A note after a row's name gives the evidence for an Ignore. README-Technical describes the method.
+	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
+	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): WoW Forever's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	https://wago.tools/db2/ItemSparse?build=5.5.4.69934
+	https://wago.tools/db2/ItemSparse?build=5.5.4.70631
+
+QuestieDB
+	None.
+]]

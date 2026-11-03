@@ -10,7 +10,8 @@ local L = ns.L
     stand in for. They are flipped the way Blizzard's ChatConfigFrame flips
     them, so the client saves them with the rest of the chat settings. Prints
     are unaffected: they go to the frame directly, not through a message group,
-    and the toasts hear CHAT_MSG_LOOT and CHAT_MSG_MONEY on their own frame.
+    and the toasts hear CHAT_MSG_LOOT and CHAT_MSG_MONEY through GogoLoot's
+    event frame.
 
     With Enable Loot Toasts on and the dropdown beside it on Disable, GogoLoot
     takes those lines off General; with either changed back it returns them,

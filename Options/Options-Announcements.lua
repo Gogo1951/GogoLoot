@@ -5,11 +5,10 @@
 --[[
     One panel for everything GogoLoot tells other players: trade summaries and
     master loot. What it shows and plays for the player alone lives on the Loot
-    Toasts and Loot Sounds panels. Enable Announcements is the panel's master switch,
-    and everything below it leaves the panel while it is off: Trade
-    Announcements, then Master Looter Announcements, each under its own header.
-    The saved key, lootNotifications, keeps the panel's earlier name, Loot
-    Notifications.
+    Toasts and Loot Sounds panels. Enable Loot Announcements is the panel's
+    master switch, and everything below it leaves the panel while it is off:
+    Trade Announcements, then Master Looter Announcements, each under its own
+    header. The saved key is lootNotifications.
 
     Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
       lootNotifications
@@ -34,7 +33,6 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local GetColor = ns.GetColor
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 local function LootNotificationsOff()
@@ -85,43 +83,53 @@ end
 --[[
     What each announcement posts, drawn by ns.OptionsExampleRow (Message
     Examples in Options-Utilities.lua) from the template and decoration the
-    real one uses, ns:BuildAnnounceMessage. The one exception is the Me Only
-    trade example, a printed line, which ns.OptionsPrintedExample lays out from
-    the _PRINT template. Each leaves with the master switch, like everything
-    else below it.
+    real one uses, ns:BuildAnnounceMessage, as party chat. The trade example
+    follows Send Trade Summary To: a whisper as Aero receives it, party chat,
+    or for Me Only the printed line from the _PRINT template. Each leaves with
+    the master switch, like everything else below it.
 ]]
-local EXAMPLE_PLAYER = "Aero"
--- The printed example names Aero in a class color, as Automated Rolls' winner summary example does.
-local EXAMPLE_PLAYER_CLASS = "WARRIOR"
+local EXAMPLE_PLAYER_CLASS = "DRUID"
 -- Two of one item for 5 gold: a trade that shows a count and money both.
 local EXAMPLE_TRADE_COUNT = 2
 local EXAMPLE_TRADE_COPPER = 50000
 local EXAMPLE_TRADE_QUALITY = 2
 
--- Me Only prints the summary rather than sending it, so its example is the printed line, name first.
 local function TradeExample()
-	local gave = ns.FormatTradeSummary(
-		{ { link = ns.OptionsExampleItem(EXAMPLE_TRADE_QUALITY), count = EXAMPLE_TRADE_COUNT } },
-		nil,
-		0
-	)
+	local gave = ns.FormatTradeSummary({
+		{ link = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[EXAMPLE_TRADE_QUALITY]), count = EXAMPLE_TRADE_COUNT },
+	}, nil, 0)
 	local received = ns.FormatTradeSummary({}, nil, EXAMPLE_TRADE_COPPER)
-	if ns.db.profile.announceTradeOutput == "self" then
-		-- The silver after the name keeps the rest of the example line silver.
-		local partner = ns.GetClassColor(EXAMPLE_PLAYER_CLASS) .. EXAMPLE_PLAYER .. GetColor("HELP")
-		return ns.OptionsPrintedExample(L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"]:format(gave, partner, received))
+	local output = ns.db.profile.announceTradeOutput
+	if output == "self" then
+		local partner = ns.OptionsExampleOther(EXAMPLE_PLAYER_CLASS)
+		return ns.OptionsPrintedLine(L["MESSAGE_TRADE_GAVE_RECEIVED_PRINT"]:format(gave, partner, received))
 	end
-	return ns:BuildAnnounceMessage("MESSAGE_TRADE_GAVE_RECEIVED", gave, EXAMPLE_PLAYER, received)
+	local partner = ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS]
+	local message = ns:BuildAnnounceMessage("MESSAGE_TRADE_GAVE_RECEIVED", gave, partner, received)
+	return ns.OptionsSentLine(output == "whisper" and "WHISPER" or "PARTY", message)
 end
 
 local function DestinationExample()
-	return ns:BuildAnnounceMessage("MESSAGE_DESTINATION_SET", EXAMPLE_PLAYER, ns.QUALITY_DISPLAY_NAMES.epic)
+	local message = ns:BuildAnnounceMessage(
+		"MESSAGE_DESTINATION_SET",
+		ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS],
+		ns.QUALITY_DISPLAY_NAMES.epic
+	)
+	return ns.OptionsSentLine("PARTY", message)
 end
 
--- The item takes the threshold's color, so the example answers the dropdown beside its toggle.
+-- The item is the threshold's quality, so the example answers the dropdown beside its toggle.
 local function AutomatedHandOutExample()
-	local item = ns.OptionsExampleItem(ns.db.profile.announceMasterLootAutoThreshold)
-	return ns:BuildAnnounceMessage("MESSAGE_GAVE", item, EXAMPLE_PLAYER)
+	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[ns.db.profile.announceMasterLootAutoThreshold])
+	local message = ns:BuildAnnounceMessage("MESSAGE_GAVE", item, ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS])
+	return ns.OptionsSentLine("PARTY", message)
+end
+
+-- Hand-outs by hand are announced at any quality, so this example follows no dropdown.
+local function ManualHandOutExample()
+	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[3])
+	local message = ns:BuildAnnounceMessage("MESSAGE_GAVE", item, ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS])
+	return ns.OptionsSentLine("PARTY", message)
 end
 
 --------------------------------------------------------------------------------
@@ -236,12 +244,8 @@ function ns.BuildAnnouncementOptions()
 				type = "select",
 				desc = L["TRADE_CONDITION_DESCRIPTION"],
 				style = "dropdown",
-				values = {
-					["always"] = L["TRADE_CONDITION_ALWAYS"],
-					["party_or_raid"] = L["TRADE_CONDITION_PARTY_OR_RAID"],
-					["raid_only"] = L["TRADE_CONDITION_RAID_ONLY"],
-				},
-				sorting = { "always", "party_or_raid", "raid_only" },
+				values = ns.TRADE_CONDITION_LABELS,
+				sorting = ns.TRADE_CONDITION_ORDER,
 				get = function()
 					return ns.db.profile.announceTradeCondition
 				end,
@@ -316,9 +320,10 @@ function ns.BuildAnnouncementOptions()
 	)
 	Add("autoExampleRow", ns.OptionsExampleRow(0, AutomatedHandOutExample))
 	--[[
-	    Items handed out by hand post the same line as the automated ones, so
-	    the example above serves both, and they take no threshold: each one was
-	    a deliberate choice.
+	    Items handed out by hand post the same line as the automated ones, and
+	    take no threshold: each one was a deliberate choice. They still get an
+	    example of their own, since this toggle posts to the whole group too
+	    (maintainer, 2026-11-03).
 	]]
 	AddSpacer("spacerBeforeManual")
 	Add("manualAnnounce", {
@@ -333,6 +338,7 @@ function ns.BuildAnnouncementOptions()
 			ns.db.profile.announceMasterLootManual = value
 		end,
 	})
+	Add("manualExampleRow", ns.OptionsExampleRow(0, ManualHandOutExample))
 
 	return {
 		type = "group",

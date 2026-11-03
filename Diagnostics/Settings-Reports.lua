@@ -1,6 +1,7 @@
 local ADDON_NAME, ns = ...
 
 local GetClientHeader = ns.GetDiagnosticClientHeader
+local CountKeys = ns.CountDiagnosticKeys
 
 --------------------------------------------------------------------------------
 -- Display Context
@@ -119,6 +120,16 @@ end
 -- Saved Variables
 --------------------------------------------------------------------------------
 
+-- Plain text: pipes escaped, so a saved item link pastes as text rather than drawing as a link.
+local function Plain(value)
+	return (string.gsub(tostring(value), "|", "||"))
+end
+
+--[[
+    Every row prints, except a table named in ns.DIAGNOSTIC_SAVED_SUMMARY_KEYS
+    (Manifests.lua): data the add-on fills in itself, which prints its row
+    count instead, so a long history can't swamp the rows a player edits.
+]]
 local function DumpTable(value, indent, depth, lines)
 	if depth > 8 then
 		lines[#lines + 1] = indent .. "<max depth>"
@@ -133,12 +144,14 @@ local function DumpTable(value, indent, depth, lines)
 	end)
 	for _, key in ipairs(keys) do
 		local entry = value[key]
-		if type(entry) == "table" then
-			lines[#lines + 1] = indent .. tostring(key) .. " = {"
+		if type(entry) == "table" and ns.DIAGNOSTIC_SAVED_SUMMARY_KEYS[key] then
+			lines[#lines + 1] = string.format("%s%s = <%d rows>", indent, Plain(key), CountKeys(entry))
+		elseif type(entry) == "table" then
+			lines[#lines + 1] = indent .. Plain(key) .. " = {"
 			DumpTable(entry, indent .. "    ", depth + 1, lines)
 			lines[#lines + 1] = indent .. "}"
 		else
-			lines[#lines + 1] = indent .. tostring(key) .. " = " .. tostring(entry)
+			lines[#lines + 1] = indent .. Plain(key) .. " = " .. Plain(entry)
 		end
 	end
 end

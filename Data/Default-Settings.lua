@@ -11,9 +11,9 @@ local _, ns = ...
     AceDB-3.0 defaults table, passed to AceDB:New in Features/Core.lua. Loot
     policy lives in the active profile (ns.db.profile), and with it the
     Automated Opening, lockbox, loot sound and loot toast settings; the
-    presentation keys and the two account-wide records live in global, per the
-    comment on that table below, and the chat tab state Loot Toasts changes
-    lives in char, per character. AceDB serves these defaults through
+    presentation keys and the account-wide records live in global, per the
+    comment on that table below, and per-character state lives in char.
+    AceDB serves these defaults through
     metatables and strips them from the saved table at logout, so there is no
     manual merge anywhere. The empty
     ignoredItemsMaster / ignoredItemsSolo lists are seeded from this client's
@@ -86,7 +86,7 @@ ns.DATABASE_DEFAULTS = {
 		autoOpenWhere = "ALWAYS",
 		-- "ALWAYS" | "SOLO_ONLY"
 		autoOpenGroup = "ALWAYS",
-		-- Tells the player when Automated Opening or Speedy Loot leaves an item set to Ignore alone.
+		-- Tells the player when Speedy Loot, or Automated Opening while it is on, leaves an item set to Ignore alone.
 		openingIgnoreNotifications = true,
 		lockboxTooltips = true,
 		-- "ROGUES" | "ALL"

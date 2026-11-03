@@ -55,7 +55,7 @@ local function OnItemLinkWidgetEnter(frame)
 	local note = option and option.desc
 	if note then
 		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r")
+		GameTooltip:AddLine(GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")
 		GameTooltip:AddLine(GetColor("HELP") .. note .. "|r", nil, nil, nil, true)
 	end
 	GameTooltip:Show()

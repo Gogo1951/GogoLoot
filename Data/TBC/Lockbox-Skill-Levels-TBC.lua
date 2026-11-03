@@ -29,7 +29,7 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, TBC Anniversary 2.5.6.69795
+	2026-11-03, TBC Anniversary 2.5.6.70577
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).
@@ -47,4 +47,9 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/Lock?build=2.5.6.69795
+	https://wago.tools/db2/ItemSparse?build=2.5.6.70577
+	https://wago.tools/db2/Lock?build=2.5.6.70577
+
+QuestieDB
+	None.
 ]]

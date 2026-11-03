@@ -48,7 +48,7 @@ local function AddRollMacro(announce)
 		if not ok or not created or created == 0 then
 			if announce or not warnedMacrosFull then
 				warnedMacrosFull = true
-				ns:PrintMessage(L["ROLL_MACRO_FULL"]:format(name))
+				ns:PrintMessage(L["ROLL_MACRO_FULL_LOADING"]:format(name))
 			end
 			return
 		end

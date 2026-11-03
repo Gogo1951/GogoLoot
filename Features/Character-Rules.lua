@@ -9,18 +9,35 @@
 local _, ns = ...
 
 --[[
-    Which of ns.CHARACTER_RULE_STATS an item carries, as { [statKey] =
-    { source, ... } }, naming every source that saw the stat for Diagnostics'
-    Gear Stats report. Two sources, because neither sees every stat:
-      * GetItemStats, for the item's own stats. On WoW Forever and later
-        clients that includes spell power, attack power and crit. It reads
-        the base item only, never the random suffix in the link.
-      * The tooltip's "+15 Intellect" lines, matched against the game's own
-        stat-line formats, so in any language: what a random suffix such as
-        "of the Owl" rolled. Play It Forward reads its stats the same way.
-    Classic Era and TBC offer only the primary attributes (Data/Data.lua),
-    since their secondary stats are "Equip:" spells neither source reads.
+    Only the stats this client's flavor folder offers
+    (ns.CHARACTER_RULE_STAT_KEYS, Data/{Folder}/Character-Rule-Stats-{Folder}.lua),
+    and only the sections left holding one, so the panel, the stat reader and
+    the roll check all see the same list. Classic Era and TBC offer the primary
+    attributes alone: their secondary stats are "Equip:" spells no item read
+    sees, and GogoLoot carries no item table to cover them. A rule saved for a
+    stat the client doesn't offer is simply never read.
 ]]
+local function KeepOfferedStats()
+	local offered, groupsInUse = {}, {}
+	for _, statKey in ipairs(ns.CHARACTER_RULE_STAT_KEYS) do
+		offered[statKey] = true
+	end
+	for index = #ns.CHARACTER_RULE_STATS, 1, -1 do
+		local stat = ns.CHARACTER_RULE_STATS[index]
+		if offered[stat.key] then
+			groupsInUse[stat.group] = true
+		else
+			table.remove(ns.CHARACTER_RULE_STATS, index)
+		end
+	end
+	for index = #ns.CHARACTER_RULE_GROUPS, 1, -1 do
+		if not groupsInUse[ns.CHARACTER_RULE_GROUPS[index].key] then
+			table.remove(ns.CHARACTER_RULE_GROUPS, index)
+		end
+	end
+end
+KeepOfferedStats()
+
 ---@param found table
 ---@param statKey string
 ---@param source string
@@ -109,6 +126,20 @@ local function AddTooltipStats(itemLink, found)
 	end
 end
 
+--[[
+    Which of ns.CHARACTER_RULE_STATS an item carries, as { [statKey] =
+    { source, ... } }, naming every source that saw the stat for Diagnostics'
+    Gear Stats report. Two sources, because neither sees every stat:
+      * GetItemStats, for the item's own stats. On WoW Forever and later
+        clients that includes spell power, attack power and crit. It reads
+        the base item only, never the random suffix in the link.
+      * The tooltip's "+15 Intellect" lines, matched against the game's own
+        stat-line formats, so in any language: what a random suffix such as
+        "of the Owl" rolled. Play It Forward reads its stats the same way.
+    Classic Era and TBC offer only the primary attributes (KeepOfferedStats,
+    above), since their secondary stats are "Equip:" spells neither source
+    reads.
+]]
 ---@param itemLink string
 ---@return table
 function ns.ReadCharacterRuleStats(itemLink)

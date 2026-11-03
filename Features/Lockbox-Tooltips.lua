@@ -24,7 +24,9 @@ local GetColor = ns.GetColor
     different record and differs from it in some locales (esMX: "Forzar
     cerraduras" against "Ganzúa"), so it never stands in. The name only finds a
     rank on a client with a skill-line API; WoW Forever has none, so there the
-    rank is always unknown, but the name still captions the tooltip block.
+    rank is always unknown, but the name still captions the tooltip block. MoP
+    Classic has no Lockpicking skill line at all (Cataclysm retired it), so its
+    data carries no ID and the name stays nil, which adds no tooltip block.
 
     THE TRAP: the tooltip is not a source for this name. Reading it off the
     tooltip's own "Requires Lockpicking (225)" line is circular: on a client that
@@ -35,8 +37,9 @@ local lockpickingSkillName
 
 ---@return string|nil
 function ns.GetLockpickingSkillName()
-	if not lockpickingSkillName then
-		lockpickingSkillName = C_TradeSkillUI.GetTradeSkillDisplayName(ns.SKILL_LINE_IDS.LOCKPICKING)
+	local skillLineIdentifier = ns.SKILL_LINE_IDS.LOCKPICKING
+	if not lockpickingSkillName and skillLineIdentifier then
+		lockpickingSkillName = C_TradeSkillUI.GetTradeSkillDisplayName(skillLineIdentifier)
 	end
 	return lockpickingSkillName
 end
@@ -98,7 +101,7 @@ local function ScanTooltipLines(tooltip)
 	if not tooltipName then
 		return false, false
 	end
-	local title = L["ADDON_TITLE"]
+	local title = L["ADDON_SHORT_NAME"]
 	local statesRequirement = false
 	for lineIndex = 1, tooltip:NumLines() do
 		local line = _G[LeftLineName(tooltipName, lineIndex)]
@@ -170,7 +173,7 @@ local function AddLockboxLine(tooltip, itemIdentifier)
         number sits in the tooltip's right column.
     ]]
 	tooltip:AddLine(" ")
-	tooltip:AddLine(GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r")
+	tooltip:AddLine(GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")
 	tooltip:AddDoubleLine(color .. label .. "|r", color .. value .. "|r")
 	tooltip:Show()
 end

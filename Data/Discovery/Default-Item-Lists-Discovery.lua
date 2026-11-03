@@ -1,11 +1,9 @@
--- Data/Discovery/Default-Item-Lists-Discovery.lua
 local _, ns = ...
 
 if not ns.IS_DISCOVERY then
 	return
 end
 
--- Copied from Data/Vanilla until Validate Data passes on this client.
 -- { itemId, rollAction }
 ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 20873, ns.NEED }, -- Alabaster Idol
@@ -77,12 +75,6 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 4500, ns.MANUAL }, -- Traveler's Backpack
 	{ 20872, ns.NEED }, -- Vermillion Idol
 	{ 19702, ns.NEED }, -- Vilebranch Coin
-	--[[
-        The Wartorn scraps are listed at Manual on purpose. They are an AQ40
-        Cenarion Circle turn-in with real value, so auto-needing one in a pug
-        reads as ninja-ing; the entry exists so the row is in the UI ready to
-        change, not so the add-on rolls on it.
-    ]]
 	{ 22374, ns.MANUAL }, -- Wartorn Chain Scrap
 	{ 22376, ns.MANUAL }, -- Wartorn Cloth Scrap
 	{ 22373, ns.MANUAL }, -- Wartorn Leather Scrap
@@ -93,13 +85,37 @@ ns.DEFAULT_IGNORE_LIST_SOLO = {
 	{ 19698, ns.NEED }, -- Zulian Coin
 }
 
--- Copied from Data/Vanilla until Validate Data passes on this client.
 -- { itemId }
 ns.DEFAULT_IGNORE_LIST_MASTER = {
-	-- BoP Crafting Materials
+	-- Crafting Materials
 	{ 12662 }, -- Demonic Rune
 	{ 20520 }, -- Dark Rune
 	-- Bags
 	{ 17966 }, -- Onyxia Hide Backpack
 	{ 19914 }, -- Panther Hide Sack
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, Season of Discovery 1.15.9.70576
+
+Notes
+	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.
+	- ns.DEFAULT_IGNORE_LIST_SOLO seeds Item Overrides, under Automated Rolls: items GogoLoot rolls on its own way rather than by the player's Party or Raid setting (Features/Automated-Rolls.lua). Need for the Zul'Gurub coins and bijous, the Ahn'Qiraj scarabs and idols, Scarab Bag, the two Scarab Coffer Keys, Fiery Core and Lava Core. Manual, which leaves the roll to the player, for the librams, the Punctured Voodoo Dolls, Demonic Rune and Dark Rune, Righteous Orb, Corruptor's Scourgestone, Frozen Rune, Word of Thawing, the bags and the Wartorn scraps.
+	- The Wartorn scraps are listed at Manual on purpose. They are an AQ40 Cenarion Circle turn-in with real value, so auto-needing one in a pug reads as ninja-ing; the entry exists so the row is in the UI ready to change, not so the add-on rolls on it.
+	- ns.DEFAULT_IGNORE_LIST_MASTER seeds the Master Looter Ignore List: items automated master looting leaves in the loot window for the master looter to hand out by hand (Features/Master-Looter-Distribution.lua). Demonic Rune and Dark Rune, then the raid bags Onyxia Hide Backpack and Panther Hide Sack.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	None.
+
+QuestieDB
+	None.
+]]

@@ -82,8 +82,9 @@ end
     The button toggles the four features a player switches in play: Automated
     Rolls on left-click, Automated Opening on right-click, Announcements and
     Automated Master Looting on the same clicks with Shift held. Speedy Loot
-    isn't one of them: it simply stays on, so its switch lives only on the
-    General options panel. Each toggle repaints every panel carrying its switch:
+    isn't one of them: it simply stays on, so its switch lives on its own panel
+    and in the General panel's Features section. Each toggle repaints every
+    panel carrying its switch:
     its own and the General panel's Features section, and for the last two the
     master looter pop-up too.
 ]]
@@ -194,7 +195,9 @@ local function ShowTooltip(anchor)
 	    count only when there is more than one, so no locale needs a plural. The
 	    name comes from the item's own link, already localized and
 	    quality-colored, with the brackets stripped: a tooltip line isn't
-	    running text.
+	    running text. A silver line closes the list with what to do: a Rogue is
+	    told to use Pick Lock, anyone else that a Rogue can pick them. The Rogue
+	    line waits for the spell's name rather than printing a blank one.
 	]]
 	local lockedBoxes = ns.GetLockedBoxes()
 	if #lockedBoxes > 0 then
@@ -204,6 +207,16 @@ local function ShowTooltip(anchor)
 			local name = row.link and string.gsub(row.link, "|h%[(.-)%]|h", "|h%1|h")
 				or (GetColor("TEXT") .. row.itemIdentifier .. "|r")
 			tooltip:AddLine(icon .. name .. (row.count > 1 and (" " .. L["ITEM_QUANTITY"]:format(row.count)) or ""))
+		end
+		local hint
+		if ns.IsPlayerRogue() then
+			local pickLock = C_Spell.GetSpellName(ns.SPELLS.PICK_LOCK)
+			hint = pickLock and L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"]:format(pickLock)
+		else
+			hint = L["MINIMAP_LOCKED_ITEMS_HINT"]:format(LOCALIZED_CLASS_NAMES_MALE.ROGUE or "")
+		end
+		if hint then
+			ns:AddTooltipLine(tooltip, hint, "HELP", true)
 		end
 		tooltip:AddLine(" ")
 	end
@@ -343,8 +356,8 @@ function ns:InitMinimap()
 	LibDBIcon:Register(ADDON_NAME, brokerObject, ns.db.global.minimap)
 
 	--[[
-	    On Retail and WoW Forever, LibDBIcon centers an 18px square icon on the button under a ring
-	    (file 136430, the same art on both clients) whose hole is off-center
+	    On WoW Forever, LibDBIcon centers an 18px square icon on the button under a ring
+	    (file 136430, Retail's art) whose hole is off-center
 	    and wider than the icon. The square's corners then show against the
 	    ring's lopsided shading and the icon reads as off-center. So the icon
 	    is masked round, grown to 20 so its rim tucks under the gold, and
@@ -356,7 +369,7 @@ function ns:InitMinimap()
 	    and errors when another add-on has replaced the button's icon.
 	]]
 	local button = LibDBIcon:GetMinimapButton(ADDON_NAME)
-	if (ns.FLAVOR == "Camelot" or ns.FLAVOR == "Mainline") and button and button.icon then
+	if ns.FLAVOR == "Camelot" and button and button.icon then
 		button.icon:SetSize(20, 20)
 		button.icon:ClearAllPoints()
 		button.icon:SetPoint("CENTER", 1, -0.35)

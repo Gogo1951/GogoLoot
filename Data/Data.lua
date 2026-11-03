@@ -95,6 +95,22 @@ ns.CLASS_COLORS = {
 	WARRIOR = "C69B6D",
 }
 
+--[[
+    The house roster the options panels' Example lines name, by class token,
+    each drawn in its class color. Proper names, the same in every locale.
+]]
+ns.SAMPLE_NAMES = {
+	HUNTER = "Spek",
+	PRIEST = "Katz",
+	ROGUE = "Fathom",
+	DRUID = "Aero",
+	WARRIOR = "Prima",
+	WARLOCK = "Greasy",
+	PALADIN = "Aiek",
+	MAGE = "Portalrico",
+	SHAMAN = "Moondragon",
+}
+
 --------------------------------------------------------------------------------
 -- Target Marker
 --------------------------------------------------------------------------------
@@ -265,26 +281,6 @@ ns.CHARACTER_RULE_STATS = {
 	},
 }
 
---[[
-    Classic Era and TBC carry spell power, healing, attack power, crit, hit and
-    mana regeneration as "Equip:" spells, which GetItemStats doesn't report and
-    the tooltip words differently in every language. Rather than ship a table
-    of every such item, Character Rules offers only the primary attributes
-    there; a rule saved for a secondary stat is simply never read.
-]]
-if ns.FLAVOR == "Vanilla" or ns.FLAVOR == "TBC" then
-	for index = #ns.CHARACTER_RULE_STATS, 1, -1 do
-		if ns.CHARACTER_RULE_STATS[index].group ~= "PRIMARY" then
-			table.remove(ns.CHARACTER_RULE_STATS, index)
-		end
-	end
-	for index = #ns.CHARACTER_RULE_GROUPS, 1, -1 do
-		if ns.CHARACTER_RULE_GROUPS[index].key ~= "PRIMARY" then
-			table.remove(ns.CHARACTER_RULE_GROUPS, index)
-		end
-	end
-end
-
 -- The highest quality a group context's automated roll reaches, as the Up to Quality rows and the mini-map tooltip name it.
 ns.ROLL_THRESHOLD_LABELS = {
 	[0] = ns.L["THRESHOLD_ONLY"]:format(ITEM_QUALITY0_DESC),
@@ -397,8 +393,7 @@ ns.OPTIONS_SUB_LABEL_WIDTH = ns.OPTIONS_LABEL_WIDTH - ns.OPTIONS_SUB_INDENT_WIDT
 
 --[[
     A sub-option checkbox carries a short caption, so it takes one label column,
-    which leaves room to spare rather than an exact fit: see ns.OptionsSubRow on
-    why an exact fit is the one thing these must not do.
+    which leaves room to spare rather than an exact fit.
 ]]
 ns.OPTIONS_SUB_TOGGLE_WIDTH = ns.OPTIONS_LABEL_WIDTH
 
@@ -534,6 +529,7 @@ ns.OPENING_REMOVED = "REMOVED"
     five: OPENING_OPEN; OPENING_UNLOCKED, a lockbox, opened once it is picked;
     OPENING_IGNORE_RAID, a raid boss drop; OPENING_IGNORE_UNIQUE, which may hold
     a unique item; or OPENING_IGNORE, which may hold Bind on Pickup loot. The
+    three Ignores go only to a container that can itself be traded. The
     last four carry a reason, which the Openables List shows as a tag on the
     row, whatever the player sets it to, and a looted container's notice gives.
 ]]
@@ -675,6 +671,14 @@ ns.TRADE_OUTPUT_LABELS = {
 	["group"] = ns.L["TRADE_OUTPUT_GROUP"],
 	["self"] = ns.L["TRADE_OUTPUT_SELF"],
 }
+
+-- Maps the announceTradeCondition setting values to their display labels, in the dropdown's order.
+ns.TRADE_CONDITION_LABELS = {
+	["always"] = ns.L["TRADE_CONDITION_ALWAYS"],
+	["party_or_raid"] = ns.L["TRADE_CONDITION_PARTY_OR_RAID"],
+	["raid_only"] = ns.L["TRADE_CONDITION_RAID_ONLY"],
+}
+ns.TRADE_CONDITION_ORDER = { "always", "party_or_raid", "raid_only" }
 
 --------------------------------------------------------------------------------
 -- Loot Master & Loot Tracker

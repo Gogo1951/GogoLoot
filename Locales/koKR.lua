@@ -17,8 +17,10 @@ end
 -- Add-on Identity
 --------------------------------------------------------------------------------
 
--- Brands every printed line, sent message, options panel, and report. A proper noun; keep it untranslated.
+-- The Full Name: leads every printed line, and names the options panels, window titles and the mini-map header. A proper noun; keep it untranslated.
 L["ADDON_TITLE"] = "GogoLoot"
+-- The Short Name: closes every sent message and names the add-on on tooltip lines other than the mini-map header. A proper noun; keep it untranslated.
+L["ADDON_SHORT_NAME"] = "GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Chat Messages
@@ -134,7 +136,7 @@ L["TAB_AUTOMATED_OPENING"] = "자동 열기"
 -- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "잠긴 상자"
 L["TAB_OPENABLE_ITEMS"] = "열기 목록"
--- The last feature panel, named for its switch, Enable Automated Master Looting.
+-- Named for its switch, Enable Automated Master Looting. Roll Macro follows it.
 L["TAB_MASTER_LOOTER"] = "자동 전리품 분배"
 -- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "전리품 받을 사람"
@@ -184,6 +186,10 @@ L["MINIMAP_TOGGLE"] = "켜기/끄기"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "잠긴 아이템"
+-- Under the list. Argument: the game's own name for the Rogue class.
+L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s에게 부탁하면 자물쇠를 열어 줍니다."
+-- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
+L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "%s 기술을 사용해 자물쇠를 여세요."
 L["MINIMAP_OPTIONS"] = "GogoLoot 설정"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 가운데 클릭"
 
@@ -218,8 +224,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List brings text of its own), the hint the box shows while empty,
-    and its button.
+    Openables List and Item Overrides bring text of their own), the hint the
+    box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "아이템 추가"
 L["ITEM_LIST_ADD_DESCRIPTION"] =
@@ -232,6 +238,9 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "아이템 검색..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"이름, 아이템 ID, 설정 또는 태그에 입력한 내용이 포함된 아이템만 표시합니다."
 L["ITEM_LIST_NO_MATCHES"] = "검색 조건에 맞는 아이템이 없습니다."
+-- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+L["ITEM_LIST_EMPTY_REFILLS"] =
+	"목록이 비어 있어 다음 접속 때 기본 항목이 돌아옵니다. 기본값 복원을 누르면 지금 바로 돌아옵니다."
 
 -- The header over what the player just added to an item list, at its top until they filter it or close the window.
 L["ITEM_LIST_NEW"] = "새 항목"
@@ -269,11 +278,7 @@ L["SAFETY_SKIP_NOTE"] =
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"제조법, 책, 탈것, 애완동물, 전설 아이템은 항상 직접 분배하도록 남겨 둡니다."
 
---[[
-    Shown under each announcement's toggle, under Print Item in Chat and Hide
-    Roll Messages, and under Enable Ignore Notifications. Argument: the
-    message, as GogoLoot sends or prints it.
-]]
+-- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "예시: %s"
 
 --------------------------------------------------------------------------------
@@ -338,8 +343,8 @@ L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_ADDED"] =
 	"%s 매크로가 일반 매크로에 있습니다. %s 입력 후 행동 단축바로 끌어다 놓으세요."
 L["ROLL_MACRO_REMOVED"] = "%s 매크로를 삭제했습니다."
-L["ROLL_MACRO_FULL"] =
-	"%s 매크로를 추가하지 못했습니다: 일반 매크로가 가득 찼습니다. 하나를 삭제하면 다음 접속 때 추가됩니다."
+L["ROLL_MACRO_FULL_LOADING"] =
+	"%s 매크로를 추가하지 못했습니다: 일반 매크로가 가득 찼습니다. 하나를 삭제하면 다음 로딩 화면이 지난 뒤 추가됩니다."
 
 --------------------------------------------------------------------------------
 -- Options: Feedback & Support Panel
@@ -408,7 +413,8 @@ L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "퀘스트 아이템 포함"
 L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 	"직접 조작하는 다른 캐릭터를 육성할 때를 위해 퀘스트 아이템도 분배합니다. 획득 기준이 일반 이하일 때만, 그리고 파티 전체에 하나만 떨어지는 퀘스트 아이템에만 작동합니다. 공격대에서는 권장하지 않습니다."
 
-L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // 빠른 설정"
+-- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
+L["QUICK_SETTINGS_TITLE"] = "빠른 설정"
 -- Argument: the game's own word for Master Looter.
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "%s 역할을 맡게 될 때마다 이 설정을 창으로 엽니다."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "전리품 전담 팝업 사용"
@@ -433,7 +439,7 @@ L["MASTER_LOOTER_OFF_NOTE"] =
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] =
 	"무시 목록을 현재 확장팩의 기본 아이템으로 바꿉니다."
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
-	"무시 목록을 현재 확장팩의 기본 아이템으로 바꿉니다. 계속하시겠습니까?"
+	"무시 목록을 현재 확장팩의 기본 아이템으로 바꾸시겠습니까?"
 L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "무시 목록에서 이 아이템을 제거합니다."
 
 --------------------------------------------------------------------------------
@@ -454,7 +460,7 @@ L["ROLLS_THRESHOLD_CHOOSE"] = "%s: GogoLoot가 주사위를 굴리는 가장 높
 L["ROLLS_ACTION_CHOOSE"] =
 	"%s: GogoLoot가 선택할 주사위입니다. 수동은 직접 선택하도록 남겨 둡니다."
 -- Section headers on the Automated Rolls panel.
-L["ROLLS_LOOT_THRESHOLDS_HEADER"] = "획득 기준"
+L["ROLLS_PARTY_AND_RAID_HEADER"] = "파티 및 공격대 주사위"
 L["ROLLS_MESSAGES_HEADER"] = "주사위 메시지"
 L["ROLLS_PRINT_ITEM"] = "대화창에 아이템 표시"
 L["ROLLS_PRINT_ITEM_DESCRIPTION"] =
@@ -480,14 +486,19 @@ L["ROLLS_OFF_NOTE"] = "자동 주사위가 꺼져 있는 동안에는 이 설정
 L["ITEM_OVERRIDES_ENABLE"] = "아이템별 설정 사용"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"아래에 정한 주사위를 사용합니다. 끄면 이 아이템들도 다른 아이템처럼 품질 설정을 따릅니다."
+-- Shown under Enable Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] =
+	"아이템별 설정이 꺼져 있는 동안에는 이 주사위 설정이 사용되지 않습니다."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"아이템별 설정을 현재 확장팩의 기본 아이템으로 바꿉니다."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"아이템별 설정을 현재 확장팩의 기본 아이템으로 바꿉니다. 계속하시겠습니까?"
+	"아이템별 설정을 현재 확장팩의 기본 아이템으로 바꾸시겠습니까?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "이 아이템에 자동으로 선택할 주사위를 정합니다."
 L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "아이템별 설정에서 이 아이템을 제거합니다."
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] =
 	"아이템별 설정에서 이 아이템과 주사위 설정을 제거하시겠습니까?"
+L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
+	"아이템 ID를 입력하거나 아이템을 여기로 끌어다 놓으면 수동으로 설정되어 목록에 추가됩니다."
 
 --[[
     Character Rules, under Automated Rolls: the stats whose gear each
@@ -530,6 +541,8 @@ L["TRADE_CONDITION_DESCRIPTION"] =
 L["TRADE_CONDITION_ALWAYS"] = "항상"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "파티 또는 공격대일 때"
 L["TRADE_CONDITION_RAID_ONLY"] = "공격대일 때"
+-- The trade window checkbox tooltip's line naming when summaries are posted.
+L["TRADE_WHEN"] = "조건"
 -- The caption of the dropdown that picks where summaries go, and the trade window checkbox tooltip's line naming it.
 L["TRADE_CHANNEL"] = "채널"
 -- Argument: the game's own word for Whisper.
@@ -606,6 +619,11 @@ L["LOOT_TOASTS_FILTER_MINE_QUALITY_DESCRIPTION"] =
 	"내가 획득한 %s 아이템 중 알림을 표시할 가장 낮은 품질입니다."
 L["LOOT_TOASTS_FILTER_GROUP_QUALITY_DESCRIPTION"] =
 	"파티가 획득한 %s 아이템 중 알림을 표시할 가장 낮은 품질입니다."
+-- The Container row is the bag class; clams, crates and lockboxes have the Openables row.
+L["LOOT_TOASTS_FILTER_CONTAINER_MINE_DESCRIPTION"] =
+	"내가 획득한 가방을 표시합니다. 조개, 상자, 잠긴 상자는 열기 대상에 있습니다."
+L["LOOT_TOASTS_FILTER_CONTAINER_GROUP_DESCRIPTION"] =
+	"파티나 공격대의 누군가가 획득한 가방을 획득한 사람의 이름과 함께 표시합니다. 조개, 상자, 잠긴 상자는 열기 대상에 있습니다."
 
 -- The three Filters rows after the item types, which aren't item types themselves: their captions (Money's is the client's MONEY) and their boxes' tooltips.
 L["LOOT_TOASTS_FILTER_BIND_ON_PICKUP"] = "획득 시 귀속"
@@ -661,8 +679,8 @@ L["LOOT_TOASTS_GROWTH_DESCRIPTION"] =
 	"오래된 알림이 가장 최근 알림에서 위로 밀려날지 아래로 밀려날지 정합니다."
 L["LOOT_TOASTS_GROW_UP"] = "위로"
 L["LOOT_TOASTS_GROW_DOWN"] = "아래로"
-L["LOOT_TOASTS_ALIGN"] = "항목 정렬"
-L["LOOT_TOASTS_ALIGN_DESCRIPTION"] = "알림을 이동 핸들의 어느 쪽에 맞춰 정렬할지 정합니다."
+L["LOOT_TOASTS_ALIGN_TOASTS"] = "알림 정렬"
+L["LOOT_TOASTS_ALIGN_TOASTS_DESCRIPTION"] = "알림을 이동 핸들의 어느 쪽에 맞춰 정렬할지 정합니다."
 L["LOOT_TOASTS_ALIGN_LEFT"] = "왼쪽"
 L["LOOT_TOASTS_ALIGN_RIGHT"] = "오른쪽"
 
@@ -685,15 +703,15 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "단색 외곽선"
 L["LOOT_TOASTS_UNLOCK"] = "위치 잠금 해제"
 L["LOOT_TOASTS_LOCK"] = "위치 잠금"
 L["LOOT_TOASTS_RESET"] = "위치 초기화"
+L["LOOT_TOASTS_RESET_CONFIRM"] = "획득 알림을 기본 위치로 되돌리시겠습니까?"
 L["LOOT_TOASTS_LOCK_DESCRIPTION"] = "알림을 새 위치로 끌어 옮기는 핸들을 표시하거나 숨깁니다."
 L["LOOT_TOASTS_RESET_DESCRIPTION"] = "알림을 화면 중앙 위쪽의 기본 위치로 되돌립니다."
 
--- The drag handle: its title, the two gestures it answers to, its button, and the preview rows.
-L["LOOT_TOASTS_HANDLE_TITLE"] = "GogoLoot 획득 알림"
+-- The drag handle, titled "Loot Toasts // GogoLoot" by code: the two gestures it answers to, its button, and the preview rows.
 L["LOOT_TOASTS_CLICK_DRAG"] = "클릭 후 끌어서 위치 지정"
 L["LOOT_TOASTS_RIGHT_CLICK_LOCK"] = "오른쪽 클릭으로 잠금"
 L["LOOT_TOASTS_DISABLE_BUTTON"] = "획득 알림 끄기"
--- The stand-in item on the sample toasts, and in every Example line.
+-- The stand-in item on the sample toasts the position preview shows; Example lines link real items.
 L["LOOT_TOASTS_EXAMPLE_ITEM"] = "예시 아이템"
 
 -- Loot Sounds

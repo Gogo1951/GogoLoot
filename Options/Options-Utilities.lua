@@ -24,7 +24,7 @@ local GetColor = ns.GetColor
     panel builder functions.
 ]]
 
----@param text string|function
+---@param text string
 ---@param order number
 ---@param hidden? boolean|function
 ---@return table
@@ -95,9 +95,7 @@ end
     immediately after this cell, and the two flow onto one line instead of the
     control stacking under its own label.
 
-    `text` may be a string or a function, exactly as AceConfig's `name` accepts,
-    so a label that reads live state (the Master Looter panel's leader note,
-    which names whoever controls the loot settings) works here unchanged.
+    `text` may be a string or a function, exactly as AceConfig's `name` accepts.
 
     `width` overrides ns.OPTIONS_LABEL_WIDTH for the rare row whose control
     needs more room than the default split leaves it (the copyable URL boxes).
@@ -419,52 +417,122 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    What a message says in chat, on a silver line under the toggle that
-    decides whether it goes out: the Announcements panel's posts and the
-    Automated Opening panel's Ignore notice. Each panel runs the real template,
-    a sent one through ns:BuildAnnounceMessage and a printed one through
-    ns.OptionsPrintedExample, so an example can't drift from its message in any
-    language. Only the stand-ins are made up: a player, and an item drawn the
-    way chat draws a link, bracketed in its quality color. The raid marker is
-    drawn as the icon chat shows, where a panel would print "{rt4}".
+    What a message looks like when it arrives, under the toggle that decides
+    whether it goes out: the Announcements panel's posts, Automated Rolls' two
+    prints, and the Automated Opening panel's Ignore notice. Each panel runs
+    the real template, a sent one through ns:BuildAnnounceMessage and a printed
+    one through ns.BuildPrintMessage, so an example can't drift from its
+    message in any language. The line is drawn in the colors of where it goes:
+
+      printed   the exact string ns:PrintMessage prints, branded colors and all
+      PARTY     "[Party] [You]: ..." in the player's party chat color, for every
+                group channel, since party is the one every group has
+      WHISPER   "[You] whispers: ..." in their whisper color, as the other
+                player receives it
+
+    "You" is the character the panel is opened on, in their class color.
+    Everybody else is from ns.SAMPLE_NAMES, and every item is a real link from
+    ns.SAMPLE_ITEM_IDS or the flavor's data, which reads as loading until the
+    client has it; the panel's function names fill it in on the next repaint.
+    The raid marker is drawn as the icon chat shows, where a panel would print
+    "{rt4}". Only the "Example:" label is silver.
 
     An example stays on show while its own toggle is off, because it is what
     somebody reads to decide whether to turn that toggle on.
 ]]
 local RAID_MARKER_ICON = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_%s:0|t"
 
----@param quality number
----@return string
-function ns.OptionsExampleItem(quality)
-	-- Back to silver after the item rather than |r, which would drop the rest of the line to white.
-	return ns.GetQualityColor(quality) .. "[" .. L["LOOT_TOASTS_EXAMPLE_ITEM"] .. "]" .. GetColor("HELP")
-end
+--[[
+    chatType is the client's own ChatTypeInfo key, so a player who recolored a
+    channel sees their own color; the hex is only for a client that hasn't
+    filled that table in. prefix is the client's own line opener, so "[Party]"
+    and "whispers:" read in the player's language.
+]]
+local SENT_FORMS = {
+	PARTY = { chatType = "PARTY", hex = "AAAAFF", prefix = CHAT_PARTY_GET or "[Party] %s: " },
+	WHISPER = { chatType = "WHISPER", hex = "FF80FF", prefix = CHAT_WHISPER_GET or "%s whispers: " },
+}
 
--- A printed line laid out as ns:PrintMessage lays it, add-on name first, without its chat colors.
----@param text string
+---@param form table
 ---@return string
-function ns.OptionsPrintedExample(text)
-	return L["ADDON_TITLE"] .. " // " .. text
-end
-
----@param message string # as ns:BuildAnnounceMessage decorates it, or as ns.OptionsPrintedExample lays it out
----@return string
-local function ExampleLine(message)
-	local markerIndex = ns.TARGET_MARKER:match("^{rt(%d)}$")
-	local markerStart, markerEnd = message:find(ns.TARGET_MARKER, 1, true)
-	if markerIndex and markerStart then
-		message = message:sub(1, markerStart - 1) .. RAID_MARKER_ICON:format(markerIndex) .. message:sub(markerEnd + 1)
+local function ChatColor(form)
+	local info = ChatTypeInfo and ChatTypeInfo[form.chatType]
+	if not info then
+		return "|cff" .. form.hex
 	end
-	return GetColor("HELP") .. L["OPTIONS_EXAMPLE"]:format(message) .. "|r"
+	return string.format(
+		"|cff%02x%02x%02x",
+		math.floor(info.r * 255 + 0.5),
+		math.floor(info.g * 255 + 0.5),
+		math.floor(info.b * 255 + 0.5)
+	)
 end
 
 --[[
-    An example sits under its toggle the way a sub-option does, indented and
-    silver, across the rest of the row. Its text is read as the panel draws, so
-    it follows the settings it shows.
+    A chat frame falls back to the line's color when a link closes; a panel
+    falls back to white, so the color is opened again after every |r.
+]]
+---@param color string
+---@param text string
+---@return string
+local function Tint(color, text)
+	return color .. (string.gsub(text, "|r", "|r" .. color)) .. "|r"
+end
+
+-- The character the panel is opened on, in their class color, read as the line is drawn.
+---@return string
+function ns.OptionsExampleYou()
+	local name = GetUnitName("player") or ns.SAMPLE_NAMES.DRUID
+	local _, classFile = UnitClass("player")
+	local classColor = ns.GetClassColor(classFile)
+	return classColor and classColor .. name .. "|r" or name
+end
+
+-- A roster player, in their class color, the way a printed line names a group member.
+---@param classFile string
+---@return string
+function ns.OptionsExampleOther(classFile)
+	return ns.GetClassColor(classFile) .. ns.SAMPLE_NAMES[classFile] .. "|r"
+end
+
+---@param itemIdentifier number
+---@return string # the item's link, or the loading line until the client has it
+function ns.OptionsExampleLink(itemIdentifier)
+	local _, itemLink = C_Item.GetItemInfo(itemIdentifier)
+	return itemLink or L["ITEM_LOADING"]:format(itemIdentifier)
+end
+
+---@param text string # the body ns:PrintMessage would print
+---@return string
+function ns.OptionsPrintedLine(text)
+	return Tint(GetColor("TEXT"), ns.BuildPrintMessage(text))
+end
+
+---@param formKey string # "PARTY" or "WHISPER"
+---@param message string # as ns:BuildAnnounceMessage builds it
+---@return string
+function ns.OptionsSentLine(formKey, message)
+	local form = SENT_FORMS[formKey]
+	message = string.gsub(message, "{rt(%d)}", function(markerIndex)
+		return RAID_MARKER_ICON:format(markerIndex)
+	end)
+	return Tint(ChatColor(form), form.prefix:format("[" .. ns.OptionsExampleYou() .. "]") .. message)
+end
+
+-- Silver opened again after the line, for a locale whose label runs on past it.
+---@param line string # from ns.OptionsPrintedLine or ns.OptionsSentLine
+---@return string
+local function ExampleLine(line)
+	return GetColor("HELP") .. L["OPTIONS_EXAMPLE"]:format(line .. GetColor("HELP")) .. "|r"
+end
+
+--[[
+    An example sits under its toggle the way a sub-option does, indented,
+    across the rest of the row. Its text is read as the panel draws, so it
+    follows the settings it shows.
 ]]
 ---@param order number
----@param buildMessage function # returns the message the example shows
+---@param buildMessage function # returns the finished line the example shows
 ---@return table
 function ns.OptionsExampleRow(order, buildMessage)
 	return ns.OptionsSubRow(order, nil, {

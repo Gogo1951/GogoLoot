@@ -123,6 +123,13 @@ ns.DIAGNOSTIC_REPORTS = {
 			return ns:BuildAnnouncementsContextReport()
 		end,
 	},
+	macro = {
+		title = D.MACRO_TITLE,
+		description = D.MACRO_DESCRIPTION,
+		build = function()
+			return ns:BuildRollMacroContextReport()
+		end,
+	},
 	player = {
 		title = D.PLAYER_TITLE,
 		description = D.PLAYER_DESCRIPTION,
@@ -214,6 +221,7 @@ ns.DIAGNOSTIC_SECTIONS = {
 			"toasts",
 			"lines",
 			"announce",
+			"macro",
 			"player",
 			"saved",
 			"display",

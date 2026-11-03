@@ -3,7 +3,6 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
-local GetColor = ns.GetColor
 local GetQualityColor = ns.GetQualityColor
 
 --------------------------------------------------------------------------------
@@ -59,29 +58,32 @@ end
 --[[
     What Print Item in Chat prints, drawn by ns.OptionsExampleRow (Message
     Examples in Options-Utilities.lua): a Greed, the default roll, run through
-    its real template and laid out as printed.
+    its real template and drawn as printed.
 ]]
 local EXAMPLE_ITEM_QUALITY = 2
 
 local function PrintItemExample()
-	return ns.OptionsPrintedExample(L["MESSAGE_ROLL_PRINT"]:format(GREED, ns.OptionsExampleItem(EXAMPLE_ITEM_QUALITY)))
+	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[EXAMPLE_ITEM_QUALITY])
+	return ns.OptionsPrintedLine(L["MESSAGE_ROLL_PRINT"]:format(GREED, item))
 end
 
 --[[
     What Print Winner Summary prints for a group member's win, the roll worded
-    as the toasts word it and the winner in a class color, as in chat. The
-    silver after the name keeps the rest of the example line silver.
+    as the toasts word it and the winner in a class color, as in chat. Shown
+    only while that line prints: Hide Roll Messages on, and Print beside it.
 ]]
-local EXAMPLE_PLAYER = "Aero"
-local EXAMPLE_PLAYER_CLASS = "WARRIOR"
+local EXAMPLE_PLAYER_CLASS = "DRUID"
 local EXAMPLE_ROLL = 95
 
 local function WinnerSummaryExample()
-	local winner = ns.GetClassColor(EXAMPLE_PLAYER_CLASS) .. EXAMPLE_PLAYER .. GetColor("HELP")
+	local winner = ns.OptionsExampleOther(EXAMPLE_PLAYER_CLASS)
+	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[EXAMPLE_ITEM_QUALITY])
 	local rollText = L["LOOT_TOASTS_ROLL_RESULT"]:format(GREED, EXAMPLE_ROLL)
-	return ns.OptionsPrintedExample(
-		L["MESSAGE_ROLL_WON_PRINT"]:format(winner, ns.OptionsExampleItem(EXAMPLE_ITEM_QUALITY), rollText)
-	)
+	return ns.OptionsPrintedLine(L["MESSAGE_ROLL_WON_PRINT"]:format(winner, item, rollText))
+end
+
+local function WinnerSummaryExampleHidden()
+	return RollsOff() or not ns.PrintingWinnerSummary()
 end
 
 ---@return table
@@ -105,9 +107,9 @@ function ns.BuildAutomatedRollOptions()
 	order = order + 1
 	args.spacerAfterToggle = HideWhenRollsOff(ns.OptionsSpacer(order))
 	order = order + 1
-	args.lootThresholdsHeader = ns.OptionsHeader(L["ROLLS_LOOT_THRESHOLDS_HEADER"], order, RollsOff)
+	args.partyAndRaidHeader = ns.OptionsHeader(L["ROLLS_PARTY_AND_RAID_HEADER"], order, RollsOff)
 	order = order + 1
-	args.spacerAfterLootThresholdsHeader = HideWhenRollsOff(ns.OptionsSpacer(order))
+	args.spacerAfterPartyAndRaidHeader = HideWhenRollsOff(ns.OptionsSpacer(order))
 	order = order + 1
 
 	--[[
@@ -227,7 +229,8 @@ function ns.BuildAutomatedRollOptions()
 		},
 	}))
 	order = order + 1
-	args.winnerSummaryExampleRow = HideWhenRollsOff(ns.OptionsExampleRow(order, WinnerSummaryExample))
+	args.winnerSummaryExampleRow = ns.OptionsExampleRow(order, WinnerSummaryExample)
+	args.winnerSummaryExampleRow.hidden = WinnerSummaryExampleHidden
 
 	return {
 		type = "group",

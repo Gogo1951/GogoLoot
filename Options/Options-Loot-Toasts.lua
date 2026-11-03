@@ -217,6 +217,8 @@ function ns.BuildLootToastOptions()
 				name = L["LOOT_TOASTS_RESET"],
 				desc = L["LOOT_TOASTS_RESET_DESCRIPTION"],
 				width = POSITION_BUTTON_WIDTH,
+				confirm = true,
+				confirmText = L["LOOT_TOASTS_RESET_CONFIRM"],
 				func = function()
 					ns.ResetLootToastPosition()
 				end,
@@ -256,9 +258,9 @@ function ns.BuildLootToastOptions()
 		},
 		{
 			key = "alignRow",
-			row = SettingRow("LOOT_TOASTS_ALIGN", {
+			row = SettingRow("LOOT_TOASTS_ALIGN_TOASTS", {
 				type = "select",
-				desc = L["LOOT_TOASTS_ALIGN_DESCRIPTION"],
+				desc = L["LOOT_TOASTS_ALIGN_TOASTS_DESCRIPTION"],
 				values = { LEFT = L["LOOT_TOASTS_ALIGN_LEFT"], RIGHT = L["LOOT_TOASTS_ALIGN_RIGHT"] },
 				sorting = { "LEFT", "RIGHT" },
 			}, "lootToastAlign"),

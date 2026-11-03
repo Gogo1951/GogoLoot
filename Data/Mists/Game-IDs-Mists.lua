@@ -1,13 +1,20 @@
 local _, ns = ...
 
 -- { [key] = skillLineId }
-ns.SKILL_LINE_IDS = {
-	LOCKPICKING = 633, -- Lockpicking
-}
+ns.SKILL_LINE_IDS = {}
 
 -- { [key] = itemId }
 ns.ITEM_IDS = {
 	BIND_PROBE = 6948, -- Hearthstone
+}
+
+-- { [quality] = itemId }, a real item at each quality for the options panels' Example lines
+ns.SAMPLE_ITEM_IDS = {
+	[0] = 3300, -- Rabbit's Foot
+	[1] = 2589, -- Linen Cloth
+	[2] = 1206, -- Moss Agate
+	[3] = 12784, -- Arcanite Reaper
+	[4] = 17073, -- Earthshaker
 }
 
 -- { [key] = soundKitId }, BAG_FULL_BY_RACE as { [raceFile] = { [sex] = soundKitId } }
@@ -27,3 +34,31 @@ ns.SOUND_KIT_IDS = {
 		["Draenei"] = { [2] = 9504, [3] = 9505 }, -- Draenei male, female
 	},
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, MoP Classic 5.5.4.70631
+
+Notes
+	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
+	- SKILL_LINE_IDS is empty on this client. Elsewhere its LOCKPICKING key is the Lockpicking skill line, whose name is how Lockbox Tooltips finds the player's rank (Features/Lockbox-Tooltips.lua). Cataclysm retired the skill: SkillLine at build 5.5.4.70631 has no row 633, and the client names that ID "Unknown", so with no key here Lockbox Tooltips adds no line rather than "Requires Unknown".
+	- ITEM_IDS.BIND_PROBE is the Hearthstone, a Bind on Pickup item every character carries. Diagnostics checks against it which C_Item.GetItemInfo return carries the bind type (Diagnostics/Manifests.lua).
+	- SAMPLE_ITEM_IDS is one real item at each quality from Poor to Epic, so the options panels' Example lines show a real item link in the player's language (Options/Options-Automated-Rolls.lua, Options-Announcements.lua, Options-Automated-Opening.lua). Options-Utilities-Item-Cache.lua asks the client for all five when the options open, so the links are ready.
+	- SOUND_KIT_IDS.PICK_POCKET is the bag-pickup sound played for a pick-pocket loot window (Features/Loot-Sounds.lua) and previewed beside its option. BAG_FULL_BY_RACE is each race's "inventory is full" voice line, by sex as UnitSex returns it (2 male, 3 female), played when Automated Opening stops for a full bag (Features/Automated-Opening.lua); BAG_FULL_FALLBACK plays for a race with no row. This client adds the Blood Elf and Draenei rows.
+	- Validate Data looks up ITEM_IDS and SAMPLE_ITEM_IDS as items. SKILL_LINE_IDS and SOUND_KIT_IDS hold IDs no client API looks up, so it only counts their rows.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	https://wago.tools/db2/SoundKit?build=5.5.4.70631
+	https://wago.tools/db2/SkillLine?build=5.5.4.70631
+
+QuestieDB
+	None.
+]]

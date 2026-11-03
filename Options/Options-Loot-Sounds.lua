@@ -14,8 +14,7 @@
       lootSoundsEnabled
         - the master switch: Loot-Sounds.lua plays neither sound while it is off
       lootSounds + lootSoundThreshold
-        - the chime and its minimum quality; lootSounds keeps the name it had
-          before the panel had a master switch
+        - the chime and its minimum quality
       pickPocketSound
         - the Pick Pocket sound
 

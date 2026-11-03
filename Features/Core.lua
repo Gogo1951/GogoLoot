@@ -63,12 +63,11 @@ end
     GogoLootDB is an AceDB-3.0 database: every profile is stored account-wide in
     GogoLootDB.profiles, each character's active profile choice in
     GogoLootDB.profileKeys, and loot policy lives inside the active profile
-    (ns.db.profile). The three presentation keys (showWelcome, speedyLoot and
-    minimap) live in ns.db.global instead, so switching, resetting, or deleting
-    a profile never moves the button or turns them back on. So do the player's
-    Openables List choices (openingActions) and where the loot toasts sit
-    (lootToastPosition), which are decisions about the items and the screen
-    rather than about a loot setup.
+    (ns.db.profile). The presentation keys and the account-wide records (the
+    global table in Data/Default-Settings.lua) live in ns.db.global instead, so
+    switching, resetting, or deleting a profile never touches them: they are
+    decisions about the client, the items and the screen rather than about a
+    loot setup.
 
     Defaults come from ns.DATABASE_DEFAULTS in Data/Default-Settings.lua. There
     is no manual defaults merge anywhere in the add-on.
@@ -88,20 +87,6 @@ local function RebuildEmptyItemLists()
 		profile.ignoredItemsSolo = ns:BuildDefaultIgnoreListSolo()
 	end
 end
-
---[[
-    MIGRATION (remove after 2026-10-28): saved data from before the options
-    rework. The Master Looter panel's tier rows always show now, so the toggle
-    that collapsed them (global.showDestinationTiers) is gone. The Openables
-    List's choices were Open, Open when Unlocked and three Ignores; they are
-    Open and Ignore now, each keeping what it did, and a choice that lands on
-    its item's default is dropped, since only changes are saved.
-]]
-local LEGACY_OPENING_ACTIONS = {
-	UNLOCKED = ns.OPENING_OPEN,
-	IGNORE_RAID = ns.OPENING_IGNORE,
-	IGNORE_UNIQUE = ns.OPENING_IGNORE,
-}
 
 --[[
     MIGRATION (remove after 2026-11-03): the loot toast filters before the
@@ -191,22 +176,6 @@ end
 local function MigrateLootToastProfiles()
 	for _, profile in pairs(ns.db.sv.profiles or {}) do
 		MigrateLootToastFilters(profile)
-	end
-end
-
--- MIGRATION (remove after 2026-10-28): the options rework's account-wide keys.
-local function MigrateOptionsRework()
-	ns.db.global.showDestinationTiers = nil
-	local savedActions = ns.db.global.openingActions
-	for itemIdentifier, action in pairs(savedActions) do
-		local mapped = LEGACY_OPENING_ACTIONS[action]
-		if mapped then
-			if mapped == ns:GetDefaultOpeningAction(itemIdentifier) then
-				savedActions[itemIdentifier] = nil
-			else
-				savedActions[itemIdentifier] = mapped
-			end
-		end
 	end
 end
 
@@ -450,7 +419,6 @@ local function OnAddonLoaded(loadedAddonName)
 
 	ns.db = LibStub("AceDB-3.0"):New("GogoLootDB", ns.DATABASE_DEFAULTS, true)
 	MigrateLootToastProfiles() -- MIGRATION (remove after 2026-11-03)
-	MigrateOptionsRework() -- MIGRATION (remove after 2026-10-28)
 	RebuildEmptyItemLists()
 	RecordCharacterClass()
 	for _, msg in ipairs({ "OnProfileChanged", "OnProfileReset", "OnProfileCopied" }) do

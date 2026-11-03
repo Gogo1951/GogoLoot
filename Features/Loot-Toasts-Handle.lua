@@ -173,7 +173,9 @@ function ns.SetLootToastsUnlocked(isUnlocked)
 		end
 		frame.label:SetText(
 			GetColor("TITLE")
-				.. L["LOOT_TOASTS_HANDLE_TITLE"]
+				.. L["TAB_LOOT_TOASTS"]
+				.. " // "
+				.. L["ADDON_TITLE"]
 				.. "|r"
 				.. BodyLine("LOOT_TOASTS_CLICK_DRAG")
 				.. BodyLine("LOOT_TOASTS_RIGHT_CLICK_LOCK")

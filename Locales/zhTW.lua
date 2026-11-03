@@ -17,8 +17,10 @@ end
 -- Add-on Identity
 --------------------------------------------------------------------------------
 
--- Brands every printed line, sent message, options panel, and report. A proper noun; keep it untranslated.
+-- The Full Name: leads every printed line, and names the options panels, window titles and the mini-map header. A proper noun; keep it untranslated.
 L["ADDON_TITLE"] = "GogoLoot"
+-- The Short Name: closes every sent message and names the add-on on tooltip lines other than the mini-map header. A proper noun; keep it untranslated.
+L["ADDON_SHORT_NAME"] = "GogoLoot"
 
 --------------------------------------------------------------------------------
 -- Chat Messages
@@ -130,7 +132,7 @@ L["TAB_AUTOMATED_OPENING"] = "自動開啟"
 -- A child panel of Automated Opening, beside the Openables List.
 L["TAB_LOCKBOXES"] = "鎖箱"
 L["TAB_OPENABLE_ITEMS"] = "可開啟清單"
--- The last feature panel, named for its switch, Enable Automated Master Looting.
+-- Named for its switch, Enable Automated Master Looting. Roll Macro follows it.
 L["TAB_MASTER_LOOTER"] = "自動隊長分配"
 -- Header of a section on the Automated Master Looting panel.
 L["TAB_LOOT_DESTINATIONS"] = "戰利品去向"
@@ -177,6 +179,10 @@ L["MINIMAP_TOGGLE"] = "切換"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "已鎖物品"
+-- Under the list. Argument: the game's own name for the Rogue class.
+L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s可以幫你開鎖。"
+-- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
+L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "使用%s來開鎖。"
 L["MINIMAP_OPTIONS"] = "GogoLoot 選項"
 L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 中鍵點擊"
 
@@ -210,8 +216,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List brings text of its own), the hint the box shows while empty,
-    and its button.
+    Openables List and Item Overrides bring text of their own), the hint the
+    box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "新增物品"
 L["ITEM_LIST_ADD_DESCRIPTION"] = "輸入物品 ID 或將物品拖曳到這裡，即可加入清單。"
@@ -223,6 +229,9 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "篩選物品..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"只顯示名稱、物品 ID、設定或標籤中包含你所輸入文字的物品。"
 L["ITEM_LIST_NO_MATCHES"] = "沒有符合篩選條件的物品。"
+-- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+L["ITEM_LIST_EMPTY_REFILLS"] =
+	"此清單為空，因此預設物品會在你下次登入時恢復。點擊恢復預設可立即恢復。"
 
 -- The header over what the player just added to an item list, at its top until they filter it or close the window.
 L["ITEM_LIST_NEW"] = "新加入"
@@ -258,11 +267,7 @@ L["SAFETY_SKIP_NOTE"] =
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "配方、書籍、坐騎、寵物與傳說物品一律留給你處理。"
 
---[[
-    Shown under each announcement's toggle, under Print Item in Chat and Hide
-    Roll Messages, and under Enable Ignore Notifications. Argument: the
-    message, as GogoLoot sends or prints it.
-]]
+-- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "範例：%s"
 
 --------------------------------------------------------------------------------
@@ -324,8 +329,8 @@ L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 ]]
 L["ROLL_MACRO_ADDED"] = "%s 巨集已在你的共用巨集中。輸入 %s 並將它拖到快捷列上。"
 L["ROLL_MACRO_REMOVED"] = "%s 巨集已刪除。"
-L["ROLL_MACRO_FULL"] =
-	"無法新增 %s 巨集：你的共用巨集已滿。刪除一個後，下次登入時就會加入。"
+L["ROLL_MACRO_FULL_LOADING"] =
+	"無法新增 %s 巨集：你的共用巨集已滿。刪除一個後，下次載入畫面結束時就會加入。"
 
 --------------------------------------------------------------------------------
 -- Options: Feedback & Support Panel
@@ -392,7 +397,8 @@ L["MASTER_LOOTER_AUTO_QUEST_ITEMS"] = "包含任務物品"
 L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 	"連任務物品也一併分配，方便帶自己的其他角色練等。只在拾取品質門檻為普通或以下時有效，且只適用於全隊只掉落一件的任務物品。不建議在團隊副本中使用。"
 
-L["MASTER_LOOTER_POPUP_TITLE"] = "GogoLoot // 快速設定"
+-- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
+L["QUICK_SETTINGS_TITLE"] = "快速設定"
 -- Argument: the game's own word for Master Looter.
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "每當你接手%s時，以視窗開啟這些設定。"
 L["MASTER_LOOTER_POPUP_ENABLE"] = "啟用隊長分配彈出視窗"
@@ -414,8 +420,7 @@ L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 -- Shown on the Ignore List while Automated Master Looting is off.
 L["MASTER_LOOTER_OFF_NOTE"] = "自動隊長分配已關閉，這些設定暫不生效。"
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] = "以你所在資料片的預設物品取代忽略清單。"
-L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
-	"這將以你所在資料片的預設物品取代你的忽略清單。是否繼續？"
+L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] = "要以你所在資料片的預設物品取代你的忽略清單嗎？"
 L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "從忽略清單中移除此物品。"
 
 --------------------------------------------------------------------------------
@@ -434,7 +439,7 @@ L["ROLLS_UP_TO_QUALITY"] = "最高品質"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s：GogoLoot 會擲骰的最高品質。"
 L["ROLLS_ACTION_CHOOSE"] = "%s：GogoLoot 擲骰的選擇。手動則交由你自己擲骰。"
 -- Section headers on the Automated Rolls panel.
-L["ROLLS_LOOT_THRESHOLDS_HEADER"] = "拾取品質門檻"
+L["ROLLS_PARTY_AND_RAID_HEADER"] = "隊伍與團隊擲骰"
 L["ROLLS_MESSAGES_HEADER"] = "擲骰訊息"
 L["ROLLS_PRINT_ITEM"] = "在聊天視窗顯示物品"
 L["ROLLS_PRINT_ITEM_DESCRIPTION"] =
@@ -460,12 +465,15 @@ L["ROLLS_OFF_NOTE"] = "自動擲骰已關閉，這些設定暫不生效。"
 L["ITEM_OVERRIDES_ENABLE"] = "啟用指定物品擲骰"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"使用下方設定的擲骰。關閉時，這些物品會和其他物品一樣依照品質設定。"
+-- Shown under Enable Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] = "指定物品擲骰已關閉，這些擲骰設定暫不生效。"
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] = "以你所在資料片的預設物品取代指定物品擲骰。"
-L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"這將以你所在資料片的預設物品取代你的指定物品擲骰。是否繼續？"
+L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "要以你所在資料片的預設物品取代你的指定物品擲骰嗎？"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "設定此物品的自動擲骰。"
 L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "從指定物品擲骰中移除此物品。"
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "要從指定物品擲骰中移除此物品及其擲骰設定嗎？"
+L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
+	"輸入物品 ID 或將物品拖曳到這裡，即可加入清單，並設為手動。"
 
 --[[
     Character Rules, under Automated Rolls: the stats whose gear each
@@ -508,6 +516,8 @@ L["TRADE_CONDITION_DESCRIPTION"] =
 L["TRADE_CONDITION_ALWAYS"] = "一律"
 L["TRADE_CONDITION_PARTY_OR_RAID"] = "在隊伍或團隊中時"
 L["TRADE_CONDITION_RAID_ONLY"] = "在團隊中時"
+-- The trade window checkbox tooltip's line naming when summaries are posted.
+L["TRADE_WHEN"] = "時機"
 -- The caption of the dropdown that picks where summaries go, and the trade window checkbox tooltip's line naming it.
 L["TRADE_CHANNEL"] = "頻道"
 -- Argument: the game's own word for Whisper.
@@ -579,6 +589,11 @@ L["LOOT_TOASTS_FILTER_GROUP_RARITY_DESCRIPTION"] =
 	"顯示隊伍或團隊中任何人拾取的%s物品，限品質達到旁邊所選品質或以上者，並附上拾取者的名字。"
 L["LOOT_TOASTS_FILTER_MINE_QUALITY_DESCRIPTION"] = "你拾取的%s物品中，會顯示提示的最低品質。"
 L["LOOT_TOASTS_FILTER_GROUP_QUALITY_DESCRIPTION"] = "隊伍拾取的%s物品中，會顯示提示的最低品質。"
+-- The Container row is the bag class; clams, crates and lockboxes have the Openables row.
+L["LOOT_TOASTS_FILTER_CONTAINER_MINE_DESCRIPTION"] =
+	"顯示你拾取的背包。蚌殼、箱子和鎖箱在可開啟物品中。"
+L["LOOT_TOASTS_FILTER_CONTAINER_GROUP_DESCRIPTION"] =
+	"顯示隊伍或團隊中任何人拾取的背包，並附上拾取者的名字。蚌殼、箱子和鎖箱在可開啟物品中。"
 
 -- The three Filters rows after the item types, which aren't item types themselves: their captions (Money's is the client's MONEY) and their boxes' tooltips.
 L["LOOT_TOASTS_FILTER_BIND_ON_PICKUP"] = "拾取後綁定"
@@ -633,8 +648,8 @@ L["LOOT_TOASTS_GROWTH"] = "延伸方向"
 L["LOOT_TOASTS_GROWTH_DESCRIPTION"] = "較舊的提示往上或往下移動，遠離最新的一則。"
 L["LOOT_TOASTS_GROW_UP"] = "向上延伸"
 L["LOOT_TOASTS_GROW_DOWN"] = "向下延伸"
-L["LOOT_TOASTS_ALIGN"] = "對齊方式"
-L["LOOT_TOASTS_ALIGN_DESCRIPTION"] = "提示對齊在拖曳把手的哪一側。"
+L["LOOT_TOASTS_ALIGN_TOASTS"] = "提示對齊"
+L["LOOT_TOASTS_ALIGN_TOASTS_DESCRIPTION"] = "提示對齊在拖曳把手的哪一側。"
 L["LOOT_TOASTS_ALIGN_LEFT"] = "靠左"
 L["LOOT_TOASTS_ALIGN_RIGHT"] = "靠右"
 
@@ -656,15 +671,15 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "單色外框"
 L["LOOT_TOASTS_UNLOCK"] = "解鎖位置"
 L["LOOT_TOASTS_LOCK"] = "鎖定位置"
 L["LOOT_TOASTS_RESET"] = "重設位置"
+L["LOOT_TOASTS_RESET_CONFIRM"] = "要將拾取提示移回預設位置嗎？"
 L["LOOT_TOASTS_LOCK_DESCRIPTION"] = "顯示或隱藏用來將提示拖曳到新位置的把手。"
 L["LOOT_TOASTS_RESET_DESCRIPTION"] = "將提示移回螢幕中央上方的預設位置。"
 
--- The drag handle: its title, the two gestures it answers to, its button, and the preview rows.
-L["LOOT_TOASTS_HANDLE_TITLE"] = "GogoLoot 拾取提示"
+-- The drag handle, titled "Loot Toasts // GogoLoot" by code: the two gestures it answers to, its button, and the preview rows.
 L["LOOT_TOASTS_CLICK_DRAG"] = "點擊 + 拖曳以調整位置"
 L["LOOT_TOASTS_RIGHT_CLICK_LOCK"] = "右鍵點擊以鎖定"
 L["LOOT_TOASTS_DISABLE_BUTTON"] = "停用拾取提示"
--- The stand-in item on the sample toasts, and in every Example line.
+-- The stand-in item on the sample toasts the position preview shows; Example lines link real items.
 L["LOOT_TOASTS_EXAMPLE_ITEM"] = "範例物品"
 
 -- Loot Sounds

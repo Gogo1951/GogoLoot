@@ -56,11 +56,13 @@ Locales/zhTW.lua
 # Data
 Data/Flavor.lua
 Data/Data.lua
+Data/Vanilla/Character-Rule-Stats-Vanilla.lua
 Data/Vanilla/Default-Item-Lists-Vanilla.lua
 Data/Vanilla/Lockbox-Skill-Levels-Vanilla.lua
 Data/Vanilla/Openable-Items-Vanilla.lua
 Data/Vanilla/Spells-Vanilla.lua
 Data/Vanilla/Game-IDs-Vanilla.lua
+Data/Discovery/Character-Rule-Stats-Discovery.lua
 Data/Discovery/Default-Item-Lists-Discovery.lua
 Data/Discovery/Lockbox-Skill-Levels-Discovery.lua
 Data/Discovery/Openable-Items-Discovery.lua

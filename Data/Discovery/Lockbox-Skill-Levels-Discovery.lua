@@ -1,27 +1,9 @@
--- Data/Discovery/Lockbox-Skill-Levels-Discovery.lua
 local _, ns = ...
 
 if not ns.IS_DISCOVERY then
 	return
 end
 
---[[
-    Required Lockpicking skill per locked container, for the tooltip line in
-    Features/Lockbox-Tooltips.lua: one row for every ns.OPENABLE_ITEMS row
-    whose lock a Rogue can pick. A locked item whose lock asks for something
-    else, a key or another profession, has no row and so no tooltip line.
-
-    Pulled from the Classic Era client's own tables on wago.tools, build
-    1.15.9.69722: the item's ItemSparse LockID, then that
-    Lock row's pick-lock entry (Type 2, Index 1), whose Skill is the number
-    stored here.
-    https://wago.tools/db2/Lock?build=1.15.9.69722
-
-    Values are numbers and the tooltip formats them with %d, so a box with no
-    number is absent from the table, never present with a stand-in value.
-
-    -- TODO: Add SQL Query
-]]
 -- { [itemId] = requiredLockpickingSkill }
 ns.LOCKBOX_SKILL_LEVELS = {
 	[16882] = 1, -- Battered Junkbox
@@ -46,3 +28,33 @@ ns.LOCKBOX_SKILL_LEVELS = {
 	[5759] = 225, -- Thorium Lockbox
 	[16883] = 70, -- Worn Junkbox
 }
+
+--[[
+How We Got the Data
+
+Last Validated
+	2026-11-03, Season of Discovery 1.15.9.70576
+
+Notes
+	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).
+	- One row for every ns.OPENABLE_ITEMS row whose lock a Rogue can pick. A container whose lock asks for something else, a key or another profession, has no row and so no tooltip line.
+	- Each number is the item's lock's Pick Lock entry: ItemSparse's LockID, then that Lock row's entry with Type 2 and Index 1, whose Skill is the number stored here.
+	- Tazan's Satchel's lock also takes its key, Tazan's Key, and on this client its tooltip names only the key ("Requires Tazan's Key").
+	- Pulled from this client's own tables at build 1.15.9.69722.
+	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
+	- Every row here must also be an ns.OPENING_UNLOCKED row in Openable-Items-Discovery.lua; a test holds every folder to it.
+
+SQL (CMaNGOS)
+	TODO: Add SQL Query
+
+Wowhead
+	None.
+
+wago.tools
+	https://wago.tools/db2/Lock?build=1.15.9.69722
+	https://wago.tools/db2/ItemSparse?build=1.15.9.70576
+	https://wago.tools/db2/Lock?build=1.15.9.70576
+
+QuestieDB
+	None.
+]]

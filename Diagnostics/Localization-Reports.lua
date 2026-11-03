@@ -167,6 +167,9 @@ end
 local EXAMPLE_STACK = 20
 local EXAMPLE_MONEY = 9999999
 
+-- A macro's text tops out at 255, unit unconfirmed, so it is measured in bytes, which never undercount.
+local MACRO_TEXT_MAX_LENGTH = 255
+
 -- The longest distinct item links in the bags, longest first, up to count.
 local function LongestBagLinks(count)
 	local links, seen = {}, {}
@@ -249,10 +252,21 @@ end
     against the chat limit. A trade summary that won't fit in one message is
     sent as two item lists instead, SPLIT here. The lists and the failure
     reports split at item boundaries, so only one item too long on its own can
-    go OVER, which is what their lines measure. Builds strings only.
+    go OVER, which is what their lines measure. The Roll Macro's text
+    (Features/Roll-Macro.lua) is measured first, against the macro limit, since
+    it needs no item. Builds strings only.
 ]]
 function ns:BuildMessageLengthReport()
 	local lines = { GetClientHeader(), "" }
+	lines[#lines + 1] = string.format(
+		"[%s] ROLL_MACRO_BODY: %d bytes of the macro limit's %d",
+		#ns.ROLL_MACRO_BODY > MACRO_TEXT_MAX_LENGTH and "OVER" or "OK",
+		#ns.ROLL_MACRO_BODY,
+		MACRO_TEXT_MAX_LENGTH
+	)
+	lines[#lines + 1] = "    " .. ShownText(ns.ROLL_MACRO_BODY)
+	lines[#lines + 1] = ""
+
 	local links = LongestBagLinks(ns.TRADE_ITEM_SLOT_COUNT)
 	if #links == 0 then
 		lines[#lines + 1] = "No items in the bags: put something in them to measure with."
