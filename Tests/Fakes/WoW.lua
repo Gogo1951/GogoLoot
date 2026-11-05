@@ -363,6 +363,23 @@ function Fake.newEnvironment()
 	    Timers are collected rather than run, so a test advances time explicitly
 	    and asserts on what fired. Real elapsed time would make the suite flaky.
 	]]
+	-- A ColorMixin stand-in: the loot toasts hand these to SetGradient.
+	-- The client's bit library, which Lua 5.1 lacks; only band is read.
+	env.bit = {
+		band = function(a, b)
+			local result, place = 0, 1
+			while a > 0 and b > 0 do
+				if a % 2 == 1 and b % 2 == 1 then
+					result = result + place
+				end
+				a, b, place = math.floor(a / 2), math.floor(b / 2), place * 2
+			end
+			return result
+		end,
+	}
+	env.CreateColor = function(r, g, b, a)
+		return { r = r, g = g, b = b, a = a }
+	end
 	env.GetTime = function()
 		return state.now or 0
 	end
@@ -568,7 +585,7 @@ function Fake.newEnvironment()
 	-- texture, name, quantity, currencyID, quality, locked: a test marks a slot still being rolled for with locked = true.
 	env.GetLootSlotInfo = function(slotIndex)
 		local slot = state.lootSlots[slotIndex]
-		return nil, nil, 1, nil, nil, slot and slot.locked or false
+		return nil, nil, slot and slot.quantity or 1, nil, nil, slot and slot.locked or false
 	end
 	env.LootSlot = function(slotIndex)
 		table.insert(state.lootedSlots, slotIndex)
@@ -684,8 +701,11 @@ function Fake.newEnvironment()
 		return bag and bag[slotIndex]
 	end
 	env.C_Container = {
-		GetContainerNumFreeSlots = function()
-			return state.freeSlotsPerBag, 0
+		-- Per bag when a test sets freeSlotsByBag / bagFamilies; otherwise every bag is general-purpose with freeSlotsPerBag free.
+		GetContainerNumFreeSlots = function(bagIndex)
+			local free = state.freeSlotsByBag and state.freeSlotsByBag[bagIndex]
+			local family = state.bagFamilies and state.bagFamilies[bagIndex]
+			return free or state.freeSlotsPerBag, family or 0
 		end,
 		GetContainerNumSlots = function()
 			return state.bagSlotCount
@@ -736,7 +756,7 @@ function Fake.newEnvironment()
 			entry.minLevel or 0,
 			"",
 			"",
-			1,
+			entry.stackCount or 1,
 			"",
 			0,
 			0,
@@ -791,6 +811,12 @@ function Fake.newEnvironment()
 		RequestLoadItemDataByID = function() end,
 		GetItemSpell = function()
 			return nil
+		end,
+		-- The bag families an item may go in (arrows 1, herbs 32...); 0 for anything a test didn't give one.
+		GetItemFamily = function(identifier)
+			local itemId = tonumber(tostring(identifier):match("item:(%d+)") or identifier)
+			local entry = itemId and state.itemNames[itemId]
+			return entry and entry.family or 0
 		end,
 		GetItemStats = function(itemLink)
 			local itemId = tonumber(tostring(itemLink):match("item:(%d+)"))
@@ -1007,6 +1033,17 @@ function Fake.newEnvironment()
 		return newFontString()
 	end
 	function frameMethods:CreateTexture()
+		return newObject()
+	end
+	-- A frame's size and its last anchor, so a test can measure a layout.
+	function frameMethods:SetSize(width, height)
+		self.width, self.height = width, height
+	end
+	function frameMethods:SetPoint(...)
+		self.lastPoint = { ... }
+	end
+	-- The toasts' rounded corners are alpha masks; a mask answers every method with a no-op, as a texture does.
+	function frameMethods:CreateMaskTexture()
 		return newObject()
 	end
 	function frameMethods:CreateAnimationGroup()
@@ -1306,6 +1343,16 @@ function Fake.newEnvironment()
 	env.MONEY_LOOT = "Money Loot"
 	env.ITEM_REQ_SKILL = "Requires %s"
 	env.MONEY = "Money"
+	env.CURRENCY = "Currency"
+	env.CURRENCY_GAINED = "You receive currency: %s."
+	env.CURRENCY_GAINED_MULTIPLE = "You receive currency: %s x%d."
+	env.CURRENCY_GAINED_MULTIPLE_BONUS = "You receive currency: %s x%d. (Bonus Objective)"
+	-- A currency's icon and quality, by id, from state.currencies; nil for one a test didn't describe.
+	env.C_CurrencyInfo = {
+		GetCurrencyInfo = function(currencyIdentifier)
+			return state.currencies and state.currencies[currencyIdentifier] or nil
+		end,
+	}
 	env.ROLL_DISENCHANT = "Disenchant"
 	env.PARTY = "Party"
 	env.RAID = "Raid"
@@ -1356,6 +1403,11 @@ function Fake.newEnvironment()
 		GetSkillLineInfo = true,
 		GuildBankFrame = true,
 		AuctionFrame = true,
+		-- ElvUI's and Tukui's loot windows exist only with those UIs; a test that models one defines it.
+		ElvLootFrame = true,
+		TukuiLootFrame = true,
+		LE_GAME_ERR_ITEM_MAX_COUNT = true,
+		KEYRING_CONTAINER = true,
 		-- Secret values exist only on WoW Forever and Retail; a stub here would make every roll line read secret.
 		issecretvalue = true,
 		-- Classic has no item GUIDs through ItemLocation in this fake: bag items are keyed by where they sit.

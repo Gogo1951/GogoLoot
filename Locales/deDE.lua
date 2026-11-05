@@ -47,6 +47,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s kann einen einzigartigen Gegenstand enthalten, daher überlässt Automatisches Öffnen dir das Öffnen."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s wurde im Beutefenster liegen gelassen, damit du es selbst plündern kannst."
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Ein Teil der Beute ist an der Leiche liegen geblieben."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

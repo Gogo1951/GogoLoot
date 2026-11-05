@@ -45,6 +45,8 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s comes from a raid or world boss, so Automated Opening will leave it unopened for you to trade or sell."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s may hold a unique item, so Automated Opening will leave it for you to open."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s was left in the loot window for you to loot yourself."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Some loot was left behind on the corpse."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

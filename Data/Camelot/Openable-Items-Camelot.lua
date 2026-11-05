@@ -246,7 +246,7 @@ ns.OPENABLE_ITEMS = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, WoW Forever 1.60.1.70205
+	2026-11-05, WoW Forever 1.60.1.70790
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).

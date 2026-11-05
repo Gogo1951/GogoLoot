@@ -131,11 +131,13 @@ end
     { source, ... } }, naming every source that saw the stat for Diagnostics'
     Gear Stats report. Two sources, because neither sees every stat:
       * GetItemStats, for the item's own stats. On WoW Forever and later
-        clients that includes spell power, attack power and crit. It reads
-        the base item only, never the random suffix in the link.
+        clients that includes spell power, attack power and crit. On WoW
+        Forever it reads the random suffix in the link too: Lupine Cord of
+        the Tiger reports the Strength and Agility its suffix rolled.
       * The tooltip's "+15 Intellect" lines, matched against the game's own
-        stat-line formats, so in any language: what a random suffix such as
-        "of the Owl" rolled. Play It Forward reads its stats the same way.
+        stat-line formats, so in any language: a second look at the primary
+        attributes, random suffix included, for a client whose GetItemStats
+        sees only the base item. Play It Forward reads its stats the same way.
     Classic Era and TBC offer only the primary attributes (KeepOfferedStats,
     above), since their secondary stats are "Equip:" spells neither source
     reads.

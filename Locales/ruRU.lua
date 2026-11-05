@@ -52,6 +52,7 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: может содержать уникальный предмет, поэтому Автооткрытие оставит его, чтобы вы открыли сами."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] =
 	"%s: оставлено в окне добычи, чтобы вы забрали сами."
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Часть добычи осталась на трупе."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

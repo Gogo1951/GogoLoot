@@ -27,7 +27,7 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, WoW Forever 1.60.1.70205
+	2026-11-05, WoW Forever 1.60.1.70790
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).

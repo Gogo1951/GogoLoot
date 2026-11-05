@@ -19,7 +19,7 @@ ns.CHARACTER_RULE_STAT_KEYS = {
 How We Got the Data
 
 Last Validated
-	Never.
+	2026-11-05, WoW Forever 1.60.1.70790
 
 Notes
 	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rules.lua drops the rest, and any section left empty, at load.

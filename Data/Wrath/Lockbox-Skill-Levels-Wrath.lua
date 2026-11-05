@@ -6,6 +6,7 @@ local _, ns = ...
     Features/Lockbox-Tooltips.lua: one row for every ns.OPENABLE_ITEMS row
     whose lock a Rogue can pick. A locked item whose lock asks for something
     else, a key or another profession, has no row and so no tooltip line.
+    Thieven' Kit is locked but has no pick-lock entry, so it has no row.
 
     Pulled from the Wrath Classic client's own tables on wago.tools, build
     3.4.4.61581: the item's ItemSparse LockID, then that

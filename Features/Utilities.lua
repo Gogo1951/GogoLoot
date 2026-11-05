@@ -252,6 +252,15 @@ function ns.GetQualityColor(quality)
 	return "|cff" .. hex
 end
 
+-- The same quality color as numbers, for texture APIs (the loot toasts' icon border).
+---@param quality number
+---@return number r
+---@return number g
+---@return number b
+function ns.GetQualityColorRGB(quality)
+	return HexToNormalizedRGB(ns.QUALITY_COLORS[quality] or ns.QUALITY_COLORS[1])
+end
+
 -- A class's color escape from its token ("WARRIOR"), or nil for a token ns.CLASS_COLORS doesn't hold.
 ---@param classFile string|nil
 ---@return string|nil
@@ -607,6 +616,80 @@ end
 ---@return boolean
 function ns.IsBagFullErrorID(errorIdentifier)
 	return errorIdentifier == LE_GAME_ERR_INV_FULL
+end
+
+--[[
+    A pickup the bags refused: full bags, or a unique item already carried.
+    Numeric like the test above; the max-count global is nil-safe, since a
+    client without it simply never matches.
+]]
+---@param errorIdentifier any
+---@return boolean
+function ns.IsLootBounceErrorID(errorIdentifier)
+	return ns.IsBagFullErrorID(errorIdentifier)
+		or (LE_GAME_ERR_ITEM_MAX_COUNT ~= nil and errorIdentifier == LE_GAME_ERR_ITEM_MAX_COUNT)
+end
+
+-- The character's own "inventory is full" voice line, by race and by sex as UnitSex returns it.
+---@return nil
+function ns.PlayBagFullSound()
+	local _, raceFile = UnitRace("player")
+	local sex = UnitSex("player")
+	local raceSounds = raceFile and ns.SOUND_KIT_IDS.BAG_FULL_BY_RACE[raceFile]
+	if raceSounds and raceSounds[sex] then
+		PlaySound(raceSounds[sex], "Master")
+	else
+		PlaySound(ns.SOUND_KIT_IDS.BAG_FULL_FALLBACK, "Master")
+	end
+end
+
+--[[
+    One inventory-full warning per ns.BAG_FULL_COOLDOWN, whoever raises it.
+    Automated Opening and Speedy Loot can both hear the same refusal (a
+    container opened into a loot window Speedy Loot then empties), and the
+    player only needs telling once. True claims the warning and stamps it.
+]]
+local lastBagFullWarningAt = nil
+
+---@return boolean
+function ns.ClaimBagFullWarning()
+	local now = GetTime()
+	if lastBagFullWarningAt and (now - lastBagFullWarningAt) <= ns.BAG_FULL_COOLDOWN then
+		return false
+	end
+	lastBagFullWarningAt = now
+	return true
+end
+
+--------------------------------------------------------------------------------
+-- The Loot Window
+--------------------------------------------------------------------------------
+
+--[[
+    ElvUI and Tukui each replace the game's loot window with their own
+    (ns.LOOT_WINDOW_REPLACEMENTS), and unregister LootFrame's events so the
+    game's never opens. Each is created only while that UI's loot module is
+    on, so whichever exists IS the loot window: the one Speedy Loot hides and
+    shows, and the one Automated Opening waits on. Both are made after
+    GogoLoot loads (ElvUI and Tukui build their modules at login), so this is
+    asked at loot time, never cached at load. With Tukui's loot module off it
+    only reskins LootFrame, which then stays the window.
+]]
+---@return table|nil
+function ns.GetLootWindow()
+	for _, frameName in ipairs(ns.LOOT_WINDOW_REPLACEMENTS) do
+		local frame = _G[frameName]
+		if frame then
+			return frame
+		end
+	end
+	return LootFrame
+end
+
+---@return boolean
+function ns.IsLootWindowShown()
+	local frame = ns.GetLootWindow()
+	return frame ~= nil and frame:IsShown() and true or false
 end
 
 --------------------------------------------------------------------------------

@@ -25,17 +25,63 @@ local L = ns.L
 local GetColor = ns.GetColor
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local TOAST_HEIGHT = 24 -- Minimum row height; large fonts raise it, see RowHeight
-local TOAST_SPACING = 8 -- Gap between rows, so entries read as separate lines
-local TOAST_TEXT_PADDING = 6 -- Breathing room above and below the text itself
+--[[
+    THE GRID. Every size in a row is a step of the 2, 4, 8, 16, 32 scale at
+    the default font size (GRID_FONT_SIZE, 16), and scales with the font from
+    there (GridSize), so the layout keeps its proportions at every size. At 16:
+
+        row 32, the framed icon filling it: 28 of art inside a 2 border
+        8 from the frame to the text, 8 between rows, so 40 row to row
+
+    The frame is the item's quality color, the way bags and the loot window
+    mark quality, and its corners are rounded (see ICON_BORDER_MASK). The icon
+    art is cropped by ICON_CROP on every side to drop the bevel Blizzard
+    paints into each icon, which would otherwise double the frame.
+]]
+local GRID_FONT_SIZE = 16
+local ROW_UNITS = 32 -- The row's height, which the framed icon fills
+local BORDER_UNITS = 2
+local TEXT_GAP_UNITS = 8
+local ROW_SPACING_UNITS = 8
+local ICON_CROP = 0.07
 
 --[[
-    Everything in a row is measured from the font size, so the layout holds its
-    proportions at every size. The icon is half again the font size, which puts
-    it just above the text's visual line height, and the gap is a third of it.
+    Rounded corners. A texture can't round its own corners, so each square is
+    cut by an alpha mask shipped with the add-on: the frame by one whose
+    corners are 4 of its 32, the art by one whose corners are 2 of its 28, so
+    the two curves stay concentric (outer radius less the border) at every
+    size. Both are 64-pixel squares, a power of two as masks must be.
 ]]
-local ICON_TO_FONT_RATIO = 1.5
-local ICON_TEXT_GAP_RATIO = 1 / 3
+local ICON_BORDER_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon-Border-Mask.tga"
+local ICON_ART_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon-Art-Mask.tga"
+
+--[[
+    A dark shade behind each row, darkest at the icon and fading to nothing a
+    few characters past the end of the text, so the text holds up over a bright
+    world without a hard box edge. BACKDROP_TAIL_UNITS is that fade-out run
+    beyond the text, on the grid (48 at the default size). The shade starts
+    under the middle of the icon, so its square end stays hidden behind the
+    rounded frame.
+]]
+local BACKDROP_ALPHA = 0.7
+local BACKDROP_TAIL_UNITS = 48
+
+--[[
+    Motion. A new row slides in from the side the stack lines up on and fades
+    up while it does; a burst of loot enters one row per
+    ns.LOOT_TOAST_ENTRY_INTERVAL rather than all at once, so each can be read
+    as it arrives. The slide is on the grid too (16 at the default size).
+]]
+local SLIDE_DURATION = 0.2
+local SLIDE_UNITS = 16
+
+--[[
+    An Epic or better item lights its row in its quality color for a moment,
+    brightest at the icon and fading along the row like the shade under it.
+]]
+local FLASH_MIN_QUALITY = 4
+local FLASH_ALPHA = 0.6
+local FLASH_DURATION = 1
 
 --[[
     How wide a row may get: roughly 64 characters at any size, since a glyph
@@ -127,12 +173,31 @@ local function ApplyFont(fontString, path, size, flags, fallbackPath)
 	end
 end
 
+-- A grid size (in units at GRID_FONT_SIZE) at the current font size, whole, and never below `minimum`.
+local function GridSize(units, minimum)
+	return math.max(minimum, math.floor(units * FontSize() / GRID_FONT_SIZE + 0.5))
+end
+
+-- The framed icon, border included: what the text and the hover area measure from. It fills the row.
+local function FramedIconSize()
+	return GridSize(ROW_UNITS, 8)
+end
+
+local function BorderSize()
+	return GridSize(BORDER_UNITS, 1)
+end
+
+-- The art inside the frame.
 local function IconSize()
-	return math.floor(FontSize() * ICON_TO_FONT_RATIO + 0.5)
+	return FramedIconSize() - 2 * BorderSize()
 end
 
 local function IconGap()
-	return math.max(2, math.floor(FontSize() * ICON_TEXT_GAP_RATIO))
+	return GridSize(TEXT_GAP_UNITS, 2)
+end
+
+local function RowSpacing()
+	return GridSize(ROW_SPACING_UNITS, 2)
 end
 
 --[[
@@ -149,7 +214,7 @@ local function MaxVisible()
 end
 
 local function RowWidth()
-	return IconSize() + IconGap() + math.floor(FontSize() * TEXT_WIDTH_RATIO)
+	return FramedIconSize() + IconGap() + math.floor(FontSize() * TEXT_WIDTH_RATIO)
 end
 
 --[[
@@ -164,9 +229,9 @@ end
 -- The handle lays its caption out by the same alignment (Features/Loot-Toasts-Handle.lua).
 ns.LootToastsAlignRight = AlignsRight
 
--- The row clears the icon, which is taller than the text; only small font sizes leave it at TOAST_HEIGHT.
+-- The framed icon fills the row, so the row is exactly as tall as it.
 local function RowHeight()
-	return math.max(TOAST_HEIGHT, IconSize() + TOAST_TEXT_PADDING)
+	return FramedIconSize()
 end
 
 --[[
@@ -182,41 +247,83 @@ end
 ]]
 local function Measure(toast, path, size, flags, fallbackPath)
 	local iconSize = IconSize()
+	local border = BorderSize()
 	local gap = IconGap()
+	local tail = GridSize(BACKDROP_TAIL_UNITS, 8)
+	local iconMiddle = math.floor(FramedIconSize() / 2)
 	toast:SetSize(RowWidth(), RowHeight())
 	toast.icon:SetSize(iconSize, iconSize)
 	toast.icon:ClearAllPoints()
 	toast.text:ClearAllPoints()
+	toast.backdrop:ClearAllPoints()
+
+	-- The frame wraps the icon on every side, so it is drawn from the icon rather than placed on its own.
+	toast.border:ClearAllPoints()
+	toast.border:SetPoint("TOPLEFT", toast.icon, "TOPLEFT", -border, border)
+	toast.border:SetPoint("BOTTOMRIGHT", toast.icon, "BOTTOMRIGHT", border, -border)
 
 	-- Font first: SetFont resets a font string's justification.
 	ApplyFont(toast.text, path, size, flags, fallbackPath)
 
+	--[[
+	    The shade spans the row's height from the middle of the icon to just
+	    past the text, darkest on the icon side. SetGradient's first color is always the
+	    left end, so the two colors swap with the alignment.
+	]]
+	local dark, clear = CreateColor(0, 0, 0, BACKDROP_ALPHA), CreateColor(0, 0, 0, 0)
 	toast.text:SetWidth(0)
 	if AlignsRight() then
-		toast.icon:SetPoint("RIGHT")
-		toast.text:SetPoint("RIGHT", toast.icon, "LEFT", -gap, 0)
+		toast.icon:SetPoint("RIGHT", -border, 0)
+		toast.text:SetPoint("RIGHT", toast.border, "LEFT", -gap, 0)
 		toast.text:SetJustifyH("RIGHT")
+		toast.backdrop:SetPoint("TOPRIGHT", -iconMiddle, 0)
+		toast.backdrop:SetPoint("BOTTOMRIGHT", -iconMiddle, 0)
+		toast.backdrop:SetPoint("LEFT", toast.text, "LEFT", -tail, 0)
+		toast.backdrop:SetGradient("HORIZONTAL", clear, dark)
+		if toast.flashColor then
+			toast.flash:SetGradient("HORIZONTAL", toast.flashClear, toast.flashColor)
+		end
 	else
-		toast.icon:SetPoint("LEFT")
-		toast.text:SetPoint("LEFT", toast.icon, "RIGHT", gap, 0)
+		toast.icon:SetPoint("LEFT", border, 0)
+		toast.text:SetPoint("LEFT", toast.border, "RIGHT", gap, 0)
 		toast.text:SetJustifyH("LEFT")
+		toast.backdrop:SetPoint("TOPLEFT", iconMiddle, 0)
+		toast.backdrop:SetPoint("BOTTOMLEFT", iconMiddle, 0)
+		toast.backdrop:SetPoint("RIGHT", toast.text, "RIGHT", tail, 0)
+		toast.backdrop:SetGradient("HORIZONTAL", dark, clear)
+		if toast.flashColor then
+			toast.flash:SetGradient("HORIZONTAL", toast.flashColor, toast.flashClear)
+		end
 	end
 
-	local maxTextWidth = RowWidth() - iconSize - gap
+	local maxTextWidth = RowWidth() - FramedIconSize() - gap
 	if toast.text:GetStringWidth() > maxTextWidth then
 		toast.text:SetWidth(maxTextWidth)
 	end
 
-	-- The hover area runs from the icon's outer edge to the end of the text, the icon's height tall.
+	-- The hover area runs from the frame's outer edge to the end of the text, the frame's height tall.
 	toast.hover:ClearAllPoints()
 	if AlignsRight() then
-		toast.hover:SetPoint("TOPRIGHT", toast.icon, "TOPRIGHT")
-		toast.hover:SetPoint("BOTTOMRIGHT", toast.icon, "BOTTOMRIGHT")
+		toast.hover:SetPoint("TOPRIGHT", toast.border, "TOPRIGHT")
+		toast.hover:SetPoint("BOTTOMRIGHT", toast.border, "BOTTOMRIGHT")
 		toast.hover:SetPoint("LEFT", toast.text, "LEFT")
 	else
-		toast.hover:SetPoint("TOPLEFT", toast.icon, "TOPLEFT")
-		toast.hover:SetPoint("BOTTOMLEFT", toast.icon, "BOTTOMLEFT")
+		toast.hover:SetPoint("TOPLEFT", toast.border, "TOPLEFT")
+		toast.hover:SetPoint("BOTTOMLEFT", toast.border, "BOTTOMLEFT")
 		toast.hover:SetPoint("RIGHT", toast.text, "RIGHT")
+	end
+end
+
+--[[
+    The icon's frame takes the item's quality color. Coin has no quality (see
+    Features/Loot-Toasts-Money.lua), so its frame stays black: still framed,
+    the same size as every other row, but saying nothing about rarity.
+]]
+local function SetToastQuality(toast, quality)
+	if quality then
+		toast.border:SetVertexColor(ns.GetQualityColorRGB(quality))
+	else
+		toast.border:SetVertexColor(0, 0, 0)
 	end
 end
 
@@ -228,6 +335,49 @@ end
 local function PlayFade(toast)
 	toast.fadeOut:SetStartDelay(ns.db.profile.lootToastDuration)
 	toast.fade:Play()
+end
+
+--[[
+    New loot keeps the whole stack up: every row already on screen starts its
+    time over, and one already fading comes back to full, so a run of pickups
+    stays readable together and leaves together. Not a row under the pointer,
+    whose fade is paused for its tooltip and resumes when the pointer leaves,
+    and not the samples, which never fade.
+
+    THE TRAP: stopping a fade can fire its OnFinished, which would release the
+    row. `restarting` tells that handler this stop is not the end.
+]]
+local function RestartFades()
+	for _, toast in ipairs(active) do
+		if not toast.isSample and not toast.hovered then
+			toast.restarting = true
+			toast.fade:Stop()
+			toast.restarting = nil
+			toast:SetAlpha(1)
+			PlayFade(toast)
+		end
+	end
+end
+
+-- Slides in from beyond the side the rows line up on: from the left on a left-aligned stack.
+local function PlayEnter(toast)
+	local distance = GridSize(SLIDE_UNITS, 4)
+	local offset = AlignsRight() and distance or -distance
+	toast.enterOffset:SetOffset(offset, 0)
+	toast.enterSlide:SetOffset(-offset, 0)
+	toast.enter:Play()
+end
+
+local function PlayFlash(toast, quality)
+	if not quality or quality < FLASH_MIN_QUALITY then
+		toast.flashColor = nil
+		toast.flash:Hide()
+		return
+	end
+	local r, g, b = ns.GetQualityColorRGB(quality)
+	toast.flashColor, toast.flashClear = CreateColor(r, g, b, FLASH_ALPHA), CreateColor(r, g, b, 0)
+	toast.flash:Show()
+	toast.flashAnimation:Play()
 end
 
 --[[
@@ -243,6 +393,7 @@ local function OnToastEnter(hover)
 	if not toast.itemLink then
 		return
 	end
+	toast.hovered = true
 	toast.fade:Pause()
 	GameTooltip:SetOwner(hover, "ANCHOR_NONE")
 	GameTooltip:ClearAllPoints()
@@ -257,6 +408,7 @@ end
 
 local function OnToastLeave(hover)
 	local toast = hover:GetParent()
+	toast.hovered = nil
 	if GameTooltip:IsOwned(hover) then
 		GameTooltip:Hide()
 	end
@@ -273,8 +425,29 @@ local function AcquireToast()
 		return toast
 	end
 	toast = CreateFrame("Frame", nil, UIParent)
-	-- Both are positioned by Measure, which owns the row's layout per alignment.
+	-- All four are positioned by Measure, which owns the row's layout per alignment.
+	-- White bases, so the gradient and the quality tint are the only color either carries.
+	toast.backdrop = toast:CreateTexture(nil, "BACKGROUND")
+	toast.backdrop:SetColorTexture(1, 1, 1, 1)
+	-- The Epic flash glows over the shade, across the same span; its gradient is painted with the shade's.
+	toast.flash = toast:CreateTexture(nil, "BACKGROUND", nil, 1)
+	toast.flash:SetColorTexture(1, 1, 1, 1)
+	toast.flash:SetBlendMode("ADD")
+	toast.flash:SetAllPoints(toast.backdrop)
+	toast.flash:Hide()
+	toast.border = toast:CreateTexture(nil, "BORDER")
+	toast.border:SetColorTexture(1, 1, 1, 1)
 	toast.icon = toast:CreateTexture(nil, "ARTWORK")
+	toast.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+	-- The masks follow their textures' size and place, so Measure never touches them.
+	toast.borderMask = toast:CreateMaskTexture()
+	toast.borderMask:SetTexture(ICON_BORDER_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	toast.borderMask:SetAllPoints(toast.border)
+	toast.border:AddMaskTexture(toast.borderMask)
+	toast.iconMask = toast:CreateMaskTexture()
+	toast.iconMask:SetTexture(ICON_ART_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	toast.iconMask:SetAllPoints(toast.icon)
+	toast.icon:AddMaskTexture(toast.iconMask)
 	toast.text = toast:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	-- One line, always. An over-long name truncates rather than breaking the row.
 	toast.text:SetWordWrap(false)
@@ -298,7 +471,40 @@ local function AcquireToast()
 	toast.fadeOut:SetToAlpha(0)
 	toast.fadeOut:SetDuration(ns.LOOT_TOAST_FADE_DURATION)
 	toast.fade:SetScript("OnFinished", function(group)
-		ns.ReleaseLootToast(group:GetParent())
+		local finished = group:GetParent()
+		if not finished.restarting then
+			ns.ReleaseLootToast(finished)
+		end
+	end)
+
+	--[[
+	    The slide: a zero-length jump out to the side, then the glide back to
+	    the row's place while it fades up. Translations don't persist, so the
+	    row is exactly where Restack put it once this ends, and a restack while
+	    it plays carries the slide along with the row.
+	]]
+	toast.enter = toast:CreateAnimationGroup()
+	toast.enterOffset = toast.enter:CreateAnimation("Translation")
+	toast.enterOffset:SetDuration(0)
+	toast.enterOffset:SetOrder(1)
+	toast.enterSlide = toast.enter:CreateAnimation("Translation")
+	toast.enterSlide:SetDuration(SLIDE_DURATION)
+	toast.enterSlide:SetOrder(2)
+	toast.enterSlide:SetSmoothing("OUT")
+	local enterAlpha = toast.enter:CreateAnimation("Alpha")
+	enterAlpha:SetFromAlpha(0)
+	enterAlpha:SetToAlpha(1)
+	enterAlpha:SetDuration(SLIDE_DURATION)
+	enterAlpha:SetOrder(2)
+
+	toast.flashAnimation = toast:CreateAnimationGroup()
+	local flashFade = toast.flashAnimation:CreateAnimation("Alpha")
+	flashFade:SetTarget(toast.flash)
+	flashFade:SetFromAlpha(1)
+	flashFade:SetToAlpha(0)
+	flashFade:SetDuration(FLASH_DURATION)
+	toast.flashAnimation:SetScript("OnFinished", function()
+		toast.flash:Hide()
 	end)
 	return toast
 end
@@ -317,7 +523,7 @@ end
 ]]
 local function Restack()
 	local count = #active
-	local step = RowHeight() + TOAST_SPACING
+	local step = RowHeight() + RowSpacing()
 	local growDown = ns.db and ns.db.profile.lootToastGrowth == "DOWN"
 	local corner = (growDown and "TOP" or "BOTTOM") .. (AlignsRight() and "RIGHT" or "LEFT")
 	local path, size, flags, fallbackPath = ResolveFont()
@@ -357,6 +563,12 @@ function ns.ReleaseLootToast(toast)
 		toast.pooled = true
 		toast.countItem = nil
 		toast.itemLink = nil
+		toast.isSample = nil
+		toast.hovered = nil
+		toast.flashColor = nil
+		toast.enter:Stop()
+		toast.flashAnimation:Stop()
+		toast.flash:Hide()
 		toast.hover:SetMouseMotionEnabled(false)
 		if GameTooltip:IsOwned(toast.hover) then
 			GameTooltip:Hide()
@@ -403,13 +615,16 @@ end
 ---@param itemLink string|nil
 ---@param countItem number|nil
 ---@param countQuantity number|nil
+---@param quality number|nil # colors the icon's frame; nil for coin
 ---@return nil
-local function PushToast(icon, text, itemLink, countItem, countQuantity)
+local function EnterToast(icon, text, itemLink, countItem, countQuantity, quality)
 	while #active >= MaxVisible() do
 		ns.ReleaseLootToast(active[1])
 	end
+	RestartFades()
 	local toast = AcquireToast()
 	toast.icon:SetTexture(icon)
+	SetToastQuality(toast, quality)
 	toast.baseText, toast.countItem, toast.countQuantity = text, countItem, countQuantity
 	toast.itemLink = itemLink
 	toast.hover:SetMouseMotionEnabled(itemLink ~= nil)
@@ -417,8 +632,59 @@ local function PushToast(icon, text, itemLink, countItem, countQuantity)
 	toast:SetAlpha(1)
 	toast:Show()
 	active[#active + 1] = toast
+	-- The flash's colors first: Restack paints its gradient with the shade's.
+	PlayFlash(toast, quality)
 	Restack()
+	PlayEnter(toast)
 	PlayFade(toast)
+end
+
+--[[
+    Rows enter one per ns.LOOT_TOAST_ENTRY_INTERVAL. A row with nothing ahead of it and no
+    row just entered goes up at once; anything else waits its turn in
+    `pending`, which drains on one timer at a time. Bag Count is read as a row
+    enters, not as it queues, so a queued row still lands on the true count.
+    Turning the toasts off empties the queue.
+]]
+local pending = {}
+local lastEntryAt = nil
+local drainScheduled = false
+
+local ScheduleDrain
+
+local function DrainPending()
+	drainScheduled = false
+	if not ns.db or not ns.db.profile.lootToasts then
+		wipe(pending)
+		return
+	end
+	local entry = table.remove(pending, 1)
+	if entry then
+		lastEntryAt = GetTime()
+		EnterToast(entry[1], entry[2], entry[3], entry[4], entry[5], entry[6])
+	end
+	if #pending > 0 then
+		ScheduleDrain()
+	end
+end
+
+function ScheduleDrain()
+	if drainScheduled then
+		return
+	end
+	drainScheduled = true
+	C_Timer.After(math.max(0, (lastEntryAt or 0) + ns.LOOT_TOAST_ENTRY_INTERVAL - GetTime()), DrainPending)
+end
+
+local function PushToast(icon, text, itemLink, countItem, countQuantity, quality)
+	local now = GetTime()
+	if #pending == 0 and (not lastEntryAt or now - lastEntryAt >= ns.LOOT_TOAST_ENTRY_INTERVAL) then
+		lastEntryAt = now
+		EnterToast(icon, text, itemLink, countItem, countQuantity, quality)
+		return
+	end
+	pending[#pending + 1] = { icon, text, itemLink, countItem, countQuantity, quality }
+	ScheduleDrain()
 end
 
 -- The money toasts reach the screen the same way (Features/Loot-Toasts-Money.lua).
@@ -449,7 +715,8 @@ function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll)
 		return
 	end
 	local itemIdentifier = tonumber(string.match(itemLink, "item:(%d+)"))
-	if not ns.IsLootToastWanted(ns.GetLinkQuality(itemLink), itemIdentifier, looterName) then
+	local quality = ns.GetLinkQuality(itemLink)
+	if not ns.IsLootToastWanted(quality, itemIdentifier, looterName) then
 		return
 	end
 	local text = string.gsub(itemLink, "|h%[(.-)%]|h", "|h%1|h")
@@ -468,13 +735,13 @@ function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll)
 		else
 			text = L["LOOT_TOASTS_LOOTED_BY"]:format(text, name)
 		end
-		PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink)
+		PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink, nil, nil, quality)
 		return
 	end
 	if rollText then
 		text = L["LOOT_TOASTS_YOU_WON_ROLL"]:format(text, rollText)
 	end
-	PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink, itemIdentifier, count)
+	PushToast(ns.GetItemIconByID(itemIdentifier), text, itemLink, itemIdentifier, count, quality)
 end
 
 --------------------------------------------------------------------------------
@@ -537,6 +804,8 @@ function ns.RefreshLootToastSamples()
 			local quality = math.random(lowestQuality, 5)
 			local toast = AcquireToast()
 			toast.icon:SetTexture(ns.LOOT_TOAST_SAMPLE_ICONS[quality])
+			SetToastQuality(toast, quality)
+			toast.isSample = true
 			toast.text:SetText(ns.GetQualityColor(quality) .. L["LOOT_TOASTS_EXAMPLE_ITEM"] .. "|r")
 			toast:SetAlpha(1)
 			toast:Show()

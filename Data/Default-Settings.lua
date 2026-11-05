@@ -148,6 +148,7 @@ ns.DATABASE_DEFAULTS = {
 			BIND_ON_PICKUP = true,
 			OPENABLES = true,
 			MONEY = true,
+			CURRENCY = true,
 		},
 		lootToastGroup = {
 			ARMOR = true,

@@ -41,7 +41,7 @@ Last Validated
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).
-	- One row for every ns.OPENABLE_ITEMS row whose lock a Rogue can pick. A container whose lock asks for something else, a key or another profession, has no row and so no tooltip line.
+	- One row for every ns.OPENABLE_ITEMS row whose lock a Rogue can pick. A container whose lock asks for something else, a key or another profession, has no row and so no tooltip line. Thieven' Kit is locked but has no pick-lock entry, so it has no row.
 	- Each number is the item's lock's Pick Lock entry: ItemSparse's LockID, then that Lock row's entry with Type 2 and Index 1, whose Skill is the number stored here.
 	- Pulled from this client's own tables at build 5.5.4.69934.
 	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
