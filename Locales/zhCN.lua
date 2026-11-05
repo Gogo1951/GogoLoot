@@ -45,6 +45,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s来自团队首领或世界首领，自动开启会将其保持原封，留给你交易或出售。"
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s可能含有唯一物品，自动开启会留给你自己打开。"
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s已留在拾取窗口中，供你自行拾取。"
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s部分战利品留在了尸体上。"
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

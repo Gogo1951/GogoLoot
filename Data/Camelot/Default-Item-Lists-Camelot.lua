@@ -95,7 +95,7 @@ ns.DEFAULT_IGNORE_LIST_MASTER = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, WoW Forever 1.60.1.70205
+	2026-11-05, WoW Forever 1.60.1.70790
 
 Notes
 	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.

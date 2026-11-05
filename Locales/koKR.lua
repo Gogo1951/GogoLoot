@@ -46,6 +46,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: 고유 아이템이 들어 있을 수 있어, 직접 열 수 있도록 자동 열기가 열지 않고 남겨 둡니다."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s: 직접 획득할 수 있도록 전리품 창에 남겨 두었습니다."
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s 일부 전리품이 시체에 남았습니다."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

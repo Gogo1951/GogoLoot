@@ -48,6 +48,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s pode conter um item único, então a Abertura Automática vai deixá-lo para você abrir."
 L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s ficou na janela de saque para você mesmo saquear."
+L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Parte do saque ficou no corpo."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
     them back. Arguments: the game's own names for its Item Loot and Money Loot

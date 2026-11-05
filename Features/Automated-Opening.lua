@@ -32,7 +32,6 @@ local openTimerLive = false
 local worldReady = false
 local scanPending = false
 local scanDueAt = 0
-local lastBagFullAt = nil
 
 --[[
     Opens the game refused. An open the game takes always answers with a loot
@@ -59,18 +58,6 @@ end
 --------------------------------------------------------------------------------
 -- Safety Checks
 --------------------------------------------------------------------------------
-
--- The character's own "inventory is full" voice line, by race and by sex as UnitSex returns it.
-local function PlayBagFullSound()
-	local _, raceFile = UnitRace("player")
-	local sex = UnitSex("player")
-	local raceSounds = raceFile and ns.SOUND_KIT_IDS.BAG_FULL_BY_RACE[raceFile]
-	if raceSounds and raceSounds[sex] then
-		PlaySound(raceSounds[sex], "Master")
-	else
-		PlaySound(ns.SOUND_KIT_IDS.BAG_FULL_FALLBACK, "Master")
-	end
-end
 
 --[[
     Stealth, or Shadowmeld's aura. WoW Forever makes aura reads secret during
@@ -105,7 +92,7 @@ local function IsInteractionActive()
 		or (AuctionHouseFrame and AuctionHouseFrame:IsShown())
 		or (GossipFrame and GossipFrame:IsShown())
 		or (QuestFrame and QuestFrame:IsShown())
-		or (LootFrame and LootFrame:IsShown())
+		or ns.IsLootWindowShown()
 		or false
 end
 
@@ -518,15 +505,17 @@ local function OnUiErrorMessage(errorIdentifier)
 	if not pendingOpenItem or GetTime() - pendingOpenAt >= ns.OPEN_ANSWER_TIMEOUT then
 		return
 	end
-	local now = GetTime()
-	if lastBagFullAt and (now - lastBagFullAt) <= ns.BAG_FULL_COOLDOWN then
-		return
-	end
-	lastBagFullAt = now
+	--[[
+	    Opening always pauses. Only the warning answers to the cooldown, which
+	    Speedy Loot's refused-pickup warning shares (ns.ClaimBagFullWarning), so
+	    a warning it just gave can't keep opening running into full bags.
+	]]
 	isPaused = true
 	announcedPaused = true
-	ns:StatusPrint(ERR_INV_FULL)
-	PlayBagFullSound()
+	if ns.ClaimBagFullWarning() then
+		ns:StatusPrint(ERR_INV_FULL)
+		ns.PlayBagFullSound()
+	end
 end
 
 local function LockboxNotificationsEnabled()

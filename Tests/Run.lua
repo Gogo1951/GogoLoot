@@ -201,6 +201,13 @@ local function loadAddon(beforeLoaded, beforeFiles)
 		assert(ok, ("%s failed to load: %s"):format(relative, tostring(runError)))
 	end
 
+	--[[
+	    Toast tests push several rows at one fake instant and read them at once,
+	    so rows enter together here; the one-at-a-time entry has its own test,
+	    which puts the interval back.
+	]]
+	ns.LOOT_TOAST_ENTRY_INTERVAL = 0
+
 	if beforeLoaded then
 		beforeLoaded(ns, env)
 	end
@@ -4886,6 +4893,151 @@ test("speedy loot takes everything and keeps the window from flashing", function
 	check(env.LootFrame:IsShown(), "and the next window is not hidden on this one's say-so")
 end)
 
+--[[
+    WoW Forever's loot frame (LootFrameMixin) shows itself partway through
+    Open() and marks itself open after. A hide from OnShow left it hidden but
+    marked open, and Blizzard later re-showed it as an empty window. The hide
+    has to wait for Open to return and close the frame Blizzard's own way.
+]]
+test("speedy loot closes Forever's loot frame after Open, so it can't come back empty", function()
+	local ns, env = loadAddon(nil, function(clientEnv)
+		local frame = clientEnv.LootFrame
+		rawset(frame, "Open", function(self)
+			self:Show()
+			self.isOpen = true
+		end)
+		rawset(frame, "Close", function(self)
+			self.isOpen = false
+		end)
+		rawset(frame, "StopAllAnimations", function(self)
+			self.animationsStopped = true
+		end)
+		clientEnv.HideUIPanel = function(panel)
+			panel:Hide()
+		end
+	end)
+	-- The fake's hooksecurefunc records post-hooks rather than wrapping, so Open runs them by hand.
+	local function blizzardOpen()
+		env.LootFrame:Open()
+		rawget(env.LootFrame, "__postHooks").Open(env.LootFrame)
+	end
+	env.__state.itemNames[2589] = { name = "Linen Cloth", quality = 1 }
+	openLootWindow(env, { { link = itemLink(2589, "Linen Cloth") } })
+	fire(ns, "LOOT_READY")
+
+	env.LootFrame:Show()
+	check(env.LootFrame:IsShown(), "the show inside Open is left alone, so Open finishes on a shown frame")
+
+	blizzardOpen()
+	check(not env.LootFrame:IsShown(), "once Open returns, the window is hidden")
+	check(env.LootFrame.isOpen == false, "and marked closed, so Blizzard has nothing to re-show")
+	check(env.LootFrame.animationsStopped, "with its open animation stopped")
+
+	fire(ns, "LOOT_CLOSED")
+	blizzardOpen()
+	check(env.LootFrame:IsShown() and env.LootFrame.isOpen, "and the next window opens normally")
+end)
+
+--[[
+    Bag space is measured per item: one that stacks onto a stack already
+    carried needs no slot at all, but only as much as the stack has room for,
+    counting what the same corpse has already sent.
+]]
+test("speedy loot stacks onto what the player carries, even with no free slot", function()
+	local ns, env = loadAddon()
+	env.__state.itemNames[2589] = { name = "Linen Cloth", quality = 1, stackCount = 20 }
+	env.__state.freeSlotsPerBag = 0
+	putInBag(env, 0, 1, 2589, "Linen Cloth", { count = 15 })
+	openLootWindow(env, {
+		{ link = itemLink(2589, "Linen Cloth"), quantity = 3 },
+		{ link = itemLink(2589, "Linen Cloth"), quantity = 3 },
+		{ slotType = 2 },
+	})
+	fire(ns, "LOOT_READY")
+	checkEqual(2, #env.__state.lootedSlots, "the coin and the first cloth are taken")
+	checkEqual(3, env.__state.lootedSlots[1], "coin first, from the bottom")
+	checkEqual(2, env.__state.lootedSlots[2], "then the cloth that fits the stack's 5 of room")
+	env.LootFrame:Show()
+	check(env.LootFrame:IsShown(), "the second cloth, with only 2 of room left, keeps the window up")
+end)
+
+test("speedy loot puts arrows in a quiver, but never a bag in a profession bag", function()
+	local ns, env = loadAddon()
+	env.__state.freeSlotsByBag = { [0] = 0, [1] = 0, [2] = 0, [3] = 0, [4] = 6 }
+	env.__state.bagFamilies = { [4] = 1 }
+	env.__state.itemNames[2512] = { name = "Rough Arrow", quality = 1, stackCount = 200, family = 1 }
+	openLootWindow(env, { { link = itemLink(2512, "Rough Arrow"), quantity = 20 } })
+	fire(ns, "LOOT_READY")
+	checkEqual(1, #env.__state.lootedSlots, "the arrows go in the quiver")
+
+	local bagNs, bagEnv = loadAddon()
+	bagEnv.__state.freeSlotsByBag = { [0] = 0, [1] = 0, [2] = 0, [3] = 0, [4] = 6 }
+	bagEnv.__state.bagFamilies = { [4] = 32 }
+	-- A Herb Pouch's own family names what it holds (herbs), not where it can go.
+	bagEnv.__state.itemNames[22250] =
+		{ name = "Herb Pouch", quality = 1, family = 32, classId = 1, itemType = "Container" }
+	openLootWindow(bagEnv, { { link = itemLink(22250, "Herb Pouch") } })
+	fire(bagNs, "LOOT_READY")
+	checkEqual(0, #bagEnv.__state.lootedSlots, "the pouch has nowhere to go and stays in the window")
+	bagEnv.LootFrame:Show()
+	check(bagEnv.LootFrame:IsShown(), "which stays up")
+end)
+
+--[[
+    A pickup the server refuses after the pass closed the loot: the window is
+    gone, so the player is told in chat with the client's own reason, and hears
+    the inventory-full line, once per cooldown and only right after such a pass.
+]]
+test("a pickup refused after speedy loot closed the window is reported once", function()
+	local ns, env = loadAddon()
+	env.__state.itemNames[2589] = { name = "Linen Cloth", quality = 1 }
+	openLootWindow(env, { { link = itemLink(2589, "Linen Cloth") } })
+	fire(ns, "LOOT_READY")
+	env.LootFrame:Show()
+	check(not env.LootFrame:IsShown(), "the pass took everything and closed the window")
+
+	local soundsBefore = #env.__state.sounds
+	fire(ns, "UI_ERROR_MESSAGE", env.LE_GAME_ERR_INV_FULL, "Inventory is full.")
+	check(printedContaining(env, "Inventory is full. Some loot was left behind on the corpse."), "chat says why")
+	checkEqual(soundsBefore + 1, #env.__state.sounds, "and the inventory-full line plays")
+
+	env.__state.prints = {}
+	fire(ns, "UI_ERROR_MESSAGE", env.LE_GAME_ERR_INV_FULL, "Inventory is full.")
+	check(not printedContaining(env, "left behind"), "a second refusal from the same pass says nothing more")
+
+	fire(ns, "LOOT_CLOSED")
+	Fake.advance(env, ns.BAG_FULL_COOLDOWN + 1)
+	fire(ns, "UI_ERROR_MESSAGE", env.LE_GAME_ERR_INV_FULL, "Inventory is full.")
+	check(not printedContaining(env, "left behind"), "and long after a pass, a refusal is the game's to report")
+end)
+
+--[[
+    ElvUI and Tukui put their own loot windows in place of the game's, built at
+    login after GogoLoot loads. Speedy Loot hides and shows whichever is in
+    use, and Automated Opening waits on it.
+]]
+test("speedy loot hides and shows ElvUI's and Tukui's loot windows", function()
+	for _, frameName in ipairs({ "ElvLootFrame", "TukuiLootFrame" }) do
+		local ns, env = loadAddon()
+		local window = env.CreateFrame("Button", frameName)
+		rawset(env, frameName, window)
+		env.__state.itemNames[2589] = { name = "Linen Cloth", quality = 1 }
+		openLootWindow(env, { { link = itemLink(2589, "Linen Cloth") } })
+		fire(ns, "LOOT_READY")
+		window:Show()
+		check(not window:IsShown(), frameName .. ": its show is undone once the pass took everything")
+
+		fire(ns, "LOOT_CLOSED")
+		Fake.advance(env, 1)
+		-- An item the client hasn't loaded may be Bind on Pickup, so it keeps the window up.
+		openLootWindow(env, { { link = itemLink(9999, "Unknown Item") } })
+		fire(ns, "LOOT_READY")
+		check(window:IsShown(), frameName .. ": it is the window shown for loot left behind")
+		check(not env.LootFrame:IsShown(), frameName .. ": and the game's own stays shut")
+		check(ns.IsLootWindowShown(), frameName .. ": Automated Opening sees it open")
+	end
+end)
+
 test("speedy loot leaves an item still being rolled for alone", function()
 	local ns, env = loadAddon()
 	openLootWindow(env, {
@@ -5333,6 +5485,133 @@ test("hovering an item toast shows the item's tooltip and holds its fade", funct
 	ns.ReleaseLootToast(itemToast)
 	check(not env.GameTooltip:IsOwned(itemToast.hover), "a row that goes while hovered takes its tooltip with it")
 	checkEqual(false, rawget(itemToast.hover, "mouseMotionEnabled"), "and stops taking the pointer in the pool")
+end)
+
+--[[
+    A burst of loot enters one row at a time, each new row starting every row
+    already up over on its time, and an Epic or better row flashes.
+]]
+test("toasts enter one at a time and keep the stack up while loot arrives", function()
+	local ns, env = loadAddon()
+	ns.LOOT_TOAST_ENTRY_INTERVAL = 0.15
+	ns.db.profile.lootToasts = true
+	ns.db.profile.lootToastsIntroSeen = true
+	knownItem(env, 2589, "Linen Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	knownItem(env, 2592, "Wool Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	knownItem(env, 2601, "Purple Helm", 4, ns.ITEM_CLASS_ARMOR)
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2589, "Linen Cloth")))
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2592, "Wool Cloth")))
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2601, "Purple Helm", "a335ee")))
+	checkEqual(1, #visibleToastTexts(env), "the first row enters at once")
+
+	local firstToast
+	for _, frame in ipairs(env.__state.createdFrames) do
+		local text = rawget(frame, "text")
+		if rawget(frame, "shown") and text and text.text and text.text:find("Linen Cloth", 1, true) then
+			firstToast = frame
+		end
+	end
+	local restarted = 0
+	firstToast.fade.Play = function()
+		restarted = restarted + 1
+	end
+	check(rawget(firstToast, "flashColor") == nil, "a Common row doesn't flash")
+
+	Fake.advance(env, 0.15)
+	checkEqual(2, #visibleToastTexts(env), "the second follows one interval later")
+	checkEqual(1, restarted, "and starts the first row's time over")
+	Fake.advance(env, 0.15)
+	checkEqual(3, #visibleToastTexts(env), "then the third")
+
+	local epicToast
+	for _, frame in ipairs(env.__state.createdFrames) do
+		local text = rawget(frame, "text")
+		if rawget(frame, "shown") and text and text.text and text.text:find("Purple Helm", 1, true) then
+			epicToast = frame
+		end
+	end
+	check(epicToast and rawget(epicToast, "flashColor") ~= nil, "the Epic row flashes")
+end)
+
+test("a row under the pointer keeps its paused fade when new loot arrives", function()
+	local ns, env = loadAddon()
+	ns.db.profile.lootToasts = true
+	ns.db.profile.lootToastsIntroSeen = true
+	knownItem(env, 2589, "Linen Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	knownItem(env, 2592, "Wool Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2589, "Linen Cloth")))
+	local hovered
+	for _, frame in ipairs(env.__state.createdFrames) do
+		local text = rawget(frame, "text")
+		if rawget(frame, "shown") and text and text.text and text.text:find("Linen Cloth", 1, true) then
+			hovered = frame
+		end
+	end
+	hovered.hover.scripts.OnEnter(hovered.hover)
+	local restarted = 0
+	hovered.fade.Play = function()
+		restarted = restarted + 1
+	end
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2592, "Wool Cloth")))
+	checkEqual(0, restarted, "its fade stays paused for the tooltip")
+end)
+
+--[[
+    Currency (MoP Classic's Justice and Valor Points) gets a toast from the
+    game's currency line, answering to the Currency row's Mine box.
+]]
+test("currency gets its own toast, with its count", function()
+	local ns, env = loadAddon()
+	ns.db.profile.lootToasts = true
+	ns.db.profile.lootToastsIntroSeen = true
+	env.__state.currencies = { [395] = { iconFileID = 463446, quality = 3 } }
+	local link = "|cff0070dd|Hcurrency:395:30|h[Justice Points]|h|r"
+	fire(ns, "CHAT_MSG_CURRENCY", env.CURRENCY_GAINED_MULTIPLE:format(link, 30))
+	check(toastShowing(env, "Justice Points"), "the currency shows")
+	check(toastShowing(env, "x30"), "with how many came")
+	check(not toastShowing(env, "[Justice Points]"), "without the link's brackets")
+
+	local parsedLink, count = ns.ParseCurrencyMessage(env.CURRENCY_GAINED:format(link))
+	checkEqual(link, parsedLink, "a single currency line reads its link")
+	checkEqual(1, count, "and counts one")
+	local _, bonusCount = ns.ParseCurrencyMessage(env.CURRENCY_GAINED_MULTIPLE_BONUS:format(link, 12))
+	checkEqual(12, bonusCount, "the bonus form keeps its count")
+
+	ns.db.profile.lootToastMine.CURRENCY = false
+	local before = #visibleToastTexts(env)
+	fire(ns, "CHAT_MSG_CURRENCY", env.CURRENCY_GAINED:format(link))
+	checkEqual(before, #visibleToastTexts(env), "with Currency cleared, nothing more shows")
+end)
+
+--[[
+    At the default font size every row measure is a step of the 2, 4, 8, 16,
+    32 scale: a 32 row the framed icon fills, 8 to the text, 8 between rows,
+    so 40 from one row to the next.
+]]
+test("toast rows sit on the 2, 4, 8, 16, 32 grid at the default font size", function()
+	local ns, env = loadAddon()
+	ns.db.profile.lootToasts = true
+	ns.db.profile.lootToastsIntroSeen = true
+	checkEqual(16, ns.db.profile.lootToastFontSize, "the default font size is the grid's")
+	knownItem(env, 2589, "Linen Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	knownItem(env, 2592, "Wool Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2589, "Linen Cloth")))
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(itemLink(2592, "Wool Cloth")))
+	local older, newer
+	for _, frame in ipairs(env.__state.createdFrames) do
+		local text = rawget(frame, "text")
+		if rawget(frame, "shown") and text and text.text then
+			if text.text:find("Linen Cloth", 1, true) then
+				older = frame
+			elseif text.text:find("Wool Cloth", 1, true) then
+				newer = frame
+			end
+		end
+	end
+	checkEqual(32, rawget(newer, "height"), "a row is 32 tall")
+	checkEqual(32 + 8 + 16 * 32, rawget(newer, "width"), "the framed icon, the 8 gap, then room for the name")
+	checkEqual(0, newer.lastPoint[5], "the newest row sits at the anchor")
+	checkEqual(40, math.abs(older.lastPoint[5]), "the one before it 40 away: the 32 row and 8 between")
 end)
 
 test("the toast cap retires the oldest, and unlimited never retires any", function()
@@ -6317,6 +6596,8 @@ end)
 test("the test harness loads exactly what the Vanilla TOC loads", function()
 	local listed = {}
 	for line in io.lines(ROOT .. "GogoLoot_Vanilla.toc") do
+		-- Git stores the TOCs with LF, but a working copy can hold CRLF, which the game reads fine.
+		line = line:gsub("\r$", "")
 		local isOtherLocale = line:match("^Locales/") and line ~= "Locales/enUS.lua"
 		if line:match("^[%w].*%.lua$") and not line:match("^Includes/") and not isOtherLocale then
 			listed[#listed + 1] = line
@@ -6344,6 +6625,7 @@ test("every flavor TOC loads the Vanilla TOC's files, with its own data folder",
 	local function ReadToc(flavor)
 		local fields, files = {}, {}
 		for line in io.lines(ROOT .. ("GogoLoot_%s.toc"):format(flavor)) do
+			line = line:gsub("\r$", "") -- CRLF in a working copy, as above
 			local key, value = line:match("^## ([%w%-]+): (.*)$")
 			if key then
 				fields[key] = value

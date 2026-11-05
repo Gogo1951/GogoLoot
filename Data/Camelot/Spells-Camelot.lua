@@ -11,7 +11,7 @@ ns.SPELLS = {
 How We Got the Data
 
 Last Validated
-	2026-10-04, WoW Forever 1.60.1.70205
+	2026-11-05, WoW Forever 1.60.1.70790
 
 Notes
 	- The spells GogoLoot listens for or reads, hand-picked, each under the key the code uses.

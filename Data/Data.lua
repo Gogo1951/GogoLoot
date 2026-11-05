@@ -487,6 +487,8 @@ ns.LOOT_TOAST_FILTER_ROWS = {
 	{ key = "BIND_ON_PICKUP", labelKey = "LOOT_TOASTS_FILTER_BIND_ON_PICKUP" },
 	{ key = "OPENABLES", labelKey = "LOOT_TOASTS_FILTER_OPENABLES" },
 	{ key = "MONEY", label = MONEY, mineOnly = true },
+	-- Currency loot lines (CHAT_MSG_CURRENCY) arrived with Cataclysm, so of the clients with a TOC only MoP Classic has them.
+	{ key = "CURRENCY", label = CURRENCY, mineOnly = true, minimumExpansion = 4 },
 }
 
 --------------------------------------------------------------------------------
@@ -499,6 +501,12 @@ ns.LOOT_TOAST_FILTER_ROWS = {
     fewer than this, so the two features share one line.
 ]]
 ns.MIN_FREE_SLOTS = 4
+
+-- The loot windows ElvUI and Tukui put in place of the game's (see ns.GetLootWindow).
+ns.LOOT_WINDOW_REPLACEMENTS = { "ElvLootFrame", "TukuiLootFrame" }
+
+-- Seconds after a Speedy Loot pass closes the loot in which a refused pickup still counts as that pass's.
+ns.LOOT_BOUNCE_WINDOW = 2
 
 ns.WORLD_LOAD_DELAY = 8 -- Seconds after a login or reload before the first scan
 ns.SCAN_DEBOUNCE = 0.5 -- Seconds a burst of bag events waits to become one scan
@@ -574,6 +582,8 @@ ns.PICK_POCKET_LOOT_WINDOW = 1
 
 -- Seconds the fade itself takes, once the chosen time on screen has passed.
 ns.LOOT_TOAST_FADE_DURATION = 0.5
+-- Seconds between rows entering, so a burst of loot arrives one row at a time (Features/Loot-Toasts.lua).
+ns.LOOT_TOAST_ENTRY_INTERVAL = 0.15
 
 -- Seconds a toast stays up. Offered as a dropdown, so the steps widen as they grow.
 ns.LOOT_TOAST_DURATIONS = { 1, 2, 3, 5, 8, 13, 21 }
