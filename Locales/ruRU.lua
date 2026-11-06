@@ -606,6 +606,11 @@ L["LOOT_TOASTS_ENABLE"] = "Включить уведомления о добыч
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 	'Показывает уведомления о добыче, выбранной в разделе "Фильтры", вашей и вашей группы.'
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] =
+	"Включить подсказки предметов в уведомлениях о добыче"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Показывает подсказку предмета при наведении на его уведомление. Если выключено, уведомления не реагируют на мышь, и можно наводить курсор и щёлкать по существам и трупам за ними."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] =
 	"Отключить стандартные сообщения о добыче"

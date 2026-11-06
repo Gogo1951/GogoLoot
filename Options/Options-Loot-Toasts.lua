@@ -10,7 +10,7 @@
 
     Beside the toggle sits the dropdown that takes the game's own loot lines
     out of the General chat tab while the toasts are on (Standard Loot
-    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come the position buttons, then two sections
+    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come Enable Tooltips on Loot Toast Items and the position buttons, then two sections
     under headers of their own, Stack (how many, how long, which way) and Text
     (face, size, outline), their rows at the panel's own level rather than
     indented under the toggle. All of it, headers and spacers included, leaves
@@ -186,8 +186,24 @@ function ns.BuildLootToastOptions()
 		end
 	end
 
+	-- Tooltips: straight under the switch. Off by default, so the stack never blocks the world.
+	AddSpacer("spacerBeforeTooltips")
+	Add("tooltipsToggle", {
+		type = "toggle",
+		name = L["LOOT_TOASTS_TOOLTIPS_ENABLE"],
+		desc = L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"],
+		width = "full",
+		get = function()
+			return ns.db.profile.lootToastTooltips
+		end,
+		set = function(_, value)
+			ns.db.profile.lootToastTooltips = value and true or false
+			ns.ApplyLootToastTooltips()
+		end,
+	})
+
 	--[[
-        The position buttons come first, straight under the switch, since where
+        The position buttons come next, just under the switch, since where
         the toasts sit is the first thing a player sets. They hide with the rest
         rather than greying out: two dead buttons under a switched-off toggle
         read as the feature being unfinished.

@@ -569,6 +569,10 @@ L["LOOT_TOASTS_ENABLE"] = "Ativar Avisos de Saque"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 	"Mostra um aviso para o saque que você escolher em Filtros, o seu e o do seu grupo."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Ativar Dicas dos Itens nos Avisos de Saque"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Mostra a dica de um item ao apontar para o aviso dele. Desativado, os avisos ignoram o mouse, então você pode apontar e clicar em monstros e corpos atrás deles."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Desativar Mensagens de Saque Padrão"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Ativar Mensagens de Saque Padrão"

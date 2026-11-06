@@ -1764,7 +1764,8 @@ function ns:BuildLootToastsContextReport()
 		profile.lootToastMaxVisible == ns.LOOT_TOAST_UNLIMITED and "unlimited" or tostring(profile.lootToastMaxVisible)
 	)
 	lines[#lines + 1] = string.format(
-		"Bag Count %s; Winning Roll: Mine %s, Group %s",
+		"Tooltips %s; Bag Count %s; Winning Roll: Mine %s, Group %s",
+		OnOff(profile.lootToastTooltips),
 		OnOff(profile.lootToastBagCount),
 		OnOff(profile.lootToastWinningRollMine),
 		OnOff(profile.lootToastWinningRollGroup)

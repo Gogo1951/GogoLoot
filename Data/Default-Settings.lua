@@ -108,6 +108,12 @@ ns.DATABASE_DEFAULTS = {
         ]]
 		standardLootMessages = "DISABLE",
 		--[[
+            Item tooltips on hover. Off, so the stack ignores the mouse entirely
+            and the world under it (a mob to click, a corpse to loot) stays
+            reachable with no hover dead spot.
+        ]]
+		lootToastTooltips = false,
+		--[[
             Whether this profile has been shown the drag handle and put it away.
             Per profile on purpose: a new or reset profile is one that has not
             been introduced to the feature, and should be.

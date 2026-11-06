@@ -5463,7 +5463,14 @@ test("hovering an item toast shows the item's tooltip and holds its fade", funct
 		end
 	end
 	check(itemToast ~= nil and coinToast ~= nil, "both toasts are up")
-	checkEqual(true, rawget(itemToast.hover, "mouseMotionEnabled"), "the item row takes the pointer")
+	checkEqual(false, ns.db.profile.lootToastTooltips, "tooltips ship off")
+	checkEqual(false, rawget(itemToast.hover, "mouseMotionEnabled"), "so even the item row lets the pointer through")
+	itemToast.hover.scripts.OnEnter(itemToast.hover)
+	check(not env.GameTooltip:IsOwned(itemToast.hover), "and shows no tooltip")
+
+	ns.BuildLootToastOptions().args.tooltipsToggle.set(nil, true)
+	checkEqual(true, ns.db.profile.lootToastTooltips, "the panel's checkbox turns them on")
+	checkEqual(true, rawget(itemToast.hover, "mouseMotionEnabled"), "the item row already up takes the pointer")
 	checkEqual(false, rawget(coinToast.hover, "mouseMotionEnabled"), "the coin row doesn't")
 
 	local paused, resumed = false, false
@@ -5485,6 +5492,25 @@ test("hovering an item toast shows the item's tooltip and holds its fade", funct
 	ns.ReleaseLootToast(itemToast)
 	check(not env.GameTooltip:IsOwned(itemToast.hover), "a row that goes while hovered takes its tooltip with it")
 	checkEqual(false, rawget(itemToast.hover, "mouseMotionEnabled"), "and stops taking the pointer in the pool")
+
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ITEM_SELF:format(link))
+	local again
+	for _, frame in ipairs(env.__state.createdFrames) do
+		local text = rawget(frame, "text")
+		if
+			rawget(frame, "shown")
+			and rawget(frame, "fade")
+			and text
+			and text.text
+			and text.text:find("Linen Cloth", 1, true)
+		then
+			again = frame
+		end
+	end
+	again.hover.scripts.OnEnter(again.hover)
+	ns.BuildLootToastOptions().args.tooltipsToggle.set(nil, false)
+	check(not env.GameTooltip:IsOwned(again.hover), "turning them off closes a tooltip being read")
+	checkEqual(false, rawget(again.hover, "mouseMotionEnabled"), "and the row lets the pointer through again")
 end)
 
 --[[
@@ -5536,6 +5562,7 @@ end)
 test("a row under the pointer keeps its paused fade when new loot arrives", function()
 	local ns, env = loadAddon()
 	ns.db.profile.lootToasts = true
+	ns.db.profile.lootToastTooltips = true
 	ns.db.profile.lootToastsIntroSeen = true
 	knownItem(env, 2589, "Linen Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)
 	knownItem(env, 2592, "Wool Cloth", 1, ns.ITEM_CLASS_TRADE_GOODS)

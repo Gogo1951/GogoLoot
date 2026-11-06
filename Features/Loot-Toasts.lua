@@ -388,9 +388,18 @@ end
     far across the screen. The fade pauses while the pointer is on the row and
     resumes where it left off, so a row can't vanish from under a tooltip being read.
 ]]
+--[[
+    Whether a row's hover area takes the pointer: only an item row, and only
+    with Enable Tooltips on Loot Toast Items on. Off, the whole stack is mouse
+    transparent, so hovering and clicking go straight to the world beneath.
+]]
+local function TakesPointer(toast)
+	return toast.itemLink ~= nil and ns.db ~= nil and ns.db.profile.lootToastTooltips == true
+end
+
 local function OnToastEnter(hover)
 	local toast = hover:GetParent()
-	if not toast.itemLink then
+	if not TakesPointer(toast) then
 		return
 	end
 	toast.hovered = true
@@ -456,7 +465,7 @@ local function AcquireToast()
         THE TRAP: the row is far wider than its text (RowWidth is a ceiling), so
         a mouse-enabled row would put a long invisible strip over the world. The
         hover area is a child covering only the icon and text (see Measure), it
-        takes the pointer only on an item row (see PushToast), and it never
+        takes the pointer only on an item row with tooltips on (see TakesPointer), and it never
         takes clicks, so a click on a toast still reaches whatever is behind it.
     ]]
 	toast.hover = CreateFrame("Frame", nil, toast)
@@ -627,7 +636,7 @@ local function EnterToast(icon, text, itemLink, countItem, countQuantity, qualit
 	SetToastQuality(toast, quality)
 	toast.baseText, toast.countItem, toast.countQuantity = text, countItem, countQuantity
 	toast.itemLink = itemLink
-	toast.hover:SetMouseMotionEnabled(itemLink ~= nil)
+	toast.hover:SetMouseMotionEnabled(TakesPointer(toast))
 	WriteToastText(toast)
 	toast:SetAlpha(1)
 	toast:Show()
@@ -772,6 +781,18 @@ function ns.ApplyLootToastLimit()
 		ns.ReleaseLootToast(active[1])
 	end
 	ns.RefreshLootToastSamples()
+end
+
+-- Enable Tooltips on Loot Toast Items just changed: the rows already up follow it now.
+---@return nil
+function ns.ApplyLootToastTooltips()
+	for _, toast in ipairs(active) do
+		local takes = TakesPointer(toast)
+		if not takes and toast.hovered then
+			OnToastLeave(toast.hover)
+		end
+		toast.hover:SetMouseMotionEnabled(takes)
+	end
 end
 
 local MAX_SAMPLE_QUALITY = 4

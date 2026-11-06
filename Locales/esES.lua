@@ -572,6 +572,10 @@ L["LOOT_TOASTS_PANEL_DESCRIPTION"] =
 L["LOOT_TOASTS_ENABLE"] = "Activar Avisos de botín"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = "Muestra un aviso para el botín que elijas en Filtros, el tuyo y el de tu grupo."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Activar descripciones de objetos en Avisos de botín"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Muestra la descripción de un objeto al señalar su aviso. Desactivado, los avisos ignoran el ratón, así que puedes señalar y pulsar enemigos y cadáveres detrás de ellos."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Desactivar mensajes de botín estándar"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Activar mensajes de botín estándar"

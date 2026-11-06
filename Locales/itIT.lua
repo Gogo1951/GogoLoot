@@ -570,6 +570,10 @@ L["LOOT_TOASTS_PANEL_DESCRIPTION"] =
 L["LOOT_TOASTS_ENABLE"] = "Attiva Avvisi del bottino"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = "Mostra un avviso per il bottino che scegli in Filtri, tuo e del tuo gruppo."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Attiva tooltip degli oggetti negli Avvisi del bottino"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Mostra il tooltip di un oggetto quando punti il suo avviso. Disattivato, gli avvisi ignorano il mouse, così puoi puntare e cliccare mostri e cadaveri dietro di essi."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Disattiva messaggi standard del bottino"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Attiva messaggi standard del bottino"

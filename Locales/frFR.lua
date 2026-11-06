@@ -578,6 +578,10 @@ L["LOOT_TOASTS_ENABLE"] = "Activer les notifications de butin"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 	"Affiche une notification pour le butin choisi dans Filtres, le vôtre et celui de votre groupe."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Activer les infobulles des objets des notifications de butin"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Affiche l'infobulle d'un objet quand vous pointez sa notification. Désactivé, les notifications ignorent la souris : vous pouvez pointer et cliquer les monstres et les cadavres derrière elles."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Désactiver les messages de butin standard"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Activer les messages de butin standard"
