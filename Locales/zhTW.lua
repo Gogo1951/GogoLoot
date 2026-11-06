@@ -557,6 +557,10 @@ L["LOOT_TOASTS_PANEL_DESCRIPTION"] =
 L["LOOT_TOASTS_ENABLE"] = "啟用拾取提示"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = "依照篩選中的選擇，為你和隊伍拾取的戰利品顯示提示。"
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "啟用拾取提示物品滑鼠提示"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"指向拾取提示時顯示物品的滑鼠提示。關閉時拾取提示不回應滑鼠，可以指向並點擊其後方的怪物和屍體。"
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "停用標準拾取訊息"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "啟用標準拾取訊息"

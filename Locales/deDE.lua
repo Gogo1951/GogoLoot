@@ -578,6 +578,10 @@ L["LOOT_TOASTS_ENABLE"] = "Beutehinweise aktivieren"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 	"Zeigt einen Beutehinweis für die Beute, die du unter Filter auswählst, deine eigene und die deiner Gruppe."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Tooltips für Gegenstände in Beutehinweisen aktivieren"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Zeigt den Tooltip eines Gegenstands, wenn du auf seinen Hinweis zeigst. Aus ignorieren die Hinweise die Maus, sodass du Gegner und Leichen dahinter anvisieren und anklicken kannst."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Standard-Beutenachrichten deaktivieren"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Standard-Beutenachrichten aktivieren"

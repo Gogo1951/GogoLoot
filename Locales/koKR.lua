@@ -585,6 +585,10 @@ L["LOOT_TOASTS_ENABLE"] = "획득 알림 사용"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 	"필터에서 선택한 전리품을 알림으로 표시합니다. 내 전리품과 파티의 전리품 모두 해당됩니다."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "획득 알림 아이템 툴팁 사용"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"알림을 가리키면 아이템 툴팁을 보여줍니다. 끄면 알림이 마우스를 무시하므로 뒤에 있는 몹과 시체를 가리키고 클릭할 수 있습니다."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "기본 획득 메시지 사용 안 함"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "기본 획득 메시지 사용"

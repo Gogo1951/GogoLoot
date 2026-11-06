@@ -556,6 +556,10 @@ L["LOOT_TOASTS_PANEL_DESCRIPTION"] =
 L["LOOT_TOASTS_ENABLE"] = "Enable Loot Toasts"
 -- Also the tooltip of the same switch in the General panel's Features section.
 L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = "Shows a toast for the loot you pick under Filters, yours and your group's."
+-- The checkbox under Enable Loot Toasts, and its tooltip.
+L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Enable Tooltips on Loot Toast Items"
+L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
+	"Shows an item's tooltip when you point at its toast. Off, the toasts ignore the mouse, so you can point at and click mobs and corpses behind them."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Disable Standard Loot Messages"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Enable Standard Loot Messages"
