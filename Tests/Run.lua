@@ -5497,7 +5497,13 @@ test("hovering an item toast shows the item's tooltip and holds its fade", funct
 	local again
 	for _, frame in ipairs(env.__state.createdFrames) do
 		local text = rawget(frame, "text")
-		if rawget(frame, "shown") and rawget(frame, "fade") and text and text.text and text.text:find("Linen Cloth", 1, true) then
+		if
+			rawget(frame, "shown")
+			and rawget(frame, "fade")
+			and text
+			and text.text
+			and text.text:find("Linen Cloth", 1, true)
+		then
 			again = frame
 		end
 	end
