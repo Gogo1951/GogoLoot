@@ -419,7 +419,7 @@ end
 --[[
     What a message looks like when it arrives, under the toggle that decides
     whether it goes out: the Announcements panel's posts, Automated Rolls' two
-    prints, and the Automated Opening panel's Ignore notice. Each panel runs
+    prints, and the Openables List's Ignore notice. Each panel runs
     the real template, a sent one through ns:BuildAnnounceMessage and a printed
     one through ns.BuildPrintMessage, so an example can't drift from its
     message in any language. The line is drawn in the colors of where it goes:

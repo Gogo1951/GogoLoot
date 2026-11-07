@@ -46,7 +46,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s proviene da un boss di incursione o mondiale, quindi Apertura automatica lo lascerà chiuso perché tu possa scambiarlo o venderlo."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s può contenere un oggetto unico, quindi Apertura automatica lascerà che sia tu ad aprirlo."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s è stato lasciato nella finestra del bottino perché tu lo raccolga."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Parte del bottino è rimasta sul cadavere."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -120,7 +120,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Impossibile consegnare il bottino a %s: %s"
 L["TAB_SPEEDY_LOOT"] = "Bottino rapido"
 L["TAB_AUTOMATED_ROLLS"] = "Tiri automatici"
 L["TAB_ITEM_OVERRIDES"] = "Eccezioni per oggetto"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "Regole per personaggio"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "Annunci del bottino"
@@ -263,14 +263,17 @@ L["ITEM_LOADING"] = "Caricamento... (ID: %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"Non tira mai su ricette, libri, cavalcature, mascotte o leggendari, e tira sugli oggetti Si vincola alla raccolta o di missione solo se sono in Eccezioni per oggetto."
+	"Non tira mai su ricette, libri, cavalcature, mascotte o leggendari, tira sugli oggetti di missione solo se sono in Eccezioni per oggetto, e sugli oggetti Si vincola alla raccolta solo se sono in Eccezioni per oggetto o se Includi Si vincola alla raccolta è attivo."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Ricette, libri, cavalcature, mascotte e leggendari restano sempre a te."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "Chat di gruppo"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Esempio: %s"
@@ -315,8 +318,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"Aggiunge alle tue Macro generali una macro chiamata %s, con l'icona delle monete d'oro, così ogni personaggio del tuo account può trascinarla su una barra delle azioni."
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Tira 1-100"
@@ -449,6 +452,9 @@ L["ROLLS_IN_RAID"] = "In incursione"
 L["ROLLS_UP_TO_QUALITY"] = "Fino alla qualità"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: la qualità più alta su cui tira GogoLoot."
 L["ROLLS_ACTION_CHOOSE"] = "%s: il tiro che fa GogoLoot. Manuale lascia il tiro a te."
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Includi Si vincola alla raccolta"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"Fa tirare anche sugli oggetti Si vincola alla raccolta i tiri qui sopra e le Regole per personaggio. Disattivato di base, perché sul bottino Si vincola alla raccolta di solito conviene tirare da sé."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Tiri in gruppo e incursione"
 L["ROLLS_MESSAGES_HEADER"] = "Messaggi dei tiri"
@@ -470,7 +476,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Stabilisce il tiro per oggetti specifici, prima delle impostazioni di qualità. È l'unico modo in cui GogoLoot tira su un oggetto Si vincola alla raccolta o di missione."
+	"Stabilisce il tiro per oggetti specifici, prima delle impostazioni di qualità. È l'unico modo in cui GogoLoot tira su un oggetto di missione, o su un oggetto Si vincola alla raccolta finché Includi Si vincola alla raccolta è disattivato."
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "Queste impostazioni non vengono usate finché la funzione Tiri automatici è disattivata."
 L["ITEM_OVERRIDES_ENABLE"] = "Attiva Eccezioni per oggetto"
@@ -489,13 +495,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"Inserisci l'ID di un oggetto o trascina qui un oggetto per aggiungerlo all'elenco, impostato su Manuale."
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"Lascia a te l'equipaggiamento con le statistiche che scegli, personaggio per personaggio: imposta %s su Manuale per il tuo %s, e l'equipaggiamento con %s mantiene la sua finestra del tiro mentre tutto il resto viene tirato come al solito. Le Eccezioni per oggetto hanno comunque la precedenza."
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	"Vuoi equipaggiamento con %s per il tuo %s? Spunta %s e i tipi di armatura e arma che usi. L'equipaggiamento che corrisponde resta a te da tirare, e Tutto il resto pensa al resto. Le Eccezioni per oggetto hanno comunque la precedenza."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -503,10 +509,44 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "Attributi primari"
 L["CHARACTER_RULES_SECONDARY"] = "Attributi secondari"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "Tiro automatico standard"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s: Manuale lascia a te, su questo personaggio, l'equipaggiamento con questa statistica, finestra del tiro compresa. Tiro automatico standard ci tira come su qualsiasi altro oggetto."
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "Tipi di armatura"
+L["CHARACTER_RULES_WEAPONS"] = "Tipi di arma"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "Altre armature e armi"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	"Canne da pesca, armi Varie e qualsiasi armatura o arma non indicata dai tipi qui sopra."
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Tutto il resto"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "Equipaggiamento che non corrisponde"
+L["CHARACTER_RULES_RESET"] = "Ripristina i valori della classe"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "Verifica"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"Come si tirerebbe su questi verdi Si vincola all'equipaggiamento per questo personaggio, con le caselle qui sopra."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Finestra di tiro"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Tiro automatico"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "Statistiche lette dalle Regole per personaggio: %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Equipaggiamento di basso livello"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Tiri automatici disattivati"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "Impostazioni di qualità"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "Classe: %s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "Bramosia automatica sull'equipaggiamento di basso livello"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	"Tira Bramosia su armature e armi il cui livello richiesto è almeno così inferiore al tuo, che corrispondano o no, fino alla qualità di Tutto il resto, così l'equipaggiamento superato non ti trattiene mentre sali di livello."
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Disattivato"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Il tuo livello - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"I Tiri automatici ora sono attivi: l'equipaggiamento che vuole ogni personaggio resta a te da tirare, e sul resto si tira Bramosia. Cambialo in Opzioni > AddOn > GogoLoot > Tiri automatici."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -536,8 +576,7 @@ L["TRADE_CHANNEL"] = "Canale"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s invia ogni riepilogo al tuo partner di scambio. Chat di gruppo lo pubblica nel gruppo o nell'incursione, e fuori da un gruppo lo sussurra comunque. Solo io lo scrive nella tua chat e non lo invia a nessuno."
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "Chat di gruppo"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "Solo io"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "Pubblica in chat un riepilogo quando questo scambio si conclude."
 L["TRADE_CHECKBOX_LABEL"] = "Annuncia"
@@ -770,20 +809,17 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Per tutti i personaggi"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Il tuo livello di %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "Attiva notifiche di Ignora"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Ti avvisa in chat quando GogoLoot lascia stare un contenitore perché l'Elenco apribili dice Ignora, e ti spiega perché."
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"Ogni contenitore che GogoLoot conosce, e cosa ne fa Apertura automatica. Ignora tiene chiuso un contenitore, e Bottino rapido lo lascia per te nella finestra del bottino. Le tue modifiche valgono per tutti i tuoi personaggi."
+	"Ogni contenitore che GogoLoot conosce, e cosa ne fa Apertura automatica. Ignora tiene chiuso un contenitore. Le tue modifiche valgono per tutti i tuoi personaggi."
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"Finché la funzione Apertura automatica è disattivata si usa solo Ignora: impedisce comunque a Bottino rapido di prenderli."
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
-	"Queste impostazioni non vengono usate finché Apertura automatica e Bottino rapido sono disattivati."
+	"Queste impostazioni non vengono usate finché la funzione Apertura automatica è disattivata."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Riporta l'elenco ai valori predefiniti: ogni oggetto torna alla sua impostazione predefinita, gli oggetti rimossi ritornano e quelli aggiunti spariscono."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1146,7 +1182,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "Durata del tiro"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Per quanto tempo resta aperto un tiro."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Annuncia in"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Dove vanno le chiamate dei tiri, i pareggi e le pause."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "Chat di gruppo"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"Avviso incursione ripiega sulla chat di gruppo quando non sei capo o assistente. I vincitori vanno sempre nella chat di gruppo."
 -- Argument: the seconds.

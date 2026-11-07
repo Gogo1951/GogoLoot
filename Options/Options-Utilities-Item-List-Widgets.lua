@@ -53,6 +53,10 @@ local function OnItemLinkWidgetEnter(frame)
     ]]
 	local option = self:GetUserDataTable().option
 	local note = option and option.desc
+	-- A note that waits on the item (Character Rules' Sanity Check) is a function, read as the tooltip opens.
+	if type(note) == "function" then
+		note = note()
+	end
 	if note then
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddLine(GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")

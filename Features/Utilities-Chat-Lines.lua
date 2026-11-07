@@ -178,6 +178,7 @@ end
     player.
 ]]
 local LEADING_HISTORY_LINK = "^|H.-|h.-|h:?%s*"
+local AFTER_LEADING_HISTORY_LINK = LEADING_HISTORY_LINK .. "(.*)$"
 local HISTORY_LINK_CAPTURE = "^(|H.-|h.-|h)"
 
 ---@param format any
@@ -299,7 +300,7 @@ function ns.IsRollChatterMessage(message)
 	if type(message) ~= "string" then
 		return false
 	end
-	local rest = string.match(message, LEADING_HISTORY_LINK .. "(.*)$")
+	local rest = string.match(message, AFTER_LEADING_HISTORY_LINK)
 	if rest and rest ~= "" and FindItemLink(rest) == rest then
 		return true
 	end

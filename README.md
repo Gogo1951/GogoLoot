@@ -24,7 +24,7 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 1. Install the add-on, ideally using [CurseForge](https://www.curseforge.com/wow/addons/gogoloot) or [Wago](https://addons.wago.io/addons/gogoloot).
 2. Type `/gogo`, or Shift + Middle-Click the mini-map button, to open the Options Interface.
-3. Turn on Automated Rolls and pick how far it goes. It starts off, as a safety.
+3. Automated Rolls is already on: gear your character wants waits for you, and the rest gets Greed. Tick what each character wants under Character Rules.
 4. Raid leading? Turn on Automated Master Looting and pick who gets each quality.
 5. _"If you ain't first, you're last."_
 
@@ -32,7 +32,7 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 🥡 **Automated Opening** // Clams, crates, coin purses, and unlocked lockboxes open in your bags on their own. Lockbox tooltips show the Lockpicking skill each one needs.
 
-🎲 **Automated Rolls** // Need, Greed, or Pass on everything up to the quality you pick, set apart for parties and raids. Give an item a roll of its own, or leave Intellect gear to you on your Warrior.
+🎲 **Automated Rolls** // Gear each character wants waits for you, and the rest gets Need, Greed, or Pass up to the quality you pick, set apart for parties and raids. Give any item a roll of its own.
 
 ⚡ **Speedy Loot** // Corpses empty the moment you open them, with no loot window in the way. Hold Shift whenever you want a look.
 

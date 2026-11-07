@@ -122,7 +122,7 @@ function ns.BuildLootMasterOptions()
 	local keepValues, keepSorting = NumberChoices(ns.DROPS_KEEP_RAIDS, "LOOT_MASTER_KEEP_RAIDS")
 	local channelValues = {
 		[ns.ROLL_CHANNEL_RAID_WARNING] = RAID_WARNING,
-		[ns.ROLL_CHANNEL_GROUP] = L["LOOT_MASTER_CHANNEL_GROUP"],
+		[ns.ROLL_CHANNEL_GROUP] = L["CHANNEL_GROUP_CHAT"],
 	}
 	local channelSorting = { ns.ROLL_CHANNEL_RAID_WARNING, ns.ROLL_CHANNEL_GROUP }
 

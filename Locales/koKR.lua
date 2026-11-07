@@ -45,7 +45,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s: 공격대 또는 필드 우두머리에게서 얻은 아이템이므로, 거래하거나 판매할 수 있도록 자동 열기가 열지 않고 남겨 둡니다."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: 고유 아이템이 들어 있을 수 있어, 직접 열 수 있도록 자동 열기가 열지 않고 남겨 둡니다."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s: 직접 획득할 수 있도록 전리품 창에 남겨 두었습니다."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s 일부 전리품이 시체에 남았습니다."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -121,7 +121,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "%s님에게 전리품을 주지 못했습니�
 L["TAB_SPEEDY_LOOT"] = "빠른 획득"
 L["TAB_AUTOMATED_ROLLS"] = "자동 주사위"
 L["TAB_ITEM_OVERRIDES"] = "아이템별 설정"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "캐릭터별 규칙"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "전리품 공지"
@@ -269,15 +269,18 @@ L["ITEM_LOADING"] = "불러오는 중... (ID: %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"제조법, 책, 탈것, 애완동물, 전설 아이템에는 절대 주사위를 굴리지 않으며, 획득 시 귀속 아이템과 퀘스트 아이템은 아이템별 설정에 있을 때만 굴립니다."
+	"제조법, 책, 탈것, 애완동물, 전설 아이템에는 절대 주사위를 굴리지 않으며, 퀘스트 아이템은 아이템별 설정에 있을 때만, 획득 시 귀속 아이템은 아이템별 설정에 있거나 획득 시 귀속 포함이 켜져 있을 때만 굴립니다."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"제조법, 책, 탈것, 애완동물, 전설 아이템은 항상 직접 분배하도록 남겨 둡니다."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "파티 대화"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "예시: %s"
@@ -323,8 +326,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"금화 아이콘이 붙은 %s 매크로를 일반 매크로에 추가해, 계정의 모든 캐릭터가 행동 단축바로 끌어다 놓을 수 있게 합니다."
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "1-100 굴리기"
@@ -460,6 +463,9 @@ L["ROLLS_UP_TO_QUALITY"] = "최대 품질"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: GogoLoot가 주사위를 굴리는 가장 높은 품질입니다."
 L["ROLLS_ACTION_CHOOSE"] =
 	"%s: GogoLoot가 선택할 주사위입니다. 수동은 직접 선택하도록 남겨 둡니다."
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "획득 시 귀속 포함"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"위 주사위 설정과 캐릭터별 규칙이 획득 시 귀속 아이템에도 주사위를 굴립니다. 획득 시 귀속 전리품은 보통 직접 굴릴 만하므로 기본값은 꺼짐입니다."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "파티 및 공격대 주사위"
 L["ROLLS_MESSAGES_HEADER"] = "주사위 메시지"
@@ -481,7 +487,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"특정 아이템의 주사위를 품질 설정보다 우선하여 정합니다. GogoLoot가 획득 시 귀속 아이템이나 퀘스트 아이템에 주사위를 굴리는 유일한 방법입니다."
+	"특정 아이템의 주사위를 품질 설정보다 우선하여 정합니다. GogoLoot가 퀘스트 아이템에, 또는 획득 시 귀속 포함이 꺼져 있을 때 획득 시 귀속 아이템에 주사위를 굴리는 유일한 방법입니다."
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "자동 주사위가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
 L["ITEM_OVERRIDES_ENABLE"] = "아이템별 설정 사용"
@@ -502,13 +508,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"아이템 ID를 입력하거나 아이템을 여기로 끌어다 놓으면 수동으로 설정되어 목록에 추가됩니다."
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"선택한 능력치가 붙은 장비를 캐릭터별로 직접 처리하도록 남겨 둡니다. 예를 들어 %s 능력치를 '수동'으로 설정하면 %s 캐릭터에서는 %s 장비에 주사위 창이 그대로 뜨고, 나머지는 평소처럼 주사위를 굴립니다. 아이템별 설정이 여전히 우선합니다."
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	"%s 장비를 %s 캐릭터가 갖고 싶나요? %s 능력치와 사용하는 방어구 및 무기 종류를 체크하세요. 조건에 맞는 장비는 직접 굴리도록 남겨 두고, 나머지는 '그 밖의 장비'가 처리합니다. 아이템별 설정이 여전히 우선합니다."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -516,10 +522,44 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "주 능력치"
 L["CHARACTER_RULES_SECONDARY"] = "보조 능력치"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "기본 자동 주사위"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s: '수동'은 이 캐릭터에서 이 능력치가 붙은 장비를 주사위 창과 함께 직접 처리하도록 남겨 둡니다. '기본 자동 주사위'는 다른 아이템처럼 주사위를 굴립니다."
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "방어구 종류"
+L["CHARACTER_RULES_WEAPONS"] = "무기 종류"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "기타 방어구 및 무기"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	"낚싯대, 기타 무기, 그리고 위 종류에 없는 모든 방어구나 무기입니다."
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "그 밖의 장비"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "조건에 맞지 않는 장비"
+L["CHARACTER_RULES_RESET"] = "직업 기본값으로 초기화"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "점검"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"위 상자 설정대로라면 이 캐릭터에게 이 착용 시 귀속 고급 아이템들이 어떻게 굴려지는지 보여줍니다."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "주사위 창"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "자동 주사위"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "캐릭터별 규칙이 읽는 능력치: %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "저레벨 장비"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "자동 주사위 꺼짐"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "품질 설정"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "직업: %s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "저레벨 장비에 자동 차비"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	"요구 레벨이 내 레벨보다 이만큼 이상 낮은 방어구와 무기에 일치 여부와 관계없이 그 밖의 장비의 품질까지 차비를 선택하므로, 레벨업 중 이미 지난 장비가 발목을 잡지 않습니다."
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "끄기"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "내 레벨 - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"자동 주사위가 이제 켜져 있습니다. 각 캐릭터가 원하는 장비는 직접 굴리도록 남겨 두고, 나머지는 차비를 선택합니다. 설정 > 애드온 > GogoLoot > 자동 주사위에서 바꿀 수 있습니다."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -549,8 +589,7 @@ L["TRADE_CHANNEL"] = "채널"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s: 각 요약을 거래 상대에게 보냅니다. 파티 대화: 파티나 공격대에 게시하며, 파티에 없을 때는 귓속말로 보냅니다. 나만 보기: 내 대화창에만 표시하고 아무에게도 보내지 않습니다."
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "파티 대화"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "나만 보기"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "이 거래가 완료되면 대화창에 거래 요약을 게시합니다."
 L["TRADE_CHECKBOX_LABEL"] = "공지"
@@ -785,20 +824,16 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "모든 캐릭터"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "내 %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "무시 알림 사용"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"열기 목록에서 무시로 설정되어 GogoLoot가 상자를 열지 않을 때, 그 이유와 함께 대화창으로 알려 줍니다."
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"GogoLoot가 아는 모든 상자와 자동 열기가 각 상자를 어떻게 처리하는지 보여 줍니다. 무시로 설정한 상자는 열지 않으며, 빠른 획득도 전리품 창에 남겨 둡니다. 변경 사항은 모든 캐릭터에 적용됩니다."
+	"GogoLoot가 아는 모든 상자와 자동 열기가 각 상자를 어떻게 처리하는지 보여 줍니다. 무시로 설정한 상자는 열지 않습니다. 변경 사항은 모든 캐릭터에 적용됩니다."
 -- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"자동 열기가 꺼져 있는 동안에는 무시 설정만 사용됩니다. 무시로 설정한 아이템은 여전히 빠른 획득이 가져가지 않습니다."
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
-	"자동 열기와 빠른 획득이 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
+L["OPENABLE_ITEMS_OFF_NOTE"] = "자동 열기가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"목록을 기본값으로 되돌립니다: 모든 아이템이 기본 설정으로 돌아가고, 제거한 아이템은 다시 나타나며, 추가한 아이템은 사라집니다."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1169,7 +1204,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "주사위 시간"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "주사위가 열려 있는 시간입니다."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "공지 채널"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "주사위 요청, 동점, 일시 중지를 알릴 곳입니다."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "파티 대화"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"공격대장이나 부공격대장이 아니면 공격대 경보 대신 파티 대화로 보냅니다. 승자는 항상 파티 대화로 알립니다."
 -- Argument: the seconds.

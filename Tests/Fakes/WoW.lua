@@ -109,6 +109,8 @@ function Fake.newEnvironment()
 		sounds = {},
 		-- Tooltip lines an item's hyperlink shows, by item id, for ItemStartsQuest.
 		hyperlinkTooltipLines = {},
+		spellDescriptions = {},
+		spellDataRequested = {},
 		-- Interaction windows (MerchantFrame, MailFrame, ...) currently open, by name.
 		shownFrames = {},
 		inCombat = false,
@@ -148,15 +150,6 @@ function Fake.newEnvironment()
 		["AceDB-3.0"] = {
 			New = function(_, _, defaults)
 				local db = { profile = {}, global = {}, char = {} }
-				--[[
-				    A test can seed what an earlier version saved (state.savedProfile)
-				    to drive the migrations, which read every profile through db.sv,
-				    the saved table itself. As in AceDB, the active profile is the
-				    same table there as db.profile.
-				]]
-				for key, value in pairs(state.savedProfile or {}) do
-					db.profile[key] = value
-				end
 				copyDefaults(db.profile, defaults.profile or {})
 				copyDefaults(db.global, defaults.global or {})
 				copyDefaults(db.char, defaults.char or {})
@@ -164,8 +157,31 @@ function Fake.newEnvironment()
 				    The character's own section is the same table under its key in
 				    db.sv.char, as in AceDB, so another character's can sit beside it.
 				]]
-				db.keys = { char = "Aero - Realm" }
-				db.sv = { profiles = { Default = db.profile }, char = { [db.keys.char] = db.char } }
+				db.keys = { char = state.characterKey or "Aero - Realm", profile = "Default" }
+				db.sv = {
+					profiles = { Default = db.profile },
+					char = { [db.keys.char] = db.char },
+					profileKeys = { [db.keys.char] = "Default" },
+				}
+				--[[
+				    Other characters a test seeds as already saved
+				    (state.savedCharacters, key to char section), each with a
+				    profile choice, as AceDB keeps them. A test can also seed
+				    other profiles (state.savedProfiles), a character's own
+				    profile choice (state.savedProfileKeys) and namespaces
+				    (state.savedNamespaces).
+				]]
+				for characterKey, section in pairs(state.savedCharacters or {}) do
+					db.sv.char[characterKey] = section
+					db.sv.profileKeys[characterKey] = "Default"
+				end
+				for profileName, profile in pairs(state.savedProfiles or {}) do
+					db.sv.profiles[profileName] = profile
+				end
+				for characterKey, profileName in pairs(state.savedProfileKeys or {}) do
+					db.sv.profileKeys[characterKey] = profileName
+				end
+				db.sv.namespaces = state.savedNamespaces
 				--[[
 				    Callbacks are kept rather than dropped so a test can fire
 				    OnProfileChanged the way AceDB would and exercise the real
@@ -757,7 +773,7 @@ function Fake.newEnvironment()
 			"",
 			"",
 			entry.stackCount or 1,
-			"",
+			entry.equipLocation or "",
 			0,
 			0,
 			entry.classId or 4,
@@ -780,7 +796,34 @@ function Fake.newEnvironment()
 		[13] = "Key",
 		[15] = "Miscellaneous",
 	}
-	local ITEM_SUBCLASS_NAMES = { ["15:2"] = "Companion Pets", ["15:5"] = "Mount" }
+	-- Plus the armor (4) and weapon (2) subclasses Character Rules lists.
+	local ITEM_SUBCLASS_NAMES = {
+		["15:2"] = "Companion Pets",
+		["15:5"] = "Mount",
+		["4:1"] = "Cloth",
+		["4:2"] = "Leather",
+		["4:3"] = "Mail",
+		["4:4"] = "Plate",
+		["4:6"] = "Shields",
+		["4:7"] = "Librams",
+		["4:8"] = "Idols",
+		["4:9"] = "Totems",
+		["2:0"] = "One-Handed Axes",
+		["2:1"] = "Two-Handed Axes",
+		["2:2"] = "Bows",
+		["2:3"] = "Guns",
+		["2:4"] = "One-Handed Maces",
+		["2:5"] = "Two-Handed Maces",
+		["2:6"] = "Polearms",
+		["2:7"] = "One-Handed Swords",
+		["2:8"] = "Two-Handed Swords",
+		["2:10"] = "Staves",
+		["2:13"] = "Fist Weapons",
+		["2:15"] = "Daggers",
+		["2:16"] = "Thrown",
+		["2:18"] = "Crossbows",
+		["2:19"] = "Wands",
+	}
 	env.C_Item = {
 		GetItemInfo = getItemInfo,
 		GetItemClassInfo = function(classId)
@@ -852,10 +895,13 @@ function Fake.newEnvironment()
 		DoesSpellExist = function()
 			return true
 		end,
-		GetSpellDescription = function()
-			return ""
+		-- A spell's description as the client words it, once loaded: state.spellDescriptions, or "" until then.
+		GetSpellDescription = function(spellIdentifier)
+			return state.spellDescriptions[spellIdentifier] or ""
 		end,
-		RequestLoadSpellData = function() end,
+		RequestLoadSpellData = function(spellIdentifier)
+			state.spellDataRequested[#state.spellDataRequested + 1] = spellIdentifier
+		end,
 	}
 	-- WoW Forever's shape: both getters, so ns.GetTooltipLines reads tooltip data rather than a scan tooltip.
 	env.C_TooltipInfo = {
@@ -1279,6 +1325,9 @@ function Fake.newEnvironment()
 	env.LOOT_ROLL_STARTED = "|HlootHistory:%d|h[Loot]|h: %s"
 	env.NEED = "Need"
 	env.GREED = "Greed"
+	-- Character Rules' Other section caption and its held off-hand row.
+	env.OTHER = "Other"
+	env.INVTYPE_HOLDABLE = "Held In Off-hand"
 	-- The stat names Character Rules captions its rows with and reads tooltips by, as Classic Era words them.
 	env.ITEM_MOD_STRENGTH_SHORT = "Strength"
 	env.ITEM_MOD_AGILITY_SHORT = "Agility"
@@ -1300,6 +1349,7 @@ function Fake.newEnvironment()
 	env.ITEM_MOD_MANA_REGENERATION_SHORT = "Mana Regeneration"
 	env.ITEM_MOD_POWER_REGEN0_SHORT = "Mana Per 5 Sec."
 	-- The full stat-line formats the tooltip prints, which Character Rules matches tooltip lines against.
+	env.ITEM_SPELL_TRIGGER_ONEQUIP = "Equip:"
 	env.ITEM_MOD_STRENGTH = "%c%d Strength"
 	env.ITEM_MOD_AGILITY = "%c%d Agility"
 	env.ITEM_MOD_STAMINA = "%c%d Stamina"

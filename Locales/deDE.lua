@@ -46,7 +46,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s stammt von einem Schlachtzugs- oder Weltboss, daher lässt Automatisches Öffnen es ungeöffnet, damit du es handeln oder verkaufen kannst."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s kann einen einzigartigen Gegenstand enthalten, daher überlässt Automatisches Öffnen dir das Öffnen."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s wurde im Beutefenster liegen gelassen, damit du es selbst plündern kannst."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Ein Teil der Beute ist an der Leiche liegen geblieben."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -120,7 +120,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Beute konnte nicht an %s vergeben werden: %s"
 L["TAB_SPEEDY_LOOT"] = "Blitz-Plündern"
 L["TAB_AUTOMATED_ROLLS"] = "Automatisches Würfeln"
 L["TAB_ITEM_OVERRIDES"] = "Gegenstandsausnahmen"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "Charakterregeln"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "Beuteankündigungen"
@@ -265,15 +265,18 @@ L["ITEM_LOADING"] = "Wird geladen... (ID: %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"Auf Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände wird nie gewürfelt, auf beim Aufheben gebundene Gegenstände und Questgegenstände nur, wenn sie in den Gegenstandsausnahmen stehen."
+	'Auf Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände wird nie gewürfelt, auf Questgegenstände nur, wenn sie in den Gegenstandsausnahmen stehen, und auf beim Aufheben gebundene Gegenstände nur, wenn sie in den Gegenstandsausnahmen stehen oder "Beim Aufheben gebunden einschließen" an ist.'
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände bleiben immer für dich liegen."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "Gruppenchat"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Beispiel: %s"
@@ -319,8 +322,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"Legt in deinen Allgemeinen Makros ein Makro namens %s mit Goldmünzen-Symbol an, damit jeder Charakter deines Accounts es auf eine Aktionsleiste ziehen kann."
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "1-100 würfeln"
@@ -455,6 +458,9 @@ L["ROLLS_IN_RAID"] = "Im Schlachtzug"
 L["ROLLS_UP_TO_QUALITY"] = "Bis zur Qualität"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: die höchste Qualität, auf die GogoLoot würfelt."
 L["ROLLS_ACTION_CHOOSE"] = "%s: der Wurf, den GogoLoot macht. Manuell überlässt dir den Wurf."
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Beim Aufheben gebunden einschließen"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"Lässt die Würfe oben und die Charakterregeln auch auf beim Aufheben gebundene Gegenstände würfeln. Standardmäßig aus, denn auf beim Aufheben gebundene Beute würfelt man meist besser selbst."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Würfeln in Gruppe und Schlachtzug"
 L["ROLLS_MESSAGES_HEADER"] = "Würfelnachrichten"
@@ -476,7 +482,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Legt den Wurf für bestimmte Gegenstände fest, vorrangig vor den Qualitätseinstellungen. Nur so würfelt GogoLoot auf einen beim Aufheben gebundenen Gegenstand oder Questgegenstand."
+	'Legt den Wurf für bestimmte Gegenstände fest, vorrangig vor den Qualitätseinstellungen. Nur so würfelt GogoLoot auf einen Questgegenstand oder, solange "Beim Aufheben gebunden einschließen" aus ist, auf einen beim Aufheben gebundenen Gegenstand.'
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "Diese Einstellungen werden nicht verwendet, solange Automatisches Würfeln aus ist."
 L["ITEM_OVERRIDES_ENABLE"] = "Gegenstandsausnahmen aktivieren"
@@ -495,13 +501,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"Gib eine Gegenstands-ID ein oder zieh einen Gegenstand hierher, um ihn mit der Einstellung Manuell der Liste hinzuzufügen."
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"Überlässt dir Ausrüstung mit den gewählten Eigenschaften, für jeden Charakter einzeln: Stell %s bei deinem %s auf Manuell, und Ausrüstung mit %s behält ihr Würfelfenster, während auf alles andere wie gewohnt gewürfelt wird. Gegenstandsausnahmen haben weiterhin Vorrang."
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	"Willst du %s-Ausrüstung auf deinem %s? Hake %s und die Rüstungs- und Waffentypen an, die du nutzt. Passende Ausrüstung bleibt dir zum Würfeln überlassen, und um den Rest kümmert sich Alles andere. Gegenstandsausnahmen haben weiterhin Vorrang."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -509,10 +515,44 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "Primäre Eigenschaften"
 L["CHARACTER_RULES_SECONDARY"] = "Sekundäre Eigenschaften"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "Automatischer Standardwurf"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s: Manuell überlässt dir Ausrüstung damit auf diesem Charakter, samt Würfelfenster. Automatischer Standardwurf würfelt darauf wie auf jeden anderen Gegenstand."
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "Rüstungstypen"
+L["CHARACTER_RULES_WEAPONS"] = "Waffentypen"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "Sonstige Rüstung und Waffen"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	"Angelruten, Waffen der Art Verschiedenes und jede Rüstung oder Waffe, die keiner der Typen oben nennt."
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Alles andere"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "Nicht passende Ausrüstung"
+L["CHARACTER_RULES_RESET"] = "Auf Klassenstandard zurücksetzen"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "Plausibilitätsprüfung"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"So würde auf diese beim Anlegen gebundenen grünen Gegenstände für diesen Charakter gewürfelt, wie die Kästchen oben stehen."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Würfelfenster"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Automatischer Wurf"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "Werte, die die Charakterregeln lesen: %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Niedrigstufige Ausrüstung"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Automatisches Würfeln aus"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "Qualitätseinstellungen"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "Klasse: %s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "Automatisch Gier auf niedrigstufige Ausrüstung"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	'Würfelt Gier auf Rüstung und Waffen, deren benötigte Stufe mindestens so weit unter deiner liegt, passend oder nicht, bis zur Qualität von "Alles andere", damit dich beim Leveln keine herausgewachsene Ausrüstung aufhält.'
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Aus"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Deine Stufe - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"Automatisches Würfeln ist jetzt an: Ausrüstung, die ein Charakter will, bleibt dir zum Würfeln überlassen, und auf den Rest wird Gier gewürfelt. Ändern kannst du das unter Optionen > AddOns > GogoLoot > Automatisches Würfeln."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -543,8 +583,7 @@ L["TRADE_CHANNEL"] = "Kanal"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s schickt jede Zusammenfassung an deinen Handelspartner. Gruppenchat postet sie in deine Gruppe oder deinen Schlachtzug und flüstert sie außerhalb einer Gruppe trotzdem. Nur ich zeigt sie in deinem eigenen Chat an und sendet sie an niemanden."
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "Gruppenchat"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "Nur ich"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "Postet eine Handelszusammenfassung im Chat, wenn dieser Handel abgeschlossen ist."
 L["TRADE_CHECKBOX_LABEL"] = "Ankündigen"
@@ -773,20 +812,16 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Für alle Charaktere"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Dein %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "Ignorier-Meldungen aktivieren"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Meldet dir im Chat, wenn GogoLoot einen Behälter in Ruhe lässt, weil er in der Behälterliste auf Ignorieren steht, und warum."
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"Jeder Behälter, den GogoLoot kennt, und was Automatisches Öffnen damit macht. Ignorieren lässt einen Behälter verschlossen, und Blitz-Plündern lässt ihn für dich im Beutefenster. Deine Änderungen gelten für alle deine Charaktere."
+	"Jeder Behälter, den GogoLoot kennt, und was Automatisches Öffnen damit macht. Ignorieren lässt einen Behälter verschlossen. Deine Änderungen gelten für alle deine Charaktere."
 -- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"Solange Automatisches Öffnen aus ist, wird nur Ignorieren verwendet: Es hält Blitz-Plündern weiterhin davon ab, diese zu nehmen."
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
-	"Diese Einstellungen werden nicht verwendet, solange Automatisches Öffnen und Blitz-Plündern aus sind."
+L["OPENABLE_ITEMS_OFF_NOTE"] = "Diese Einstellungen werden nicht verwendet, solange Automatisches Öffnen aus ist."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Setzt die Liste auf den Standard zurück: Jeder Gegenstand erhält wieder seine Standardeinstellung, entfernte Gegenstände kehren zurück und hinzugefügte verschwinden."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1153,7 +1188,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "Würfeldauer"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Wie lange das Würfeln offen bleibt."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Ankündigen in"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Wohin Würfelaufrufe, Gleichstände und Pausen gehen."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "Gruppenchat"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"Schlachtzugswarnung weicht auf den Gruppenchat aus, wenn du weder Anführer noch Assistent bist. Gewinner gehen immer in den Gruppenchat."
 -- Argument: the seconds.

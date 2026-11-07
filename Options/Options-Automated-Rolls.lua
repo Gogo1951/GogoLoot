@@ -167,6 +167,28 @@ function ns.BuildAutomatedRollOptions()
 	end
 
 	--[[
+        Include Bind on Pickup: off by default, since Bind on Pickup gear is
+        usually worth rolling on yourself. On, the rows above and Character
+        Rules' Everything Else roll on it too.
+    ]]
+	args.spacerBeforeBindOnPickup = HideWhenRollsOff(ns.OptionsSpacer(order))
+	order = order + 1
+	args.rollBindOnPickup = HideWhenRollsOff({
+		type = "toggle",
+		name = L["ROLLS_INCLUDE_BIND_ON_PICKUP"],
+		desc = L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"],
+		width = "full",
+		order = order,
+		get = function()
+			return ns.db.profile.rollBindOnPickup
+		end,
+		set = function(_, value)
+			ns.db.profile.rollBindOnPickup = value
+		end,
+	})
+	order = order + 1
+
+	--[[
         Roll Messages: what GogoLoot prints for its own rolls, and the game's
         roll lines it keeps out of chat. Both are part of Automated Rolls, so
         they leave with the switch, and neither does anything while it is off.

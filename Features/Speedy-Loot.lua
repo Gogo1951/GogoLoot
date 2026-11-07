@@ -11,10 +11,8 @@
     master-loot session race the distribution path and pop the candidate
     dropdown for items the engine would have placed automatically.
 
-    The window stays up whenever something is left in it: an item set to Ignore
-    on the Openables List, which is left for the player to take by hand, loot
-    the bags had no room for, or a Bind on Pickup item waiting on the client's
-    bind question. Auto Loot, which this depends on, is enforced by
+    The window stays up whenever something is left in it: loot the bags had no
+    room for, or a Bind on Pickup item waiting on the client's bind question. Auto Loot, which this depends on, is enforced by
     Features/Auto-Loot.lua.
 
     "The window" is whichever loot window is in use: the game's, or ElvUI's or
@@ -211,8 +209,8 @@ local function RunSpeedyLoot()
 	local space = ReadBagSpace()
 
 	--[[
-        Set whenever the window has to stay up: an item set to Ignore, one with
-        nowhere to go, or a Bind on Pickup item, whose bind question the client
+        Set whenever the window has to stay up: an item with nowhere to go, or
+        a Bind on Pickup item, whose bind question the client
         only asks while the loot session is open, so hiding the window would
         cancel it and leave the item behind. It drives both re-showing the
         window and the suppression flag below: the window is only suppressed
@@ -237,13 +235,13 @@ local function RunSpeedyLoot()
 			else
 				local itemLink = GetLootSlotLink(slotIndex)
 				local itemIdentifier = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
-				-- Ignore on the Openables List also leaves the item here for the player.
-				if itemIdentifier and ns:IsOpeningIgnored(itemIdentifier) then
-					if ns.db.profile.openingIgnoreNotifications then
-						ns:AnnounceItemOnce("MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW", itemIdentifier, itemLink)
-					end
-					leftBehind = true
-				elseif TakeSpaceFor(space, itemLink, itemIdentifier, quantity or 1) then
+				--[[
+                    Ignore on the Openables List only keeps a container sealed
+                    in the bags; it is looted like anything else. Leaving it in
+                    the window would lose it for good on loot that can't be
+                    reopened, such as a fishing catch (maintainer, 2026-11-07).
+                ]]
+				if TakeSpaceFor(space, itemLink, itemIdentifier, quantity or 1) then
 					LootSlot(slotIndex)
 					tookItem = true
 					if itemLink then

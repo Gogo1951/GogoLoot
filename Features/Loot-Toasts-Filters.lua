@@ -43,8 +43,9 @@ end
 
     ORDER HERE IS BY COST. The list lookup and the type are free, Bind on Pickup
     needs the full C_Item.GetItemInfo, which can answer nil on a cold cache;
-    that reads as "not Bind on Pickup", acceptable because the item was just
-    looted, the one moment the client is sure to have it cached. The quest
+    that reads as "not Bind on Pickup". The player's own loot is cached the
+    moment it is looted; another member's may not be, so ns.ShowLootToast asks
+    for an uncached one it turned down and judges it once more. The quest
     starter costs a tooltip, so it is last. A quality nobody can read passes a
     rarity row: a toast is a display, and silently swallowing something that
     was looted is the worse failure.

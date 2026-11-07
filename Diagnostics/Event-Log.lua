@@ -43,15 +43,17 @@ ns.MESSAGE_ID_FILTERED_EVENTS = {
 --[[
     The ids GogoLoot acts on, which are the filter's allowlist: the master-loot
     errors and the trade results, resolved through the same one walk the live
-    handlers use, and the inventory-full id Automated Opening pauses on, through
-    its own test. Built on first use, not at load, like the live handlers' maps:
+    handlers use, and the pickups the bags refused (inventory full, which also
+    pauses Automated Opening, and a unique item already carried), through the
+    test Speedy Loot's warning uses. Built on first use, not at load, like the
+    live handlers' maps:
     the walk scans the client's whole message table, and nothing needs it until
     a message fires while logging.
 ]]
 local correlatedMessageIds
 
 local function IsCorrelatedMessageId(messageID)
-	if ns.IsBagFullErrorID(messageID) then
+	if ns.IsLootBounceErrorID(messageID) then
 		return true
 	end
 	if not correlatedMessageIds then

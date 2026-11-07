@@ -57,6 +57,7 @@ Locales/zhTW.lua
 Data/Flavor.lua
 Data/Data.lua
 Data/TBC/Character-Rule-Stats-TBC.lua
+Data/TBC/Character-Rule-Gear-Types-TBC.lua
 Data/TBC/Default-Item-Lists-TBC.lua
 Data/TBC/Lockbox-Skill-Levels-TBC.lua
 Data/TBC/Openable-Items-TBC.lua
@@ -67,6 +68,7 @@ Data/Default-Settings.lua
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Bags.lua
 Features/Utilities-Scan-Tooltip.lua
 Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua

@@ -44,7 +44,6 @@ L["MESSAGE_ITEM_IGNORED"] = "%s is set to Ignore, so Automated Opening will leav
 L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s comes from a raid or world boss, so Automated Opening will leave it unopened for you to trade or sell."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s may hold a unique item, so Automated Opening will leave it for you to open."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s was left in the loot window for you to loot yourself."
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Some loot was left behind on the corpse."
 --[[
@@ -117,7 +116,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Couldn't give loot to %s: %s"
 L["TAB_SPEEDY_LOOT"] = "Speedy Loot"
 L["TAB_AUTOMATED_ROLLS"] = "Automated Rolls"
 L["TAB_ITEM_OVERRIDES"] = "Item Overrides"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "Character Rules"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "Loot Announcements"
@@ -258,14 +257,17 @@ L["ITEM_LOADING"] = "Loading... (ID: %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"It never rolls on recipes, books, mounts, pets, or legendaries, and rolls on Bind on Pickup or quest items only when they're on Item Overrides."
+	"It never rolls on recipes, books, mounts, pets, or legendaries, rolls on quest items only when they're on Item Overrides, and rolls on Bind on Pickup items only when they're on Item Overrides or Include Bind on Pickup is on."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Recipes, books, mounts, pets, and legendaries are always left for you."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "Group Chat"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Example: %s"
@@ -310,8 +312,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"Adds a macro named %s, with a gold coins icon, to your General Macros, so every character on your account can drag it to an action bar."
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Roll 1-100"
@@ -439,6 +441,9 @@ L["ROLLS_IN_RAID"] = "In Raid"
 L["ROLLS_UP_TO_QUALITY"] = "Up to Quality"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: the highest quality GogoLoot rolls on."
 L["ROLLS_ACTION_CHOOSE"] = "%s: the roll GogoLoot makes. Manual leaves the roll to you."
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Include Bind on Pickup"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"Lets the rolls above and Character Rules roll on Bind on Pickup items too. Off by default, since Bind on Pickup loot is usually worth rolling on yourself."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Party and Raid Rolls"
 L["ROLLS_MESSAGES_HEADER"] = "Roll Messages"
@@ -460,7 +465,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Sets the roll for specific items, ahead of the quality settings. It's the only way GogoLoot will roll on a Bind on Pickup or quest item."
+	"Sets the roll for specific items, ahead of the quality settings. It's the only way GogoLoot will roll on a quest item, or on a Bind on Pickup item while Include Bind on Pickup is off."
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "These settings aren't being used while Automated Rolls is off."
 L["ITEM_OVERRIDES_ENABLE"] = "Enable Item Overrides"
@@ -476,13 +481,13 @@ L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "Remove this item and its roll action from 
 L["ITEM_OVERRIDES_ADD_DESCRIPTION"] = "Enter an item ID or drag an item here to add it to the list, set to Manual."
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"Leaves gear with the stats you pick to you, character by character: set %s to Manual on your %s, and %s gear keeps its roll window while everything else rolls as usual. Item Overrides still come first."
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	"Want %s gear on your %s? Tick %s and the armor and weapon types you use. Gear that matches is left for you to roll, and Everything Else takes care of the rest. Item Overrides still come first."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -490,10 +495,44 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "Primary Attributes"
 L["CHARACTER_RULES_SECONDARY"] = "Secondary Attributes"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "Standard Automated Roll"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s: Manual leaves gear with it to you on this character, roll window and all. Standard Automated Roll rolls it like any other item."
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "Armor Types"
+L["CHARACTER_RULES_WEAPONS"] = "Weapon Types"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "Other Armor and Weapons"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	"Fishing Poles, Miscellaneous weapons, and any armor or weapon the types above don't name."
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Everything Else"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "Gear That Doesn't Match"
+L["CHARACTER_RULES_RESET"] = "Reset to Class Defaults"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "Sanity Check"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"How these Bind on Equip greens would roll for this character, as the boxes above stand."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Roll Window"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Automated Roll"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "Stats Character Rules reads: %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Low-Level Gear"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Automated Rolls Off"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "Quality Settings"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "Class: %s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "Automatically Greed on Low-Level Gear"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	"Greeds armor and weapons whose required level is at least this far below yours, matching or not, up to Everything Else's quality, so gear you've outgrown never waits on you while leveling."
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Off"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Your Level - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"Automated Rolls is now on: gear each character wants is left for you to roll, and the rest is greeded. Change it under Options > AddOns > GogoLoot > Automated Rolls."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -523,8 +562,7 @@ L["TRADE_CHANNEL"] = "Channel"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s sends each summary to your trade partner. Group Chat posts it to your party or raid, and whispers it anyway outside a group. Me Only prints it in your own chat and sends it to nobody."
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "Group Chat"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "Me Only"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "Posts a trade summary to chat when this trade completes."
 L["TRADE_CHECKBOX_LABEL"] = "Announce"
@@ -746,19 +784,16 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "For All Characters"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Your %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "Enable Ignore Notifications"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Tells you in chat when GogoLoot leaves a container alone because the Openables List says Ignore, and why."
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"Every container GogoLoot knows, and what Automated Opening does with it. Ignore keeps a container sealed, and Speedy Loot leaves it in the loot window for you. Your changes apply to all of your characters."
+	"Every container GogoLoot knows, and what Automated Opening does with it. Ignore keeps a container sealed. Your changes apply to all of your characters."
 -- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"Only Ignore is being used while Automated Opening is off: it still keeps Speedy Loot from taking these."
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] = "These settings aren't being used while Automated Opening and Speedy Loot are off."
+L["OPENABLE_ITEMS_OFF_NOTE"] = "These settings aren't being used while Automated Opening is off."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Puts the list back to its defaults: every item returns to its default setting, removed items come back, and added items leave."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1115,7 +1150,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "Roll Length"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "How long a roll stays open."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Announce In"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Where calls for rolls, ties and pauses go."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "Group Chat"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"Raid Warning falls back to group chat when you aren't leader or assistant. Winners always go to group chat."
 -- Argument: the seconds.

@@ -136,6 +136,8 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "GetInventoryItemLink", GlobalIsType("GetInventoryItemLink", "function") },
 	{ "C_Item.GetItemClassInfo", MemberIsFunction("C_Item", "GetItemClassInfo") },
 	{ "C_Item.GetItemSubClassInfo", MemberIsFunction("C_Item", "GetItemSubClassInfo") },
+	-- The "Equip:" opener the Equip-spell stat lines are matched behind; without it they match with no opener.
+	{ "ITEM_SPELL_TRIGGER_ONEQUIP (string)", GlobalIsType("ITEM_SPELL_TRIGGER_ONEQUIP", "string") },
 
 	-- Bag space — Speedy-Loot.lua free-slot budget
 	{
@@ -196,6 +198,17 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	},
 	-- Speedy Loot hides the window through this frame's OnShow hook; without it the window flashes.
 	{ "LootFrame (frame)", GlobalIsType("LootFrame", "table") },
+	--[[
+	    Speedy Loot's bag-space budget: a specialty bag's family through either
+	    half of the family read, and the keyring where the client has one,
+	    asked through whichever of the two keyring checks it ships. A FAIL on
+	    one half of a pair is the report saying which this client took.
+	]]
+	{ "C_Item.GetItemFamily", MemberIsFunction("C_Item", "GetItemFamily") },
+	{ "GetItemFamily (legacy)", GlobalIsType("GetItemFamily", "function") },
+	{ "KEYRING_CONTAINER (number)", GlobalIsType("KEYRING_CONTAINER", "number") },
+	{ "IsKeyRingEnabled", GlobalIsType("IsKeyRingEnabled", "function") },
+	{ "C_ActionBar.ShouldShowKeyring", MemberIsFunction("C_ActionBar", "ShouldShowKeyring") },
 
 	-- Loot method & threshold — Utilities.lua / Master-Looter.lua master-loot guards
 	{
@@ -490,6 +503,10 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "PlaySoundFile", GlobalIsType("PlaySoundFile", "function") },
 	-- A number on every target client, which is what ns.IsBagFullErrorID compares against.
 	{ "LE_GAME_ERR_INV_FULL (number)", GlobalIsType("LE_GAME_ERR_INV_FULL", "number") },
+	-- Speedy Loot also stops on a unique item already carried; a client without it never matches that error.
+	{ "LE_GAME_ERR_ITEM_MAX_COUNT (number)", GlobalIsType("LE_GAME_ERR_ITEM_MAX_COUNT", "number") },
+	-- Secret values exist only on WoW Forever and later clients, so a FAIL is expected on the others.
+	{ "issecretvalue", GlobalIsType("issecretvalue", "function") },
 	-- The scan tooltip reads this whole line to tell a locked box from an open one.
 	{ "LOCKED (string)", GlobalIsType("LOCKED", "string") },
 
@@ -517,6 +534,15 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "GOLD_AMOUNT_SYMBOL (string)", GlobalIsType("GOLD_AMOUNT_SYMBOL", "string") },
 	{ "SILVER_AMOUNT_SYMBOL (string)", GlobalIsType("SILVER_AMOUNT_SYMBOL", "string") },
 	{ "COPPER_AMOUNT_SYMBOL (string)", GlobalIsType("COPPER_AMOUNT_SYMBOL", "string") },
+	--[[
+	    The player's own currency lines, read back for a currency toast, and the
+	    currency's icon — Loot-Toasts-Money.lua. Currency arrived with
+	    Cataclysm, so a FAIL is expected on the earlier clients.
+	]]
+	{ "CURRENCY_GAINED (string)", GlobalIsType("CURRENCY_GAINED", "string") },
+	{ "CURRENCY_GAINED_MULTIPLE (string)", GlobalIsType("CURRENCY_GAINED_MULTIPLE", "string") },
+	{ "CURRENCY_GAINED_MULTIPLE_BONUS (string)", GlobalIsType("CURRENCY_GAINED_MULTIPLE_BONUS", "string") },
+	{ "C_CurrencyInfo.GetCurrencyInfo", MemberIsFunction("C_CurrencyInfo", "GetCurrencyInfo") },
 
 	--[[
         The roll lines, read back for the winning roll on a toast and kept out
@@ -644,6 +670,10 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	-- The item lists' drop box takes the item held on the cursor — Options-Utilities-Item-List-Widgets.lua
 	{ "GetCursorInfo", GlobalIsType("GetCursorInfo", "function") },
 	{ "ClearCursor", GlobalIsType("ClearCursor", "function") },
+	-- The Example lines take the client's chat colors and line openers, else fixed fallbacks — Options-Utilities.lua
+	{ "ChatTypeInfo (table)", GlobalIsType("ChatTypeInfo", "table") },
+	{ "CHAT_PARTY_GET (string)", GlobalIsType("CHAT_PARTY_GET", "string") },
+	{ "CHAT_WHISPER_GET (string)", GlobalIsType("CHAT_WHISPER_GET", "string") },
 }
 
 --------------------------------------------------------------------------------
@@ -1093,6 +1123,80 @@ local function AppendLootSoundInputs(lines)
 end
 
 --[[
+    The space a Speedy Loot pass measures loot against (ReadBagSpace in
+    Features/Speedy-Loot.lua): each bag's free slots and family, 0 for a
+    general-purpose bag, and the keyring where the client has one, asked the
+    way the feature asks. A herb or a key with no bag of its family left takes
+    a general slot, so a full herb bag can strand loot while general slots
+    read free.
+]]
+local function AppendBagSpaceLines(lines)
+	local bags = {}
+	for bagIndex = 0, NUM_BAG_SLOTS do
+		local free, family = C_Container.GetContainerNumFreeSlots(bagIndex)
+		bags[#bags + 1] = string.format("bag %d %s free family %s", bagIndex, tostring(free), tostring(family))
+	end
+	lines[#lines + 1] = "Bag space by bag: " .. table.concat(bags, "; ")
+	local keyringEnabled = "unreadable"
+	if type(IsKeyRingEnabled) == "function" then
+		keyringEnabled = YesNo(IsKeyRingEnabled())
+	elseif type(C_ActionBar) == "table" and type(C_ActionBar.ShouldShowKeyring) == "function" then
+		keyringEnabled = YesNo(C_ActionBar.ShouldShowKeyring())
+	end
+	lines[#lines + 1] = string.format(
+		"Keyring: KEYRING_CONTAINER %s, enabled %s, free %s",
+		tostring(KEYRING_CONTAINER),
+		keyringEnabled,
+		KEYRING_CONTAINER and tostring(C_Container.GetContainerNumFreeSlots(KEYRING_CONTAINER)) or "n/a"
+	)
+end
+
+--[[
+    Every slot in the open loot window with what the pass reads on it, bottom
+    first as the pass walks it: a LOCKED slot is skipped (still being rolled
+    for, or not the player's yet), and a taken item whose bind type is Bind on
+    Pickup, or nil because the client hasn't loaded it, keeps the window up.
+    STACK, CARRIED and FAMILY are what the pass weighs to find the item room
+    (TakeSpaceFor). Reading an item's info may ask the client to load it.
+]]
+local function AppendSpeedyLootSlots(lines)
+	local slotCount = GetNumLootItems()
+	if slotCount == 0 then
+		return
+	end
+	lines[#lines + 1] = "SLOT\tTYPE\tQUANTITY\tLOCKED\tBIND_TYPE\tSTACK\tCARRIED\tFAMILY\tLINK"
+	for slotIndex = slotCount, 1, -1 do
+		local _, _, quantity, _, _, locked = GetLootSlotInfo(slotIndex)
+		local itemLink = GetLootSlotLink(slotIndex)
+		local itemIdentifier = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
+		local stackSize, bindType, family, carried
+		if itemLink then
+			stackSize = select(8, C_Item.GetItemInfo(itemLink))
+			bindType = select(14, C_Item.GetItemInfo(itemLink))
+			local getFamily = C_Item.GetItemFamily or GetItemFamily
+			family = getFamily and getFamily(itemLink)
+			carried = itemIdentifier and C_Item.GetItemCount(itemIdentifier)
+		end
+		lines[#lines + 1] = table.concat({
+			tostring(slotIndex),
+			tostring(GetLootSlotType(slotIndex)),
+			tostring(quantity),
+			tostring(locked and true or false),
+			itemLink and tostring(bindType) or "",
+			itemLink and tostring(stackSize) or "",
+			itemLink and tostring(carried) or "",
+			itemLink and tostring(family) or "",
+			LinkCell(itemLink),
+		}, "\t")
+	end
+	lines[#lines + 1] = string.format(
+		"(TYPE %s is an item; BIND_TYPE %s is Bind on Pickup, nil is not loaded yet)",
+		tostring(ns.LOOT_SLOT_TYPE_ITEM),
+		tostring(ns.BIND_ON_PICKUP)
+	)
+end
+
+--[[
     Speedy Loot (Features/Speedy-Loot.lua) acts on LOOT_READY only when its
     switch is on, the player isn't the master looter, and Auto Loot and the
     auto-loot modifier disagree (Auto Loot on and the key up, or off and the key
@@ -1125,12 +1229,21 @@ function ns:BuildSpeedyLootContextReport()
 		YesNo(ns:AreWeMasterLooter())
 	)
 	AppendFreeSlotsLine(lines)
+	AppendBagSpaceLines(lines)
+	--[[
+	    The window the pass hides is ElvUI's or Tukui's where one is loaded,
+	    else LootFrame, hidden through its Open method where the frame carries
+	    one (WoW Forever) and through OnShow everywhere else.
+	]]
+	local lootWindow = ns.GetLootWindow()
 	lines[#lines + 1] = string.format(
-		"Loot window: LootFrame present %s, shown %s, slots now %d",
-		YesNo(LootFrame ~= nil),
-		YesNo(LootFrame and LootFrame:IsShown()),
-		GetNumLootItems()
+		"Loot window: %s, shown %s, slots now %d; LootFrame hidden through %s",
+		lootWindow and tostring(lootWindow:GetName()) or "none",
+		YesNo(ns.IsLootWindowShown()),
+		GetNumLootItems(),
+		(LootFrame and type(rawget(LootFrame, "Open")) == "function") and "Open" or "OnShow"
 	)
+	AppendSpeedyLootSlots(lines)
 
 	lines[#lines + 1] = ""
 	lines[#lines + 1] = string.format(
@@ -1153,7 +1266,9 @@ end
 --[[
     The windows Automated Opening waits out (IsInteractionActive in
     Features/Automated-Opening.lua), by their global names. A client lacks the
-    auction house it doesn't use, which reads as closed.
+    auction house it doesn't use, which reads as closed. The loot window is
+    whichever ns.GetLootWindow picks, ElvUI's or Tukui's ahead of LootFrame,
+    as the opener reads it.
 ]]
 local INTERACTION_FRAMES = {
 	"MerchantFrame",
@@ -1165,7 +1280,6 @@ local INTERACTION_FRAMES = {
 	"AuctionHouseFrame",
 	"GossipFrame",
 	"QuestFrame",
-	"LootFrame",
 }
 
 -- The open windows by name, or "none".
@@ -1176,6 +1290,9 @@ local function OpenInteractionFrames()
 		if frame and frame:IsShown() then
 			shown[#shown + 1] = frameName
 		end
+	end
+	if ns.IsLootWindowShown() then
+		shown[#shown + 1] = tostring(ns.GetLootWindow():GetName())
 	end
 	return #shown > 0 and table.concat(shown, ", ") or "none"
 end
@@ -1247,7 +1364,7 @@ end
 
 local function AppendLockboxLines(lines, profile)
 	lines[#lines + 1] = string.format(
-		"Notices: Ignore notice %s (Speedy Loot's needs only this), opening's active now %s (needs Automated Opening); lockbox notices %s (scope %s, shows for you %s); lockbox tooltips %s (scope %s, shows for you %s); you are a Rogue %s",
+		"Notices: Ignore notice %s, active now %s (needs Automated Opening); lockbox notices %s (scope %s, shows for you %s); lockbox tooltips %s (scope %s, shows for you %s); you are a Rogue %s",
 		OnOff(profile.openingIgnoreNotifications),
 		YesNo(profile.autoOpen and profile.openingIgnoreNotifications),
 		OnOff(profile.lockboxNotifications),
@@ -1343,20 +1460,42 @@ local function OpeningVerdict(action, requiredLevel, locked)
 end
 
 --[[
+    Whether the client's own tooltip already states the Lockpicking
+    requirement, matched as Lockbox Tooltips matches it (ITEM_MIN_SKILL). When
+    it does, Lockbox Tooltips adds only your rank, and adds nothing at all
+    where your rank can't be read.
+]]
+local function ClientStatesRequirement(bagIndex, slotIndex)
+	local pattern = ns.BuildFormatPattern(ITEM_MIN_SKILL)
+	if not pattern then
+		return false
+	end
+	for _, text in ipairs(ns.GetBagItemTooltipLines(bagIndex, slotIndex)) do
+		if string.match(text, pattern) then
+			return true
+		end
+	end
+	return false
+end
+
+--[[
     Every openable item in the bags with the verdict Automated Opening acts on:
     its data default, reason included (UNLOCKED, IGNORE_RAID and the like), its
     action (nil for one the player removed), the level it needs (blank while
     the item isn't cached), and whether the scan tooltip reads it as locked.
     The tooltip's line count is what separates a truly unlocked box from a scan
-    tooltip that read nothing at all, since both answer "not locked".
-    Read-only; nothing here opens anything.
+    tooltip that read nothing at all, since both answer "not locked". Then
+    what Lockbox Tooltips reads on it: the Lockpicking it needs, blank for an
+    item the data doesn't list (which gets no tooltip block), and whether the
+    client's tooltip already states that. A lockbox off the Openables List
+    still gets a row. Read-only; nothing here opens anything.
 ]]
 ---@return string
 function ns:BuildLockedBoxesReport()
 	local lines = {
 		GetClientHeader(),
 		"",
-		"BAG\tSLOT\tITEM_ID\tLINK\tDEFAULT\tACTION\tLOCKED\tTOOLTIP_LINES\tREQUIRED_LEVEL\tVERDICT",
+		"BAG\tSLOT\tITEM_ID\tLINK\tDEFAULT\tACTION\tLOCKED\tTOOLTIP_LINES\tREQUIRED_LEVEL\tVERDICT\tSKILL_REQUIRED\tCLIENT_STATES_SKILL",
 	}
 	local found = 0
 	for bagIndex = 0, NUM_BAG_SLOTS do
@@ -1364,7 +1503,8 @@ function ns:BuildLockedBoxesReport()
 			local itemIdentifier = ns.GetBagItemIdentifier(bagIndex, slotIndex)
 			local default = ns:GetOpeningDefault(itemIdentifier)
 			local action = ns:GetOpeningAction(itemIdentifier)
-			if default or action then
+			local requiredSkill = itemIdentifier and ns.LOCKBOX_SKILL_LEVELS[itemIdentifier]
+			if default or action or requiredSkill then
 				found = found + 1
 				local locked, lineCount = ns.IsItemLocked(bagIndex, slotIndex)
 				local requiredLevel = select(5, C_Item.GetItemInfo(itemIdentifier))
@@ -1379,6 +1519,8 @@ function ns:BuildLockedBoxesReport()
 					tostring(lineCount),
 					requiredLevel and tostring(requiredLevel) or "",
 					OpeningVerdict(action, requiredLevel, locked),
+					requiredSkill and tostring(requiredSkill) or "",
+					requiredSkill and tostring(ClientStatesRequirement(bagIndex, slotIndex)) or "",
 				}, "\t")
 			end
 		end
@@ -1405,42 +1547,103 @@ local function RollSettingText(action, threshold)
 	)
 end
 
--- This character's Manual stats, in panel order, or nil for none.
-local function ManualStats()
+-- This character's ticked boxes, class starter list included, in panel order ("ARMOR_4, WEAPON_15, STAT_STRENGTH"), or nil.
+local function TickedBoxes()
+	local _, classFile = UnitClass("player")
 	local rules = ns.db.char.characterRules
-	local manual = {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		if rules and rules[stat.key] == ns.MANUAL then
-			manual[#manual + 1] = stat.key
+	local ticked = {}
+	for _, group in ipairs(ns.CHARACTER_RULE_GEAR_GROUPS) do
+		for _, row in ipairs(ns[group.types]) do
+			if ns.CharacterRuleWantsGear(rules, classFile, group, row) then
+				ticked[#ticked + 1] = ns.CharacterRuleGearKey(group, row)
+			end
 		end
 	end
-	return #manual > 0 and table.concat(manual, ", ") or nil
+	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
+		if ns.CharacterRuleWantsStat(rules, classFile, stat.key) then
+			ticked[#ticked + 1] = ns.CharacterRuleStatKey(stat.key)
+		end
+	end
+	return #ticked > 0 and table.concat(ticked, ", ") or nil
 end
 
--- This character's saved rules for stats this client's folder doesn't offer, A to Z, or nil for none.
-local function UnreadRuleStats()
-	local offered = {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		offered[stat.key] = true
-	end
-	local unread = {}
-	for statKey, action in pairs(ns.db.char.characterRules or {}) do
-		if not offered[statKey] then
-			unread[#unread + 1] = statKey .. "=" .. tostring(action)
+-- What this character saved, A to Z ("wanted.ARMOR_2=true, unwanted.action=pass"), or nil for class defaults throughout.
+local function SavedRules()
+	local saved = {}
+	for section, fields in pairs(ns.db.char.characterRules or {}) do
+		if type(fields) == "table" then
+			for field, value in pairs(fields) do
+				saved[#saved + 1] = tostring(section) .. "." .. tostring(field) .. "=" .. tostring(value)
+			end
+		else
+			saved[#saved + 1] = tostring(section) .. "=" .. tostring(fields)
 		end
 	end
-	table.sort(unread)
-	return #unread > 0 and table.concat(unread, ", ") or nil
+	table.sort(saved)
+	return #saved > 0 and table.concat(saved, ", ") or nil
 end
 
 --[[
     What decides a roll (EvaluateRoll in Features/Automated-Rolls.lua): the
-    master switch, Item Overrides ahead of everything else, then the group
-    context's setting, which only ever takes items that aren't Bind on Pickup or
-    quest items, and Character Rules last. Legendaries, recipes, mounts and pets
-    are never rolled on at all. Hide Roll Messages answers to the master switch
-    too.
+    master switch, Item Overrides ahead of everything else, then Character
+    Rules for anything that isn't a quest item, then the group context's
+    setting, which only ever takes items that aren't Bind on Pickup.
+    Legendaries, recipes, mounts and pets are never rolled on at all. Hide Roll
+    Messages answers to the master switch too.
+
+    A roll open now is checked as the roll handler checks it: whether its link
+    has resolved, whether Need and Greed are open to the player (a Need with no
+    Need open falls back to Greed, and nothing rolls without Greed), and
+    whether its retry is still polling for an item the client hasn't loaded.
+    The retry's timer name is ROLL_RETRY_TIMER_PREFIX in
+    Features/Automated-Rolls.lua plus the roll id.
 ]]
+local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
+
+local function AppendOpenRolls(lines)
+	local frameCount = type(_G.NUM_GROUP_LOOT_FRAMES) == "number" and _G.NUM_GROUP_LOOT_FRAMES or 4
+	local open = 0
+	for frameIndex = 1, frameCount do
+		local frame = _G["GroupLootFrame" .. frameIndex]
+		local rollIdentifier = frame and frame:IsShown() and frame.rollID
+		if type(rollIdentifier) == "number" then
+			open = open + 1
+			local _, _, _, quality, bindOnPickup, canNeed, canGreed = GetLootRollItemInfo(rollIdentifier)
+			lines[#lines + 1] = string.format(
+				"  Roll %s: quality %s, Bind on Pickup %s, Need open %s, Greed open %s, retry polling %s, link %s",
+				tostring(rollIdentifier),
+				tostring(quality),
+				YesNo(bindOnPickup),
+				YesNo(canNeed),
+				YesNo(canGreed),
+				YesNo(ns:IsTimerPending(ROLL_RETRY_TIMER_PREFIX .. rollIdentifier)),
+				LinkCell(GetLootRollItemLink(rollIdentifier)) ~= "" and LinkCell(GetLootRollItemLink(rollIdentifier))
+					or "not resolved yet"
+			)
+		end
+	end
+	if open == 0 then
+		lines[#lines + 1] = string.format("  No roll window open now (GroupLootFrame1 to %d).", frameCount)
+	end
+end
+
+--[[
+    How many of the Equip spells whose descriptions word the stat lines have
+    loaded this session: one that hasn't builds no pattern, so its stat goes
+    unseen on an Equip line. Read before Roll Verdicts and Gear Stats, which
+    ask the client to load them.
+]]
+local function EquipSpellsLoaded()
+	local loaded, total = 0, 0
+	for spellIdentifier in pairs(ns.CHARACTER_RULE_EQUIP_SPELLS or {}) do
+		total = total + 1
+		local description = C_Spell.GetSpellDescription(spellIdentifier)
+		if type(description) == "string" and description:find("%S") then
+			loaded = loaded + 1
+		end
+	end
+	return loaded, total
+end
 function ns:BuildRollsContextReport()
 	local lines = { GetClientHeader(), "" }
 	AppendProfileLines(lines)
@@ -1481,13 +1684,30 @@ function ns:BuildRollsContextReport()
 		tostring(profile.winnerSummary),
 		YesNo(ns.PrintingWinnerSummary())
 	)
+	local rules = ns.db.char.characterRules
 	lines[#lines + 1] = string.format(
-		"Character Rules on %s: %s",
+		"Character Rules on %s (%s): ticked %s",
 		tostring(ns.db.keys and ns.db.keys.char),
-		ManualStats() and ("Manual for " .. ManualStats()) or "nothing (every stat on Standard Automated Roll)"
+		tostring(select(2, UnitClass("player"))),
+		TickedBoxes() or "nothing"
 	)
+	lines[#lines + 1] = string.format(
+		"  Everything Else: %s up to quality %s, Bind on Pickup %s",
+		tostring(ns.CharacterRuleUnwanted(rules, "action")),
+		tostring(ns.CharacterRuleUnwanted(rules, "threshold")),
+		YesNo(ns.db.profile.rollBindOnPickup)
+	)
+	lines[#lines + 1] = string.format(
+		"  Low-level gear: Greeds gear whose required level is at least %s below yours (%s), whatever the boxes say; 0 is off",
+		tostring(ns.CharacterRuleUnwanted(rules, "lowLevelGear")),
+		tostring(UnitLevel("player"))
+	)
+	lines[#lines + 1] = "  Saved (anything not saved follows the class defaults): " .. (SavedRules() or "nothing")
 	lines[#lines + 1] = "  Stats this client offers: " .. table.concat(ns.CHARACTER_RULE_STAT_KEYS, ", ")
-	lines[#lines + 1] = "  Saved for a stat this client doesn't offer, so never read: " .. (UnreadRuleStats() or "none")
+	lines[#lines + 1] = string.format("  Equip-line stat spells loaded this session: %d of %d", EquipSpellsLoaded())
+	lines[#lines + 1] = ""
+	lines[#lines + 1] = "Rolls open now:"
+	AppendOpenRolls(lines)
 	return table.concat(lines, "\n")
 end
 
@@ -1503,6 +1723,9 @@ end
     an item can't, so a NEED verdict may roll Greed.
 ]]
 local function RollVerdict(profile, itemLink, itemIdentifier, rollAction, rollThreshold)
+	if not profile.autoGreed then
+		return "AUTOMATED ROLLS OFF"
+	end
 	local itemInformation = ns:SafeGetItemInfo(itemIdentifier)
 	if not itemInformation then
 		return "NOT CACHED (a live roll waits for it)"
@@ -1517,7 +1740,39 @@ local function RollVerdict(profile, itemLink, itemIdentifier, rollAction, rollTh
 	if ns:IsQuestClassItem(itemInformation) then
 		return "QUEST ITEM"
 	end
-	if itemInformation.bindType == ns.BIND_ON_PICKUP then
+	local verdict, group, row =
+		ns.CharacterRuleVerdict(itemInformation, itemLink, ns.db.char.characterRules, select(2, UnitClass("player")))
+	local where = type(group) == "table" and ns.CharacterRuleGearKey(group, row) or tostring(group)
+	local rules = ns.db.char.characterRules
+	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or ns.db.profile.rollBindOnPickup
+	if
+		verdict
+		and bindOk
+		and rollAction ~= ns.MANUAL
+		and ns.IsLowLevelGear(rules, itemInformation.requiredLevel, UnitLevel("player"))
+		and itemInformation.quality <= ns.CharacterRuleUnwanted(rules, "threshold")
+	then
+		return "CHARACTER RULES: LOW-LEVEL GEAR (REQUIRED LEVEL "
+			.. tostring(itemInformation.requiredLevel)
+			.. ", "
+			.. where
+			.. "), ROLLS GREED"
+	end
+	if verdict == ns.CHARACTER_RULE_WANTED then
+		return "CHARACTER RULES: WANTED (" .. where .. "), ROLL WINDOW"
+	end
+	if verdict == ns.CHARACTER_RULE_UNWANTED and rollAction ~= ns.MANUAL then
+		if ns.CharacterRuleUnwanted(rules, "action") == ns.MANUAL then
+			return "CHARACTER RULES: NOT WANTED (" .. where .. "), EVERYTHING ELSE IS MANUAL, ROLL WINDOW"
+		end
+		if bindOk and itemInformation.quality <= ns.CharacterRuleUnwanted(rules, "threshold") then
+			return "CHARACTER RULES: NOT WANTED ("
+				.. where
+				.. "), ROLLS "
+				.. string.upper(tostring(ns.CharacterRuleUnwanted(rules, "action")))
+		end
+	end
+	if itemInformation.bindType == ns.BIND_ON_PICKUP and not ns.db.profile.rollBindOnPickup then
 		return "BIND ON PICKUP"
 	end
 	if rollAction == ns.MANUAL then
@@ -1525,9 +1780,6 @@ local function RollVerdict(profile, itemLink, itemIdentifier, rollAction, rollTh
 	end
 	if itemInformation.quality > rollThreshold then
 		return "ABOVE THRESHOLD"
-	end
-	if ns.CharacterRulesLeaveToPlayer(itemLink) then
-		return "CHARACTER RULES"
 	end
 	return "ROLLS " .. string.upper(tostring(rollAction))
 end
@@ -1611,27 +1863,29 @@ local function StatsCell(found)
 	return #cells > 0 and table.concat(cells, "; ") or "none"
 end
 
----@param found table
+-- What this character's rules say about one piece: WANTED or NOT WANTED, with the box it fell under, or NOT JUDGED.
+---@param itemLink string
 ---@param rules table|nil
 ---@return string
-local function RuleCell(found, rules)
-	local manual = {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		if found[stat.key] and rules and rules[stat.key] == ns.MANUAL then
-			manual[#manual + 1] = stat.key
-		end
+local function RuleCell(itemLink, rules)
+	local itemInformation = ns:SafeGetItemInfo(itemLink)
+	if not itemInformation then
+		return "NOT CACHED"
 	end
-	if #manual > 0 then
-		return "MANUAL (" .. table.concat(manual, ", ") .. ")"
+	local verdict, group, row =
+		ns.CharacterRuleVerdict(itemInformation, itemLink, rules, select(2, UnitClass("player")))
+	if not verdict then
+		return "NOT JUDGED"
 	end
-	return "STANDARD"
+	local where = type(group) == "table" and ns.CharacterRuleGearKey(group, row) or tostring(group)
+	return (verdict == ns.CHARACTER_RULE_WANTED and "WANTED" or "NOT WANTED") .. " (" .. where .. ")"
 end
 
 --[[
     Every armor and weapon piece in the bags and on the character, with the
     stats Character Rules reads on it and where each came from, and what this
-    character's rules do with it: MANUAL, naming the stats that leave it to the
-    player, or STANDARD. The same read the roll makes, so a piece that rolled
+    character's rules say about it: WANTED or NOT WANTED, with the box it fell
+    under (TYPELESS for a cloak, ring, neck or trinket). The same read the roll makes, so a piece that rolled
     when it shouldn't have can be checked without waiting for another drop.
     Read-only; nothing here rolls.
 ]]
@@ -1641,10 +1895,7 @@ function ns:BuildGearStatsReport()
 	local lines = {
 		GetClientHeader(),
 		"",
-		"Manual on "
-			.. tostring(ns.db.keys and ns.db.keys.char)
-			.. ": "
-			.. (ManualStats() or "nothing (every stat on Standard Automated Roll)"),
+		"Ticked on " .. tostring(ns.db.keys and ns.db.keys.char) .. ": " .. (TickedBoxes() or "nothing"),
 		"",
 		"WHERE\tITEM_ID\tSUFFIX_ID\tLINK\tSTATS\tRULE",
 	}
@@ -1661,7 +1912,7 @@ function ns:BuildGearStatsReport()
 			tostring(ns.GetLinkRandomSuffix(itemLink) or ""),
 			LinkCell(itemLink),
 			StatsCell(found),
-			RuleCell(found, rules),
+			RuleCell(itemLink, rules),
 		}, "\t")
 	end
 
@@ -1829,6 +2080,26 @@ local GROUP_LINE_FORMATS = {
 	{ "LOOT_ITEM_PUSHED_MULTIPLE", EXAMPLE_COUNT },
 }
 
+--[[
+    Whether a roll reader would take a loot line for its own: the toast
+    handler hands a line to the roll records first and drops one they claim
+    (ns.RecordRollLine), and Hide Roll Messages keeps roll chatter out of
+    chat. Read through the parsers alone, never RecordRollLine, which stores
+    what it reads. Nil when nothing claims it.
+]]
+local function RollClaim(line)
+	if select(4, ns.ParseRollResultMessage(line)) then
+		return "a roll result"
+	end
+	if ns.ParseRollWonMessage(line) then
+		return "a won roll"
+	end
+	if ns.IsRollChatterMessage(line) then
+		return "roll chatter"
+	end
+	return nil
+end
+
 local function AppendOwnLines(lines, link)
 	for _, entry in ipairs(OWN_LINE_FORMATS) do
 		local constant, count = entry[1], entry[2]
@@ -1837,13 +2108,15 @@ local function AppendOwnLines(lines, link)
 			lines[#lines + 1] = string.format("[ERROR] %s: %s", constant, problem)
 		else
 			local parsedLink, parsedCount = ns.ParseOwnLootMessage(line)
-			local ok = parsedLink == link and parsedCount == count
+			local claim = RollClaim(line)
+			local ok = parsedLink == link and parsedCount == count and not claim
 			lines[#lines + 1] = string.format(
-				"[%s] %s: read link %s, count %s",
+				"[%s] %s: read link %s, count %s, taken for %s",
 				ok and "OK" or "FAIL",
 				constant,
 				parsedLink == link and "matches" or LinkCell(parsedLink or "nil"),
-				tostring(parsedCount)
+				tostring(parsedCount),
+				claim or "no roll line"
 			)
 			if not ok then
 				lines[#lines + 1] = "    " .. LinkCell(line)
@@ -1861,15 +2134,21 @@ local function AppendGroupLines(lines, link)
 		else
 			local isOwn = ns.ParseOwnLootMessage(line) ~= nil
 			local looter, parsedLink, parsedCount = ns.ParseGroupLootMessage(line)
-			local ok = not isOwn and looter == EXAMPLE_LOOTER and parsedLink == link and parsedCount == count
+			local claim = RollClaim(line)
+			local ok = not isOwn
+				and looter == EXAMPLE_LOOTER
+				and parsedLink == link
+				and parsedCount == count
+				and not claim
 			lines[#lines + 1] = string.format(
-				"[%s] %s: read as your own %s, looter %s, link %s, count %s",
+				"[%s] %s: read as your own %s, looter %s, link %s, count %s, taken for %s",
 				ok and "OK" or "FAIL",
 				constant,
 				YesNo(isOwn),
 				tostring(looter),
 				parsedLink == link and "matches" or LinkCell(parsedLink or "nil"),
-				tostring(parsedCount)
+				tostring(parsedCount),
+				claim or "no roll line"
 			)
 			if not ok then
 				lines[#lines + 1] = "    " .. LinkCell(line)
@@ -2074,6 +2353,23 @@ function ns:BuildLootLineReport()
 		tostring(quality),
 		tostring(ns:GetOpeningAction(itemIdentifier))
 	)
+	--[[
+	    What the Filters rows read on it (ns.IsLootToastWanted): its item class
+	    and subclass, which pick its row, its bind type for the Bind on Pickup
+	    and Quest rows, and whether its tooltip starts a quest.
+	]]
+	local _, _, _, _, _, classIdentifier, subclassIdentifier = C_Item.GetItemInfoInstant(itemIdentifier)
+	-- Nil while the client hasn't loaded the item.
+	local bindType = select(14, C_Item.GetItemInfo(itemIdentifier))
+	lines[#lines + 1] = string.format(
+		"What the Filters read: item class %s, subclass %s, bind type %s (Bind on Pickup is %s, quest item %s), starts a quest %s",
+		tostring(classIdentifier),
+		tostring(subclassIdentifier),
+		tostring(bindType),
+		tostring(ns.BIND_ON_PICKUP),
+		tostring(ns.BIND_QUEST_ITEM),
+		YesNo(ns.ItemStartsQuest(itemIdentifier))
+	)
 	if ns.db and ns.db.profile then
 		lines[#lines + 1] = string.format(
 			"It would get a toast (with Loot Toasts on): yours %s, a group member's %s",
@@ -2127,6 +2423,7 @@ function ns:BuildAnnouncementsContextReport()
 		OnOff(profile.announceDestinations)
 	)
 	lines[#lines + 1] = string.format("Target marker: %s", tostring(ns.TARGET_MARKER))
+	lines[#lines + 1] = string.format("Welcome message at login: %s", OnOff(ns.db.global.showWelcome))
 	return table.concat(lines, "\n")
 end
 
@@ -2222,7 +2519,8 @@ function ns:BuildPlayerReport()
 	)
 	lines[#lines + 1] = string.format(
 		"Inventory-full voice line: %s",
-		ns.SOUND_KIT_IDS.BAG_FULL_BY_RACE[raceFile] and "this race's own" or "the fallback sound"
+		(ns.SOUND_KIT_IDS.BAG_FULL_BY_RACE[raceFile] or {})[UnitSex("player")] and "this race's own"
+			or "the fallback sound"
 	)
 	lines[#lines + 1] = ""
 	for _, key in ipairs(ns.DIAGNOSTIC_SPELLS) do
@@ -2346,6 +2644,13 @@ local UI_LABELS = {
 	"LOOT_ROLL_YOU_WON_NO_SPAM_NEED",
 	"LOOT_ROLL_YOU_WON_NO_SPAM_GREED",
 	"LOOT_ROLL_YOU_WON_NO_SPAM_DE",
+	"CURRENCY",
+	"CURRENCY_GAINED",
+	"CURRENCY_GAINED_MULTIPLE",
+	"CURRENCY_GAINED_MULTIPLE_BONUS",
+	"ITEM_SPELL_TRIGGER_ONEQUIP",
+	"CHAT_PARTY_GET",
+	"CHAT_WHISPER_GET",
 }
 
 ns.DIAGNOSTIC_NAME_LOOKUPS = {
@@ -2370,6 +2675,30 @@ end
 ]]
 for _, group in ipairs(ns.CHARACTER_RULE_GROUPS) do
 	AddNameLookup(UiLabel(group.labelGlobal))
+end
+-- The armor and weapon sections' game labels: Other's caption, and the held off-hand row's name.
+for _, group in ipairs(ns.CHARACTER_RULE_GEAR_GROUPS) do
+	if group.labelGlobal then
+		AddNameLookup(UiLabel(group.labelGlobal))
+	end
+end
+AddNameLookup(UiLabel("INVTYPE_HOLDABLE"))
+-- Every other armor and weapon row, captioned with the client's own item subclass name as the panel reads it.
+for _, group in ipairs(ns.CHARACTER_RULE_GEAR_GROUPS) do
+	if group.classIdentifier then
+		for _, rowIdentifier in ipairs(ns[group.types] or {}) do
+			if not ns.CHARACTER_RULE_GEAR_ROW_LABELS[rowIdentifier] then
+				AddNameLookup({
+					constant = group.types .. "." .. tostring(rowIdentifier),
+					kind = "itemSubclass",
+					id = group.classIdentifier .. ":" .. tostring(rowIdentifier),
+					lookup = function()
+						return C_Item.GetItemSubClassInfo(group.classIdentifier, rowIdentifier)
+					end,
+				})
+			end
+		end
+	end
 end
 for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
 	AddNameLookup({
@@ -2408,17 +2737,20 @@ for _, classToken in ipairs({ "ROGUE", "WARRIOR" }) do
 	})
 end
 
-AddNameLookup({
-	constant = "SPELLS.PICK_POCKET",
-	kind = "spell",
-	id = ns.SPELLS.PICK_POCKET,
-	lookup = function()
-		return C_Spell.GetSpellName(ns.SPELLS.PICK_POCKET)
-	end,
-	request = function()
-		C_Spell.RequestLoadSpellData(ns.SPELLS.PICK_POCKET)
-	end,
-})
+-- Pick Pocket captions the Loot Sounds row; Pick Lock names the spell in the mini-map tooltip's Locked Items list.
+for _, key in ipairs({ "PICK_POCKET", "PICK_LOCK" }) do
+	AddNameLookup({
+		constant = "SPELLS." .. key,
+		kind = "spell",
+		id = ns.SPELLS[key],
+		lookup = function()
+			return C_Spell.GetSpellName(ns.SPELLS[key])
+		end,
+		request = function()
+			C_Spell.RequestLoadSpellData(ns.SPELLS[key])
+		end,
+	})
+end
 
 -- MoP Classic has no Lockpicking skill line, so its data carries no ID and there is no name to check.
 if ns.SKILL_LINE_IDS.LOCKPICKING then
@@ -2585,6 +2917,32 @@ ns.DIAGNOSTIC_DATA_SOURCES = {
 		label = "Character-Rule-Stats",
 		sources = {
 			{ table = "CHARACTER_RULE_STAT_KEYS", kind = "other", rowId = ValueIsId },
+			-- The Equip spells whose descriptions word the stat lines; a folder whose client words none declares it empty.
+			{
+				table = "CHARACTER_RULE_EQUIP_SPELLS",
+				kind = "spell",
+				rowId = KeyIsId,
+				dataColumns = {
+					{
+						"DATA_STATS",
+						function(_, row)
+							return table.concat(row, " ")
+						end,
+					},
+				},
+			},
+		},
+	},
+	{
+		label = "Character-Rule-Gear-Types",
+		sources = {
+			{ table = "CHARACTER_RULE_ARMOR_TYPES", kind = "other", rowId = ValueIsId },
+			{ table = "CHARACTER_RULE_WEAPON_TYPES", kind = "other", rowId = ValueIsId },
+			{ table = "CHARACTER_RULE_SAMPLE_ITEMS", kind = "item", rowId = ValueIsId },
+			-- The boxes each class starts with, by class file: row counts, since a class file is no game id.
+			{ table = "CLASS_ARMOR_STARTER", kind = "other", rowId = KeyIsId },
+			{ table = "CLASS_WEAPON_STARTER", kind = "other", rowId = KeyIsId },
+			{ table = "CLASS_STAT_STARTER", kind = "other", rowId = KeyIsId },
 		},
 	},
 	{

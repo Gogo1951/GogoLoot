@@ -57,12 +57,14 @@ Locales/zhTW.lua
 Data/Flavor.lua
 Data/Data.lua
 Data/Vanilla/Character-Rule-Stats-Vanilla.lua
+Data/Vanilla/Character-Rule-Gear-Types-Vanilla.lua
 Data/Vanilla/Default-Item-Lists-Vanilla.lua
 Data/Vanilla/Lockbox-Skill-Levels-Vanilla.lua
 Data/Vanilla/Openable-Items-Vanilla.lua
 Data/Vanilla/Spells-Vanilla.lua
 Data/Vanilla/Game-IDs-Vanilla.lua
 Data/Discovery/Character-Rule-Stats-Discovery.lua
+Data/Discovery/Character-Rule-Gear-Types-Discovery.lua
 Data/Discovery/Default-Item-Lists-Discovery.lua
 Data/Discovery/Lockbox-Skill-Levels-Discovery.lua
 Data/Discovery/Openable-Items-Discovery.lua
@@ -73,6 +75,7 @@ Data/Default-Settings.lua
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Bags.lua
 Features/Utilities-Scan-Tooltip.lua
 Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua

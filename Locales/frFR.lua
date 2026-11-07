@@ -47,8 +47,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s provient d'un boss de raid ou d'un boss mondial, l'ouverture automatique le laisse donc fermé pour que vous puissiez l'échanger ou le vendre."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s peut contenir un objet unique, l'ouverture automatique vous laisse donc l'ouvrir vous-même."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] =
-	"%s a été laissé dans la fenêtre de butin pour que vous le ramassiez vous-même."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Une partie du butin est restée sur le cadavre."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -122,7 +121,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Impossible de remettre le butin à %s : %s"
 L["TAB_SPEEDY_LOOT"] = "Butin rapide"
 L["TAB_AUTOMATED_ROLLS"] = "Jets automatiques"
 L["TAB_ITEM_OVERRIDES"] = "Exceptions par objet"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "Règles par personnage"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "Annonces de butin"
@@ -267,15 +266,18 @@ L["ITEM_LOADING"] = "Chargement... (ID : %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"Aucun jet n'est jamais fait sur les recettes, livres, montures, mascottes ou objets légendaires, et les objets Lié quand ramassé ou de quête ne le sont que s'ils figurent dans Exceptions par objet."
+	"Aucun jet n'est jamais fait sur les recettes, livres, montures, mascottes ou objets légendaires, les objets de quête ne le sont que s'ils figurent dans Exceptions par objet, et les objets Lié quand ramassé que s'ils y figurent ou si Inclure Lié quand ramassé est activé."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"Les recettes, livres, montures, mascottes et objets légendaires vous sont toujours laissés."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "Canal de groupe"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Exemple : %s"
@@ -321,8 +323,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"Ajoute à vos macros générales une macro nommée %s, avec une icône de pièces d'or, pour que chaque personnage de votre compte puisse la glisser sur une barre d'action."
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Jet 1-100"
@@ -455,6 +457,9 @@ L["ROLLS_IN_RAID"] = "En raid"
 L["ROLLS_UP_TO_QUALITY"] = "Jusqu'à la qualité"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s : la qualité maximale sur laquelle GogoLoot lance les dés."
 L["ROLLS_ACTION_CHOOSE"] = "%s : le jet que fait GogoLoot. Manuel vous laisse le choix."
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Inclure Lié quand ramassé"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"Les jets ci-dessus et les Règles par personnage lancent aussi les dés sur les objets Lié quand ramassé. Désactivé par défaut, car mieux vaut en général lancer les dés soi-même sur le butin Lié quand ramassé."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Jets en groupe et en raid"
 L["ROLLS_MESSAGES_HEADER"] = "Messages de jets"
@@ -476,7 +481,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Définit le jet pour des objets précis, avant les réglages de qualité. C'est la seule façon pour GogoLoot de lancer les dés sur un objet Lié quand ramassé ou de quête."
+	"Définit le jet pour des objets précis, avant les réglages de qualité. C'est la seule façon pour GogoLoot de lancer les dés sur un objet de quête, ou sur un objet Lié quand ramassé tant qu'Inclure Lié quand ramassé est désactivé."
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "Ces réglages ne sont pas utilisés tant que les jets automatiques sont désactivés."
 L["ITEM_OVERRIDES_ENABLE"] = "Activer les exceptions par objet"
@@ -495,13 +500,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"Saisissez l'ID d'un objet ou faites glisser un objet ici pour l'ajouter à la liste, réglé sur Manuel."
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"Vous laisse l'équipement doté des caractéristiques choisies, personnage par personnage : réglez %s sur Manuel pour votre %s, et l'équipement avec %s garde sa fenêtre de jet tandis que le reste est joué comme d'habitude. Les Exceptions par objet passent toujours en premier."
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	"Vous voulez de l'équipement avec %s pour votre %s ? Cochez %s et les types d'armure et d'arme que vous utilisez. L'équipement correspondant vous est laissé pour lancer les dés, et Tout le reste s'occupe du reste. Les Exceptions par objet passent toujours en premier."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -509,10 +514,44 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "Caractéristiques principales"
 L["CHARACTER_RULES_SECONDARY"] = "Caractéristiques secondaires"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "Jet automatique standard"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s : Manuel vous laisse l'équipement qui en possède sur ce personnage, fenêtre de jet comprise. Jet automatique standard lance les dés dessus comme pour tout autre objet."
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "Types d'armure"
+L["CHARACTER_RULES_WEAPONS"] = "Types d'arme"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "Autres armures et armes"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	"Cannes à pêche, armes Divers, et toute armure ou arme qu'aucun type ci-dessus ne nomme."
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Tout le reste"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "Équipement non correspondant"
+L["CHARACTER_RULES_RESET"] = "Rétablir les valeurs de la classe"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "Vérification"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"Comment ces objets verts Lié quand équipé seraient joués pour ce personnage, selon les cases ci-dessus."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Fenêtre de jet"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Jet automatique"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "Caractéristiques lues par les Règles par personnage : %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Équipement de bas niveau"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Jets automatiques désactivés"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "Réglages de qualité"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "Classe : %s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "Cupidité automatique sur l'équipement de bas niveau"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	"Fait Cupidité sur les armures et armes dont le niveau requis est au moins autant inférieur au vôtre, qu'elles correspondent ou non, jusqu'à la qualité de Tout le reste, pour que l'équipement dépassé ne vous retienne jamais pendant la montée de niveau."
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Désactivé"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Votre niveau - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"Les Jets automatiques sont maintenant activés : l'équipement que veut chaque personnage vous est laissé pour lancer les dés, et le reste est joué en Cupidité. Modifiez-le dans Options > AddOns > GogoLoot > Jets automatiques."
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -542,8 +581,7 @@ L["TRADE_CHANNEL"] = "Canal"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s envoie chaque résumé à votre partenaire d'échange. Canal de groupe le publie dans votre groupe ou raid, et le chuchote quand même hors groupe. Moi seul l'affiche dans votre propre discussion sans l'envoyer à personne."
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "Canal de groupe"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "Moi seul"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "Publie un résumé dans la discussion quand cet échange est conclu."
 L["TRADE_CHECKBOX_LABEL"] = "Annoncer"
@@ -778,20 +816,16 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Pour tous les personnages"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Votre %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "Activer les alertes d'objets ignorés"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Vous prévient dans la discussion quand GogoLoot laisse un conteneur de côté parce que la liste Objets à ouvrir indique Ignorer, et pourquoi."
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"Tous les conteneurs que GogoLoot connaît, et ce que l'ouverture automatique en fait. Ignorer garde un conteneur fermé, et le butin rapide le laisse dans la fenêtre de butin pour vous. Vos modifications s'appliquent à tous vos personnages."
+	"Tous les conteneurs que GogoLoot connaît, et ce que l'ouverture automatique en fait. Ignorer garde un conteneur fermé. Vos modifications s'appliquent à tous vos personnages."
 -- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"Seul Ignorer est utilisé tant que l'ouverture automatique est désactivée : il empêche toujours le butin rapide de prendre ces objets."
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
-	"Ces réglages ne sont pas utilisés tant que l'ouverture automatique et le butin rapide sont désactivés."
+L["OPENABLE_ITEMS_OFF_NOTE"] = "Ces réglages ne sont pas utilisés tant que l'ouverture automatique est désactivée."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Rétablit la liste par défaut : chaque objet reprend son réglage par défaut, les objets retirés reviennent et les objets ajoutés disparaissent."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1157,7 +1191,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "Durée du jet"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Combien de temps un jet reste ouvert."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Annoncer dans"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Où vont les appels aux jets, les égalités et les pauses."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "Canal de groupe"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"L'avertissement raid bascule sur le canal de groupe quand vous n'êtes ni chef ni assistant. Les gagnants sont toujours annoncés dans le canal de groupe."
 -- Argument: the seconds.
