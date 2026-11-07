@@ -64,6 +64,8 @@ local ICON_ART_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon
     rounded frame.
 ]]
 local BACKDROP_ALPHA = 0.7
+local BACKDROP_DARK = CreateColor(0, 0, 0, BACKDROP_ALPHA)
+local BACKDROP_CLEAR = CreateColor(0, 0, 0, 0)
 local BACKDROP_TAIL_UNITS = 48
 
 --[[
@@ -270,7 +272,7 @@ local function Measure(toast, path, size, flags, fallbackPath)
 	    past the text, darkest on the icon side. SetGradient's first color is always the
 	    left end, so the two colors swap with the alignment.
 	]]
-	local dark, clear = CreateColor(0, 0, 0, BACKDROP_ALPHA), CreateColor(0, 0, 0, 0)
+	local dark, clear = BACKDROP_DARK, BACKDROP_CLEAR
 	toast.text:SetWidth(0)
 	if AlignsRight() then
 		toast.icon:SetPoint("RIGHT", -border, 0)
@@ -381,14 +383,6 @@ local function PlayFlash(toast, quality)
 end
 
 --[[
-    An item row shows the item's own tooltip on hover, the one chat shows for
-    the same link. It sits against the hovered icon and name, on the side away
-    from where the rows line up. THE TRAP: not against the row's frame, which is
-    RowWidth() wide whatever the text, so a short name left the tooltip stranded
-    far across the screen. The fade pauses while the pointer is on the row and
-    resumes where it left off, so a row can't vanish from under a tooltip being read.
-]]
---[[
     Whether a row's hover area takes the pointer: only an item row, and only
     with Enable Tooltips on Loot Toast Items on. Off, the whole stack is mouse
     transparent, so hovering and clicking go straight to the world beneath.
@@ -397,6 +391,14 @@ local function TakesPointer(toast)
 	return toast.itemLink ~= nil and ns.db ~= nil and ns.db.profile.lootToastTooltips == true
 end
 
+--[[
+    An item row shows the item's own tooltip on hover, the one chat shows for
+    the same link. It sits against the hovered icon and name, on the side away
+    from where the rows line up. THE TRAP: not against the row's frame, which is
+    RowWidth() wide whatever the text, so a short name left the tooltip stranded
+    far across the screen. The fade pauses while the pointer is on the row and
+    resumes where it left off, so a row can't vanish from under a tooltip being read.
+]]
 local function OnToastEnter(hover)
 	local toast = hover:GetParent()
 	if not TakesPointer(toast) then
@@ -552,10 +554,13 @@ end
     Only the pooling is idempotent: stopping the fade can fire its own
     OnFinished, which releases the same frame again, and pooling it twice would
     hand one frame out as two rows.
+
+    A loop releasing several rows passes skipRestack and restacks once after it.
 ]]
 ---@param toast table
+---@param skipRestack boolean|nil
 ---@return nil
-function ns.ReleaseLootToast(toast)
+function ns.ReleaseLootToast(toast, skipRestack)
 	for index, candidate in ipairs(samples) do
 		if candidate == toast then
 			table.remove(samples, index)
@@ -587,7 +592,9 @@ function ns.ReleaseLootToast(toast)
 		toast:SetAlpha(1)
 		pool[#pool + 1] = toast
 	end
-	Restack()
+	if not skipRestack then
+		Restack()
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -627,8 +634,9 @@ end
 ---@param quality number|nil # colors the icon's frame; nil for coin
 ---@return nil
 local function EnterToast(icon, text, itemLink, countItem, countQuantity, quality)
+	-- The Restack below covers every release here.
 	while #active >= MaxVisible() do
-		ns.ReleaseLootToast(active[1])
+		ns.ReleaseLootToast(active[1], true)
 	end
 	RestartFades()
 	local toast = AcquireToast()
@@ -714,18 +722,32 @@ end
     silver, after the looter, or after "You Won" when it was the player's,
     while Winning Roll is on for that side.
 ]]
+--[[
+    Another member's item may not be cached yet, and its bind type, which the
+    Bind on Pickup and Quest rows read, is unknown until it is. One the filters
+    turn down while uncached is asked for and judged once more a moment later.
+]]
+local GROUP_ITEM_RETRY_SECONDS = 1
+
 ---@param itemLink string
 ---@param quantity number|nil
 ---@param looterName string|nil # nil for the player's own loot
 ---@param winningRoll string|nil # the roll it was won with, as LOOT_TOASTS_ROLL_RESULT reads
+---@param retried boolean|nil # true on the second look at an uncached group item
 ---@return nil
-function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll)
+function ns.ShowLootToast(itemLink, quantity, looterName, winningRoll, retried)
 	if not itemLink or not ns.db or not ns.db.profile.lootToasts then
 		return
 	end
 	local itemIdentifier = tonumber(string.match(itemLink, "item:(%d+)"))
 	local quality = ns.GetLinkQuality(itemLink)
 	if not ns.IsLootToastWanted(quality, itemIdentifier, looterName) then
+		if looterName and itemIdentifier and not retried and not C_Item.GetItemInfo(itemIdentifier) then
+			C_Item.RequestLoadItemDataByID(itemIdentifier)
+			C_Timer.After(GROUP_ITEM_RETRY_SECONDS, function()
+				ns.ShowLootToast(itemLink, quantity, looterName, winningRoll, true)
+			end)
+		end
 		return
 	end
 	local text = string.gsub(itemLink, "|h%[(.-)%]|h", "|h%1|h")
@@ -767,18 +789,22 @@ end
     and the reshuffled colors make the preview visibly answer each one. Samples
     never fade; they go when the handle does.
 ]]
+--[[
+    ReleaseLootToast takes the frame out of `samples` itself, so drain the tail.
+    Its caller, ns.RefreshLootToastSamples, restacks once afterwards.
+]]
 local function ReleaseSamples()
-	-- ReleaseLootToast takes the frame out of `samples` itself, so drain the tail.
 	while #samples > 0 do
-		ns.ReleaseLootToast(samples[#samples])
+		ns.ReleaseLootToast(samples[#samples], true)
 	end
 end
 
 -- The cap just changed: trim now, so the setting just picked is the one on screen.
 ---@return nil
 function ns.ApplyLootToastLimit()
+	-- ns.RefreshLootToastSamples, below, restacks once for every release here.
 	while #active > MaxVisible() do
-		ns.ReleaseLootToast(active[1])
+		ns.ReleaseLootToast(active[1], true)
 	end
 	ns.RefreshLootToastSamples()
 end
@@ -862,8 +888,11 @@ local function OnChatMessageLoot(message)
 	end
 end
 
--- The bags settled: every own-loot toast on screen re-reads its count (see WriteToastText).
+-- The bags settled: every own-loot toast on screen re-reads its count (see WriteToastText), while Bag Count is on.
 local function OnBagUpdateDelayed()
+	if not ns.db or not ns.db.profile.lootToastBagCount then
+		return
+	end
 	local rewritten = false
 	for _, toast in ipairs(active) do
 		if toast.countItem then

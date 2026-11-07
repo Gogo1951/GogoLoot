@@ -82,8 +82,18 @@
 - **Instead:** GogoLoot keeps the Simple model's one shared profile and saves Character Rules, each character's class, and the General tab's loot lines it took in that character's AceDB char section.
 - **Why:** Loot policy is shared by every character, while the gear a character wants and its own chat settings belong to that character alone.
 
+### Reset to Class Defaults asks nothing
+
+- **Departs from:** OPTIONS PANEL → Widget Conventions, destructive actions confirm.
+- **Instead:** Character Rules' Reset to Class Defaults clears a character's changed boxes on one click, with no confirmation.
+- **Why:** The boxes it clears are quick to tick again, so a dialog would cost more than the rare misclick.
+
+### Unfinished features ship parked
+
+- **Departs from:** `08 - Prelaunch Review.md` → Load-time integrity, every Lua file listed in at least one TOC.
+- **Instead:** Feature files still in development stay in the repo, guarded off and listed in no TOC, with their strings, defaults and offline tests, so they ship in the zip but never load.
+- **Why:** Work in progress keeps passing lint, tests and localization with the rest of the add-on without reaching players before it is finished.
+
 ## Decisions
 
 - **The Openables List is the whole list, with Add Item, a remove column and Restore Defaults.** Every container the client's data lists appears with its own dropdown of two choices, Open or Ignore (maintainer, 2026-09-28: Open when Unlocked opened exactly as Open does, and the three Ignores only changed the reason printed). A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a tradeable container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for a tradeable one that can hold a Unique item; Ignore, tagged Sell Sealed, for a tradeable one that can hold a Bind on Pickup item; the rest on Open, untagged. Tradeable means the container isn't itself Bind on Pickup or a quest item: one that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03). One exception is set by hand in every flavor folder: Gnarlpine Necklace (8049), a quest item holding the unique Tallonkai's Jewel, stays on Ignore, tagged May Hold Unique, and a regenerated list must keep it there. The tag belongs to the item, so it stays whatever the player picks, and a looted container's notice gives the reason. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item. The player can add an item the data lacks, which joins on Open (gear and bags are refused, since using one equips it), or remove a listed one, which GogoLoot then treats as an ordinary item. Only the changes are saved, account-wide, so new data reaches every player, and Restore Defaults clears them all.
-- **Each flavor's openable items come from that client's own tables** on wago.tools, every item flagged Openable, rather than from a private-server database or Wowhead listings. Season of Discovery's items stay out of the Classic Era and WoW Forever lists, though both clients know the IDs, and clams stay out of Wrath, Mists and Retail, which open them through a spell no add-on can cast. What a container holds and where it drops, which no client table records, come from the CMaNGOS world databases instead (README-Technical, Openable Items Data).
-- **The "Level N" gear and supply boxes are never on the Openables List** (maintainer, 2026-10-04). WoW Forever's client data flags them openable (Level 23, 38, 57 and 60 Cloth, Leather, Mail and Plate Gear, and Cloth, Enchanting, Herbalism, Hunter, Mining, Skinning and Tradeskill Supplies, items 274559–278066), and the online databases list them, but no player can get one. All 39 rows were removed from `Data/Camelot/`, and a regenerated list must leave them out on every flavor.

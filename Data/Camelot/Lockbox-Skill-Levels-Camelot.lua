@@ -27,13 +27,13 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-05, WoW Forever 1.60.1.70790
+	2026-11-07, WoW Forever 1.60.1.70862
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).
 	- One row for every ns.OPENABLE_ITEMS row whose lock a Rogue can pick. A container whose lock asks for something else, a key or another profession, has no row and so no tooltip line. Thieven' Kit is locked but has no pick-lock entry, so it has no row.
 	- Each number is the item's lock's Pick Lock entry: ItemSparse's LockID, then that Lock row's entry with Type 2 and Index 1, whose Skill is the number stored here. Tazan's Satchel's lock also takes its key, Tazan's Key, and on this client its tooltip reads "Requires Open (0)" rather than naming Pick Lock.
-	- Pulled from Forever's own tables at build 1.60.1.70009, falling back on Classic Era build 1.15.9.69722 where Forever's ItemSparse lacked the item. Every row here has its own Forever row, so none came from the fallback.
+	- Pulled from Forever's own tables at build 1.60.1.70009, falling back on Classic Era build 1.15.9.69722 where Forever's ItemSparse lacked the item. Every row here has its own Forever row, so none came from the fallback. Rechecked against build 1.60.1.70862's tables, which give every row the same number and no other ns.OPENING_UNLOCKED row a Pick Lock entry.
 	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
 	- Every row here must also be an ns.OPENING_UNLOCKED row in Openable-Items-Camelot.lua; a test holds every folder to it.
 
@@ -45,4 +45,9 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/Lock?build=1.60.1.70009
+	https://wago.tools/db2/Lock?build=1.60.1.70862
+	https://wago.tools/db2/ItemSparse?build=1.60.1.70862
+
+QuestieDB
+	None.
 ]]

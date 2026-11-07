@@ -34,7 +34,8 @@ ns.DATABASE_DEFAULTS = {
 		announceTradeCondition = "always",
 		-- "whisper" | "group" | "self" (printed to the player's own chat, sent to nobody)
 		announceTradeOutput = "whisper",
-		autoGreed = false,
+		-- Enable Automated Rolls: on, with each character's Character Rules deciding its gear (maintainer, 2026-11-07).
+		autoGreed = true,
 		--[[
             Automated rolls are configured per group context: the party pair
             applies whenever IsInRaid() is false, the raid pair whenever it is
@@ -45,6 +46,12 @@ ns.DATABASE_DEFAULTS = {
 		autoRollThresholdParty = 2,
 		autoRollActionRaid = ns.GREED,
 		autoRollThresholdRaid = 2,
+		--[[
+            Include Bind on Pickup: off, so the party and raid rolls and
+            Character Rules' Everything Else leave Bind on Pickup gear to the
+            player. Only Item Overrides roll on it then.
+        ]]
+		rollBindOnPickup = false,
 		--[[
             Print Item in Chat: on, since the roll window closes the moment
             GogoLoot rolls, and this line is the only record of what came up
@@ -86,7 +93,7 @@ ns.DATABASE_DEFAULTS = {
 		autoOpenWhere = "ALWAYS",
 		-- "ALWAYS" | "SOLO_ONLY"
 		autoOpenGroup = "ALWAYS",
-		-- Tells the player when Speedy Loot, or Automated Opening while it is on, leaves an item set to Ignore alone.
+		-- Tells the player when Automated Opening, while it is on, leaves an item set to Ignore sealed.
 		openingIgnoreNotifications = true,
 		lockboxTooltips = true,
 		-- "ROGUES" | "ALL"
@@ -226,6 +233,8 @@ ns.DATABASE_DEFAULTS = {
 	]]
 	global = {
 		showWelcome = true,
+		-- Set once chat has said Automated Rolls is on by default (Features/Character-Rules.lua).
+		automatedRollsOnNoticeShown = false,
 		-- It changes how the client's loot window behaves rather than loot policy, so a profile switch or Reset Profile leaves it.
 		speedyLoot = true,
 		-- The Roll Macro is a General macro, shared by every character, so its switch is too.

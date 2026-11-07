@@ -89,97 +89,6 @@ local function RebuildEmptyItemLists()
 end
 
 --[[
-    MIGRATION (remove after 2026-11-03): the loot toast filters before the
-    Mine and Group rows. Toasts took a minimum quality for the player's own
-    loot, nine Always Show kinds that skipped it, and, under Whose Loot's Whole
-    Group, one minimum quality for everyone else's. Each saved profile keeps
-    what it showed: the old minimum becomes the quality on the rarity rows, a
-    switched-off kind turns its rows off, and the item types that answered to
-    the minimum alone, mostly whites and greys, turn off once it reached
-    Uncommon. A Whole Group profile ticks the group's rarity rows at its old
-    Group Quality, and every other item type too when that reached down to
-    Common. A raw saved profile holds only what differed from the old defaults
-    (Poor, Mine, Uncommon, every kind on), so an absent key is a default.
-    Report Each Roll is gone.
-]]
-local LEGACY_ALWAYS_SHOW_ROWS = {
-	lootToastBindOnPickup = { "BIND_ON_PICKUP" },
-	lootToastQuestItems = { "QUEST" },
-	lootToastRecipes = { "RECIPE" },
-	lootToastMounts = { "MOUNT" },
-	lootToastPets = { "COMPANION_PET" },
-	lootToastKeys = { "KEY" },
-	lootToastBags = { "CONTAINER", "QUIVER" },
-	lootToastContainers = { "OPENABLES" },
-}
-local LEGACY_THRESHOLD_ONLY_ROWS = { "CONSUMABLE", "MISCELLANEOUS", "PROJECTILE", "REAGENT" }
-local LEGACY_GROUP_DEFAULT_THRESHOLD = 2
-
-local function MigrateLootToastFilters(profile)
-	local mine, mineQuality = profile.lootToastMine or {}, profile.lootToastMineQuality or {}
-	local threshold = profile.lootToastThreshold
-	if threshold and threshold > 0 then
-		for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
-			if row.rarity then
-				mineQuality[row.key] = threshold
-			end
-		end
-		for legacyKey, rowKeys in pairs(LEGACY_ALWAYS_SHOW_ROWS) do
-			if profile[legacyKey] == false then
-				for _, rowKey in ipairs(rowKeys) do
-					mine[rowKey] = false
-				end
-			end
-		end
-		if threshold >= LEGACY_GROUP_DEFAULT_THRESHOLD then
-			for _, rowKey in ipairs(LEGACY_THRESHOLD_ONLY_ROWS) do
-				mine[rowKey] = false
-			end
-		end
-	end
-	if profile.lootToastMoney == false then
-		mine.MONEY = false
-	end
-	if next(mine) then
-		profile.lootToastMine = mine
-	end
-	if next(mineQuality) then
-		profile.lootToastMineQuality = mineQuality
-	end
-
-	if profile.lootToastSource == "GROUP" then
-		local groupThreshold = profile.lootToastGroupThreshold or LEGACY_GROUP_DEFAULT_THRESHOLD
-		local group, groupQuality = profile.lootToastGroup or {}, profile.lootToastGroupQuality or {}
-		for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
-			if row.rarity then
-				group[row.key] = true
-				groupQuality[row.key] = groupThreshold
-			elseif row.classIdentifier and groupThreshold < LEGACY_GROUP_DEFAULT_THRESHOLD then
-				group[row.key] = true
-			end
-		end
-		profile.lootToastGroup = group
-		profile.lootToastGroupQuality = groupQuality
-	end
-
-	profile.lootToastThreshold = nil
-	profile.lootToastSource = nil
-	profile.lootToastGroupThreshold = nil
-	profile.lootToastMoney = nil
-	for legacyKey in pairs(LEGACY_ALWAYS_SHOW_ROWS) do
-		profile[legacyKey] = nil
-	end
-	profile.autoRollReport = nil
-end
-
--- MIGRATION (remove after 2026-11-03): every saved profile's loot toast filters.
-local function MigrateLootToastProfiles()
-	for _, profile in pairs(ns.db.sv.profiles or {}) do
-		MigrateLootToastFilters(profile)
-	end
-end
-
---[[
     Fired on OnProfileChanged / OnProfileCopied / OnProfileReset. The new
     profile's tables replace the old ones wholesale, so everything that
     caches or displays profile state is repainted here: the item lists re-seed
@@ -413,15 +322,83 @@ local function RecordCharacterClass()
 	end
 end
 
+--[[
+    Characters from another game version, dropped without a word. AceDB keys
+    a character "Name - Realm" on realm clients and "First Last" on the
+    realm-free ones (WoW Forever), so a saved key shaped the other way from
+    the one being played came from a copied WTF folder: its char section,
+    its profile choice and, unless someone still uses it, its own profile go.
+]]
+local REALM_KEY_SEPARATOR = " - "
+
+---@param characterKey any
+---@param realmClient boolean
+---@return boolean
+local function IsOtherClientKey(characterKey, realmClient)
+	if type(characterKey) ~= "string" then
+		return true
+	end
+	return (characterKey:find(REALM_KEY_SEPARATOR, 1, true) ~= nil) ~= realmClient
+end
+
+---@param sv table # the saved table, or one of its namespaces
+---@param realmClient boolean
+---@param profilesInUse table<string, boolean>
+---@return nil
+local function PruneSavedTable(sv, realmClient, profilesInUse)
+	local pruned = {}
+	for _, section in ipairs({ "char", "profileKeys" }) do
+		local characters = sv[section]
+		if type(characters) == "table" then
+			for characterKey in pairs(characters) do
+				if IsOtherClientKey(characterKey, realmClient) then
+					characters[characterKey] = nil
+					pruned[characterKey] = true
+				end
+			end
+		end
+	end
+	if type(sv.profiles) == "table" then
+		for characterKey in pairs(pruned) do
+			if not profilesInUse[characterKey] then
+				sv.profiles[characterKey] = nil
+			end
+		end
+	end
+end
+
+---@return nil
+local function PruneOtherClientCharacters()
+	local currentKey = ns.db.keys and ns.db.keys.char
+	local sv = ns.db.sv
+	if type(currentKey) ~= "string" or type(sv) ~= "table" then
+		return
+	end
+	local realmClient = currentKey:find(REALM_KEY_SEPARATOR, 1, true) ~= nil
+	local profilesInUse = { [ns.db.keys.profile or ""] = true }
+	for characterKey, profileName in pairs(sv.profileKeys or {}) do
+		if not IsOtherClientKey(characterKey, realmClient) then
+			profilesInUse[profileName] = true
+		end
+	end
+	PruneSavedTable(sv, realmClient, profilesInUse)
+	for _, namespace in pairs(sv.namespaces or {}) do
+		if type(namespace) == "table" then
+			PruneSavedTable(namespace, realmClient, profilesInUse)
+		end
+	end
+end
+
 local function OnAddonLoaded(loadedAddonName)
 	if loadedAddonName ~= ADDON_NAME then
 		return
 	end
 
 	ns.db = LibStub("AceDB-3.0"):New("GogoLootDB", ns.DATABASE_DEFAULTS, true)
-	MigrateLootToastProfiles() -- MIGRATION (remove after 2026-11-03)
+	PruneOtherClientCharacters()
 	RebuildEmptyItemLists()
 	RecordCharacterClass()
+	ns.DropOldCharacterRules() -- MIGRATION (remove after 2026-12-07)
 	for _, msg in ipairs({ "OnProfileChanged", "OnProfileReset", "OnProfileCopied" }) do
 		ns.db.RegisterCallback(ns, msg, "ApplyProfile")
 	end

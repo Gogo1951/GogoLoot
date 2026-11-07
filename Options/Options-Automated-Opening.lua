@@ -10,8 +10,7 @@
 
     Everything below the switch leaves the panel while it is off. Enable Ignore
     Notifications lives on the Openables List (Options-Openable-Items.lua),
-    since Speedy Loot gives that notice with opening off too (maintainer,
-    2026-11-03). Lockboxes, whose tooltips work with nothing opening, is a child
+    beside the Ignore settings it reports on. Lockboxes, whose tooltips work with nothing opening, is a child
     panel of its own (Options-Lockboxes.lua).
 ]]
 local _, ns = ...

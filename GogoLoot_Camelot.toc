@@ -57,6 +57,7 @@ Locales/zhTW.lua
 Data/Flavor.lua
 Data/Data.lua
 Data/Camelot/Character-Rule-Stats-Camelot.lua
+Data/Camelot/Character-Rule-Gear-Types-Camelot.lua
 Data/Camelot/Default-Item-Lists-Camelot.lua
 Data/Camelot/Lockbox-Skill-Levels-Camelot.lua
 Data/Camelot/Openable-Items-Camelot.lua
@@ -67,6 +68,7 @@ Data/Default-Settings.lua
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Bags.lua
 Features/Utilities-Scan-Tooltip.lua
 Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua

@@ -205,7 +205,7 @@ end
     tooltip on its own schedule, can still land below it. A row out of place
     beats a tooltip that strobes.
 
-    SetBagItem is hooked unguarded: a widget method on all three clients, firing
+    SetBagItem is hooked unguarded: a widget method on every client GogoLoot ships for, firing
     for the bag and bank slots the feature is about and nothing else.
 ]]
 local hookInstalled = false

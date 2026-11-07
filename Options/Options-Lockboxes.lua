@@ -18,6 +18,28 @@ local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
 
+--[[
+    The example the Enable Lockbox Notifications row names: the lowest item ID
+    this flavor's data sets to open once it is unlocked.
+]]
+local exampleLockedContainer = nil
+
+-- Also warmed at login with the other example items (ns:WarmItemCache).
+---@return number|nil
+function ns.ExampleLockedContainer()
+	if not exampleLockedContainer then
+		for itemIdentifier, default in pairs(ns.OPENABLE_ITEMS) do
+			if
+				default == ns.OPENING_UNLOCKED
+				and (not exampleLockedContainer or itemIdentifier < exampleLockedContainer)
+			then
+				exampleLockedContainer = itemIdentifier
+			end
+		end
+	end
+	return exampleLockedContainer
+end
+
 -- What Enable Lockbox Notifications prints, drawn as printed (Message Examples in Options-Utilities.lua).
 local function LockboxNotificationExample()
 	local item = ns.OptionsExampleLink(ns.ExampleLockedContainer() or ns.SAMPLE_ITEM_IDS[2])

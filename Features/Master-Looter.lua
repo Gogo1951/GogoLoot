@@ -199,20 +199,14 @@ end
 
     Readings taken while the state is unreadable are ignored outright and
     deliberately NOT recorded. Freezing rather than updating is what keeps a
-    genuine change that lands mid-loading-screen: the first reading afterwards
-    still compares against the state from before it, so the change is noticed a
-    beat late instead of never.
+    genuine change that lands mid-loading-screen: the settle window ends with a
+    fresh reading (BeginZoneChangeSettle, below), which still compares against
+    the state from before it, so the change is noticed a beat late instead of
+    waiting on the next roster event.
 ]]
 local ZONE_SETTLE_SECONDS = 3
 local ZONE_SETTLE_TIMER = "GogoLoot.MasterLooter.ZoneSettle"
 local isZoneChangeSettling = false
-
-local function BeginZoneChangeSettle()
-	isZoneChangeSettling = true
-	ns:After(ZONE_SETTLE_TIMER, ZONE_SETTLE_SECONDS, function()
-		isZoneChangeSettling = false
-	end)
-end
 
 ---@return boolean
 local function IsLootStateUnreadable()
@@ -612,7 +606,8 @@ end
     maps the client's nil answer to "group", which against a stored "master"
     reads as the leader having changed the method mid-zone. Freezing rather than
     recording is what keeps a genuine change that lands mid-loading-screen — the
-    first reading afterwards still compares against the pre-zone method.
+    reading taken when the settle window closes still compares against the
+    pre-zone method.
 ]]
 local lastObservedLootMethod = nil
 
@@ -688,6 +683,15 @@ local function OnGroupRosterUpdate()
 		ns:RefreshMasterLooterPanels()
 	end
 	CheckMasterLooterPopup()
+end
+
+-- When the window closes, everything ignored during it is read again, as a roster update would.
+local function BeginZoneChangeSettle()
+	isZoneChangeSettling = true
+	ns:After(ZONE_SETTLE_TIMER, ZONE_SETTLE_SECONDS, function()
+		isZoneChangeSettling = false
+		OnGroupRosterUpdate()
+	end)
 end
 
 --[[

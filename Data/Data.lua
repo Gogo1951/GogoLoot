@@ -165,23 +165,20 @@ ns.ROLL_OVERRIDE_LABELS = {
 ns.ROLL_OVERRIDE_ORDER = { ns.MANUAL, ns.PASS, ns.GREED, ns.NEED }
 
 --[[
-    Character Rules: the stats whose gear each character leaves to the player.
-    Two choices per stat (maintainer, 2026-10-05): Standard Automated Roll,
-    saved as no rule at all, and Manual.
+    Character Rules: what each character wants. Gear that is a ticked armor
+    or weapon type and carries a ticked stat is left to the player to roll;
+    every other armor or weapon is rolled the way the character's Everything
+    Else row says (Greed up to Epic by default; Bind on Pickup only while
+    Include Bind on Pickup, rollBindOnPickup, is on).
+    Every character starts on its class's list (Data/{Folder}/
+    Character-Rule-Gear-Types-{Folder}.lua) and saves only the boxes the
+    player changes (maintainer, 2026-11-07).
 ]]
-ns.CHARACTER_RULE_STANDARD = "standard"
-
-ns.CHARACTER_RULE_LABELS = {
-	[ns.CHARACTER_RULE_STANDARD] = ns.L["CHARACTER_RULES_STANDARD"],
-	[ns.MANUAL] = ns.L["ROLL_MANUAL"],
-}
-
-ns.CHARACTER_RULE_ORDER = { ns.CHARACTER_RULE_STANDARD, ns.MANUAL }
 
 --[[
-    The panel's two sections, in order. Each is captioned with the game's own
-    label (labelGlobal) on a client that has it, WoW Forever and later, and with
-    its locale key (caption) on one that doesn't.
+    The panel's two stat sections, in order. Each is captioned with the game's
+    own label (labelGlobal) on a client that has it, WoW Forever and later, and
+    with its locale key (caption) on one that doesn't.
 ]]
 ns.CHARACTER_RULE_GROUPS = {
 	{ key = "PRIMARY", caption = "CHARACTER_RULES_PRIMARY", labelGlobal = "STAT_CATEGORY_PRIMARY_ATTRIBUTES" },
@@ -201,6 +198,11 @@ ns.CHARACTER_RULE_GROUPS = {
     carry the stat, and `label` is the game's own name for it, already in the
     player's language. Spell Power is damage and healing in one stat, so it
     counts for both rules.
+
+    An `everyClass` stat starts ticked for every class (crit and hit, which
+    count melee and spell ratings as one, and which every role takes). Every
+    other stat starts from the class's starter list, and Stamina is on none
+    (maintainer, 2026-11-07).
 ]]
 ns.CHARACTER_RULE_STATS = {
 	{
@@ -253,6 +255,7 @@ ns.CHARACTER_RULE_STATS = {
 	},
 	{
 		key = "CRIT",
+		everyClass = true,
 		group = "SECONDARY",
 		label = ITEM_MOD_CRIT_RATING_SHORT,
 		itemMods = {
@@ -264,6 +267,7 @@ ns.CHARACTER_RULE_STATS = {
 	},
 	{
 		key = "HIT",
+		everyClass = true,
 		group = "SECONDARY",
 		label = ITEM_MOD_HIT_RATING_SHORT,
 		itemMods = {
@@ -280,6 +284,112 @@ ns.CHARACTER_RULE_STATS = {
 		itemMods = { "ITEM_MOD_MANA_REGENERATION_SHORT", "ITEM_MOD_POWER_REGEN0_SHORT" },
 	},
 }
+
+--[[
+    Character Rules' armor and weapon sections, under the stats, then the
+    Other catch-all. Each row is one item subclass, named by the client
+    (C_Item.GetItemSubClassInfo), or a named row (ns.CHARACTER_RULE_GEAR_ROW_LABELS).
+    `types` and `starter` name the tables on ns that each flavor folder's
+    Character-Rule-Gear-Types-{Folder}.lua fills: the rows, in panel order,
+    and which of them each class starts with ticked. A section whose folder
+    lists no rows is dropped at load. Weapons sort A to Z by name; armor keeps
+    its listed order, lightest first.
+]]
+ns.CHARACTER_RULE_GEAR_GROUPS = {
+	{
+		key = "ARMOR",
+		caption = "CHARACTER_RULES_ARMOR",
+		classIdentifier = ns.ITEM_CLASS_ARMOR,
+		types = "CHARACTER_RULE_ARMOR_TYPES",
+		starter = "CLASS_ARMOR_STARTER",
+	},
+	{
+		key = "WEAPON",
+		caption = "CHARACTER_RULES_WEAPONS",
+		classIdentifier = ns.ITEM_CLASS_WEAPON,
+		types = "CHARACTER_RULE_WEAPON_TYPES",
+		starter = "CLASS_WEAPON_STARTER",
+		sortByLabel = true,
+	},
+	--[[
+        Last, a catch-all: any armor or weapon no row above names (a fishing
+        pole, a Miscellaneous weapon, gear from a subclass the data never
+        listed), so the player still has a say over it. No class starts with
+        it ticked. Captioned with the game's own OTHER.
+    ]]
+	{
+		key = "OTHER",
+		labelGlobal = "OTHER",
+		caption = "CHARACTER_RULES_OTHER_GEAR",
+		catchAll = true,
+		types = "CHARACTER_RULE_OTHER_TYPES",
+	},
+}
+
+ns.CHARACTER_RULE_OTHER_TYPES = { "GEAR" }
+
+--[[
+    The rows not named by an item subclass, which C_Item.GetItemSubClassInfo
+    can't caption: held off-hands, told apart by their slot (they share armor
+    subclass 0 with rings), and the Other row.
+]]
+ns.CHARACTER_RULE_GEAR_ROW_LABELS = {
+	HELD = INVTYPE_HOLDABLE,
+	GEAR = ns.L["CHARACTER_RULES_OTHER_GEAR"],
+}
+
+-- [equipLocation] = row, for a row an item's slot names rather than its subclass.
+ns.CHARACTER_RULE_GEAR_SLOT_ROWS = {
+	INVTYPE_HOLDABLE = "HELD",
+}
+
+--[[
+    Slots any class wears, so their type never decides: a cloak is cloth by
+    subclass, and the rest are armor subclass 0 Miscellaneous. Stats alone
+    decide whether the character wants one.
+]]
+ns.CHARACTER_RULE_TYPELESS_SLOTS = {
+	INVTYPE_CLOAK = true,
+	INVTYPE_FINGER = true,
+	INVTYPE_NECK = true,
+	INVTYPE_TRINKET = true,
+}
+
+-- Slots Character Rules never judges: shirts and tabards carry no stats and are no one's upgrade.
+ns.CHARACTER_RULE_SKIPPED_SLOTS = {
+	INVTYPE_BODY = true,
+	INVTYPE_TABARD = true,
+}
+
+--[[
+    The Everything Else row: what happens to gear the character doesn't want.
+    Each field is saved only once the player changes it from these.
+]]
+ns.CHARACTER_RULE_UNWANTED_DEFAULTS = {
+	action = ns.GREED,
+	threshold = 4,
+	--[[
+        Gear whose required level is at least this many levels below the
+        character's Greeds whatever it matches, so outgrown gear never waits
+        on a levelling player; 0 is off (maintainer, 2026-11-07).
+    ]]
+	lowLevelGear = 5,
+}
+
+-- Automatically Greed on Low-Level Gear's choices: Off, then Your Level - 1 to - 5.
+ns.CHARACTER_RULE_LOW_LEVEL_ORDER = { 0, 1, 2, 3, 4, 5 }
+ns.CHARACTER_RULE_LOW_LEVEL_LABELS = { [0] = ns.L["CHARACTER_RULES_LOW_LEVEL_OFF"] }
+for levelsBelow = 1, 5 do
+	ns.CHARACTER_RULE_LOW_LEVEL_LABELS[levelsBelow] = ns.L["CHARACTER_RULES_LOW_LEVEL_BELOW"]:format(levelsBelow)
+end
+
+ns.CHARACTER_RULE_UNWANTED_LABELS = {
+	[ns.GREED] = GREED,
+	[ns.MANUAL] = ns.L["ROLL_MANUAL"],
+	[ns.PASS] = PASS,
+}
+
+ns.CHARACTER_RULE_UNWANTED_ORDER = { ns.GREED, ns.MANUAL, ns.PASS }
 
 -- The highest quality a group context's automated roll reaches, as the Up to Quality rows and the mini-map tooltip name it.
 ns.ROLL_THRESHOLD_LABELS = {
@@ -678,7 +788,7 @@ ns.MONEY_PALETTE = {
 -- Maps the announceTradeOutput setting values to their display labels.
 ns.TRADE_OUTPUT_LABELS = {
 	["whisper"] = WHISPER,
-	["group"] = ns.L["TRADE_OUTPUT_GROUP"],
+	["group"] = ns.L["CHANNEL_GROUP_CHAT"],
 	["self"] = ns.L["TRADE_OUTPUT_SELF"],
 }
 

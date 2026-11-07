@@ -98,6 +98,118 @@ end
 --------------------------------------------------------------------------------
 
 --[[
+    What Automated Rolls does with one item, for a character's rules and
+    class: the roll to make (ns.NEED, ns.GREED or ns.PASS), or nil to leave
+    the roll window to the player, then why ("OFF", "NEVER", "OVERRIDE",
+    "QUEST", "LOW_LEVEL", "WANTED", "EVERYTHING_ELSE", "BIND_ON_PICKUP", "MANUAL",
+    "QUALITY" or "ABOVE_QUALITY"). EvaluateRoll makes the roll it returns;
+    Character Rules' Sanity Check shows it. The gates run in a fixed order,
+    and the order is the design (README-Technical.md, Item Overrides vs. the
+    Automated Rolls Toggle).
+]]
+---@param itemIdentifier number
+---@param itemInformation table
+---@param itemLink string
+---@param quality number
+---@param rules table|nil
+---@param classFile string|nil
+---@param level number|nil
+---@return string|nil rollAction
+---@return string reason
+function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules, classFile, level)
+	if not ns.db.profile.autoGreed then
+		return nil, "OFF"
+	end
+
+	-- Hard safety: legendaries, recipes/books, mounts, pets are never automated
+	if ns:IsNeverAutomatedItem(itemInformation) then
+		return nil, "NEVER"
+	end
+
+	--[[
+        Item Overrides: a per-item override is an explicit instruction, so it
+        bypasses the threshold, the BoP guard, and the quest-class skip below.
+        It runs ahead of that skip deliberately — the AQ and ZG tokens the
+        default list exists to roll on are all quest-class (see
+        ns:IsQuestClassItem), so checking the skip first would make the whole
+        feature a no-op for them.
+    ]]
+	if ns.db.profile.customRollList then
+		local rollOverride = ns.db.profile.ignoredItemsSolo[itemIdentifier]
+		if rollOverride then
+			if rollOverride == ns.MANUAL then
+				return nil, "OVERRIDE"
+			end
+			return rollOverride, "OVERRIDE"
+		end
+	end
+
+	-- Unlisted quest items are never picked up by the threshold path on their own
+	if ns:IsQuestClassItem(itemInformation) then
+		return nil, "QUEST"
+	end
+
+	local contextRollAction, contextRollThreshold = GetContextRollSettings()
+
+	--[[
+        Character Rules: gear this character wants (a ticked type carrying a
+        ticked stat) keeps its roll window, whatever the quality settings
+        say. Gear it doesn't want rolls the way its Everything Else row says
+        (Greed up to Epic by default; Bind on Pickup only while Include Bind
+        on Pickup is on), as an Item Override does, unless the group context
+        is set to Manual. Gear past that row's reach falls through to the
+        threshold path below.
+    ]]
+	local verdict = ns.CharacterRuleVerdict(itemInformation, itemLink, rules, classFile)
+	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or ns.db.profile.rollBindOnPickup
+
+	--[[
+        Automatically Greed on Low-Level Gear: gear whose required level is
+        far enough below the character's (Your Level - 5 by default) Greeds,
+        matching or not, up to Everything Else's quality, so a levelling
+        character never waits on gear it has outgrown. Bind on Pickup only
+        while Include Bind on Pickup is on, and never while the group context
+        is set to Manual.
+    ]]
+	if
+		verdict
+		and bindOk
+		and contextRollAction ~= ns.MANUAL
+		and ns.IsLowLevelGear(rules, itemInformation.requiredLevel, level)
+		and quality <= ns.CharacterRuleUnwanted(rules, "threshold")
+	then
+		return ns.GREED, "LOW_LEVEL"
+	end
+
+	if verdict == ns.CHARACTER_RULE_WANTED then
+		return nil, "WANTED"
+	end
+	if verdict == ns.CHARACTER_RULE_UNWANTED and contextRollAction ~= ns.MANUAL then
+		-- Manual: gear that doesn't match keeps its roll window, whatever the quality settings say.
+		if ns.CharacterRuleUnwanted(rules, "action") == ns.MANUAL then
+			return nil, "EVERYTHING_ELSE"
+		end
+		if bindOk and quality <= ns.CharacterRuleUnwanted(rules, "threshold") then
+			return ns.CharacterRuleUnwanted(rules, "action"), "EVERYTHING_ELSE"
+		end
+	end
+
+	-- The threshold path touches BoP items only while Include Bind on Pickup is on
+	if itemInformation.bindType == ns.BIND_ON_PICKUP and not ns.db.profile.rollBindOnPickup then
+		return nil, "BIND_ON_PICKUP"
+	end
+
+	if contextRollAction == ns.MANUAL then
+		return nil, "MANUAL"
+	end
+
+	if quality <= contextRollThreshold then
+		return contextRollAction, "QUALITY"
+	end
+	return nil, "ABOVE_QUALITY"
+end
+
+--[[
     Evaluates a roll and takes the configured automated action. Re-reads all
     roll data fresh, so it behaves identically whether called from
     START_LOOT_ROLL or from a later retry tick.
@@ -154,58 +266,19 @@ local function EvaluateRoll(rollIdentifier)
 		return false
 	end
 
-	-- Hard safety: legendaries, recipes/books, mounts, pets are never automated
-	if ns:IsNeverAutomatedItem(itemInformation) then
-		return true
+	local _, playerClassFile = UnitClass("player")
+	local rollAction = ns.DecideRoll(
+		parsedItemLink.itemIdentifier,
+		itemInformation,
+		rollItemLink,
+		rollQuality,
+		ns.db.char.characterRules,
+		playerClassFile,
+		UnitLevel("player")
+	)
+	if rollAction then
+		ExecuteRollOverride(rollIdentifier, rollItemLink, rollAction, rollGreedAllowed, rollNeedAllowed)
 	end
-
-	--[[
-        Item Overrides: a per-item override is an explicit instruction, so it
-        bypasses the threshold, the BoP guard, and the quest-class skip below.
-        It runs ahead of that skip deliberately — the AQ and ZG tokens the
-        default list exists to roll on are all quest-class (see
-        ns:IsQuestClassItem), so checking the skip first would make the whole
-        feature a no-op for them.
-    ]]
-	if ns.db.profile.customRollList then
-		local rollOverride = ns.db.profile.ignoredItemsSolo[parsedItemLink.itemIdentifier]
-		if rollOverride then
-			if rollOverride == ns.MANUAL then
-				return true
-			end
-			ExecuteRollOverride(rollIdentifier, rollItemLink, rollOverride, rollGreedAllowed, rollNeedAllowed)
-			return true
-		end
-	end
-
-	-- Unlisted quest items are never picked up by the threshold path on their own
-	if ns:IsQuestClassItem(itemInformation) then
-		return true
-	end
-
-	-- The threshold path NEVER touches BoP items
-	if itemInformation.bindType == ns.BIND_ON_PICKUP then
-		return true
-	end
-
-	local contextRollAction, contextRollThreshold = GetContextRollSettings()
-	if contextRollAction == ns.MANUAL then
-		return true
-	end
-
-	if rollQuality <= contextRollThreshold then
-		--[[
-            Character Rules: gear with a stat this character set to Manual is
-            left to the player. The last check before rolling, since its
-            tooltip read is the costliest and a rule can only leave a roll
-            alone; Item Overrides, which name one item, still come first.
-        ]]
-		if ns.CharacterRulesLeaveToPlayer(rollItemLink) then
-			return true
-		end
-		ExecuteRollOverride(rollIdentifier, rollItemLink, contextRollAction, rollGreedAllowed, rollNeedAllowed)
-	end
-
 	return true
 end
 

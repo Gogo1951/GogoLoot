@@ -24,10 +24,10 @@
     data, or given a new default, takes effect for everyone who hasn't set that
     item themselves.
 
-    Ignore also keeps Speedy Loot from taking the item
-    (Features/Speedy-Loot.lua): it stays in the loot window for the player to
-    take by hand. A removed item is no container to GogoLoot at all: it is never
-    opened and loots like any other item.
+    Ignore only keeps the item sealed: Speedy Loot still takes it, since loot
+    left in the window can be lost for good, a fishing catch above all
+    (maintainer, 2026-11-07). A removed item is no container to GogoLoot at
+    all: it is never opened.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -114,12 +114,6 @@ function ns:GetOpeningAction(itemIdentifier)
 		return chosenAction
 	end
 	return ns:GetDefaultOpeningAction(itemIdentifier)
-end
-
----@param itemIdentifier number|nil
----@return boolean
-function ns:IsOpeningIgnored(itemIdentifier)
-	return ns:GetOpeningAction(itemIdentifier) == ns.OPENING_IGNORE
 end
 
 --[[

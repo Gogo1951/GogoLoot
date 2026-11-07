@@ -44,7 +44,7 @@ L["MESSAGE_ITEM_IGNORED"] = "%s 設為忽略，自動開啟不會動它。"
 L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s 來自團隊首領或世界首領，自動開啟會保留它不開，讓你交易或出售。"
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s 可能含有唯一物品，自動開啟會留給你自己開啟。"
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "%s 已留在拾取視窗中，讓你自行拾取。"
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s部分戰利品留在了屍體上。"
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -117,7 +117,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "無法將戰利品交給 %s：%s"
 L["TAB_SPEEDY_LOOT"] = "快速拾取"
 L["TAB_AUTOMATED_ROLLS"] = "自動擲骰"
 L["TAB_ITEM_OVERRIDES"] = "指定物品擲骰"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "角色規則"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "戰利品通報"
@@ -259,14 +259,17 @@ L["ITEM_LOADING"] = "載入中...(ID：%d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"絕不會對配方、書籍、坐騎、寵物或傳說物品擲骰；拾取後綁定物品與任務物品只有列在指定物品擲骰中才會擲骰。"
+	'絕不會對配方、書籍、坐騎、寵物或傳說物品擲骰；任務物品只有列在指定物品擲骰中才會擲骰；拾取後綁定物品只有列在指定物品擲骰中或開啟了"包含拾取後綁定"時才會擲骰。'
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "配方、書籍、坐騎、寵物與傳說物品一律留給你處理。"
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "隊伍頻道"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "範例：%s"
@@ -310,8 +313,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	"在你的共用巨集中新增一個名為 %s、圖示為金幣的巨集，讓你帳號中的每個角色都能把它拖到快捷列上。"
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "擲骰 1-100"
@@ -439,6 +442,9 @@ L["ROLLS_IN_RAID"] = "在團隊中"
 L["ROLLS_UP_TO_QUALITY"] = "最高品質"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s：GogoLoot 會擲骰的最高品質。"
 L["ROLLS_ACTION_CHOOSE"] = "%s：GogoLoot 擲骰的選擇。手動則交由你自己擲骰。"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "包含拾取後綁定"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"讓上面的擲骰與角色規則也對拾取後綁定的物品擲骰。預設關閉，因為拾取後綁定的戰利品通常值得你自己擲骰。"
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "隊伍與團隊擲骰"
 L["ROLLS_MESSAGES_HEADER"] = "擲骰訊息"
@@ -460,7 +466,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"為特定物品設定擲骰，優先於品質設定。這是 GogoLoot 對拾取後綁定物品或任務物品擲骰的唯一方式。"
+	'為特定物品設定擲骰，優先於品質設定。這是 GogoLoot 對任務物品擲骰的唯一方式；在"包含拾取後綁定"關閉時，也是對拾取後綁定物品擲骰的唯一方式。'
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] = "自動擲骰已關閉，這些設定暫不生效。"
 L["ITEM_OVERRIDES_ENABLE"] = "啟用指定物品擲骰"
@@ -477,13 +483,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"輸入物品 ID 或將物品拖曳到這裡，即可加入清單，並設為手動。"
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	"逐一角色將帶有你所選屬性的裝備留給你處理：例如將%s設為手動，你的%s遇到帶%s的裝備時就會保留擲骰視窗，其他物品則照常擲骰。指定物品擲骰仍然優先。"
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	'想要%s裝備？在你的%s上勾選%s以及你使用的護甲和武器類型。符合條件的裝備留給你擲骰，其餘的交給"其他一切"處理。指定物品擲骰仍然優先。'
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -491,10 +497,43 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "主要屬性"
 L["CHARACTER_RULES_SECONDARY"] = "次要屬性"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "標準自動擲骰"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	"%s：手動會在此角色上把帶有此屬性的裝備留給你，連同擲骰視窗。標準自動擲骰則像其他物品一樣擲骰。"
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "護甲類型"
+L["CHARACTER_RULES_WEAPONS"] = "武器類型"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "其他護甲和武器"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] = "釣竿、雜項武器，以及上面各類型都不包括的護甲或武器。"
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "其他一切"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "不符合條件的裝備"
+L["CHARACTER_RULES_RESET"] = "恢復職業預設值"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "檢查"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"依上面的勾選，這些裝備後綁定的綠色物品對這個角色會如何擲骰。"
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "擲骰視窗"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "自動擲骰"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] = "角色規則讀取的屬性：%s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "低等級裝備"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "自動擲骰已關閉"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "品質設定"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "職業：%s"
+L["CHARACTER_RULES_LOW_LEVEL"] = "對低等級裝備自動貪婪"
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	"需求等級至少比你低這麼多的護甲與武器，無論是否符合，都會在其他一切的品質以內選擇貪婪，讓升級途中已經用不上的裝備不再耽誤你。"
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "關閉"
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "你的等級 - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	"自動擲骰現已開啟：每個角色想要的裝備留給你擲骰，其餘的選擇貪婪。可在 選項 > 插件 > GogoLoot > 自動擲骰 中更改。"
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -524,8 +563,7 @@ L["TRADE_CHANNEL"] = "頻道"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s會將每份摘要發給交易對象。隊伍頻道會發到你的隊伍或團隊，不在隊伍中時仍改用悄悄話發送。僅自己只顯示在你自己的聊天視窗，不發給任何人。"
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "隊伍頻道"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "僅自己"
 L["TRADE_TOOLTIP_DESCRIPTION"] = "此交易完成時，將交易摘要發送到聊天頻道。"
 L["TRADE_CHECKBOX_LABEL"] = "通報"
@@ -748,19 +786,16 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "所有角色"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "你的%s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "啟用忽略通知"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"當 GogoLoot 因為可開啟清單設為忽略而不開啟某個容器時，在聊天視窗中通知你並說明原因。"
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	"GogoLoot 認得的所有容器，以及自動開啟會如何處理它們。忽略會讓容器保持未開啟，快速拾取也會將它留在拾取視窗中給你。你的變更適用於你的所有角色。"
+	"GogoLoot 認得的所有容器，以及自動開啟會如何處理它們。忽略會讓容器保持未開啟。你的變更適用於你的所有角色。"
 -- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"自動開啟已關閉時只會使用忽略：它仍會讓快速拾取略過這些物品。"
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] = "自動開啟與快速拾取都已關閉，這些設定暫不生效。"
+L["OPENABLE_ITEMS_OFF_NOTE"] = "自動開啟已關閉，這些設定暫不生效。"
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"將清單恢復為預設：每件物品回到預設設定，移除的物品會回來，新增的物品會被移除。"
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1122,7 +1157,6 @@ L["LOOT_MASTER_ROLL_LENGTH"] = "擲骰時間"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "擲骰開放多久。"
 L["LOOT_MASTER_ANNOUNCE_IN"] = "通報頻道"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "開骰、平手與暫停的訊息要發送到哪裡。"
-L["LOOT_MASTER_CHANNEL_GROUP"] = "隊伍頻道"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"當你不是隊長或助理時，團隊警告會改用隊伍頻道。贏家一律發送到隊伍頻道。"
 -- Argument: the seconds.

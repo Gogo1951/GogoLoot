@@ -134,21 +134,23 @@ ns.DiagnosticsStrings = {
 	API_TITLE = "API Endpoints",
 	API_DESCRIPTION = "Checks that every game function " .. TITLE .. " calls exists on this client.",
 	LOOT_TITLE = "Loot Method",
-	LOOT_DESCRIPTION = "Shows what the game reports for your group's loot method and threshold, how GogoLoot reads it, the Automated Master Looting settings and destinations, why each slot in an open loot window would or wouldn't be handed out, and which message IDs resolved.",
+	LOOT_DESCRIPTION = "Shows what the game reports for your group's loot method and threshold, how "
+		.. TITLE
+		.. " reads it, the Automated Master Looting settings and destinations, why each slot in an open loot window would or wouldn't be handed out, and which message IDs resolved.",
 	LOOTING_TITLE = "Speedy Loot Context",
-	LOOTING_DESCRIPTION = "Shows whether Speedy Loot can take loot right now: its switch, the game's Auto Loot setting and modifier key, the master looter stand-down, free bag space and the loot window. Then what the Loot Sounds read: their switches, where the open loot came from, and the game's sound settings.",
+	LOOTING_DESCRIPTION = "Shows whether Speedy Loot can take loot right now: its switch, the game's Auto Loot setting and modifier key, the master looter stand-down, free space in each bag and the keyring, which loot window it hides, and what it reads on each slot of an open one. Then what the Loot Sounds read: their switches, where the open loot came from, and the game's sound settings.",
 	OPENING_TITLE = "Automated Opening Context",
 	OPENING_DESCRIPTION = "Shows every check that can hold Automated Opening back right now: its switch and hold-offs, combat, stealth, open windows, casting, free bag space, the Openables List, the lockbox switches, and whether Open Sesame is running too.",
 	LOCKED_TITLE = "Locked Boxes",
-	LOCKED_DESCRIPTION = "Lists every openable item in your bags with its action, the level it needs, whether "
+	LOCKED_DESCRIPTION = "Lists every openable item and lockbox in your bags with its action, the level it needs, whether "
 		.. TITLE
-		.. " reads it as locked, and whether it would open. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
+		.. " reads it as locked, whether it would open, and the Lockpicking it needs. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
 	ROLLS_TITLE = "Automated Rolls Context",
-	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, and this character's Character Rules with the stats this client offers.",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Rules with the stats this client offers, and any roll open now.",
 	VERDICTS_TITLE = "Roll Verdicts",
 	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
-	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Rules reads on each, where each came from (ITEM or TOOLTIP), and whether this character's rules leave it to you.",
+	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Rules reads on each, where each came from (ITEM, TOOLTIP or EQUIP), and whether this character wants each (Character Rules' verdict).",
 	TOASTS_TITLE = "Loot Toasts Context",
 	TOASTS_DESCRIPTION = "Shows the Loot Toasts switch and look, every Filters row for Mine and Group, and whether the General chat tab still shows the game's own loot and money lines.",
 	LINES_TITLE = "Loot Line Reading",
@@ -158,7 +160,7 @@ ns.DiagnosticsStrings = {
 	ANNOUNCE_TITLE = "Loot Announcements Context",
 	ANNOUNCE_DESCRIPTION = "Shows the Enable Loot Announcements switch, the trade and master loot announcement settings, and the chat channel "
 		.. TITLE
-		.. " would send to right now.",
+		.. " would send to right now, and the welcome message switch.",
 	MACRO_TITLE = "Roll Macro Context",
 	MACRO_DESCRIPTION = "Shows the Enable Roll Macro switch, whether the macro is in your General Macros as "
 		.. TITLE

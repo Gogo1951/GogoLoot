@@ -57,6 +57,7 @@ Locales/zhTW.lua
 Data/Flavor.lua
 Data/Data.lua
 Data/Mists/Character-Rule-Stats-Mists.lua
+Data/Mists/Character-Rule-Gear-Types-Mists.lua
 Data/Mists/Default-Item-Lists-Mists.lua
 Data/Mists/Lockbox-Skill-Levels-Mists.lua
 Data/Mists/Openable-Items-Mists.lua
@@ -67,6 +68,7 @@ Data/Default-Settings.lua
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Bags.lua
 Features/Utilities-Scan-Tooltip.lua
 Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua

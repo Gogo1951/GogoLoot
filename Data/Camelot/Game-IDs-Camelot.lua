@@ -39,7 +39,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-05, WoW Forever 1.60.1.70790
+	2026-11-07, WoW Forever 1.60.1.70862
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
@@ -56,4 +56,8 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/SoundKit?build=1.60.1.70205
+	https://wago.tools/db2/SoundKit?build=1.60.1.70862
+
+QuestieDB
+	None.
 ]]

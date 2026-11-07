@@ -78,12 +78,14 @@ local FILES = {
 	"Data/Flavor.lua",
 	"Data/Data.lua",
 	"Data/Vanilla/Character-Rule-Stats-Vanilla.lua",
+	"Data/Vanilla/Character-Rule-Gear-Types-Vanilla.lua",
 	"Data/Vanilla/Default-Item-Lists-Vanilla.lua",
 	"Data/Vanilla/Lockbox-Skill-Levels-Vanilla.lua",
 	"Data/Vanilla/Openable-Items-Vanilla.lua",
 	"Data/Vanilla/Spells-Vanilla.lua",
 	"Data/Vanilla/Game-IDs-Vanilla.lua",
 	"Data/Discovery/Character-Rule-Stats-Discovery.lua",
+	"Data/Discovery/Character-Rule-Gear-Types-Discovery.lua",
 	"Data/Discovery/Default-Item-Lists-Discovery.lua",
 	"Data/Discovery/Lockbox-Skill-Levels-Discovery.lua",
 	"Data/Discovery/Openable-Items-Discovery.lua",
@@ -92,6 +94,7 @@ local FILES = {
 	"Data/Default-Settings.lua",
 	"Features/Core.lua",
 	"Features/Utilities.lua",
+	"Features/Utilities-Bags.lua",
 	"Features/Utilities-Scan-Tooltip.lua",
 	"Features/Utilities-Chat-Lines.lua",
 	"Features/Announcements.lua",
@@ -312,6 +315,11 @@ local function cacheOpenableItems(ns, env)
 	for quality, itemIdentifier in pairs(ns.SAMPLE_ITEM_IDS) do
 		env.__state.itemNames[itemIdentifier] = env.__state.itemNames[itemIdentifier]
 			or { name = "Sample " .. itemIdentifier, quality = quality }
+	end
+	-- The Character Rules Sanity Check's items, watched once that panel is built.
+	for _, itemIdentifier in ipairs(ns.CHARACTER_RULE_SAMPLE_ITEMS or {}) do
+		env.__state.itemNames[itemIdentifier] = env.__state.itemNames[itemIdentifier]
+			or { name = "Sanity " .. itemIdentifier, quality = 2, classId = 4, equipLocation = "INVTYPE_HEAD" }
 	end
 end
 
@@ -1004,48 +1012,6 @@ test("the pop-up carries the automation switch, and Send All Loot To leaves with
 	check(not evaluate(args.sendAll.hidden), "Send All Loot To shows while it is on")
 	args.autoMasterLoot.set(nil, false)
 	check(evaluate(args.sendAll.hidden), "and leaves while it is off")
-end)
-
---[[
-    MIGRATION (remove after 2026-11-03): a profile saved before the Mine and
-    Group rows keeps what it showed.
-]]
-test("saved loot toast filters carry over to the Mine and Group rows", function()
-	local ns = loadAddon(nil, function(env)
-		env.__state.savedProfile = {
-			lootToastThreshold = 2,
-			lootToastQuestItems = false,
-			lootToastBags = false,
-			lootToastMoney = false,
-			lootToastSource = "GROUP",
-			lootToastGroupThreshold = 3,
-			autoRollReport = true,
-		}
-	end)
-	local profile = ns.db.profile
-
-	checkEqual(2, profile.lootToastMineQuality.ARMOR, "the old minimum lands on the rarity rows")
-	checkEqual(2, profile.lootToastMineQuality.TRADE_GOODS, "every one of them")
-	checkEqual(false, profile.lootToastMine.QUEST, "a switched-off kind turns its row off")
-	checkEqual(false, profile.lootToastMine.CONTAINER, "Bags covered bags")
-	checkEqual(false, profile.lootToastMine.QUIVER, "and quivers")
-	checkEqual(false, profile.lootToastMine.MONEY, "and Money stays off")
-	checkEqual(false, profile.lootToastMine.CONSUMABLE, "types that answered to the minimum alone go quiet at Uncommon")
-	checkEqual(true, profile.lootToastMine.RECIPE, "a kind left on stays on")
-	checkEqual(true, profile.lootToastGroup.TRADE_GOODS, "Whole Group ticks the group's rarity rows")
-	checkEqual(3, profile.lootToastGroupQuality.WEAPON, "at its old Group Quality")
-	checkEqual(true, profile.lootToastGroup.QUEST, "keeping the group's quest items on")
-	for _, key in ipairs({
-		"lootToastThreshold",
-		"lootToastQuestItems",
-		"lootToastBags",
-		"lootToastMoney",
-		"lootToastSource",
-		"lootToastGroupThreshold",
-		"autoRollReport",
-	}) do
-		checkEqual(nil, profile[key], key .. " is gone")
-	end
 end)
 
 test("changing the loot method reaches the modern API", function()
@@ -1975,7 +1941,7 @@ test("trade announcements pick whisper, group chat, or Me Only from a Channel dr
 	checkEqual("select", dropdown.type, "it is a dropdown")
 	checkEqual(ns.OPTIONS_CONTROL_WIDTH, dropdown.width, "in the shared control column")
 	checkEqual("Whisper", dropdown.values.whisper, "offering the game's own Whisper")
-	checkEqual(ns.L["TRADE_OUTPUT_GROUP"], dropdown.values.group, "Group Chat")
+	checkEqual(ns.L["CHANNEL_GROUP_CHAT"], dropdown.values.group, "Group Chat")
 	checkEqual(ns.L["TRADE_OUTPUT_SELF"], dropdown.values.self, "and Me Only")
 	checkEqual("whisper", dropdown.sorting[1], "Whisper first")
 	checkEqual("self", dropdown.sorting[3], "Me Only last")
@@ -2137,10 +2103,9 @@ test("the Ignore notice's example is its real printed line", function()
 	check(not evaluate(row.hidden), "and stays on show with the notice off")
 	ns.db.profile.autoOpen = false
 	check(not evaluate(row.hidden), "and with opening off")
-	L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] = "<%s stays behind>"
 	check(
-		row.args.control1.name():find("[Sealed Box]|h stays behind>", 1, true) ~= nil,
-		"where it shows Speedy Loot's notice instead"
+		row.args.control1.name():find("[Sealed Box]|h is ignored>", 1, true) ~= nil,
+		"still showing the opening notice, the only one Ignore gives"
 	)
 end)
 
@@ -2712,6 +2677,40 @@ test("a promotion that lands mid-loading-screen opens the window once it settles
 	checkEqual(1, opened.count, "the window opens a beat late rather than never")
 end)
 
+test("a promotion inside the settle window opens the window when it closes, with no later roster event", function()
+	local ns, env = loadAddon()
+	local opened = watchPopup(ns)
+	local state = joinGroupWithoutMasterLoot(ns, env)
+
+	fire(ns, "ZONE_CHANGED_NEW_AREA")
+	becomeMasterLooter(state)
+	fire(ns, "PARTY_LOOT_METHOD_CHANGED")
+	checkEqual(0, opened.count, "nothing while the border crossing settles")
+
+	Fake.advance(env, 5)
+
+	checkEqual(1, opened.count, "the window opens as the settle window closes")
+end)
+
+test("a method change inside the settle window clears destinations when it closes", function()
+	local ns, env = loadAddon()
+	watchPopup(ns)
+	local state = joinGroupWithoutMasterLoot(ns, env)
+	becomeMasterLooter(state)
+	fire(ns, "PARTY_LOOT_METHOD_CHANGED")
+	ns:SetAllDestinations("hippobob")
+
+	fire(ns, "ZONE_CHANGED_NEW_AREA")
+	state.lootMethod = 3
+	state.masterLooterPartyIndex = nil
+	fire(ns, "PARTY_LOOT_METHOD_CHANGED")
+	checkEqual("hippobob", ns:GetSharedDestination(), "the setup is untouched while it settles")
+
+	Fake.advance(env, 5)
+
+	checkEqual(nil, ns:GetSharedDestination(), "the change to group loot clears it when the window closes")
+end)
+
 --[[
     Login and /reload are loading screens too, and are the two the pop-up is
     meant to answer from a standing start. PLAYER_ENTERING_WORLD's own arguments
@@ -2970,6 +2969,24 @@ test("local prints lead with the add-on name", function()
 	local printed = env.__state.prints[#env.__state.prints] or ""
 	local plainText = printed:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
 	checkEqual(ns.L["ADDON_TITLE"] .. " // Hello.", plainText, "the name first, the information after")
+end)
+
+test("a group member whose name reads secret is unknown, never compared", function()
+	local secretName = {}
+	local ns, env = loadAddon(nil, function(loadingEnv)
+		loadingEnv.issecretvalue = function(value)
+			return value == secretName
+		end
+	end)
+	local state = env.__state
+	state.inGroup = true
+	state.groupMembers = 2
+	state.unitNames.party1 = secretName
+
+	checkEqual(nil, ns:GetCleanUnitName("party1"), "a secret name reads as unknown")
+	checkEqual(nil, ns:GetGroupMemberClassColor("Hippobob"), "the class-color lookup skips it")
+	fire(ns, "GROUP_ROSTER_UPDATE")
+	checkEqual("Tester", ns:GetCleanUnitName("player"), "a readable name still reads")
 end)
 
 --[[
@@ -3881,19 +3898,18 @@ end)
 --------------------------------------------------------------------------------
 
 --[[
-    A roll on gear for Character Rules: an Uncommon, Bind on Equip plate piece
-    the default In Party setting Greeds on, with `stats` as GetItemStats would
-    report them, and the player's rules set to `rules`.
-]]
---[[
     The add-on as a client with the given X-Flavor loads it. Classic Era is the
     default; the secondary stats only exist from WoW Forever on.
 ]]
 local function loadFlavorAddon(flavor)
 	return loadAddon(nil, function(env)
-		-- The flavor folder's stat list in place of Vanilla's, as that flavor's TOC loads it.
+		-- The flavor folder's stat and gear lists in place of Vanilla's, as that flavor's TOC loads them.
 		env.__flavorFiles = {
 			["Data/Vanilla/Character-Rule-Stats-Vanilla.lua"] = ("Data/%s/Character-Rule-Stats-%s.lua"):format(
+				flavor,
+				flavor
+			),
+			["Data/Vanilla/Character-Rule-Gear-Types-Vanilla.lua"] = ("Data/%s/Character-Rule-Gear-Types-%s.lua"):format(
 				flavor,
 				flavor
 			),
@@ -3908,114 +3924,573 @@ local function loadFlavorAddon(flavor)
 	end)
 end
 
-local function startRuleRoll(ns, env, rules, description)
+--[[
+    A roll on one piece of gear as `classFile`: Epic, Bind on Equip plate with
+    no stats by default, past the default threshold's reach, so a roll means
+    Character Rules' Everything Else made it. `item` overrides any of
+    those fields, `item.stats` is what GetItemStats reports, and the player's
+    rules are set to `rules`.
+]]
+local function startGearRoll(ns, env, classFile, item, rules)
 	local state = env.__state
-	description = description or {}
-	local itemId = description.itemId or 4001
-	state.itemStats[itemId] = description.stats or {}
-	state.itemNames[itemId] = {
-		name = "Rule Item",
-		quality = 2,
-		classId = 4,
-		subclassId = 4,
-		bindType = 2,
+	state.playerClassFile = classFile
+	item = item or {}
+	--[[
+        Gear the character's own level needs, so Automatically Greed on
+        Low-Level Gear stays out of the way unless a test asks for it.
+    ]]
+	state.playerLevel = item.playerLevel or 59
+	state.itemStats[4100] = item.stats or {}
+	state.itemNames[4100] = {
+		name = "Gear Item",
+		quality = item.quality or 4,
+		classId = item.classId or 4,
+		subclassId = item.subclassId or 4,
+		bindType = item.bindType or 2,
+		equipLocation = item.equipLocation or "INVTYPE_CHEST",
+		minLevel = item.requiredLevel or state.playerLevel,
 	}
-	state.lootRolls[7] = { itemId = itemId, suffixId = description.suffixId }
+	state.lootRolls[8] = {
+		itemId = 4100,
+		suffixId = item.suffixId,
+		canNeed = item.canNeed == nil and false or item.canNeed,
+		canGreed = item.canGreed,
+	}
 	state.rollsPerformed = {}
 	ns.db.char.characterRules = rules
 	ns.db.profile.autoGreed = true
-	fire(ns, "START_LOOT_ROLL", 7)
+	fire(ns, "START_LOOT_ROLL", 8)
 	return state.rollsPerformed
 end
 
-test("a stat set to Manual leaves gear with it to the player, and other gear rolls as usual", function()
+local function rolledAction(rolls)
+	return rolls[1] and rolls[1].action
+end
+
+local STRENGTH = { ITEM_MOD_STRENGTH_SHORT = 8 }
+local INTELLECT = { ITEM_MOD_INTELLECT_SHORT = 8 }
+local CLOTH = 1
+local LEATHER = 2
+
+test("gear that matches keeps its roll window, and Everything Else Greeds the rest up to Epic", function()
 	local ns, env = loadAddon()
-	local rules = { INTELLECT = ns.MANUAL }
-
-	local rolls =
-		startRuleRoll(ns, env, rules, { stats = { ITEM_MOD_INTELLECT_SHORT = 8, ITEM_MOD_STRENGTH_SHORT = 8 } })
-	checkEqual(0, #rolls, "Intellect gear keeps its roll window")
-
-	rolls = startRuleRoll(ns, env, rules, { stats = { ITEM_MOD_STRENGTH_SHORT = 8 } })
-	checkEqual(ns.ROLL_ACTION_GREED, rolls[1] and rolls[1].action, "Strength gear Greeds as the quality settings say")
-
-	rolls = startRuleRoll(ns, env, nil, { stats = { ITEM_MOD_INTELLECT_SHORT = 8 } })
-	checkEqual(ns.ROLL_ACTION_GREED, rolls[1] and rolls[1].action, "and with no rules, so does Intellect gear")
+	checkEqual(0, #startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH }), "Strength plate on a warrior")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { stats = INTELLECT })),
+		"Intellect plate isn't a warrior's: an Epic piece Greeds"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", { stats = INTELLECT })),
+		"nor is plate a mage's, whatever its stats"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { stats = { ITEM_MOD_STAMINA_SHORT = 20 } })),
+		"Stamina starts unticked for everyone, so Stamina-only plate Greeds"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", { stats = { ITEM_MOD_STAMINA_SHORT = 20, ITEM_MOD_STRENGTH_SHORT = 5 } }),
+		"while Strength and Stamina plate keeps its roll window"
+	)
+	checkEqual(0, #startGearRoll(ns, env, "WARRIOR"), "and so does plate with no stats read")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", { quality = 2, bindType = 2 })),
+		"an Uncommon piece Greeds too"
+	)
 end)
 
-test("Classic Era and TBC offer only the primary attributes, and a secondary rule saved there does nothing", function()
-	for _, flavor in ipairs({ "Vanilla", "TBC" }) do
-		local ns, env = loadFlavorAddon(flavor)
-		local keys = {}
-		for index, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-			keys[index] = stat.key
-		end
-		checkEqual("STRENGTH AGILITY STAMINA INTELLECT SPIRIT", table.concat(keys, " "), flavor .. " lists the five")
-		checkEqual(1, #ns.CHARACTER_RULE_GROUPS, flavor .. " has one section")
+test("Everything Else's choices, and a group context set to Manual", function()
+	local ns, env = loadAddon()
+	local plate = {}
+	checkEqual(
+		ns.ROLL_ACTION_PASS,
+		rolledAction(startGearRoll(ns, env, "MAGE", plate, { unwanted = { action = ns.PASS } })),
+		"Pass passes"
+	)
 
-		local rolls = startRuleRoll(
-			ns,
-			env,
-			{ SPELL_POWER = ns.MANUAL },
-			{ stats = { ITEM_MOD_SPELL_DAMAGE_DONE_SHORT = 12 } }
+	local bindOnPickup = { bindType = 1 }
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", bindOnPickup), "Bind on Pickup keeps its roll window by default")
+	ns.db.profile.rollBindOnPickup = true
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", bindOnPickup)),
+		"until Include Bind on Pickup is on"
+	)
+	ns.db.profile.rollBindOnPickup = false
+
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "MAGE", plate, { unwanted = { action = ns.MANUAL } }),
+		"Manual leaves gear that doesn't match to the player"
+	)
+
+	local upToRare = { unwanted = { threshold = 3 } }
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", plate, upToRare), "an Epic past Everything Else's reach")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", { quality = 3 }, upToRare)),
+		"a Rare within it"
+	)
+
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", { canGreed = false }), "no Greed open, no roll")
+
+	ns.db.profile.autoRollActionParty = ns.MANUAL
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", plate), "a group context set to Manual rolls nothing")
+end)
+
+test("a box saved on the character wins over its class starter", function()
+	local ns, env = loadAddon()
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "MAGE", { stats = INTELLECT }, { wanted = { ARMOR_4 = true } }),
+		"plate ticked on for a mage"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH }, { wanted = { ARMOR_4 = false } })),
+		"plate ticked off"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH }, { wanted = { STAT_STRENGTH = false } })),
+		"Strength ticked off"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", { stats = INTELLECT }, { wanted = { STAT_INTELLECT = true } }),
+		"Intellect ticked on"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", { stats = { ITEM_MOD_INTELLECT_SHORT = 8, ITEM_MOD_STRENGTH_SHORT = 8 } }),
+		"one ticked stat is enough"
+	)
+end)
+
+test("gear far enough below the character's level Greeds whatever it matches, Your Level - 5 by default", function()
+	local ns, env = loadAddon()
+	local outgrown = { stats = STRENGTH, playerLevel = 30, requiredLevel = 25 }
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", outgrown)),
+		"Strength plate needing level 25 Greeds on a level 30 warrior"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH, playerLevel = 30, requiredLevel = 26 }),
+		"and keeps its roll window at level 26"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(
+			startGearRoll(
+				ns,
+				env,
+				"WARRIOR",
+				{ stats = STRENGTH, playerLevel = 30, requiredLevel = 29 },
+				{ unwanted = { lowLevelGear = 1 } }
+			)
+		),
+		"Your Level - 1 Greeds gear one level down"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", outgrown, { unwanted = { lowLevelGear = 0 } }),
+		"Off keeps its roll window"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", outgrown, { unwanted = { action = ns.PASS } })),
+		"it Greeds even when Everything Else passes"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH, playerLevel = 30, requiredLevel = 25, bindType = 1 }),
+		"Bind on Pickup gear waits for Include Bind on Pickup"
+	)
+	ns.db.profile.rollBindOnPickup = true
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(
+			startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH, playerLevel = 30, requiredLevel = 25, bindType = 1 })
+		),
+		"and Greeds once it is on"
+	)
+	ns.db.profile.rollBindOnPickup = false
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR", outgrown, { unwanted = { threshold = 3 } }),
+		"and nothing past Everything Else's quality"
+	)
+	checkEqual(false, ns.IsLowLevelGear(nil, nil, 30), "a required level nobody can read is never low-level")
+end)
+
+test("Item Overrides beat Character Rules", function()
+	local ns, env = loadAddon()
+	ns.db.profile.ignoredItemsSolo[4100] = ns.PASS
+	checkEqual(
+		ns.ROLL_ACTION_PASS,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { stats = STRENGTH })),
+		"the item's override decided"
+	)
+end)
+
+test("cloaks, rings, necks and trinkets go by their stats alone, and shirts and tabards are never judged", function()
+	local ns, env = loadAddon()
+	for _, slot in ipairs({ "INVTYPE_CLOAK", "INVTYPE_FINGER", "INVTYPE_NECK", "INVTYPE_TRINKET" }) do
+		local subclassId = slot == "INVTYPE_CLOAK" and CLOTH or 0
+		checkEqual(
+			ns.ROLL_ACTION_GREED,
+			rolledAction(
+				startGearRoll(ns, env, "WARRIOR", { subclassId = subclassId, equipLocation = slot, stats = INTELLECT })
+			),
+			slot .. " with Intellect Greeds on a warrior"
 		)
-		checkEqual(1, #rolls, flavor .. " rolls on spell damage gear despite an old Spell Power rule")
+		checkEqual(
+			0,
+			#startGearRoll(ns, env, "WARRIOR", { subclassId = subclassId, equipLocation = slot, stats = STRENGTH }),
+			slot .. " with Strength keeps its roll window, cloth or not"
+		)
 	end
 
-	local ns = loadFlavorAddon("Camelot")
-	checkEqual(11, #ns.CHARACTER_RULE_STATS, "WoW Forever keeps every stat")
+	local pass = { unwanted = { action = ns.PASS } }
+	for _, slot in ipairs({ "INVTYPE_TABARD", "INVTYPE_BODY" }) do
+		checkEqual(
+			ns.ROLL_ACTION_GREED,
+			rolledAction(
+				startGearRoll(
+					ns,
+					env,
+					"WARRIOR",
+					{ subclassId = 0, equipLocation = slot, quality = 2, bindType = 2, stats = INTELLECT },
+					pass
+				)
+			),
+			slot .. " rolls as the threshold says, never Everything Else's Pass"
+		)
+	end
 end)
 
-test("Hit and Mana Per 5 count from the item on WoW Forever", function()
-	local ns, env = loadFlavorAddon("Camelot")
-	local rolls = startRuleRoll(ns, env, { HIT = ns.MANUAL }, { stats = { ITEM_MOD_HIT_SPELL_RATING_SHORT = 10 } })
-	checkEqual(0, #rolls, "spell hit rating is Hit gear")
+test("a held off-hand goes by its slot", function()
+	local ns, env = loadAddon()
+	local orb = { subclassId = 0, equipLocation = "INVTYPE_HOLDABLE", stats = INTELLECT }
+	checkEqual(ns.ROLL_ACTION_GREED, rolledAction(startGearRoll(ns, env, "WARRIOR", orb)), "a warrior greeds an orb")
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", orb), "a mage keeps its roll window")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", orb, { wanted = { ARMOR_HELD = false } })),
+		"unless the mage ticked held off-hands off"
+	)
+end)
 
-	rolls = startRuleRoll(ns, env, { MP5 = ns.MANUAL }, { stats = { ITEM_MOD_MANA_REGENERATION_SHORT = 4 } })
-	checkEqual(0, #rolls, "mana regeneration is Mana Per 5 gear")
+test("armor or weapons no row names fall to Other, which starts ticked for everyone", function()
+	local ns, env = loadAddon()
+	local pole = { classId = 2, subclassId = 20, equipLocation = "INVTYPE_2HWEAPON" }
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", pole), "a fishing pole keeps its roll window")
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, nil, { classId = 2, subclassId = 14, equipLocation = "INVTYPE_WEAPON" }),
+		"and a Miscellaneous weapon, even for a character with no class saved"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", pole, { wanted = { OTHER_GEAR = false } })),
+		"until Other is ticked off"
+	)
+end)
+
+test("each class starts from what it can train and the stats its specs use", function()
+	local ns, env = loadAddon()
+	checkEqual(
+		0,
+		#startGearRoll(
+			ns,
+			env,
+			"HUNTER",
+			{ classId = 2, subclassId = 16, equipLocation = "INVTYPE_THROWN", stats = { ITEM_MOD_AGILITY_SHORT = 5 } }
+		),
+		"a hunter can train Thrown"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(
+			startGearRoll(
+				ns,
+				env,
+				"PRIEST",
+				{ classId = 2, subclassId = 8, equipLocation = "INVTYPE_2HWEAPON", stats = INTELLECT }
+			)
+		),
+		"a priest can't use a two-handed sword"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "PALADIN", { subclassId = 8, equipLocation = "INVTYPE_RELIC" })),
+		"nor a paladin an idol"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "ROGUE", { subclassId = LEATHER, stats = { ITEM_MOD_AGILITY_SHORT = 5 } }),
+		"Agility leather on a rogue"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "PRIEST", { subclassId = CLOTH, stats = { ITEM_MOD_SPIRIT_SHORT = 5 } }),
+		"Spirit cloth on a priest"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", { subclassId = CLOTH, stats = { ITEM_MOD_SPIRIT_SHORT = 5 } })),
+		"but not on a mage"
+	)
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "PALADIN", { subclassId = CLOTH, stats = INTELLECT }),
+		"a paladin starts with every lighter armor too, for healing cloth"
+	)
+	checkEqual(0, #startGearRoll(ns, env, "DRUID", { subclassId = CLOTH, stats = INTELLECT }), "and a druid with cloth")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "DRUID", { subclassId = 3, stats = INTELLECT })),
+		"but never armor the class can't wear"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, nil, { subclassId = CLOTH })),
+		"a character with no class starts with nothing ticked"
+	)
+end)
+
+test("Classic Era, Season of Discovery and TBC offer every stat", function()
+	for _, flavor in ipairs({ "Vanilla", "TBC" }) do
+		local ns = loadFlavorAddon(flavor)
+		checkEqual(11, #ns.CHARACTER_RULE_STATS, flavor .. " lists all eleven")
+		checkEqual(2, #ns.CHARACTER_RULE_GROUPS, flavor .. " has both sections")
+		check(next(ns.CHARACTER_RULE_EQUIP_SPELLS) ~= nil, flavor .. " lists the Equip spells it reads")
+	end
+	local foreverEquipSpells = loadFlavorAddon("Camelot").CHARACTER_RULE_EQUIP_SPELLS
+	check(
+		type(foreverEquipSpells) == "table" and next(foreverEquipSpells) == nil,
+		"WoW Forever reads its stats off the item"
+	)
+
+	-- Season of Discovery runs on the Classic Era client: the same stats, the same Equip spells.
+	local function statFileBody(folder)
+		local file = assert(io.open(("Data/%s/Character-Rule-Stats-%s.lua"):format(folder, folder)))
+		local text = file:read("*a")
+		file:close()
+		return text:match("ns%.CHARACTER_RULE_STAT_KEYS = .-\n}\n.-ns%.CHARACTER_RULE_EQUIP_SPELLS = .-\n}\n")
+	end
+	check(statFileBody("Vanilla") ~= nil, "the Classic Era stat file has both tables")
+	checkEqual(statFileBody("Vanilla"), statFileBody("Discovery"), "and Season of Discovery's matches it")
+end)
+
+-- An Equip line's tooltip on the gear item, as the scan tooltip reads it.
+local function equipLine(env, line)
+	env.__state.hyperlinkTooltipLines[4100] = { "Gear Item", line }
+end
+
+test("Classic Era reads spell power off the gear's Equip line, in the words of the spell's own description", function()
+	local ns, env = loadFlavorAddon("Vanilla")
+	equipLine(env, "Equip: Increases damage and healing done by magical spells and effects by up to 30.")
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "WARRIOR"),
+		"before the spell's description loads, the line isn't read, so plate goes by its type"
+	)
+	local requested = false
+	for _, spellIdentifier in ipairs(env.__state.spellDataRequested) do
+		requested = requested or spellIdentifier == 9397
+	end
+	check(requested, "and the description is asked for")
+
+	env.__state.spellDescriptions[9397] = "Increases damage and healing done by magical spells and effects by up to 12."
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR")),
+		"once it loads, spell power plate isn't a warrior's, whatever the number"
+	)
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", { subclassId = CLOTH }), "spell power cloth is a mage's")
+	checkEqual(0, #startGearRoll(ns, env, "PRIEST", { subclassId = CLOTH }), "and, as healing, a priest's")
+
+	equipLine(env, "Equip: Improves your chance to get a critical strike by 2%.")
+	env.__state.spellDescriptions[7597] = "Improves your chance to get a critical strike by 1%."
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", nil, { wanted = { STAT_CRIT = false } })),
+		"a percentage reads too: crit plate Greeds once crit is ticked off"
+	)
+	checkEqual(0, #startGearRoll(ns, env, "WARRIOR"), "and keeps its roll window while crit is ticked")
+
+	equipLine(env, "Equip: Increases damage and healing done by magical spells and effects by up to 30. Rarely.")
+	checkEqual(0, #startGearRoll(ns, env, "WARRIOR"), "a line that only starts the same way isn't the stat")
+end)
+
+test("TBC reads a two-number Equip line, and a client in another language words its own", function()
+	local ns, env = loadFlavorAddon("TBC")
+	env.__state.spellDescriptions[7678] =
+		"Increases healing done by up to 44 and damage done by up to 15 for all magical spells and effects."
+	equipLine(
+		env,
+		"Equip: Increases healing done by up to 88 and damage done by up to 29 for all magical spells and effects."
+	)
+	checkEqual(0, #startGearRoll(ns, env, "PRIEST", { subclassId = CLOTH }), "healing cloth is a priest's")
+	checkEqual(ns.ROLL_ACTION_GREED, rolledAction(startGearRoll(ns, env, "WARRIOR")), "and not a warrior's plate")
+
+	local german, germanEnv = loadAddon(nil, function(loadingEnv)
+		loadingEnv.ITEM_SPELL_TRIGGER_ONEQUIP = "Anlegen:"
+	end)
+	germanEnv.__state.spellDescriptions[9330] = "+12 Angriffskraft."
+	equipLine(germanEnv, "Anlegen: +40 Angriffskraft.")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(german, germanEnv, "MAGE", { subclassId = CLOTH })),
+		"an attack power line in German is attack power, so a mage's cloth with it Greeds"
+	)
+end)
+
+test("Mana Per 5 counts from the item on WoW Forever, and hit starts on for everyone", function()
+	local ns, env = loadFlavorAddon("Camelot")
+	local mp5 = { subclassId = CLOTH, stats = { ITEM_MOD_MANA_REGENERATION_SHORT = 4 } }
+	checkEqual(0, #startGearRoll(ns, env, "PRIEST", mp5), "a priest wants Mana Per 5 cloth")
+	checkEqual(ns.ROLL_ACTION_GREED, rolledAction(startGearRoll(ns, env, "MAGE", mp5)), "a mage doesn't")
+	checkEqual(
+		0,
+		#startGearRoll(ns, env, "MAGE", { subclassId = CLOTH, stats = { ITEM_MOD_HIT_SPELL_RATING_SHORT = 10 } }),
+		"hit starts ticked for every class"
+	)
+end)
+
+test("Spell Power on a later client counts as healing gear too", function()
+	local ns, env = loadFlavorAddon("Camelot")
+	local wand = { subclassId = CLOTH, stats = { ITEM_MOD_SPELL_POWER_SHORT = 20 } }
+	local healerOnly = { wanted = { STAT_SPELL_POWER = false, STAT_INTELLECT = false, STAT_HEALING_POWER = true } }
+	checkEqual(0, #startGearRoll(ns, env, "MAGE", wand, healerOnly), "healing ticked keeps Spell Power gear")
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "MAGE", wand, { wanted = { STAT_SPELL_POWER = false } })),
+		"and without it, Spell Power gear Greeds"
+	)
 end)
 
 test("a suffix's stats are read off the tooltip in the game's own words where no table has them", function()
 	local ns, env = loadAddon()
 	-- What a suffix line looks like on the scan tooltip: color-wrapped and newline-terminated.
-	env.__state.hyperlinkTooltipLines[4001] = { "Rule Item", "|cffffffff+15 Intellect|r\n", "+9 Stamina" }
-	local rolls = startRuleRoll(ns, env, { INTELLECT = ns.MANUAL }, { suffixId = 99999 })
-	checkEqual(0, #rolls, "+15 Intellect on the tooltip is Intellect gear")
+	env.__state.hyperlinkTooltipLines[4100] = { "Gear Item", "|cffffffff+15 Intellect|r\n", "+9 Stamina" }
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { suffixId = 99999 })),
+		"+15 Intellect on the tooltip is Intellect gear"
+	)
 end)
 
 test("a stat the gear lowers isn't a stat it carries", function()
 	local ns, env = loadAddon()
-	env.__state.hyperlinkTooltipLines[4001] = { "Rule Item", "-10 Spirit", "+9 Stamina" }
-	local rolls = startRuleRoll(ns, env, { SPIRIT = ns.MANUAL }, { suffixId = 99999 })
-	checkEqual(1, #rolls, "-10 Spirit doesn't make it Spirit gear, so it still rolls")
+	env.__state.hyperlinkTooltipLines[4100] = { "Gear Item", "-10 Strength", "+9 Intellect" }
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(startGearRoll(ns, env, "WARRIOR", { suffixId = 99999 })),
+		"-10 Strength doesn't make it Strength gear"
+	)
 end)
 
-test("Spell Power on a later client counts as healing gear too", function()
-	local ns, env = loadFlavorAddon("Camelot")
-	local rolls = startRuleRoll(ns, env, { HEALING_POWER = ns.MANUAL }, { stats = { ITEM_MOD_SPELL_POWER_SHORT = 20 } })
-	checkEqual(0, #rolls, "a Manual healing stat keeps Spell Power gear's roll window")
+test("MoP Classic lists no relics or thrown weapons, and knows the monk and death knight", function()
+	local ns, env = loadFlavorAddon("Mists")
+	for _, identifier in ipairs(ns.CHARACTER_RULE_ARMOR_TYPES) do
+		check(identifier ~= 7 and identifier ~= 8 and identifier ~= 9, "no relic row " .. tostring(identifier))
+	end
+	for _, identifier in ipairs(ns.CHARACTER_RULE_WEAPON_TYPES) do
+		check(identifier ~= 16, "no thrown row")
+	end
+
+	local agility = { ITEM_MOD_AGILITY_SHORT = 5 }
+	checkEqual(
+		0,
+		#startGearRoll(
+			ns,
+			env,
+			"MONK",
+			{ classId = 2, subclassId = 6, equipLocation = "INVTYPE_2HWEAPON", stats = agility }
+		),
+		"a monk wants an Agility polearm"
+	)
+	checkEqual(
+		ns.ROLL_ACTION_GREED,
+		rolledAction(
+			startGearRoll(
+				ns,
+				env,
+				"MONK",
+				{ classId = 2, subclassId = 8, equipLocation = "INVTYPE_2HWEAPON", stats = agility }
+			)
+		),
+		"and greeds a two-handed sword"
+	)
+	checkEqual(0, #startGearRoll(ns, env, "DEATHKNIGHT", { stats = STRENGTH }), "a death knight keeps Strength plate")
 end)
 
-test("Item Overrides beat Character Rules", function()
-	local ns, env = loadAddon()
-	ns.db.profile.ignoredItemsSolo[4001] = ns.NEED
-	local rolls = startRuleRoll(ns, env, { STRENGTH = ns.MANUAL }, { stats = { ITEM_MOD_STRENGTH_SHORT = 12 } })
-	checkEqual(ns.ROLL_ACTION_NEED, rolls[1] and rolls[1].action, "the item's override decided")
+test("every flavor's starter lists name only rows that folder lists and stats that exist", function()
+	local everyStat = {}
+	for _, stat in ipairs(loadFlavorAddon("Camelot").CHARACTER_RULE_STATS) do
+		everyStat[stat.key] = stat
+	end
+	for _, flavor in ipairs({ "Vanilla", "TBC", "Camelot", "Mists" }) do
+		local ns = loadFlavorAddon(flavor)
+		for _, pair in ipairs({
+			{ "CHARACTER_RULE_ARMOR_TYPES", "CLASS_ARMOR_STARTER" },
+			{ "CHARACTER_RULE_WEAPON_TYPES", "CLASS_WEAPON_STARTER" },
+		}) do
+			local listed = {}
+			for _, identifier in ipairs(ns[pair[1]]) do
+				listed[identifier] = true
+			end
+			for classFile, starter in pairs(ns[pair[2]]) do
+				for _, identifier in ipairs(starter) do
+					check(
+						listed[identifier],
+						("%s %s %s %s is a row"):format(flavor, pair[2], classFile, tostring(identifier))
+					)
+				end
+			end
+		end
+		for classFile, starter in pairs(ns.CLASS_STAT_STARTER) do
+			check(#starter > 0, flavor .. " " .. classFile .. " starts with a stat")
+			for _, statKey in ipairs(starter) do
+				local stat = everyStat[statKey]
+				check(
+					stat ~= nil and statKey ~= "STAMINA",
+					("%s %s %s is a stat, not Stamina"):format(flavor, classFile, statKey)
+				)
+			end
+		end
+		checkEqual(3, #ns.CHARACTER_RULE_GEAR_GROUPS, flavor .. " offers Armor, Weapons and Other")
+	end
 end)
 
-test("a Need or Greed saved before the rules went to two choices does nothing", function()
-	local ns, env = loadAddon()
-	local rolls = startRuleRoll(ns, env, { STRENGTH = ns.NEED }, { stats = { ITEM_MOD_STRENGTH_SHORT = 12 } })
-	checkEqual(ns.ROLL_ACTION_GREED, rolls[1] and rolls[1].action, "the gear rolls as the quality settings say")
-
-	local select = ns.BuildCharacterRulesOptions().args["Aero - Realm"].args.ruleSTRENGTH.args.control2
-	checkEqual(ns.CHARACTER_RULE_STANDARD, select.get(), "and the dropdown reads Standard Automated Roll")
-end)
+-- A checkbox list's labels in the order the panel shows them, and each label's key.
+local function checkboxLabels(list)
+	local places = {}
+	for place in pairs(list.values) do
+		places[#places + 1] = place
+	end
+	table.sort(places)
+	local labels, placeOf = {}, {}
+	for index, place in ipairs(places) do
+		labels[index] = list.values[place]
+		placeOf[list.values[place]] = place
+	end
+	return table.concat(labels, ", "), placeOf
+end
 
 test("the Character Rules panel lists every character in its class color and edits the one picked", function()
 	local ns, env = loadFlavorAddon("Camelot")
 	env.__state.playerClassFile = "WARRIOR"
 	ns.db.sv.char["Hippo - Realm"] = { classFile = "ROGUE" }
+	ns.db.sv.char["Nobody - Realm"] = {}
 
 	local panel = ns.BuildCharacterRulesOptions()
 	checkEqual("tree", panel.childGroups, "characters down the left, rules on the right")
@@ -4025,26 +4500,6 @@ test("the Character Rules panel lists every character in its class color and edi
 	checkEqual("|cffFFF468Hippo - Realm|r", alt and alt.name, "another character in the color it saved")
 	check(mine.order < alt.order, "sorted by name")
 
-	local strengthSelect = alt.args.ruleSTRENGTH.args.control2
-	checkEqual(ns.CHARACTER_RULE_STANDARD, strengthSelect.get(), "every stat starts on Standard Automated Roll")
-	checkEqual(2, #strengthSelect.sorting, "with Manual the only other choice")
-	checkEqual(
-		ns.OPTIONS_TREE_ROW_WIDTH,
-		alt.args.ruleSTRENGTH.args.control1.width + strengthSelect.width,
-		"a row fits the pane"
-	)
-
-	strengthSelect.set(nil, ns.MANUAL)
-	checkEqual(ns.MANUAL, ns.db.sv.char["Hippo - Realm"].characterRules.STRENGTH, "the rule lands on that character")
-	checkEqual(nil, ns.db.char.characterRules, "not on the one being played")
-
-	strengthSelect.set(nil, ns.CHARACTER_RULE_STANDARD)
-	checkEqual(nil, ns.db.sv.char["Hippo - Realm"].characterRules, "Standard saves no rule, and an empty set goes")
-
-	--[[
-	    The pane top to bottom: Primary Attributes in the character sheet's
-	    order, a blank line, then Secondary Attributes A to Z.
-	]]
 	local layout = {}
 	for key, entry in pairs(alt.args) do
 		layout[#layout + 1] = { key = key, order = entry.order }
@@ -4058,28 +4513,262 @@ test("the Character Rules panel lists every character in its class color and edi
 	end
 	checkEqual(
 		table.concat({
+			"classLine",
+			"spacerAfterClassLine",
+			"lowLevelGear",
+			"spacerBeforeARMOR",
+			"headerARMOR",
+			"listARMOR",
+			"spacerBeforeWEAPON",
+			"headerWEAPON",
+			"listWEAPON",
+			"spacerBeforeOTHER",
+			"headerOTHER",
+			"toggleOTHER",
+			"noteOTHER",
 			"spacerBeforePRIMARY",
 			"headerPRIMARY",
-			"spacerAfterPRIMARY",
-			"ruleSTRENGTH",
-			"ruleAGILITY",
-			"ruleSTAMINA",
-			"ruleINTELLECT",
-			"ruleSPIRIT",
+			"listPRIMARY",
 			"spacerBeforeSECONDARY",
 			"headerSECONDARY",
-			"spacerAfterSECONDARY",
-			-- The test client's words: Attack Power, Bonus Healing, Critical Strike, Hit, Mana Per 5 Sec., Spell Power.
-			"ruleATTACK_POWER",
-			"ruleHEALING_POWER",
-			"ruleCRIT",
-			"ruleHIT",
-			"ruleMP5",
-			"ruleSPELL_POWER",
+			"listSECONDARY",
+			"spacerBeforeUNWANTED",
+			"headerUNWANTED",
+			"unwantedAction",
+			"spacerBetweenUnwantedRows",
+			"unwantedThreshold",
+			"spacerBeforeReset",
+			"reset",
+			"spacerBeforeSANITY_CHECK",
+			"headerSANITY_CHECK",
+			"sanityCheckNote",
+			"spacerBeforeSanityCheck1",
+			"sanityCheck1",
+			"spacerBeforeSanityCheck2",
+			"sanityCheck2",
+			"spacerBeforeSanityCheck3",
+			"sanityCheck3",
+			"spacerBeforeSanityCheck4",
+			"sanityCheck4",
+			"spacerBeforeSanityCheck5",
+			"sanityCheck5",
+			"spacerBeforeSanityCheck6",
+			"sanityCheck6",
+			"spacerBeforeSanityCheck7",
+			"sanityCheck7",
+			"spacerBeforeSanityCheck8",
+			"sanityCheck8",
+			"spacerBeforeSanityCheck9",
+			"sanityCheck9",
+			"spacerBeforeSanityCheck10",
+			"sanityCheck10",
 		}, " "),
 		table.concat(keys, " "),
-		"Primary in the character sheet's order, then Secondary A to Z by the client's own names"
+		"the class, types, then stats, then Everything Else, the reset and the Sanity Check"
 	)
+	checkEqual("Class: |cffFFF468Rogue|r", alt.args.classLine.name, "the class, in its color")
+	checkEqual(nil, panel.args["Nobody - Realm"].args.classLine, "and no class line for a character with none saved")
+	check(alt.args.headerARMOR.name:find("Armor Types", 1, true) ~= nil, "the armor section's caption")
+	check(alt.args.headerOTHER.name:find("Other", 1, true) ~= nil, "the catch-all under the game's own Other")
+	checkEqual("multiselect", alt.args.listARMOR.type, "each section is a checkbox list")
+
+	local armorLabels, armorPlace = checkboxLabels(alt.args.listARMOR)
+	checkEqual(
+		"Cloth, Leather, Mail, Plate, Shields, Held In Off-hand, Librams, Idols, Totems",
+		armorLabels,
+		"armor lightest first, then held off-hands and relics"
+	)
+	checkEqual(
+		"Bows, Crossbows, Daggers, Fist Weapons, Guns, One-Handed Axes, One-Handed Maces, One-Handed Swords, "
+			.. "Polearms, Staves, Thrown, Two-Handed Axes, Two-Handed Maces, Two-Handed Swords, Wands",
+		(checkboxLabels(alt.args.listWEAPON)),
+		"weapons A to Z"
+	)
+	checkEqual("Other Armor and Weapons", alt.args.toggleOTHER.name, "Other is one full-width toggle")
+	checkEqual("full", alt.args.toggleOTHER.width, "so its name never truncates")
+	checkEqual(true, alt.args.toggleOTHER.get(), "starting on")
+	alt.args.toggleOTHER.set(nil, false)
+	checkEqual(false, ns.db.sv.char["Hippo - Realm"].characterRules.wanted.OTHER_GEAR, "and saving when ticked off")
+	alt.args.toggleOTHER.set(nil, true)
+	check(alt.args.noteOTHER.name:find("Fishing Poles", 1, true) ~= nil, "with a line saying what it catches")
+	check(alt.args.noteOTHER.name:find("|cff" .. ns.PALETTE.HELP, 1, true) == 1, "in the helper text's silver")
+	local primary, primaryPlace = checkboxLabels(alt.args.listPRIMARY)
+	checkEqual("Strength, Agility, Stamina, Intellect, Spirit", primary, "every primary stat has a box")
+	checkEqual(false, alt.args.listPRIMARY.get(nil, primaryPlace.Stamina), "Stamina starting off")
+	local secondary, secondaryPlace = checkboxLabels(alt.args.listSECONDARY)
+	check(
+		secondary:find("Hit", 1, true) ~= nil and secondary:find("Critical", 1, true) ~= nil,
+		"and so do hit and crit"
+	)
+	for label, place in pairs(secondaryPlace) do
+		if label:find("Hit", 1, true) or label:find("Critical", 1, true) then
+			checkEqual(true, alt.args.listSECONDARY.get(nil, place), label .. " starting on")
+		end
+	end
+
+	local list = alt.args.listARMOR
+	checkEqual(true, list.get(nil, armorPlace.Leather), "a rogue starts with leather")
+	checkEqual(true, list.get(nil, armorPlace.Cloth), "and cloth")
+	checkEqual(false, list.get(nil, armorPlace.Plate), "and without plate")
+	list.set(nil, armorPlace.Plate, true)
+	checkEqual(true, ns.db.sv.char["Hippo - Realm"].characterRules.wanted.ARMOR_4, "the box lands on that character")
+	checkEqual(true, list.get(nil, armorPlace.Plate), "and reads back")
+	checkEqual(nil, ns.db.char.characterRules, "not on the one being played")
+	list.set(nil, armorPlace.Plate, false)
+	checkEqual(nil, ns.db.sv.char["Hippo - Realm"].characterRules, "back to the starter saves nothing")
+	list.set(nil, armorPlace.Leather, false)
+	checkEqual(false, ns.db.sv.char["Hippo - Realm"].characterRules.wanted.ARMOR_2, "a starter type ticks off")
+
+	local action = alt.args.unwantedAction.args.control2
+	local threshold = alt.args.unwantedThreshold.args.control2
+	checkEqual(ns.GREED, action.get(), "Everything Else starts on Greed")
+	checkEqual(4, threshold.get(), "up to Epic")
+	local lowLevel = alt.args.lowLevelGear.args.control2
+	checkEqual(5, lowLevel.get(), "Low-Level Gear starts on Your Level - 5")
+	checkEqual("Your Level - 5", lowLevel.values[5], "worded from the player's level")
+	checkEqual("Off", lowLevel.values[0], "with Off first")
+	lowLevel.set(nil, 0)
+	checkEqual(0, ns.db.sv.char["Hippo - Realm"].characterRules.unwanted.lowLevelGear, "and Off saves")
+	lowLevel.set(nil, 5)
+	checkEqual(nil, ns.db.sv.char["Hippo - Realm"].characterRules.unwanted, "back to the default, it saves nothing")
+	action.set(nil, ns.PASS)
+	local saved = ns.db.sv.char["Hippo - Realm"].characterRules.unwanted
+	checkEqual(ns.PASS, saved.action, "Pass is saved")
+	action.set(nil, ns.GREED)
+	checkEqual(nil, saved.action, "back to the default saves nothing")
+
+	alt.args.reset.func()
+	checkEqual(nil, ns.db.sv.char["Hippo - Realm"].characterRules, "Reset to Class Defaults drops everything saved")
+	checkEqual(false, list.get(nil, armorPlace.Plate), "and the boxes read the starter again")
+
+	local nobody = panel.args["Nobody - Realm"].args.listARMOR
+	checkEqual(false, nobody.get(nil, armorPlace.Cloth), "a character with no class saved starts with nothing ticked")
+end)
+
+test("Sanity Check shows how each sample item would roll, as the boxes stand", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+	state.playerLevel = 59
+	state.itemNames[12427] = {
+		name = "Imperial Plate Helm",
+		quality = 2,
+		minLevel = 55,
+		classId = 4,
+		subclassId = 4,
+		bindType = 2,
+		equipLocation = "INVTYPE_HEAD",
+	}
+	state.itemStats[12427] = { ITEM_MOD_STRENGTH_SHORT = 10, ITEM_MOD_STAMINA_SHORT = 10 }
+	state.itemNames[13857] = {
+		name = "Runecloth Tunic",
+		quality = 2,
+		minLevel = 55,
+		classId = 4,
+		subclassId = 1,
+		bindType = 2,
+		equipLocation = "INVTYPE_CHEST",
+	}
+	state.itemStats[13857] = { ITEM_MOD_INTELLECT_SHORT = 10, ITEM_MOD_SPIRIT_SHORT = 10 }
+	ns.db.sv.char["Hippo - Realm"] = { classFile = "MAGE", level = 40 }
+
+	local function row(characterKey, itemIdentifier)
+		local args = ns.BuildCharacterRulesOptions().args[characterKey].args
+		for index, sampleIdentifier in ipairs(ns.CHARACTER_RULE_SAMPLE_ITEMS) do
+			if sampleIdentifier == itemIdentifier then
+				local cells = args["sanityCheck" .. index].args
+				return cells.control1, cells.control2.name()
+			end
+		end
+	end
+
+	local helm, helmOutcome = row("Aero - Realm", 12427)
+	checkEqual(ns.ITEM_LINK_WIDGET_TYPE, helm.dialogControl, "each row draws its item as a link with a tooltip")
+	checkEqual("12427", helm.get(), "for its item")
+	checkEqual(
+		"Stats Character Rules reads: Strength, Stamina",
+		helm.desc(),
+		"and the tooltip names the stats Character Rules reads on it"
+	)
+	checkEqual(ns.GetColor("INFO") .. "Roll Window|r", helmOutcome, "Strength plate keeps its roll window on a warrior")
+
+	local _, robeOutcome = row("Aero - Realm", 13857)
+	checkEqual("Automated Roll", robeOutcome, "an Intellect robe is an automated roll, with nothing more said")
+
+	local _, mageHelm = row("Hippo - Realm", 12427)
+	local _, mageRobe = row("Hippo - Realm", 13857)
+	checkEqual("Automated Roll", mageHelm, "another character's page follows its own class: a mage rolls on the helm")
+	check(mageRobe:find("Roll Window", 1, true) ~= nil, "and keeps the robe")
+
+	state.playerLevel = 60
+	_, helmOutcome = row("Aero - Realm", 12427)
+	check(helmOutcome:find("Automated Roll", 1, true) == 1, "five levels past the helm, it rolls anyway")
+	check(helmOutcome:find("(Low-Level Gear)", 1, true) ~= nil, "and says why")
+
+	state.playerLevel = 59
+	ns.db.char.characterRules = { unwanted = { action = ns.MANUAL } }
+	_, robeOutcome = row("Aero - Realm", 13857)
+	check(
+		robeOutcome:find("Roll Window", 1, true) ~= nil,
+		"with Gear That Doesn't Match on Manual, the robe keeps its window"
+	)
+	local args = ns.BuildCharacterRulesOptions().args["Aero - Realm"].args
+	check(args.unwantedThreshold.hidden(), "and Up to Quality leaves, having nothing to limit")
+	ns.db.char.characterRules = nil
+
+	state.itemsNotOnClient[13857] = true
+	args = ns.BuildCharacterRulesOptions().args["Aero - Realm"].args
+	for index, sampleIdentifier in ipairs(ns.CHARACTER_RULE_SAMPLE_ITEMS) do
+		if sampleIdentifier == 13857 then
+			check(args["sanityCheck" .. index].hidden(), "an item this client doesn't have gets no row")
+		end
+	end
+end)
+
+test("a load drops what the dropdown version of Character Rules saved", function()
+	local ns = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.savedCharacters = {
+			["Hippo - Realm"] = {
+				classFile = "ROGUE",
+				characterRules = {
+					STRENGTH = "manual",
+					ARMOR_4 = "greed",
+					wanted = { ARMOR_4 = true },
+					unwanted = { bindOnPickup = false },
+				},
+			},
+			["Togo - Realm"] = { classFile = "SHAMAN", characterRules = { INTELLECT = "manual" } },
+		}
+	end)
+	local rules = ns.db.sv.char["Hippo - Realm"].characterRules
+	checkEqual(nil, rules.STRENGTH, "a stat's Manual goes")
+	checkEqual(nil, rules.ARMOR_4, "and a type's choice")
+	checkEqual(true, rules.wanted.ARMOR_4, "a box stays")
+	checkEqual(nil, rules.unwanted, "Everything Else's old Bind on Pickup row goes, and its emptied table")
+	checkEqual(nil, ns.db.sv.char["Togo - Realm"].characterRules, "and a table left empty goes")
+end)
+
+test("Automated Rolls ships on, and says so once", function()
+	local ns, env = loadAddon()
+	checkEqual(true, ns.db.profile.autoGreed, "on by default")
+	local notice = ns.L["MESSAGE_AUTOMATED_ROLLS_ON"]
+	local function noticesPrinted(printed)
+		local count = 0
+		for _, line in ipairs(printed or env.__state.prints) do
+			if line:find(notice, 1, true) then
+				count = count + 1
+			end
+		end
+		return count
+	end
+	fire(ns, "PLAYER_LOGIN")
+	checkEqual(1, noticesPrinted(), "the first login says so")
+	fire(ns, "PLAYER_LOGIN")
+	checkEqual(1, noticesPrinted(), "and only the first")
+
+	local quiet, quietEnv = loadAddon()
+	quiet.db.profile.autoGreed = false
+	fire(quiet, "PLAYER_LOGIN")
+	checkEqual(0, noticesPrinted(quietEnv.__state.prints), "nothing while it's off")
 end)
 
 test("Character Rules opens on the character being played, every time it's shown", function()
@@ -4106,6 +4795,64 @@ test("each character saves its class for the list's colors", function()
 		loadingEnv.__state.playerClassFile = "PRIEST"
 	end)
 	checkEqual("PRIEST", ns.db.char.classFile, "the class is saved at load")
+end)
+
+test("a WoW Forever load drops every character copied over from a realm client", function()
+	local ns = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.characterKey = "Aero Bramblefoot"
+		loadingEnv.__state.savedCharacters = {
+			["Hippo Gogo"] = { classFile = "ROGUE", characterRules = { wanted = { STAT_STRENGTH = false } } },
+			["Hippo - Mankrik"] = { classFile = "ROGUE", characterRules = { wanted = { STAT_INTELLECT = true } } },
+			["Togo - Pagle"] = { classFile = "SHAMAN" },
+		}
+		loadingEnv.__state.savedProfiles = {
+			["Hippo - Mankrik"] = {},
+			["Togo - Pagle"] = {},
+		}
+		loadingEnv.__state.savedProfileKeys = {
+			["Hippo - Mankrik"] = "Hippo - Mankrik",
+			["Hippo Gogo"] = "Togo - Pagle",
+		}
+		loadingEnv.__state.savedNamespaces = {
+			Extra = { char = { ["Hippo - Mankrik"] = {}, ["Hippo Gogo"] = {} } },
+		}
+	end)
+	local sv = ns.db.sv
+	checkEqual(nil, sv.profiles["Hippo - Mankrik"], "a realm character's own profile goes")
+	check(sv.profiles["Togo - Pagle"] ~= nil, "unless a staying character still uses it")
+	checkEqual(nil, sv.namespaces.Extra.char["Hippo - Mankrik"], "namespaces drop it too")
+	check(sv.namespaces.Extra.char["Hippo Gogo"] ~= nil, "and keep the Forever character")
+	check(sv.char["Aero Bramblefoot"] ~= nil, "the character being played stays")
+	checkEqual(
+		false,
+		sv.char["Hippo Gogo"].characterRules.wanted.STAT_STRENGTH,
+		"another Forever character keeps its rules"
+	)
+	checkEqual(nil, sv.char["Hippo - Mankrik"], "a realm character's section goes")
+	checkEqual(nil, sv.char["Togo - Pagle"], "every realm's")
+	checkEqual(nil, sv.profileKeys["Hippo - Mankrik"], "and its profile choice")
+	checkEqual("Togo - Pagle", sv.profileKeys["Hippo Gogo"], "a Forever character's profile choice stays")
+	check(sv.profiles.Default ~= nil, "other profiles stay")
+
+	local panel = ns.BuildCharacterRulesOptions()
+	checkEqual(nil, panel.args["Hippo - Mankrik"], "and Character Rules no longer lists it")
+end)
+
+test("a realm client drops characters copied over from WoW Forever and keeps every realm", function()
+	local ns = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.savedCharacters = {
+			["Hippo Gogo"] = { classFile = "ROGUE" },
+			["Hippo - Mankrik"] = { classFile = "ROGUE" },
+		}
+		loadingEnv.__state.savedProfiles = { ["Hippo Gogo"] = {} }
+		loadingEnv.__state.savedProfileKeys = { ["Hippo Gogo"] = "Hippo Gogo" }
+	end)
+	local sv = ns.db.sv
+	checkEqual(nil, sv.profiles["Hippo Gogo"], "a Forever character's own profile goes")
+	checkEqual(nil, sv.char["Hippo Gogo"], "a Forever character's section goes")
+	checkEqual(nil, sv.profileKeys["Hippo Gogo"], "and its profile choice")
+	check(sv.char["Hippo - Mankrik"] ~= nil, "a character on another realm stays")
+	check(sv.char["Aero - Realm"] ~= nil, "and so does the one being played")
 end)
 
 --------------------------------------------------------------------------------
@@ -4318,9 +5065,13 @@ end)
 test("every kind of Ignore leaves an item alone", function()
 	local ns, env = loadAddon()
 	for _, itemIdentifier in ipairs({ BLUE_SACK_OF_GEMS, PIRATES_FOOTLOCKER, WATERLOGGED_CRATE }) do
-		check(ns:IsOpeningIgnored(itemIdentifier), ("%d counts as ignored"):format(itemIdentifier))
+		checkEqual(
+			ns.OPENING_IGNORE,
+			ns:GetOpeningAction(itemIdentifier),
+			("%d counts as ignored"):format(itemIdentifier)
+		)
 	end
-	check(not ns:IsOpeningIgnored(CLAM), "a container set to Open doesn't")
+	checkEqual(ns.OPENING_OPEN, ns:GetOpeningAction(CLAM), "a container set to Open doesn't")
 	putInBag(env, 0, 1, BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
 	putInBag(env, 0, 2, PIRATES_FOOTLOCKER, "Pirate's Footlocker")
 	putInBag(env, 0, 3, WATERLOGGED_CRATE, "Waterlogged Crate")
@@ -4385,7 +5136,7 @@ test("a listed item the player removes is an ordinary item until added back", fu
 	checkEqual(0, #env.__state.usedContainerItems, "and is never opened")
 
 	ns:RemoveOpeningItem(BLUE_SACK_OF_GEMS)
-	check(not ns:IsOpeningIgnored(BLUE_SACK_OF_GEMS), "a removed Ignore row no longer holds Speedy Loot back")
+	checkEqual(nil, ns:GetOpeningAction(BLUE_SACK_OF_GEMS), "a removed Ignore row is no longer ignored")
 
 	check(ns:AddOpeningItem(CLAM), "adding it back")
 	checkEqual(nil, ns.db.global.openingActions[CLAM], "clears the removal")
@@ -4831,16 +5582,16 @@ test("with Automated Opening off, looting an ignored container says nothing", fu
 	)
 end)
 
-test("the Openables List's off note tells the truth about Speedy Loot", function()
+test("the Openables List's off note doesn't depend on Speedy Loot", function()
 	local ns = loadAddon()
 	ns.db.profile.autoOpen = false
 	local function Note()
 		local name = ns.BuildOpenableItemsOptions().args.featureOffNote.name
 		return type(name) == "function" and name() or name
 	end
-	check(Note():find(ns.L["OPENABLE_ITEMS_OFF_NOTE"], 1, true) ~= nil, "Ignore still holds Speedy Loot back")
+	check(Note():find(ns.L["OPENABLE_ITEMS_OFF_NOTE"], 1, true) ~= nil, "the list isn't used with opening off")
 	ns.db.global.speedyLoot = false
-	check(Note():find(ns.L["OPENABLE_ITEMS_ALL_OFF_NOTE"], 1, true) ~= nil, "until Speedy Loot is off too")
+	check(Note():find(ns.L["OPENABLE_ITEMS_OFF_NOTE"], 1, true) ~= nil, "whatever Speedy Loot is set to")
 end)
 
 test("each Ignore that gives a reason says it when its container is looted", function()
@@ -5049,54 +5800,39 @@ test("speedy loot leaves an item still being rolled for alone", function()
 	checkEqual(1, env.__state.lootedSlots[1], "the cloth's slot")
 end)
 
-test("speedy loot leaves an ignored container in the window and says so", function()
-	local ns, env = loadAddon()
-	local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
-	openLootWindow(env, {
-		{ link = sackLink },
-		{ link = itemLink(2589, "Linen Cloth") },
-	})
-	fire(ns, "LOOT_READY")
-	checkEqual(1, #env.__state.lootedSlots, "only the cloth was taken")
-	checkEqual(2, env.__state.lootedSlots[1], "the cloth's slot")
-	check(env.LootFrame:IsShown(), "the window stays up for the container")
-	check(
-		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) ~= nil,
-		"and the player is told"
-	)
+--[[
+    Ignore only keeps a container sealed. Loot left in the window can be lost
+    for good, a fishing catch above all, so Speedy Loot takes it like anything
+    else (maintainer, 2026-11-07).
+]]
+test("speedy loot takes an ignored container like any other item", function()
+	for _, autoOpen in ipairs({ true, false }) do
+		local ns, env = loadAddon()
+		ns.db.profile.autoOpen = autoOpen
+		ns.db.profile.openingIgnoreNotifications = true
+		local label = autoOpen and "opening on" or "opening off"
+		local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
+		local crateLink = itemLink(WATERLOGGED_CRATE, "Waterlogged Crate")
+		openLootWindow(env, {
+			{ link = sackLink },
+			{ link = crateLink },
+			{ link = itemLink(2589, "Linen Cloth") },
+		})
+		fire(ns, "LOOT_READY")
+		checkEqual(3, #env.__state.lootedSlots, label .. ": every slot was taken, the ignored ones too")
+		checkEqual(nil, printedContaining(env, sackLink), label .. ": with nothing said about being left behind")
+		checkEqual(nil, printedContaining(env, crateLink), label .. ": for either container")
+	end
 end)
 
-test("speedy loot still says so while Automated Opening is off", function()
+test("an ignored container speedy loot took still stays sealed in the bags", function()
 	local ns, env = loadAddon()
-	ns.db.profile.autoOpen = false
-	ns.db.profile.openingIgnoreNotifications = true
-	local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
-	openLootWindow(env, {
-		{ link = sackLink },
-		{ link = itemLink(2589, "Linen Cloth") },
-	})
+	openLootWindow(env, { { link = itemLink(WATERLOGGED_CRATE, "Waterlogged Crate") } })
 	fire(ns, "LOOT_READY")
-	checkEqual(1, #env.__state.lootedSlots, "the container is still left in the window")
-	check(
-		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) ~= nil,
-		"and the player is told, since the notice's toggle never hides"
-	)
-end)
-
-test("speedy loot leaves an ignored container quietly while Ignore notices are off", function()
-	local ns, env = loadAddon()
-	ns.db.profile.openingIgnoreNotifications = false
-	local sackLink = itemLink(BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
-	openLootWindow(env, {
-		{ link = sackLink },
-		{ link = itemLink(2589, "Linen Cloth") },
-	})
-	fire(ns, "LOOT_READY")
-	checkEqual(1, #env.__state.lootedSlots, "the container is still left in the window")
-	check(
-		printedContaining(env, ns.L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"]:format(sackLink)) == nil,
-		"and nothing is printed"
-	)
+	checkEqual(1, #env.__state.lootedSlots, "the crate was taken")
+	putInBag(env, 0, 1, WATERLOGGED_CRATE, "Waterlogged Crate")
+	scanAndTick(ns, env)
+	checkEqual(0, #env.__state.usedContainerItems, "and Automated Opening leaves it shut")
 end)
 
 test("speedy loot keeps the window up when the bags are nearly full", function()
@@ -6703,6 +7439,18 @@ test("an inventory-full error stays in the event log as a full line", function()
 	)
 end)
 
+test("a unique item the bags refused stays in the event log as a full line", function()
+	local ns, env = loadAddon()
+	env.LE_GAME_ERR_ITEM_MAX_COUNT = 41
+	ns:StartEventLog()
+	ns:LogEvent("UI_ERROR_MESSAGE", 41, "You can't carry any more of those items.")
+	local report = ns:BuildEventLogReport()
+	check(
+		report:find("UI_ERROR_MESSAGE(41, You can't carry any more of those items.)", 1, true) ~= nil,
+		"the refusal Speedy Loot warns about is logged, not counted as noise"
+	)
+end)
+
 test("the locked boxes report gives each openable item its action and lock verdict", function()
 	local ns, env = loadAddon()
 	putInBag(env, 0, 1, IRON_LOCKBOX, "Iron Lockbox", { locked = true })
@@ -6719,33 +7467,39 @@ end)
 test("Gear Stats lists the gear in the bags and on the character, each stat's sources, and the rule", function()
 	local ns, env = loadAddon()
 	local state = env.__state
-	state.itemNames[14152] = { name = "Robe of the Archmage", quality = 4, classId = 4, itemType = "Armor" }
-	state.itemNames[4001] = { name = "Owl Robe", quality = 2, classId = 4, itemType = "Armor" }
+	local robe = { classId = 4, subclassId = 1, equipLocation = "INVTYPE_ROBE", itemType = "Armor" }
+	state.itemNames[14152] = { name = "Robe of the Archmage", quality = 4 }
+	state.itemNames[4001] = { name = "Owl Robe", quality = 2 }
+	for field, value in pairs(robe) do
+		state.itemNames[14152][field], state.itemNames[4001][field] = value, value
+	end
 	state.itemNames[2589] = { name = "Linen Cloth", quality = 1, classId = 7, itemType = "Trade Goods" }
 	state.itemStats[14152] = { ITEM_MOD_INTELLECT_SHORT = 10 }
 	putInBag(env, 0, 1, 4001, "Owl Robe", { link = "|Hitem:4001::::::754|h[Owl Robe]|h" })
 	state.hyperlinkTooltipLines[4001] = { "Owl Robe of the Owl", "+5 Intellect", "+5 Spirit" }
 	putInBag(env, 0, 2, 2589, "Linen Cloth")
 	state.equipped[5] = "|Hitem:14152|h[Robe of the Archmage]|h"
-	ns.db.char.characterRules = { SPIRIT = ns.MANUAL }
+	ns.db.char.characterRules = { wanted = { STAT_SPIRIT = true } }
 
 	local report = ns:BuildGearStatsReport()
 	check(
-		report:find("Manual on Aero - Realm: SPIRIT", 1, true) ~= nil,
-		"the header names this character's Manual stats"
+		report:find("Ticked on Aero - Realm: ARMOR_1, ARMOR_2, ARMOR_3, ARMOR_4, ARMOR_6", 1, true) ~= nil
+			and report:find("STAT_STRENGTH, STAT_SPIRIT", 1, true) ~= nil,
+		"the header names this character's ticked boxes"
 	)
 	check(
 		report:find(
-			"EQUIPPED 5\t14152\t\t||Hitem:14152||h[Robe of the Archmage]||h\t" .. "INTELLECT (ITEM)\tSTANDARD",
+			"EQUIPPED 5\t14152\t\t||Hitem:14152||h[Robe of the Archmage]||h\t"
+				.. "INTELLECT (ITEM)\tNOT WANTED (ARMOR_1)",
 			1,
 			true
 		) ~= nil,
-		"the equipped robe shows its item stat, and rolls as usual"
+		"the equipped robe shows its item stat, and isn't wanted"
 	)
 	check(
 		report:find("BAG 0/1\t4001\t754\t", 1, true) ~= nil
-			and report:find("INTELLECT (TOOLTIP); SPIRIT (TOOLTIP)\tMANUAL (SPIRIT)", 1, true) ~= nil,
-		"the of the Owl piece shows its suffix and its stats, and is left to the player"
+			and report:find("INTELLECT (TOOLTIP); SPIRIT (TOOLTIP)\tWANTED (ARMOR_1)", 1, true) ~= nil,
+		"the of the Owl piece shows its suffix and its stats, and is wanted"
 	)
 	check(report:find("2589", 1, true) == nil, "and what isn't gear has no row")
 end)

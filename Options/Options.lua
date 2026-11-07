@@ -190,8 +190,8 @@ function ns.RegisterOptionsPanels()
 
 	--[[
         Closing the Options window ends an item list's New section (see
-        Options-Utilities-Item-List-Filter.lua). SettingsPanel is the window on all
-        three clients; hooked rather than replaced, so Blizzard's own OnHide
+        Options-Utilities-Item-List-Filter.lua). SettingsPanel is the window on every
+        client GogoLoot ships for; hooked rather than replaced, so Blizzard's own OnHide
         still runs.
     ]]
 	if SettingsPanel then

@@ -50,8 +50,7 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 	"%s: добыча с рейдового или мирового босса, поэтому Автооткрытие оставит его закрытым, чтобы его можно было передать или продать."
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: может содержать уникальный предмет, поэтому Автооткрытие оставит его, чтобы вы открыли сами."
-L["MESSAGE_ITEM_LEFT_IN_LOOT_WINDOW"] =
-	"%s: оставлено в окне добычи, чтобы вы забрали сами."
+-- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Часть добычи осталась на трупе."
 --[[
     Standard Loot Messages taking the General tab's loot lines off, or putting
@@ -127,7 +126,7 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Не удалось передать добы�
 L["TAB_SPEEDY_LOOT"] = "Быстрый сбор"
 L["TAB_AUTOMATED_ROLLS"] = "Автоброски"
 L["TAB_ITEM_OVERRIDES"] = "Особые предметы"
--- A child panel of Automated Rolls: each character's rolls by the stats on the gear.
+-- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
 L["TAB_CHARACTER_RULES"] = "Правила персонажей"
 -- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
 L["TAB_ANNOUNCEMENTS"] = "Оповещения о добыче"
@@ -278,15 +277,18 @@ L["ITEM_LOADING"] = "Загрузка... (ID: %d)"
 
 --[[
     Appended to the Automated Rolls description. Item Overrides is the one way
-    a Bind on Pickup or quest item gets rolled on; nothing ever rolls on the
-    rest.
+    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
+    the way a Bind on Pickup item does; nothing ever rolls on the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	'Никогда не бросает на рецепты, книги, транспорт, питомцев и легендарные предметы, а на предметы, персональные при поднятии, и предметы для заданий бросает, только если они есть в списке "Особые предметы".'
+	'Никогда не бросает на рецепты, книги, транспорт, питомцев и легендарные предметы, на предметы для заданий бросает, только если они есть в списке "Особые предметы", а на предметы, персональные при поднятии, только если они есть в этом списке или включено "Включая персональные при поднятии".'
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"Рецепты, книги, транспорт, питомцы и легендарные предметы всегда остаются вам."
+
+-- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+L["CHANNEL_GROUP_CHAT"] = "Чат группы"
 
 -- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
 L["OPTIONS_EXAMPLE"] = "Пример: %s"
@@ -332,8 +334,8 @@ L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 L["ROLL_MACRO_DESCRIPTION"] =
 	'Добавляет в ваши общие макросы макрос "%s" со значком золотых монет, чтобы любой персонаж вашей учетной записи мог перетащить его на панель команд.'
 --[[
-    The three rows under it, each beside the game's name for a mouse button
-    (MINIMAP_LEFT_CLICK and its neighbours). Right-click is the off-spec roll;
+    The three rows under it, each beside its mouse button's caption
+    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Бросок 1-100"
@@ -476,6 +478,9 @@ L["ROLLS_THRESHOLD_CHOOSE"] =
 	"%s: самое высокое качество, на которое бросает GogoLoot."
 L["ROLLS_ACTION_CHOOSE"] =
 	'%s: какой бросок делает GogoLoot. "Вручную" оставляет бросок вам.'
+L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Включая персональные при поднятии"
+L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
+	"Броски выше и Правила персонажей будут бросать и на предметы, персональные при поднятии. По умолчанию выключено: на такую добычу обычно стоит бросать самому."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Броски в группе и рейде"
 L["ROLLS_MESSAGES_HEADER"] = "Сообщения о бросках"
@@ -497,7 +502,7 @@ L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
     own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Задает бросок для отдельных предметов в обход настроек качества. Только так GogoLoot будет бросать на предметы, персональные при поднятии, и на предметы для заданий."
+	'Задает бросок для отдельных предметов в обход настроек качества. Только так GogoLoot будет бросать на предметы для заданий, а также на предметы, персональные при поднятии, пока выключено "Включая персональные при поднятии".'
 -- Shown on Item Overrides and Character Rules while Automated Rolls is off.
 L["ROLLS_OFF_NOTE"] =
 	"Пока Автоброски выключены, эти настройки не используются."
@@ -520,13 +525,13 @@ L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	'Введите ID предмета или перетащите предмет сюда, чтобы добавить его в список с действием "Вручную".'
 
 --[[
-    Character Rules, under Automated Rolls: the stats whose gear each
-    character leaves to the player. The stat names come from the game's own
-    strings.
+    Character Rules, under Automated Rolls: the stats and the armor and
+    weapon types each character wants, whose gear is left to the player. The
+    stat, armor and weapon names come from the game's own strings.
 ]]
--- Arguments: the game's own name for Intellect, then for the Warrior class, then Intellect again.
-L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
-	'Оставляет вам снаряжение с выбранными характеристиками, отдельно для каждого персонажа: выберите "Вручную" для характеристики "%s" у персонажа класса "%s", и для снаряжения с характеристикой "%s" будет открываться окно розыгрыша, а на все остальное броски пойдут как обычно. Особые предметы по-прежнему имеют приоритет.'
+-- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
+L["CHARACTER_RULES_PANEL_INTRO"] =
+	'Хотите снаряжение с характеристикой "%s" для персонажа класса "%s"? Отметьте "%s" и типы брони и оружия, которые используете. Подходящее снаряжение остается вам для броска, а остальным займется раздел "Все остальное". Особые предметы по-прежнему имеют приоритет.'
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -534,10 +539,46 @@ L["CHARACTER_RULES_PANEL_DESCRIPTION"] =
 ]]
 L["CHARACTER_RULES_PRIMARY"] = "Основные характеристики"
 L["CHARACTER_RULES_SECONDARY"] = "Вторичные характеристики"
--- The first of the two choices in each stat's dropdown: no rule, so the rest of Automated Rolls decides.
-L["CHARACTER_RULES_STANDARD"] = "Стандартный автобросок"
-L["CHARACTER_RULES_ACTION_DESCRIPTION"] =
-	'%s: "Вручную" оставляет вам снаряжение с этой характеристикой на этом персонаже вместе с окном розыгрыша. "Стандартный автобросок" бросает на него, как на любой другой предмет.'
+-- The armor and weapon sections above the stats; each box is named by the game.
+L["CHARACTER_RULES_ARMOR"] = "Типы брони"
+L["CHARACTER_RULES_WEAPONS"] = "Типы оружия"
+-- The catch-all row at the bottom, under the game's own "Other": any armor or weapon no row above names.
+L["CHARACTER_RULES_OTHER_GEAR"] = "Прочая броня и оружие"
+L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
+	'Удочки, оружие типа "Разное" и любая броня или оружие, которых нет среди типов выше.'
+-- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
+L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Все остальное"
+L["CHARACTER_RULES_UNWANTED_ACTION"] = "Неподходящее снаряжение"
+L["CHARACTER_RULES_RESET"] = "Сбросить к настройкам класса"
+-- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
+L["CHARACTER_RULES_SANITY_CHECK"] = "Проверка"
+L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
+	"Как бы бросались кости на эти зелёные предметы, персональные при надевании, для этого персонажа при отметках выше."
+--[[
+    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
+    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
+    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
+]]
+L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Окно броска"
+L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Автоматический бросок"
+-- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
+L["CHARACTER_RULES_SANITY_STATS"] =
+	"Характеристики, которые читают Правила персонажей: %s"
+L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Низкоуровневое снаряжение"
+L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Автоброски выключены"
+L["CHARACTER_RULES_SANITY_QUALITY"] = "Настройки качества"
+-- Argument: the game's own name for the character's class.
+L["CHARACTER_RULES_CLASS"] = "Класс: %s"
+L["CHARACTER_RULES_LOW_LEVEL"] =
+	'Автоматически "Не откажусь" на низкоуровневое снаряжение'
+L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
+	'Выбирает "Не откажусь" для брони и оружия, требуемый уровень которых хотя бы настолько ниже вашего, подходят они или нет, до качества раздела "Все остальное", чтобы при прокачке переросшее снаряжение вас не задерживало.'
+-- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
+L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Выкл."
+L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Ваш уровень - %d"
+-- Printed once per account, at the first login where Automated Rolls is on by default.
+L["MESSAGE_AUTOMATED_ROLLS_ON"] =
+	'Автоброски теперь включены: снаряжение, нужное каждому персонажу, остается вам для броска, а на остальное выбирается "Не откажусь". Изменить можно в меню Настройки > Модификации > GogoLoot > Автоброски.'
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -568,8 +609,7 @@ L["TRADE_CHANNEL"] = "Канал"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	'"%s" отправляет итоги партнеру по обмену. "Чат группы" публикует их в группе или рейде, а вне группы все равно отправляет шепотом. "Только мне" выводит их только в ваш чат и никому не отправляет.'
--- The Channel dropdown's choices (Whisper is the client's WHISPER), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_GROUP"] = "Чат группы"
+-- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
 L["TRADE_OUTPUT_SELF"] = "Только мне"
 L["TRADE_TOOLTIP_DESCRIPTION"] =
 	"Публикует итоги в чате, когда этот обмен завершится."
@@ -817,20 +857,17 @@ L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Для всех персонажей"
 ]]
 L["LOCKBOXES_TOOLTIP_YOUR_SKILL_RANK"] = "Ваш навык: %s"
 
--- On the Automated Opening panel, below its switch.
+-- On the Openables List panel.
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"] = "Включить оповещения об игнорировании"
 L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	'Сообщает в чате, когда GogoLoot не трогает контейнер, потому что в Списке контейнеров выбрано "Игнорировать", и почему.'
 
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
-	'Все контейнеры, которые знает GogoLoot, и что с ними делает Автооткрытие. "Игнорировать" оставляет контейнер закрытым, а Быстрый сбор оставляет его вам в окне добычи. Изменения действуют для всех ваших персонажей.'
+	'Все контейнеры, которые знает GogoLoot, и что с ними делает Автооткрытие. "Игнорировать" оставляет контейнер закрытым. Изменения действуют для всех ваших персонажей.'
 -- Shown on the Openables List while Automated Opening is off.
 L["OPENABLE_ITEMS_OFF_NOTE"] =
-	'Пока Автооткрытие выключено, используется только "Игнорировать": оно по-прежнему не дает Быстрому сбору забирать эти предметы.'
--- The same while Speedy Loot is off too.
-L["OPENABLE_ITEMS_ALL_OFF_NOTE"] =
-	"Пока Автооткрытие и Быстрый сбор выключены, эти настройки не используются."
+	"Пока Автооткрытие выключено, эти настройки не используются."
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Возвращает список к исходному виду: у каждого предмета восстанавливается настройка по умолчанию, удаленные предметы возвращаются, а добавленные удаляются."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1213,7 +1250,6 @@ L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "Сколько длится розы
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Куда объявлять"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] =
 	"Куда идут объявления розыгрышей, ничьих и пауз."
-L["LOOT_MASTER_CHANNEL_GROUP"] = "Чат группы"
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"Если вы не лидер и не помощник, вместо объявления рейду используется чат группы. Победители всегда объявляются в чате группы."
 -- Argument: the seconds.
