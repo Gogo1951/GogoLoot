@@ -107,8 +107,8 @@ Turn on Roll Macro and GogoLoot adds a `- Roll` macro to your General Macros: Le
 * Arkayenro's [ArkInventory](https://www.curseforge.com/wow/addons/ark-inventory)
 * plusmouse's [Baganator](https://www.curseforge.com/wow/addons/baganator)
 * jaliborc's [Bagnon](https://www.curseforge.com/wow/addons/bagnon)
-* Xruptor's [BagSync](https://www.curseforge.com/wow/addons/bagsync)
 * Gogo1951's [Magic Eraser](https://www.curseforge.com/wow/addons/magic-eraser)
+* Gogo1951's [Play It Forward](https://www.curseforge.com/wow/addons/play-it-forward)
 
 ### 🟡 Overlaps
 
