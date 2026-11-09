@@ -1,7 +1,7 @@
 # Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
 name: Request
 description: A suggestion for something new or changed, or feedback on how things are working.
-labels: ["Feedback"]
+labels: ["Type: Enhancement"]
 projects: ["Gogo1951/6"]
 body:
   - type: markdown

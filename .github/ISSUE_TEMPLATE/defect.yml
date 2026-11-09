@@ -1,8 +1,8 @@
 # Copied unchanged from Gogo1951/Common-Core/addon-files; CI fails if it drifts.
-# Issue Type adds an "Area: ..." label through .github/workflows/issue-labels.yml.
+# Issue Type picks the "Area: ..." label through Common-Core's .github/workflows/issue-labels.yml.
 name: Defect
 description: Something is broken or not working the way it should.
-labels: ["Defect"]
+labels: ["Type: Defect"]
 projects: ["Gogo1951/6"]
 body:
   - type: markdown
