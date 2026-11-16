@@ -215,3 +215,110 @@ function ns.GetItemLinkTooltipLines(itemLink)
 	tooltip:Hide()
 	return lines
 end
+
+--------------------------------------------------------------------------------
+-- Reading the Trade Clock
+--------------------------------------------------------------------------------
+
+--[[
+    A duration format's plural forms spelled out: "%d |4hour:hrs;" becomes
+    "%d hour" and "%d hrs". ruRU's three forms come out as three.
+]]
+---@param format string
+---@return string[]
+local function ExpandPluralForms(format)
+	local before, forms, after = string.match(format, "^(.-)|4([^;]*);(.*)$")
+	if not before then
+		return { format }
+	end
+	local expanded = {}
+	for form in string.gmatch(forms .. ":", "([^:]*):") do
+		for _, rest in ipairs(ExpandPluralForms(after)) do
+			expanded[#expanded + 1] = before .. form .. rest
+		end
+	end
+	return expanded
+end
+
+--[[
+    Each unit's patterns with its length in seconds, longest form first so
+    "hours" is tried before "hour", and the whole trade line's pattern. Built
+    on first use: ns.BuildFormatPattern lives in Utilities-Chat-Lines.lua,
+    which loads after this file.
+]]
+local DURATION_UNITS, tradeLinePattern
+
+local function BuildTradeClockPatterns()
+	DURATION_UNITS = {}
+	for _, unit in ipairs({
+		{ format = INT_SPELL_DURATION_HOURS, seconds = 3600 },
+		{ format = INT_SPELL_DURATION_MIN, seconds = 60 },
+		{ format = INT_SPELL_DURATION_SEC, seconds = 1 },
+	}) do
+		if type(unit.format) == "string" then
+			local patterns = {}
+			for _, form in ipairs(ExpandPluralForms(unit.format)) do
+				patterns[#patterns + 1] = (ns.BuildFormatPattern(form))
+			end
+			table.sort(patterns, function(a, b)
+				return #a > #b
+			end)
+			DURATION_UNITS[#DURATION_UNITS + 1] = { patterns = patterns, seconds = unit.seconds }
+		end
+	end
+
+	tradeLinePattern = ns.BuildFormatPattern(BIND_TRADE_TIME_REMAINING)
+	if tradeLinePattern then
+		tradeLinePattern = "^" .. tradeLinePattern .. "$"
+	end
+end
+
+--[[
+    The seconds a tooltip line says an item can still be traded for, or nil
+    for any other line. The tooltip counts in whole minutes, so this is right
+    to within a minute.
+]]
+---@param line any
+---@return number|nil
+function ns.ParseTradeTimeLine(line)
+	if not DURATION_UNITS then
+		BuildTradeClockPatterns()
+	end
+	if not tradeLinePattern or type(line) ~= "string" then
+		return nil
+	end
+	local duration = string.match(line, tradeLinePattern)
+	if not duration then
+		return nil
+	end
+	local seconds, matched = 0, false
+	for _, unit in ipairs(DURATION_UNITS) do
+		for _, pattern in ipairs(unit.patterns) do
+			local amount = tonumber(string.match(duration, pattern))
+			if amount then
+				seconds = seconds + amount * unit.seconds
+				matched = true
+				break
+			end
+		end
+	end
+	return matched and seconds or nil
+end
+
+--[[
+    The seconds a bag slot's item can still be traded for, or nil when its
+    tooltip has no trade clock: not Bind on Pickup, already Soulbound, or never
+    tradable. Shared by the Loot Master's Roll List and the Tradable Gear Tint.
+]]
+---@param bagIndex number
+---@param slotIndex number
+---@return number|nil
+function ns.GetBagSlotTradeSeconds(bagIndex, slotIndex)
+	for _, line in ipairs(ns.GetBagItemTooltipLines(bagIndex, slotIndex)) do
+		local seconds = ns.ParseTradeTimeLine(line)
+		if seconds then
+			return seconds
+		end
+	end
+	return nil
+end

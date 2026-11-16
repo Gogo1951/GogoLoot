@@ -10,7 +10,6 @@
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 local TOAST_HANDLE_WIDTH = 400 -- The drag handle only; rows size themselves
 
@@ -28,11 +27,11 @@ local TOAST_HANDLE_WIDTH = 400 -- The drag handle only; rows size themselves
     The caption keeps to its own column at one end, and rows hang off the other
     end (lootToastAlign), so the two never share horizontal space.
 ]]
-local TOAST_HANDLE_HEIGHT = 130
-local TOAST_HANDLE_LABEL_WIDTH = 260
-local TOAST_HANDLE_BUTTON_WIDTH = 150
-local TOAST_HANDLE_BUTTON_HEIGHT = 22
-local TOAST_HANDLE_PADDING = 10
+local TOAST_HANDLE_HEIGHT = 128
+local TOAST_HANDLE_LABEL_WIDTH = 256
+local TOAST_HANDLE_BUTTON_WIDTH = 144
+local TOAST_HANDLE_BUTTON_HEIGHT = 32
+local TOAST_HANDLE_PADDING = 8
 
 local anchor
 local unlocked = false
@@ -139,7 +138,7 @@ function ns.ApplyLootToastPosition()
 		frame:SetPoint(saved.point, UIParent, saved.relativePoint, saved.x, saved.y)
 	else
 		-- Default: above center, clear of the action bars and the chat frame.
-		frame:SetPoint("CENTER", UIParent, "CENTER", 0, 200)
+		frame:SetPoint("CENTER", UIParent, "CENTER", 0, 192)
 	end
 end
 
@@ -190,7 +189,7 @@ function ns.SetLootToastsUnlocked(isUnlocked)
 	end
 	unlocked = isUnlocked and true or false
 	ns.RefreshLootToastSamples()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.LootToasts)
+	ns.RefreshSettings()
 end
 
 ---@return boolean
@@ -243,10 +242,9 @@ end
 --[[
     Switching toasts on raises the handle and its samples, because the player
     has just turned on something that draws on their screen and has no other way
-    to see where or how big. Switching off puts the handle away. Both panels
-    carrying the switch are told either way, the Loot Toasts panel and
-    the General panel's Features section, since the handle's own Disable button
-    reaches this from outside both.
+    to see where or how big. Switching off puts the handle away. Every panel
+    and the menu repaint either way (ns.RefreshSettings), since the handle's
+    own Disable button reaches this from outside them all.
 ]]
 ---@param enabled boolean
 ---@return nil
@@ -254,8 +252,8 @@ function ns.SetLootToastsEnabled(enabled)
 	ns.db.profile.lootToasts = enabled and true or false
 	ns.SetLootToastsUnlocked(ns.db.profile.lootToasts)
 	ns.SyncStandardLootMessages()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.LootToasts)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
+	ns.SyncBlizzardRollWonWindow()
+	ns.RefreshSettings()
 end
 
 --------------------------------------------------------------------------------

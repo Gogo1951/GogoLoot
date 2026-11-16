@@ -384,9 +384,14 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    The one LOOT_READY handler, and its order is load-bearing. The world-loot
-    stamp and the Pick Pocket sound (Features/Loot-Sounds.lua) read the loot
-    slots, which the Speedy Loot pass empties, so both run first.
+    The LOOT_READY handler that empties the loot slots, and its order is
+    load-bearing. The world-loot stamp and the Pick Pocket sound
+    (Features/Loot-Sounds.lua) read the slots, so both run here, first.
+    Anything else that reads the slots on LOOT_READY belongs here too, before
+    RunSpeedyLoot: this file loads first, so another module's LOOT_READY
+    handler runs after the pass and finds the slots empty. Other modules may
+    listen to LOOT_READY only for the fact that it fired, as Automated Opening
+    does to confirm its open.
 ]]
 local function OnLootReady()
 	HookReplacementLootWindows()

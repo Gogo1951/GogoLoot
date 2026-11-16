@@ -10,10 +10,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
-
-local function AutomatedMasterLootingOn()
-	return ns.db.profile.autoMasterLoot
-end
+local Kit = ns.OptionsKit
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -46,10 +43,10 @@ function ns.BuildMasterLooterIgnoreListOptions()
 	})
 
 	local args = {
-		description = ns.OptionsDesc(L["MASTER_LOOTER_IGNORE_DESCRIPTION"], 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
+		description = Kit.Desc(L["MASTER_LOOTER_IGNORE_DESCRIPTION"], 1),
+		spacerAfterDesc = Kit.Spacer(2),
 	}
-	local order = ns.AddFeatureOffNote(args, 3, L["MASTER_LOOTER_OFF_NOTE"], AutomatedMasterLootingOn)
+	local order = ns.AddFeatureOffLine(args, 3, "autoMasterLoot")
 	args.ignoreList = {
 		type = "group",
 		name = "",

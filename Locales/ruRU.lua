@@ -69,6 +69,9 @@ L["MESSAGE_ITEM_NOT_OPENABLE"] =
 L["MESSAGE_ROLL_PRINT"] = 'Вы выбрали "%s" для предмета %s.'
 -- The same after a Pass. Argument: the item's link.
 L["MESSAGE_ROLL_PASS_PRINT"] = "Вы отказались от предмета %s."
+-- Automated Rolls' Safety Warning, on entering a dungeon or raid. Arguments: the game's word for the roll (Need or Pass), then the highest quality it rolls on, in that quality's color.
+L["MESSAGE_ROLL_SAFETY_WARNING"] =
+	'Внимание! Здесь автоброски выберут "%s" для предметов до качества "%s".'
 --[[
     Hide Roll Messages' winner summary. Arguments: the winner, the item's link,
     then the winning roll as LOOT_TOASTS_ROLL_RESULT words it ("Greed 95"). The
@@ -125,10 +128,10 @@ L["ERROR_DISTRIBUTION_FAILED"] = "Не удалось передать добы�
 -- The first feature panel, holding the one Speedy Loot switch.
 L["TAB_SPEEDY_LOOT"] = "Быстрый сбор"
 L["TAB_AUTOMATED_ROLLS"] = "Автоброски"
-L["TAB_ITEM_OVERRIDES"] = "Особые предметы"
+L["TAB_ITEM_OVERRIDES"] = "Глобальные особые предметы"
 -- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
-L["TAB_CHARACTER_RULES"] = "Правила персонажей"
--- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_CHARACTER_RULES"] = "Настройки персонажей"
+-- The panel for everything GogoLoot posts to chat; also its block in the mini-map button's menu.
 L["TAB_ANNOUNCEMENTS"] = "Оповещения о добыче"
 -- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "Оповещения об обмене"
@@ -149,47 +152,58 @@ L["TAB_LOOT_DESTINATIONS"] = "Получатели добычи"
 L["TAB_IGNORE_LIST"] = "Список исключений"
 -- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
 L["TAB_ROLL_MACRO"] = "Макрос бросков"
+L["TAB_SANITY_CHECK"] = "Проверка бросков на добычу"
 -- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
 L["TAB_LOOT_MASTER"] = "Распорядитель добычи"
-
--- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
-L["TAB_NESTED_FORMAT"] = "%s: %s"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------
 
-L["STATUS_ENABLED"] = "Включено"
-L["STATUS_DISABLED"] = "Отключено"
 -- Automated Opening is on but waiting for empty bag slots.
-L["STATUS_PAUSED"] = "Приостановлено"
+L["MENU_PAUSED"] = "Приостановлено"
 
 --[[
-    The tooltip titles each feature with its options-panel name, and gives
-    each a description of its own, two lines at most: the panels' longer text
-    doesn't fit a tooltip.
+    The mini-map menu titles each feature with its options-panel name, and
+    gives each a description of its own, two lines at most: the panels' longer
+    text doesn't fit the menu.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Бросает кубики за вас на подходящие предметы вплоть до выбранного качества."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Открывает в сумках моллюсков, ящики, кошельки, а также запертые ящики, как только их отопрут."
+-- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+L["MENU_OPENING_WAITING"] = "Ожидание свободных ячеек в сумках: %d."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 	"Публикует в чате итоги обменов и раздачу добычи."
-L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] =
-	"Раздает добычу игрокам, выбранным для каждого качества."
 --[[
-    The tooltip's read-back of each group context's roll, one line each under
-    the description. Arguments: the game's own word for Party or Raid, the roll,
-    then (all but Manual) the highest quality it rolls on.
+    The menu's read-back of each group context's roll, on the right of its
+    Party or Raid row. Arguments: the roll, then the highest quality it rolls
+    on. Manual shows the roll alone.
 ]]
-L["MINIMAP_ROLLS_SETTING"] = "%s: %s, %s"
-L["MINIMAP_ROLLS_SETTING_MANUAL"] = "%s: %s"
+L["MENU_ROLLS_SETTING"] = "%s, %s"
+-- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
+L["MENU_ROLLS_AUTOMATION"] = "Автоматизация"
+L["MENU_ROLLS_THRESHOLD"] = "Порог"
+--[[
+    Under the flyouts' choices, above links to both pages. Arguments:
+    TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
+    Overrides is off, the second line names TAB_CHARACTER_RULES alone.
+]]
+L["MENU_ROLLS_OVERRIDES_NOTE"] = "%s и %s продолжают действовать."
+L["MENU_ROLLS_OVERRIDE_NOTE"] = "%s продолжают действовать."
+L["MENU_ON"] = "Вкл."
+L["MENU_OFF"] = "Выкл."
+L["MENU_MORE_FEATURES"] = "Другие функции"
+L["MENU_FEATURE_COUNT_ON"] = "Вкл.: %d"
+L["MENU_FEATURE_COUNT_OFF"] = "Выкл.: %d"
 
-L["MINIMAP_LEFT_CLICK"] = "Левый клик"
-L["MINIMAP_RIGHT_CLICK"] = "Правый клик"
-L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + левый клик"
-L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + правый клик"
-L["MINIMAP_TOGGLE"] = "Переключить"
+L["MENU_CLICK_LEFT"] = "Левый клик"
+L["MENU_CLICK_RIGHT"] = "Правый клик"
+L["MENU_CLICK_SHIFT_LEFT"] = "Shift + левый клик"
+-- Middle-Click opens the loot windows, only while they are loaded.
+L["MENU_CLICK_MIDDLE"] = "Средний клик"
+L["MENU_TOGGLE"] = "Переключить"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Запертые предметы"
@@ -197,20 +211,11 @@ L["MINIMAP_LOCKED_ITEMS"] = "Запертые предметы"
 L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s может вскрыть их для вас."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = 'Используйте "%s", чтобы отпереть их.'
-L["MINIMAP_OPTIONS"] = "Настройки GogoLoot"
-L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + средний клик"
+L["MENU_OPTIONS"] = "Настройки GogoLoot"
+L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + средний клик"
 
--- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
-L["MINIMAP_TRADABLE_LOOT"] = "Передаваемая добыча"
--- Under the first few of them. Argument: how many more there are.
-L["MINIMAP_TRADABLE_MORE"] = "Еще: %d"
--- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
-L["MINIMAP_LOOT_WINDOWS"] = "Распорядитель добычи и Журнал добычи"
-L["MINIMAP_TO_HAND_OUT"] = "Раздать: %d"
-L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] =
-	"Разыгрывайте то, что еще можно передать, и следите за каждым броском."
-L["MINIMAP_MIDDLE_CLICK"] = "Средний клик"
-L["MINIMAP_OPEN"] = "Открыть"
+-- Under the first eight rows of a menu list. Argument: how many more there are.
+L["MENU_MORE"] = "Еще: %d"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -231,8 +236,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List and Item Overrides bring text of their own), the hint the
-    box shows while empty, and its button.
+    Openables List and Global Item Overrides bring text of their own), the
+    hint the box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "Добавить предмет"
 L["ITEM_LIST_ADD_DESCRIPTION"] =
@@ -245,7 +250,7 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "Фильтр предметов..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"Показывает только предметы, чье название, ID, настройка или метка содержат введенный текст."
 L["ITEM_LIST_NO_MATCHES"] = "Нет предметов, подходящих под фильтр."
--- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+-- Shown in place of the rows when the Ignore List or Global Item Overrides is empty, since both refill at login.
 L["ITEM_LIST_EMPTY_REFILLS"] =
 	'Список пуст, поэтому стандартные предметы вернутся при следующем входе в игру. Кнопка "Восстановить по умолчанию" вернет их сразу.'
 
@@ -259,7 +264,7 @@ L["ITEM_LIST_KIND_DESCRIPTION"] =
 
 --[[
     The Add from Bags dropdown beside every item list's add box: its resting
-    text and tooltip, then what it reads, greyed out, when everything carried
+    text and tooltip, then what it reads, grayed out, when everything carried
     is already on the list. The Openables List brings a tooltip of its own.
 ]]
 L["ITEM_LIST_ADD_FROM_BAGS"] = "Добавить из сумок"
@@ -273,25 +278,38 @@ L["ITEM_LIST_BAGS_EMPTY_DESCRIPTION"] =
 L["ITEM_LIST_RESTORE"] = "Восстановить по умолчанию"
 
 -- Placeholder shown in the item lists until the client caches an item's info.
-L["ITEM_LOADING"] = "Загрузка... (ID: %d)"
+L["LOADING_ITEM"] = "Загрузка ID: %d"
 
 --[[
-    Appended to the Automated Rolls description. Item Overrides is the one way
-    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
-    the way a Bind on Pickup item does; nothing ever rolls on the rest.
+    Appended to the Automated Rolls description. Global Item Overrides is the
+    one way a quest item gets rolled on, and Global Item Overrides or Include
+    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
+    the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	'Никогда не бросает на рецепты, книги, транспорт, питомцев и легендарные предметы, на предметы для заданий бросает, только если они есть в списке "Особые предметы", а на предметы, персональные при поднятии, только если они есть в этом списке или включено "Включая персональные при поднятии".'
+	'Никогда не бросает на рецепты, книги, транспорт, питомцев и легендарные предметы, на предметы для заданий бросает, только если они есть в списке "Глобальные особые предметы", а на предметы, персональные при поднятии, только если они есть в этом списке или включено "Включая персональные при поднятии".'
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"Рецепты, книги, транспорт, питомцы и легендарные предметы всегда остаются вам."
 
--- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+--[[
+    The channel choices shared by Trade Announcements' Channel, Raid Roll
+    Winner's output and the Loot Master's Announce In: Group Chat posts to the
+    party or raid, Me Only prints in the player's own chat and sends nothing.
+]]
 L["CHANNEL_GROUP_CHAT"] = "Чат группы"
+L["CHANNEL_ME_ONLY"] = "Только мне"
 
--- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
-L["OPTIONS_EXAMPLE"] = "Пример: %s"
+-- The silver label over every Example line, which shows a chat line the way it will arrive.
+L["SAMPLE_EXAMPLE"] = "Пример"
+
+-- The tooltip on every sound row's speaker icon, which plays the row's sound.
+L["OPTIONS_SOUND_PREVIEW_DESCRIPTION"] =
+	"Проигрывает этот звук сейчас, даже если он выключен."
+
+-- The button on a Reset row: Character Overrides' Reset to Class Defaults and the Loot Toasts position reset.
+L["OPTIONS_RESET"] = "Сбросить"
 
 --------------------------------------------------------------------------------
 -- Options: General
@@ -304,7 +322,7 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"При каждом входе в игру показывает версию GogoLoot и где найти эти настройки."
 L["MINIMAP_BUTTON_ENABLE"] = "Включить кнопку у миникарты"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Показывает кнопку GogoLoot у миникарты. Левый клик включает и выключает Автоброски, правый клик делает то же с Автооткрытием, Shift + левый клик с оповещениями о добыче, а Shift + правый клик с Автораздачей."
+	"Показывает кнопку GogoLoot у миникарты. Наведите на неё курсор, чтобы открыть меню GogoLoot. Левый клик включает и выключает Автоброски, правый клик делает то же с Автооткрытием, а Shift + левый клик с оповещениями о добыче."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Команды"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -312,6 +330,10 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "Открывает окно настроек
 
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Функции"
+
+--------------------------------------------------------------------------------
+-- Options: Speedy Loot
+--------------------------------------------------------------------------------
 
 -- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
@@ -325,6 +347,10 @@ L["SPEEDY_LOOT_ENABLE"] = "Включить Быстрый сбор"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	'Забирает всю добычу с трупа сразу, не показывая окно добычи. Удерживайте Shift при сборе, чтобы увидеть окно. Включает игровую настройку "%s" и не срабатывает, пока у вас роль "%s".'
 
+--------------------------------------------------------------------------------
+-- Options: Roll Macro
+--------------------------------------------------------------------------------
+
 --[[
     The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
     locale. General Macros is the tab of the game's Macros window that every
@@ -335,16 +361,27 @@ L["ROLL_MACRO_DESCRIPTION"] =
 	'Добавляет в ваши общие макросы макрос "%s" со значком золотых монет, чтобы любой персонаж вашей учетной записи мог перетащить его на панель команд.'
 --[[
     The three rows under it, each beside its mouse button's caption
-    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
+    (MENU_CLICK_LEFT and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Бросок 1-100"
 L["ROLL_MACRO_RIGHT_CLICK"] = "Бросок 1-99"
 L["ROLL_MACRO_MIDDLE_CLICK"] = "Рейдовый бросок"
 L["ROLL_MACRO_ENABLE"] = "Включить макрос бросков"
--- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+-- Under the three rows, in silver: what Middle-Click's raid roll is.
 L["ROLL_MACRO_RAID_ROLL_NOTE"] =
-	"Рейдовый бросок отдает предмет случайному игроку. Он бросает от 1 до числа игроков в вашей группе, так что каждое число соответствует одному игроку: отсчитайте по списку рейда или группы выпавшее число, чтобы найти победителя. В одиночку бросает 1-100."
+	"Рейдовый бросок бросает от 1 до числа игроков в вашей группе, по одному числу на игрока."
+-- The Roll Macro panel's Raid Rolls section, shown whether or not the macro is on, since it reads anyone's raid roll.
+L["RAID_ROLL_HEADER"] = "Рейдовые броски"
+L["RAID_ROLL_WINNER_ENABLE"] = "Включить победителя рейдового броска"
+L["RAID_ROLL_WINNER_ENABLE_DESCRIPTION"] =
+	"Когда кто-то в вашей группе бросает от 1 до размера группы, называет игрока, на которого выпало число, по порядку в списке рейда или группы."
+L["RAID_ROLL_OUTPUT_DESCRIPTION"] =
+	'"Только мне" выводит победителя в ваш собственный чат. "Чат группы" сообщает его вашей группе или рейду.'
+-- Printed when someone raid rolls. Arguments: the roller, the roll, the group's size, the player it lands on.
+L["MESSAGE_RAID_ROLL_PRINT"] = "%s выбрасывает в рейдовом броске %d из %d, это %s."
+-- The same, posted to group chat with plain names.
+L["MESSAGE_RAID_ROLL"] = "%s выбрасывает в рейдовом броске %d из %d, это %s"
 L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 	'Хранит макрос "%s" в ваших общих макросах: левый клик бросает 1-100, правый клик 1-99, средний клик делает рейдовый бросок. При выключении макрос удаляется.'
 --[[
@@ -405,7 +442,7 @@ L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
     leader. Hidden only while solo, where there is no leader to name.
 ]]
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Этими настройками управляет: %s."
--- Shown in the same place while solo, where the two dropdowns are greyed out.
+-- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] =
 	"Вступите в группу, чтобы изменить эти настройки. Изменить их может только лидер группы."
 
@@ -434,6 +471,19 @@ L["MASTER_LOOTER_POPUP_TOOLTIP"] =
 	'Открывает эти настройки в отдельном окне, когда вы получаете роль "%s".'
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Включить окно ответственного"
 
+-- Tradable Gear Tint, on the Automated Master Looting panel
+L["TRADABLE_TINT_HEADER"] = "Подсветка передаваемой экипировки"
+L["TRADABLE_TINT_DESCRIPTION"] =
+	"Подсвечивает в сумках экипировку, которая становится персональной при поднятии, но ещё может быть передана, чтобы вы сразу видели, что можно раздать, пока она не стала персональной."
+L["TRADABLE_TINT_ENABLE"] = "Включить подсветку передаваемой экипировки"
+L["TRADABLE_TINT_ENABLE_DESCRIPTION"] =
+	"Включает или выключает подсветку. Работает со стандартными сумками, Baganator, Bagnon, AdiBags, ArkInventory, BetterBags и ElvUI."
+L["TRADABLE_TINT_COLOR"] = "Цвет подсветки"
+L["TRADABLE_TINT_COLOR_DESCRIPTION"] =
+	"Цвет и непрозрачность подсветки. При меньшей непрозрачности значок предмета виден лучше."
+L["TRADABLE_TINT_BAGANATOR_WIDGET_LABEL"] =
+	"Подсветка передаваемой экипировки (GogoLoot)"
+
 L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
 	"Выберите, кто получает предметы каждого качества. Если для качества никто не выбран, предметы остаются вам в окне добычи."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Себе"
@@ -450,9 +500,7 @@ L["MASTER_LOOTER_NO_DESTINATIONS_NOTE"] =
 
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 	"Предметы из этого списка никогда не раздаются автоматически. Они ждут в окне добычи, чтобы вы раздали их сами."
--- Shown on the Ignore List while Automated Master Looting is off.
-L["MASTER_LOOTER_OFF_NOTE"] =
-	"Пока Автораздача выключена, эти настройки не используются."
+-- The Ignore List's Restore Defaults: its tooltip and its confirmation.
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] =
 	"Заменяет Список исключений стандартными предметами для вашего дополнения."
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
@@ -469,7 +517,7 @@ L["ROLLS_PANEL_DESCRIPTION"] =
 	'Выбирает за вас "%s", "%s" или "%s" для групповой добычи, вплоть до выбранного качества, с отдельными настройками для группы и рейда.'
 L["ROLLS_ENABLE"] = "Включить Автоброски"
 L["ROLLS_ENABLE_DESCRIPTION"] =
-	"Включает и выключает автоматические броски, в том числе Особые предметы и Правила персонажей."
+	"Включает и выключает автоматические броски, в том числе Глобальные особые предметы и Настройки персонажей."
 L["ROLLS_IN_PARTY"] = "В группе"
 L["ROLLS_IN_RAID"] = "В рейде"
 -- The caption of the quality row under In Party and under In Raid, shown while that roll isn't Manual.
@@ -478,9 +526,10 @@ L["ROLLS_THRESHOLD_CHOOSE"] =
 	"%s: самое высокое качество, на которое бросает GogoLoot."
 L["ROLLS_ACTION_CHOOSE"] =
 	'%s: какой бросок делает GogoLoot. "Вручную" оставляет бросок вам.'
+-- A sub-row under In Party's and In Raid's Up to Quality, one setting each, and a row in the mini-map menu's Party and Raid flyouts.
 L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Включая персональные при поднятии"
 L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
-	"Броски выше и Правила персонажей будут бросать и на предметы, персональные при поднятии. По умолчанию выключено: на такую добычу обычно стоит бросать самому."
+	"Бросок выше и Настройки персонажей будут бросать и на предметы, персональные при поднятии. По умолчанию выключено: на такую добычу обычно стоит бросать самому."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Броски в группе и рейде"
 L["ROLLS_MESSAGES_HEADER"] = "Сообщения о бросках"
@@ -496,42 +545,53 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Выводить итоги розыгрыш�
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Не выводить итоги розыгрыша"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	'"Выводить итоги розыгрыша" выводит в чат одну строку на каждую победу с победителем, предметом и победным броском вместо игровой строки. "Не выводить итоги розыгрыша" оставляет игровую строку о том, кто выиграл.'
+-- The Safety Warnings section on the Automated Rolls panel.
+L["ROLLS_SAFETY_HEADER"] = "Предупреждения"
+-- Arguments: the game's own words for Need and Pass, in both.
+L["ROLLS_SAFETY_WARNING"] =
+	'Предупреждать при входе в подземелье или рейд с "%s" или "%s"'
+L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
+	'При входе в подземелье или рейд, где GogoLoot выберет за вас "%s" или "%s", выводит напоминание в чат, чтобы вы успели изменить это до первой добычи.'
+L["ROLLS_SAFETY_WARNING_SOUND"] = "Проигрывать звук"
+L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
+	"Проигрывает сигнал вместе с предупреждением, на случай если в чате много сообщений."
 
 --[[
-    Item Overrides, under Automated Rolls: items with a roll action of their
-    own.
+    Global Item Overrides, under Automated Rolls: items with a roll action of
+    their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	'Задает бросок для отдельных предметов в обход настроек качества. Только так GogoLoot будет бросать на предметы для заданий, а также на предметы, персональные при поднятии, пока выключено "Включая персональные при поднятии".'
--- Shown on Item Overrides and Character Rules while Automated Rolls is off.
-L["ROLLS_OFF_NOTE"] =
-	"Пока Автоброски выключены, эти настройки не используются."
-L["ITEM_OVERRIDES_ENABLE"] = "Включить Особые предметы"
+-- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
+L["OPTIONS_FEATURE_OFF_STATUS"] =
+	'%s отключено, поэтому эти настройки не используются. Его переключатель находится на странице "%s".'
+L["ITEM_OVERRIDES_ENABLE"] = "Включить Глобальные особые предметы"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"Использует броски, заданные ниже. Если выключено, эти предметы следуют настройкам качества, как и все остальные."
--- Shown under Enable Item Overrides while it is off.
+-- Shown under Enable Global Item Overrides while it is off.
 L["ITEM_OVERRIDES_OFF_NOTE"] =
-	"Пока Особые предметы выключены, эти броски не используются."
+	"Пока Глобальные особые предметы выключены, эти броски не используются."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
-	"Заменяет ваши Особые предметы стандартными предметами для вашего дополнения."
+	"Заменяет ваши Глобальные особые предметы стандартными предметами для вашего дополнения."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"Заменить ваши Особые предметы стандартными предметами для вашего дополнения?"
+	"Заменить ваши Глобальные особые предметы стандартными предметами для вашего дополнения?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] =
 	"Задает автоматический бросок для этого предмета."
-L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "Удаляет этот предмет из Особых предметов."
+L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] =
+	"Удаляет этот предмет из Глобальных особых предметов."
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] =
-	"Удалить этот предмет и его бросок из Особых предметов?"
+	"Удалить этот предмет и его бросок из Глобальных особых предметов?"
 L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	'Введите ID предмета или перетащите предмет сюда, чтобы добавить его в список с действием "Вручную".'
 
 --[[
-    Character Rules, under Automated Rolls: the stats and the armor and
+    Character Overrides, under Automated Rolls: the stats and the armor and
     weapon types each character wants, whose gear is left to the player. The
     stat, armor and weapon names come from the game's own strings.
 ]]
 -- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
 L["CHARACTER_RULES_PANEL_INTRO"] =
-	'Хотите снаряжение с характеристикой "%s" для персонажа класса "%s"? Отметьте "%s" и типы брони и оружия, которые используете. Подходящее снаряжение остается вам для броска, а остальным займется раздел "Все остальное". Особые предметы по-прежнему имеют приоритет.'
+	'Хотите снаряжение с характеристикой "%s" для персонажа класса "%s"? Отметьте "%s" и типы брони и оружия, которые используете. Подходящее снаряжение остается вам для броска, а остальным займется раздел "Все остальное". Глобальные особые предметы по-прежнему имеют приоритет.'
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -550,35 +610,55 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Все остальное"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "Неподходящее снаряжение"
 L["CHARACTER_RULES_RESET"] = "Сбросить к настройкам класса"
--- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
-L["CHARACTER_RULES_SANITY_CHECK"] = "Проверка"
-L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
-	"Как бы бросались кости на эти зелёные предметы, персональные при надевании, для этого персонажа при отметках выше."
---[[
-    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
-    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
-    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
-]]
-L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Окно броска"
-L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Автоматический бросок"
--- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
-L["CHARACTER_RULES_SANITY_STATS"] =
-	"Характеристики, которые читают Правила персонажей: %s"
-L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Низкоуровневое снаряжение"
-L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Автоброски выключены"
-L["CHARACTER_RULES_SANITY_QUALITY"] = "Настройки качества"
+L["CHARACTER_RULES_RESET_DESCRIPTION"] =
+	'Возвращает флажки и "Все остальное" этого персонажа к настройкам его класса.'
 -- Argument: the game's own name for the character's class.
 L["CHARACTER_RULES_CLASS"] = "Класс: %s"
 L["CHARACTER_RULES_LOW_LEVEL"] =
 	'Автоматически "Не откажусь" на низкоуровневое снаряжение'
 L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
-	'Выбирает "Не откажусь" для брони и оружия, требуемый уровень которых хотя бы настолько ниже вашего, подходят они или нет, до качества раздела "Все остальное", чтобы при прокачке переросшее снаряжение вас не задерживало.'
+	'Выбирает "Не откажусь" для брони и оружия, требуемый уровень которых хотя бы настолько ниже вашего, подходят они или нет, до качества, заданного в "В группе" или "В рейде", чтобы при прокачке переросшее снаряжение вас не задерживало.'
 -- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
 L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Выкл."
 L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Ваш уровень - %d"
 -- Printed once per account, at the first login where Automated Rolls is on by default.
 L["MESSAGE_AUTOMATED_ROLLS_ON"] =
 	'Автоброски теперь включены: снаряжение, нужное каждому персонажу, остается вам для броска, а на остальное выбирается "Не откажусь". Изменить можно в меню Настройки > Модификации > GogoLoot > Автоброски.'
+
+--------------------------------------------------------------------------------
+-- Options: Loot Roll Sanity Check
+--------------------------------------------------------------------------------
+
+L["SANITY_CHECK_DESCRIPTION"] =
+	"По десять случайных предметов с каждого вида противников и что автоброски сделали бы с каждым из них для этого персонажа при текущих настройках."
+-- The button that draws a fresh ten for each section.
+L["SANITY_CHECK_REFRESH"] = "Выбрать новую добычу"
+L["SANITY_CHECK_REFRESH_DESCRIPTION"] =
+	"Выбирает по десять новых предметов для каждого вида противников."
+-- The three sections, one per kind of kill. Trash: any enemy that isn't a boss.
+L["SANITY_CHECK_TRASH"] = "Мелкие противники"
+L["SANITY_CHECK_DUNGEON_BOSSES"] = "Боссы подземелий"
+L["SANITY_CHECK_RAID_BOSSES"] = "Боссы рейдов"
+-- Under each section's header. Argument: the group settings it reads, ROLLS_IN_PARTY or ROLLS_IN_RAID.
+L["SANITY_CHECK_CONTEXT"] = 'Броски по настройкам "%s".'
+--[[
+    Each drop's first line ends in its outcome: Manual Roll when the roll
+    window is left to the player, or Automatic and the roll, whose argument
+    is the game's own Need, Greed or Pass. The second line opens with its
+    tag line, the binding's short name then the game's names for its stats,
+    and ends in why, one of the reasons below or the page that decided it by
+    its panel name (TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES).
+]]
+L["SANITY_CHECK_MANUAL_ROLL"] = "Ручной бросок"
+L["SANITY_CHECK_AUTOMATIC"] = "Автоматически: %s"
+L["SANITY_CHECK_BOP"] = "Перс. при поднятии"
+L["SANITY_CHECK_BOE"] = "Перс. при надевании"
+L["SANITY_CHECK_LOW_LEVEL"] = "Низкоуровневое снаряжение"
+L["SANITY_CHECK_ROLLS_OFF"] = "Автоброски выключены"
+L["SANITY_CHECK_QUALITY"] = "Настройки качества"
+L["SANITY_CHECK_NEVER"] = "Никогда автоматически"
+L["SANITY_CHECK_QUEST"] = "Предмет для задания"
+L["SANITY_CHECK_BIND_ON_PICKUP"] = "Персональный при поднятии"
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -609,8 +689,7 @@ L["TRADE_CHANNEL"] = "Канал"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	'"%s" отправляет итоги партнеру по обмену. "Чат группы" публикует их в группе или рейде, а вне группы все равно отправляет шепотом. "Только мне" выводит их только в ваш чат и никому не отправляет.'
--- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_SELF"] = "Только мне"
+-- The trade window checkbox: its tooltip and its caption.
 L["TRADE_TOOLTIP_DESCRIPTION"] =
 	"Публикует итоги в чате, когда этот обмен завершится."
 L["TRADE_CHECKBOX_LABEL"] = "Оповестить"
@@ -651,6 +730,11 @@ L["LOOT_TOASTS_TOOLTIPS_ENABLE"] =
 	"Включить подсказки предметов в уведомлениях о добыче"
 L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
 	"Показывает подсказку предмета при наведении на его уведомление. Если выключено, уведомления не реагируют на мышь, и можно наводить курсор и щёлкать по существам и трупам за ними."
+-- The checkbox under Enable Tooltips on Loot Toast Items: the game's own "You Won" window, shown only on clients that have one.
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_ENABLE"] =
+	"Включить стандартное окно Blizzard о победе в розыгрыше"
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_DESCRIPTION"] =
+	"Показывает собственное окно игры, когда вы выигрываете розыгрыш, рядом с уведомлениями. Если выключено, о выигрыше сообщают только уведомления."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] =
 	"Отключить стандартные сообщения о добыче"
@@ -669,9 +753,6 @@ L["LOOT_TOASTS_TEXT_HEADER"] = "Текст"
     carry a quality dropdown beside each ticked box. Argument in each tooltip:
     the row's item type, as the client names it.
 ]]
--- Shown on the Filters panel while Loot Toasts is off.
-L["LOOT_TOASTS_OFF_NOTE"] =
-	"Пока уведомления о добыче выключены, эти настройки не используются."
 -- The Filters panel's description.
 L["LOOT_TOASTS_FILTERS_CAPTION"] =
 	"Выберите, какая добыча получает уведомление и что в нем написано, для вашей добычи и добычи группы. Рядом с добычей группы показывается имя подобравшего."
@@ -717,7 +798,8 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
     reads as the game's own word for Need or Greed, then the number
     (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
     looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
-    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter,
+    the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "Победный бросок"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
@@ -803,12 +885,10 @@ L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"Проигрывает сигнал, когда вы забираете с трупа или из сундука предмет выбранного качества или выше."
 L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] =
 	"Самое низкое качество предмета, для которого проигрывается сигнал добычи."
-L["LOOT_SOUNDS_TEST"] = "Проигрывает сигнал добычи."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "Включить звук: %s"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] =
 	"Проигрывает звук сумки, когда %s действительно что-то приносит."
-L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "Проигрывает звук: %s."
 
 --------------------------------------------------------------------------------
 -- Options: Automated Opening
@@ -843,9 +923,9 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Сообщает в чате, когда вы получаете запертый ящик, который откроется, как только его отопрут."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"Показывать оповещения о запертых ящиках только разбойникам или всем персонажам."
--- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+-- Lockboxes' silver status line while Automated Opening is off. Arguments: Automated Opening in gold, then its page's name.
 L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
-	"Пока Автооткрытие выключено, оповещения о запертых ящиках не используются."
+	'%s отключено, поэтому оповещения о запертых ящиках не используются. Его переключатель находится на странице "%s".'
 L["LOCKBOXES_FOR_ROGUES"] = "Для разбойников"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Для всех персонажей"
 
@@ -865,9 +945,7 @@ L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
 	'Все контейнеры, которые знает GogoLoot, и что с ними делает Автооткрытие. "Игнорировать" оставляет контейнер закрытым. Изменения действуют для всех ваших персонажей.'
--- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] =
-	"Пока Автооткрытие выключено, эти настройки не используются."
+-- The Openables List's Restore Defaults: its tooltip and its confirmation.
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Возвращает список к исходному виду: у каждого предмета восстанавливается настройка по умолчанию, удаленные предметы возвращаются, а добавленные удаляются."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1088,7 +1166,8 @@ L["LOOT_MASTER_STATE_WAITING"] = "Ждут розыгрыша: %d."
 L["LOOT_MASTER_FOOTER"] = "Раздать: %d."
 L["LOOT_MASTER_FOOTER_CLOCK"] =
 	"Раздать: %d, ближайший срок обмена истекает через %s."
-L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + клик по предмету в сумке, чтобы добавить"
+L["LOOT_MASTER_ALT_CLICK_HINT"] =
+	"Alt + клик по предмету в сумке, чтобы добавить его."
 
 -- The Disqualify window.
 L["LOOT_MASTER_DISQUALIFY_TITLE"] = "Дисквалификация броска"

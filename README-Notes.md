@@ -16,11 +16,11 @@
 - **Instead:** Sent lines lead with the target marker on WoW Forever too.
 - **Why:** Forever blocks raid markers only in /say and public channels such as General, which GogoLoot never sends to.
 
-### Locked Items leads the mini-map tooltip
+### Locked Items leads the mini-map menu
 
-- **Departs from:** MINIMAP BUTTON → Tooltip Structure, the feature blocks directly under the title.
-- **Instead:** While lockboxes wait on a lock, a Locked Items list sits directly under the title, above the feature blocks.
-- **Why:** It is the one part of the tooltip that reflects the bags rather than a setting, so it is what the player opens the tooltip to check.
+- **Departs from:** MINIMAP MENU → Layout, the feature blocks directly under the title.
+- **Instead:** While lockboxes wait on a lock, a Locked Items heading sits directly under the title, above the feature blocks: an item row per box, eight at most with a note counting the rest, then a gray note saying a Rogue can pick them (or, to a Rogue, to use Pick Lock).
+- **Why:** It is the one part of the menu that reflects the bags rather than a setting, so it is what the player opens the menu to check.
 
 ### Loot Toasts scan a tooltip for quest starters
 
@@ -64,11 +64,11 @@
 - **Instead:** Each item type's row is its caption, then a Mine column and a Group column, each a box and, on Armor, Weapon, Trade Goods and Gem, a quality dropdown while the box is ticked (a blank cell of its width while clear, so every Group box lines up). Bag Count (Mine only) and Winning Roll close the grid in the same columns.
 - **Why:** Whose loot a row covers is the point of the panel, and one row per type and side would double an eighteen-row list.
 
-### Mini-map tooltip reads back Automated Rolls
+### Mini-map menu reads back Automated Rolls
 
-- **Departs from:** MINIMAP BUTTON → Tooltip Structure.
-- **Instead:** Under Automated Rolls' description, a silver line per group context, set in two spaces and named in the game's own word for it, says what it rolls, such as "Party: Greed, Uncommon & Lower".
-- **Why:** Right-click turns rolling on without saying what it rolls; the lines answer that where the click is.
+- **Departs from:** MINIMAP MENU → Layout, a block's description followed by its Toggle row.
+- **Instead:** Between Automated Rolls' description and its Toggle row, a Party and a Raid value row, each named in the game's own word for it, say what it rolls on the right, such as "Greed, Uncommon & Lower", or the roll alone on Manual.
+- **Why:** Left-Click turns rolling on without saying what it rolls; the rows answer that where the click is.
 
 ### Loot Toasts settings sit at panel level
 
@@ -96,4 +96,4 @@
 
 ## Decisions
 
-- **The Openables List is the whole list, with Add Item, a remove column and Restore Defaults.** Every container the client's data lists appears with its own dropdown of two choices, Open or Ignore (maintainer, 2026-09-28: Open when Unlocked opened exactly as Open does, and the three Ignores only changed the reason printed). A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a tradeable container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for a tradeable one that can hold a Unique item; Ignore, tagged Sell Sealed, for a tradeable one that can hold a Bind on Pickup item; the rest on Open, untagged. Tradeable means the container isn't itself Bind on Pickup or a quest item: one that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03). One exception is set by hand in every flavor folder: Gnarlpine Necklace (8049), a quest item holding the unique Tallonkai's Jewel, stays on Ignore, tagged May Hold Unique, and a regenerated list must keep it there. The tag belongs to the item, so it stays whatever the player picks, and a looted container's notice gives the reason. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item. The player can add an item the data lacks, which joins on Open (gear and bags are refused, since using one equips it), or remove a listed one, which GogoLoot then treats as an ordinary item. Only the changes are saved, account-wide, so new data reaches every player, and Restore Defaults clears them all.
+- **Openables List defaults.** A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a tradeable container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for a tradeable one that can hold a Unique item; Ignore, tagged Sell Sealed, for a tradeable one that can hold a Bind on Pickup item; the rest on Open, untagged. Tradeable means the container isn't itself Bind on Pickup or a quest item: one that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03). One exception is set by hand in every flavor folder: Gnarlpine Necklace (8049), a quest item holding the unique Tallonkai's Jewel, stays on Ignore, tagged May Hold Unique, and a regenerated list must keep it there. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item.

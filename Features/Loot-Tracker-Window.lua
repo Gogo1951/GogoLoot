@@ -6,7 +6,7 @@
     The window every raider sees, in two tabs:
 
       * Rolls: the roll in progress, its rolls as they land, sorted highest
-        first or as they came, the ones that don't count greyed with the
+        first or as they came, the ones that don't count grayed with the
         reason, who hasn't rolled, and Roll and Pass buttons. Earlier rolls
         sit underneath and open to show theirs.
       * Drops: what dropped tonight, boss by boss, with who got it, printed,

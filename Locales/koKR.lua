@@ -64,6 +64,9 @@ L["MESSAGE_ITEM_NOT_OPENABLE"] =
 L["MESSAGE_ROLL_PRINT"] = "%s 주사위를 굴렸습니다: %s."
 -- The same after a Pass. Argument: the item's link.
 L["MESSAGE_ROLL_PASS_PRINT"] = "주사위 굴리기를 포기했습니다: %s."
+-- Automated Rolls' Safety Warning, on entering a dungeon or raid. Arguments: the game's word for the roll (Need or Pass), then the highest quality it rolls on, in that quality's color.
+L["MESSAGE_ROLL_SAFETY_WARNING"] =
+	"주의! 이곳에서는 자동 주사위가 %s을(를) 선택합니다(최대 %s 등급 아이템)."
 --[[
     Hide Roll Messages' winner summary. Arguments: the winner, the item's link,
     then the winning roll as LOOT_TOASTS_ROLL_RESULT words it ("Greed 95"). The
@@ -120,10 +123,10 @@ L["ERROR_DISTRIBUTION_FAILED"] = "%s님에게 전리품을 주지 못했습니�
 -- The first feature panel, holding the one Speedy Loot switch.
 L["TAB_SPEEDY_LOOT"] = "빠른 획득"
 L["TAB_AUTOMATED_ROLLS"] = "자동 주사위"
-L["TAB_ITEM_OVERRIDES"] = "아이템별 설정"
+L["TAB_ITEM_OVERRIDES"] = "전역 아이템별 설정"
 -- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
-L["TAB_CHARACTER_RULES"] = "캐릭터별 규칙"
--- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_CHARACTER_RULES"] = "캐릭터별 설정"
+-- The panel for everything GogoLoot posts to chat; also its block in the mini-map button's menu.
 L["TAB_ANNOUNCEMENTS"] = "전리품 공지"
 -- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "거래 공지"
@@ -144,46 +147,57 @@ L["TAB_LOOT_DESTINATIONS"] = "전리품 받을 사람"
 L["TAB_IGNORE_LIST"] = "무시 목록"
 -- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
 L["TAB_ROLL_MACRO"] = "주사위 매크로"
+L["TAB_SANITY_CHECK"] = "전리품 주사위 점검"
 -- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
 L["TAB_LOOT_MASTER"] = "전리품 관리자"
-
--- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
-L["TAB_NESTED_FORMAT"] = "%s: %s"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------
 
-L["STATUS_ENABLED"] = "사용"
-L["STATUS_DISABLED"] = "사용 안 함"
 -- Automated Opening is on but waiting for empty bag slots.
-L["STATUS_PAUSED"] = "일시 중지"
+L["MENU_PAUSED"] = "일시 중지"
 
 --[[
-    The tooltip titles each feature with its options-panel name, and gives
-    each a description of its own, two lines at most: the panels' longer text
-    doesn't fit a tooltip.
+    The mini-map menu titles each feature with its options-panel name, and
+    gives each a description of its own, two lines at most: the panels' longer
+    text doesn't fit the menu.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"선택한 품질까지 대상 아이템에 대신 주사위를 굴립니다."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"가방에 있는 조개, 상자, 동전 주머니, 잠금 해제된 잠긴 상자를 엽니다."
+-- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+L["MENU_OPENING_WAITING"] = "가방 빈 칸 %d개를 기다리는 중입니다."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "거래 요약과 전리품 분배 내역을 대화창에 게시합니다."
-L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] =
-	"품질별로 지정한 플레이어에게 전리품을 분배합니다."
 --[[
-    The tooltip's read-back of each group context's roll, one line each under
-    the description. Arguments: the game's own word for Party or Raid, the roll,
-    then (all but Manual) the highest quality it rolls on.
+    The menu's read-back of each group context's roll, on the right of its
+    Party or Raid row. Arguments: the roll, then the highest quality it rolls
+    on. Manual shows the roll alone.
 ]]
-L["MINIMAP_ROLLS_SETTING"] = "%s: %s, %s"
-L["MINIMAP_ROLLS_SETTING_MANUAL"] = "%s: %s"
+L["MENU_ROLLS_SETTING"] = "%s, %s"
+-- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
+L["MENU_ROLLS_AUTOMATION"] = "자동화"
+L["MENU_ROLLS_THRESHOLD"] = "기준"
+--[[
+    Under the flyouts' choices, above links to both pages. Arguments:
+    TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
+    Overrides is off, the second line names TAB_CHARACTER_RULES alone.
+]]
+L["MENU_ROLLS_OVERRIDES_NOTE"] = "%s 및 %s 설정은 계속 적용됩니다."
+L["MENU_ROLLS_OVERRIDE_NOTE"] = "%s 설정은 계속 적용됩니다."
+L["MENU_ON"] = "켜짐"
+L["MENU_OFF"] = "꺼짐"
+L["MENU_MORE_FEATURES"] = "추가 기능"
+L["MENU_FEATURE_COUNT_ON"] = "%d개 켜짐"
+L["MENU_FEATURE_COUNT_OFF"] = "%d개 꺼짐"
 
-L["MINIMAP_LEFT_CLICK"] = "왼쪽 클릭"
-L["MINIMAP_RIGHT_CLICK"] = "오른쪽 클릭"
-L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + 왼쪽 클릭"
-L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + 오른쪽 클릭"
-L["MINIMAP_TOGGLE"] = "켜기/끄기"
+L["MENU_CLICK_LEFT"] = "왼쪽 클릭"
+L["MENU_CLICK_RIGHT"] = "오른쪽 클릭"
+L["MENU_CLICK_SHIFT_LEFT"] = "Shift + 왼쪽 클릭"
+-- Middle-Click opens the loot windows, only while they are loaded.
+L["MENU_CLICK_MIDDLE"] = "가운데 클릭"
+L["MENU_TOGGLE"] = "켜기/끄기"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "잠긴 아이템"
@@ -191,20 +205,11 @@ L["MINIMAP_LOCKED_ITEMS"] = "잠긴 아이템"
 L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s에게 부탁하면 자물쇠를 열어 줍니다."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "%s 기술을 사용해 자물쇠를 여세요."
-L["MINIMAP_OPTIONS"] = "GogoLoot 설정"
-L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 가운데 클릭"
+L["MENU_OPTIONS"] = "GogoLoot 설정"
+L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + 가운데 클릭"
 
--- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
-L["MINIMAP_TRADABLE_LOOT"] = "거래 가능 전리품"
--- Under the first few of them. Argument: how many more there are.
-L["MINIMAP_TRADABLE_MORE"] = "외 %d개"
--- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
-L["MINIMAP_LOOT_WINDOWS"] = "전리품 관리자 및 전리품 추적기"
-L["MINIMAP_TO_HAND_OUT"] = "분배할 아이템 %d개"
-L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] =
-	"아직 거래할 수 있는 전리품을 주사위로 분배하고, 모든 주사위를 지켜봅니다."
-L["MINIMAP_MIDDLE_CLICK"] = "가운데 클릭"
-L["MINIMAP_OPEN"] = "열기"
+-- Under the first eight rows of a menu list. Argument: how many more there are.
+L["MENU_MORE"] = "외 %d개"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -225,8 +230,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List and Item Overrides bring text of their own), the hint the
-    box shows while empty, and its button.
+    Openables List and Global Item Overrides bring text of their own), the
+    hint the box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "아이템 추가"
 L["ITEM_LIST_ADD_DESCRIPTION"] =
@@ -239,7 +244,7 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "아이템 검색..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"이름, 아이템 ID, 설정 또는 태그에 입력한 내용이 포함된 아이템만 표시합니다."
 L["ITEM_LIST_NO_MATCHES"] = "검색 조건에 맞는 아이템이 없습니다."
--- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+-- Shown in place of the rows when the Ignore List or Global Item Overrides is empty, since both refill at login.
 L["ITEM_LIST_EMPTY_REFILLS"] =
 	"목록이 비어 있어 다음 접속 때 기본 항목이 돌아옵니다. 기본값 복원을 누르면 지금 바로 돌아옵니다."
 
@@ -253,7 +258,7 @@ L["ITEM_LIST_KIND_DESCRIPTION"] =
 
 --[[
     The Add from Bags dropdown beside every item list's add box: its resting
-    text and tooltip, then what it reads, greyed out, when everything carried
+    text and tooltip, then what it reads, grayed out, when everything carried
     is already on the list. The Openables List brings a tooltip of its own.
 ]]
 L["ITEM_LIST_ADD_FROM_BAGS"] = "가방에서 추가"
@@ -265,25 +270,37 @@ L["ITEM_LIST_BAGS_EMPTY_DESCRIPTION"] = "가지고 있는 모든 아이템이 �
 L["ITEM_LIST_RESTORE"] = "기본값 복원"
 
 -- Placeholder shown in the item lists until the client caches an item's info.
-L["ITEM_LOADING"] = "불러오는 중... (ID: %d)"
+L["LOADING_ITEM"] = "불러오는 중 ID: %d"
 
 --[[
-    Appended to the Automated Rolls description. Item Overrides is the one way
-    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
-    the way a Bind on Pickup item does; nothing ever rolls on the rest.
+    Appended to the Automated Rolls description. Global Item Overrides is the
+    one way a quest item gets rolled on, and Global Item Overrides or Include
+    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
+    the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"제조법, 책, 탈것, 애완동물, 전설 아이템에는 절대 주사위를 굴리지 않으며, 퀘스트 아이템은 아이템별 설정에 있을 때만, 획득 시 귀속 아이템은 아이템별 설정에 있거나 획득 시 귀속 포함이 켜져 있을 때만 굴립니다."
+	"제조법, 책, 탈것, 애완동물, 전설 아이템에는 절대 주사위를 굴리지 않으며, 퀘스트 아이템은 전역 아이템별 설정에 있을 때만, 획득 시 귀속 아이템은 전역 아이템별 설정에 있거나 획득 시 귀속 포함이 켜져 있을 때만 굴립니다."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] =
 	"제조법, 책, 탈것, 애완동물, 전설 아이템은 항상 직접 분배하도록 남겨 둡니다."
 
--- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+--[[
+    The channel choices shared by Trade Announcements' Channel, Raid Roll
+    Winner's output and the Loot Master's Announce In: Group Chat posts to the
+    party or raid, Me Only prints in the player's own chat and sends nothing.
+]]
 L["CHANNEL_GROUP_CHAT"] = "파티 대화"
+L["CHANNEL_ME_ONLY"] = "나만 보기"
 
--- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
-L["OPTIONS_EXAMPLE"] = "예시: %s"
+-- The silver label over every Example line, which shows a chat line the way it will arrive.
+L["SAMPLE_EXAMPLE"] = "예시"
+
+-- The tooltip on every sound row's speaker icon, which plays the row's sound.
+L["OPTIONS_SOUND_PREVIEW_DESCRIPTION"] = "소리가 켜져 있든 꺼져 있든 지금 이 소리를 재생합니다."
+
+-- The button on a Reset row: Character Overrides' Reset to Class Defaults and the Loot Toasts position reset.
+L["OPTIONS_RESET"] = "초기화"
 
 --------------------------------------------------------------------------------
 -- Options: General
@@ -296,7 +313,7 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"접속할 때마다 GogoLoot의 버전과 이 설정을 찾는 위치를 표시합니다."
 L["MINIMAP_BUTTON_ENABLE"] = "미니맵 버튼 사용"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"미니맵에 GogoLoot 버튼을 표시합니다. 왼쪽 클릭은 자동 주사위, 오른쪽 클릭은 자동 열기, Shift + 왼쪽 클릭은 전리품 공지, Shift + 오른쪽 클릭은 자동 전리품 분배를 켜거나 끕니다."
+	"미니맵에 GogoLoot 버튼을 표시합니다. 버튼에 마우스를 올리면 GogoLoot 메뉴가 열립니다. 왼쪽 클릭은 자동 주사위, 오른쪽 클릭은 자동 열기, Shift + 왼쪽 클릭은 전리품 공지를 켜거나 끕니다."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/명령어"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -304,6 +321,10 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "이 애드온의 설정 창을 엽니다."
 
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "기능"
+
+--------------------------------------------------------------------------------
+-- Options: Speedy Loot
+--------------------------------------------------------------------------------
 
 -- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
@@ -317,6 +338,10 @@ L["SPEEDY_LOOT_ENABLE"] = "빠른 획득 사용"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"시체를 여는 즉시 전리품 창 없이 모두 획득합니다. 전리품 창을 보려면 Shift 키를 누른 채 획득하세요. 게임의 %s 설정을 켜며, %s 역할을 맡는 동안에는 작동하지 않습니다."
 
+--------------------------------------------------------------------------------
+-- Options: Roll Macro
+--------------------------------------------------------------------------------
+
 --[[
     The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
     locale. General Macros is the tab of the game's Macros window that every
@@ -327,16 +352,27 @@ L["ROLL_MACRO_DESCRIPTION"] =
 	"금화 아이콘이 붙은 %s 매크로를 일반 매크로에 추가해, 계정의 모든 캐릭터가 행동 단축바로 끌어다 놓을 수 있게 합니다."
 --[[
     The three rows under it, each beside its mouse button's caption
-    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
+    (MENU_CLICK_LEFT and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "1-100 굴리기"
 L["ROLL_MACRO_RIGHT_CLICK"] = "1-99 굴리기"
 L["ROLL_MACRO_MIDDLE_CLICK"] = "공격대 주사위"
 L["ROLL_MACRO_ENABLE"] = "주사위 매크로 사용"
--- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+-- Under the three rows, in silver: what Middle-Click's raid roll is.
 L["ROLL_MACRO_RAID_ROLL_NOTE"] =
-	"공격대 주사위는 아이템을 무작위로 한 사람에게 줍니다. 1부터 파티 인원 수까지 굴리므로 숫자 하나가 플레이어 한 명을 뜻합니다: 공격대나 파티 목록을 위에서부터 나온 숫자만큼 세어 승자를 찾으세요. 혼자일 때는 1-100을 굴립니다."
+	"공격대 주사위는 1부터 파티 인원 수까지 굴리며, 숫자 하나가 플레이어 한 명입니다."
+-- The Roll Macro panel's Raid Rolls section, shown whether or not the macro is on, since it reads anyone's raid roll.
+L["RAID_ROLL_HEADER"] = "공격대 주사위"
+L["RAID_ROLL_WINNER_ENABLE"] = "공격대 주사위 승자 사용"
+L["RAID_ROLL_WINNER_ENABLE_DESCRIPTION"] =
+	"파티원 누구든 1부터 파티 인원 수까지 굴리면, 공격대나 파티 목록에서 그 숫자에 해당하는 플레이어를 알려줍니다."
+L["RAID_ROLL_OUTPUT_DESCRIPTION"] =
+	"나만 보기는 승자를 내 대화창에만 표시합니다. 파티 대화는 파티나 공격대에 알립니다."
+-- Printed when someone raid rolls. Arguments: the roller, the roll, the group's size, the player it lands on.
+L["MESSAGE_RAID_ROLL_PRINT"] = "%s 님이 공격대 주사위에서 %d/%d을 굴렸고, %s 님에게 해당합니다."
+-- The same, posted to group chat with plain names.
+L["MESSAGE_RAID_ROLL"] = "%s 님이 공격대 주사위에서 %d/%d을 굴렸고, %s 님에게 해당합니다"
 L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 	"%s 매크로를 일반 매크로에 유지합니다: 왼쪽 클릭은 1-100, 오른쪽 클릭은 1-99, 가운데 클릭은 공격대 주사위를 굴립니다. 끄면 매크로를 삭제합니다."
 --[[
@@ -396,7 +432,7 @@ L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
     leader. Hidden only while solo, where there is no leader to name.
 ]]
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "이 설정은 %s님이 관리합니다."
--- Shown in the same place while solo, where the two dropdowns are greyed out.
+-- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "변경하려면 파티에 참여하세요. 파티장만 변경할 수 있습니다."
 
 -- Argument: the game's own word for Master Looter.
@@ -423,6 +459,18 @@ L["QUICK_SETTINGS_TITLE"] = "빠른 설정"
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "%s 역할을 맡게 될 때마다 이 설정을 창으로 엽니다."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "전리품 전담 팝업 사용"
 
+-- Tradable Gear Tint, on the Automated Master Looting panel
+L["TRADABLE_TINT_HEADER"] = "거래 가능 장비 색칠"
+L["TRADABLE_TINT_DESCRIPTION"] =
+	"가방 안의 획득 시 귀속 장비 중 아직 거래할 수 있는 것을 색칠해, 귀속되기 전에 나눠 줄 수 있는 장비를 한눈에 알아볼 수 있게 합니다."
+L["TRADABLE_TINT_ENABLE"] = "거래 가능 장비 색칠 사용"
+L["TRADABLE_TINT_ENABLE_DESCRIPTION"] =
+	"색칠을 켜거나 끕니다. 기본 가방, Baganator, Bagnon, AdiBags, ArkInventory, BetterBags, ElvUI에서 작동합니다."
+L["TRADABLE_TINT_COLOR"] = "색칠 색상"
+L["TRADABLE_TINT_COLOR_DESCRIPTION"] =
+	"색칠의 색상과 불투명도입니다. 불투명도가 낮을수록 아이템 아이콘이 잘 보입니다."
+L["TRADABLE_TINT_BAGANATOR_WIDGET_LABEL"] = "거래 가능 장비 색칠 (GogoLoot)"
+
 L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
 	"품질별로 받을 사람을 선택하세요. 받을 사람이 없는 품질은 전리품 창에 남겨 둡니다."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "자신"
@@ -437,9 +485,7 @@ L["MASTER_LOOTER_NO_DESTINATIONS_NOTE"] =
 
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 	"이 목록의 아이템은 절대 자동으로 분배하지 않습니다. 직접 분배할 수 있도록 전리품 창에 남겨 둡니다."
--- Shown on the Ignore List while Automated Master Looting is off.
-L["MASTER_LOOTER_OFF_NOTE"] =
-	"자동 전리품 분배가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
+-- The Ignore List's Restore Defaults: its tooltip and its confirmation.
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] =
 	"무시 목록을 현재 확장팩의 기본 아이템으로 바꿉니다."
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
@@ -455,7 +501,7 @@ L["ROLLS_PANEL_DESCRIPTION"] =
 	"주사위 굴림 방식의 전리품에서 선택한 품질까지 %s, %s, %s 중 하나를 대신 선택합니다. 파티와 공격대를 따로 설정할 수 있습니다."
 L["ROLLS_ENABLE"] = "자동 주사위 사용"
 L["ROLLS_ENABLE_DESCRIPTION"] =
-	"아이템별 설정과 캐릭터별 규칙을 포함해 자동 주사위를 켜거나 끕니다."
+	"전역 아이템별 설정과 캐릭터별 설정을 포함해 자동 주사위를 켜거나 끕니다."
 L["ROLLS_IN_PARTY"] = "파티에서"
 L["ROLLS_IN_RAID"] = "공격대에서"
 -- The caption of the quality row under In Party and under In Raid, shown while that roll isn't Manual.
@@ -463,9 +509,10 @@ L["ROLLS_UP_TO_QUALITY"] = "최대 품질"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: GogoLoot가 주사위를 굴리는 가장 높은 품질입니다."
 L["ROLLS_ACTION_CHOOSE"] =
 	"%s: GogoLoot가 선택할 주사위입니다. 수동은 직접 선택하도록 남겨 둡니다."
+-- A sub-row under In Party's and In Raid's Up to Quality, one setting each, and a row in the mini-map menu's Party and Raid flyouts.
 L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "획득 시 귀속 포함"
 L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
-	"위 주사위 설정과 캐릭터별 규칙이 획득 시 귀속 아이템에도 주사위를 굴립니다. 획득 시 귀속 전리품은 보통 직접 굴릴 만하므로 기본값은 꺼짐입니다."
+	"위 주사위 설정과 캐릭터별 설정이 획득 시 귀속 아이템에도 주사위를 굴립니다. 획득 시 귀속 전리품은 보통 직접 굴릴 만하므로 기본값은 꺼짐입니다."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "파티 및 공격대 주사위"
 L["ROLLS_MESSAGES_HEADER"] = "주사위 메시지"
@@ -481,40 +528,50 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "승자 요약 표시"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "승자 요약 표시 안 함"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"'승자 요약 표시'는 게임 자체 메시지 대신, 승리할 때마다 승자, 아이템, 승리 주사위를 담은 한 줄을 대화창에 표시합니다. '승자 요약 표시 안 함'은 누가 이겼는지 알려 주는 게임의 메시지를 그대로 둡니다."
+-- The Safety Warnings section on the Automated Rolls panel.
+L["ROLLS_SAFETY_HEADER"] = "안전 경고"
+-- Arguments: the game's own words for Need and Pass, in both.
+L["ROLLS_SAFETY_WARNING"] = "%s 또는 %s(으)로 설정된 던전이나 공격대에 입장하면 경고"
+L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
+	"GogoLoot가 대신 %s 또는 %s을(를) 선택하는 던전이나 공격대에 입장하면 대화창에 알림을 표시하여 첫 전리품 전에 바꿀 수 있게 합니다."
+L["ROLLS_SAFETY_WARNING_SOUND"] = "소리 재생"
+L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
+	"경고와 함께 알림음을 재생합니다. 대화창이 바쁠 때 유용합니다."
 
 --[[
-    Item Overrides, under Automated Rolls: items with a roll action of their
-    own.
+    Global Item Overrides, under Automated Rolls: items with a roll action of
+    their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"특정 아이템의 주사위를 품질 설정보다 우선하여 정합니다. GogoLoot가 퀘스트 아이템에, 또는 획득 시 귀속 포함이 꺼져 있을 때 획득 시 귀속 아이템에 주사위를 굴리는 유일한 방법입니다."
--- Shown on Item Overrides and Character Rules while Automated Rolls is off.
-L["ROLLS_OFF_NOTE"] = "자동 주사위가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
-L["ITEM_OVERRIDES_ENABLE"] = "아이템별 설정 사용"
+-- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
+L["OPTIONS_FEATURE_OFF_STATUS"] =
+	"%s 기능이 꺼져 있어 이 설정은 사용되지 않습니다. 스위치는 %s 페이지에 있습니다."
+L["ITEM_OVERRIDES_ENABLE"] = "전역 아이템별 설정 사용"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"아래에 정한 주사위를 사용합니다. 끄면 이 아이템들도 다른 아이템처럼 품질 설정을 따릅니다."
--- Shown under Enable Item Overrides while it is off.
+-- Shown under Enable Global Item Overrides while it is off.
 L["ITEM_OVERRIDES_OFF_NOTE"] =
-	"아이템별 설정이 꺼져 있는 동안에는 이 주사위 설정이 사용되지 않습니다."
+	"전역 아이템별 설정이 꺼져 있는 동안에는 이 주사위 설정이 사용되지 않습니다."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
-	"아이템별 설정을 현재 확장팩의 기본 아이템으로 바꿉니다."
+	"전역 아이템별 설정을 현재 확장팩의 기본 아이템으로 바꿉니다."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"아이템별 설정을 현재 확장팩의 기본 아이템으로 바꾸시겠습니까?"
+	"전역 아이템별 설정을 현재 확장팩의 기본 아이템으로 바꾸시겠습니까?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "이 아이템에 자동으로 선택할 주사위를 정합니다."
-L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "아이템별 설정에서 이 아이템을 제거합니다."
+L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "전역 아이템별 설정에서 이 아이템을 제거합니다."
 L["ITEM_OVERRIDES_REMOVE_CONFIRM"] =
-	"아이템별 설정에서 이 아이템과 주사위 설정을 제거하시겠습니까?"
+	"전역 아이템별 설정에서 이 아이템과 주사위 설정을 제거하시겠습니까?"
 L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"아이템 ID를 입력하거나 아이템을 여기로 끌어다 놓으면 수동으로 설정되어 목록에 추가됩니다."
 
 --[[
-    Character Rules, under Automated Rolls: the stats and the armor and
+    Character Overrides, under Automated Rolls: the stats and the armor and
     weapon types each character wants, whose gear is left to the player. The
     stat, armor and weapon names come from the game's own strings.
 ]]
 -- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
 L["CHARACTER_RULES_PANEL_INTRO"] =
-	"%s 장비를 %s 캐릭터가 갖고 싶나요? %s 능력치와 사용하는 방어구 및 무기 종류를 체크하세요. 조건에 맞는 장비는 직접 굴리도록 남겨 두고, 나머지는 '그 밖의 장비'가 처리합니다. 아이템별 설정이 여전히 우선합니다."
+	"%s 장비를 %s 캐릭터가 갖고 싶나요? %s 능력치와 사용하는 방어구 및 무기 종류를 체크하세요. 조건에 맞는 장비는 직접 굴리도록 남겨 두고, 나머지는 '그 밖의 장비'가 처리합니다. 전역 아이템별 설정이 여전히 우선합니다."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -533,33 +590,53 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "그 밖의 장비"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "조건에 맞지 않는 장비"
 L["CHARACTER_RULES_RESET"] = "직업 기본값으로 초기화"
--- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
-L["CHARACTER_RULES_SANITY_CHECK"] = "점검"
-L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
-	"위 상자 설정대로라면 이 캐릭터에게 이 착용 시 귀속 고급 아이템들이 어떻게 굴려지는지 보여줍니다."
---[[
-    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
-    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
-    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
-]]
-L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "주사위 창"
-L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "자동 주사위"
--- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
-L["CHARACTER_RULES_SANITY_STATS"] = "캐릭터별 규칙이 읽는 능력치: %s"
-L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "저레벨 장비"
-L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "자동 주사위 꺼짐"
-L["CHARACTER_RULES_SANITY_QUALITY"] = "품질 설정"
+L["CHARACTER_RULES_RESET_DESCRIPTION"] =
+	"이 캐릭터의 체크 상자와 그 밖의 장비 설정을 직업 기본값으로 되돌립니다."
 -- Argument: the game's own name for the character's class.
 L["CHARACTER_RULES_CLASS"] = "직업: %s"
 L["CHARACTER_RULES_LOW_LEVEL"] = "저레벨 장비에 자동 차비"
 L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
-	"요구 레벨이 내 레벨보다 이만큼 이상 낮은 방어구와 무기에 일치 여부와 관계없이 그 밖의 장비의 품질까지 차비를 선택하므로, 레벨업 중 이미 지난 장비가 발목을 잡지 않습니다."
+	"요구 레벨이 내 레벨보다 이만큼 이상 낮은 방어구와 무기에는 일치 여부와 관계없이 '파티에서' 또는 '공격대에서'에 설정한 품질까지 차비를 선택하므로, 레벨업 중 이미 지난 장비가 발목을 잡지 않습니다."
 -- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
 L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "끄기"
 L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "내 레벨 - %d"
 -- Printed once per account, at the first login where Automated Rolls is on by default.
 L["MESSAGE_AUTOMATED_ROLLS_ON"] =
 	"자동 주사위가 이제 켜져 있습니다. 각 캐릭터가 원하는 장비는 직접 굴리도록 남겨 두고, 나머지는 차비를 선택합니다. 설정 > 애드온 > GogoLoot > 자동 주사위에서 바꿀 수 있습니다."
+
+--------------------------------------------------------------------------------
+-- Options: Loot Roll Sanity Check
+--------------------------------------------------------------------------------
+
+L["SANITY_CHECK_DESCRIPTION"] =
+	"적 종류마다 무작위 전리품 10개와, 현재 설정에서 자동 주사위가 이 캐릭터를 위해 각각 어떻게 처리할지 보여줍니다."
+-- The button that draws a fresh ten for each section.
+L["SANITY_CHECK_REFRESH"] = "새 전리품 뽑기"
+L["SANITY_CHECK_REFRESH_DESCRIPTION"] = "적 종류마다 새 전리품 10개를 뽑습니다."
+-- The three sections, one per kind of kill. Trash: any enemy that isn't a boss.
+L["SANITY_CHECK_TRASH"] = "일반 몹"
+L["SANITY_CHECK_DUNGEON_BOSSES"] = "던전 우두머리"
+L["SANITY_CHECK_RAID_BOSSES"] = "공격대 우두머리"
+-- Under each section's header. Argument: the group settings it reads, ROLLS_IN_PARTY or ROLLS_IN_RAID.
+L["SANITY_CHECK_CONTEXT"] = "'%s' 설정으로 주사위를 굴립니다."
+--[[
+    Each drop's first line ends in its outcome: Manual Roll when the roll
+    window is left to the player, or Automatic and the roll, whose argument
+    is the game's own Need, Greed or Pass. The second line opens with its
+    tag line, the binding's short name then the game's names for its stats,
+    and ends in why, one of the reasons below or the page that decided it by
+    its panel name (TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES).
+]]
+L["SANITY_CHECK_MANUAL_ROLL"] = "수동 주사위"
+L["SANITY_CHECK_AUTOMATIC"] = "자동 %s"
+L["SANITY_CHECK_BOP"] = "획득 시 귀속"
+L["SANITY_CHECK_BOE"] = "착용 시 귀속"
+L["SANITY_CHECK_LOW_LEVEL"] = "저레벨 장비"
+L["SANITY_CHECK_ROLLS_OFF"] = "자동 주사위 꺼짐"
+L["SANITY_CHECK_QUALITY"] = "품질 설정"
+L["SANITY_CHECK_NEVER"] = "자동 처리 안 함"
+L["SANITY_CHECK_QUEST"] = "퀘스트 아이템"
+L["SANITY_CHECK_BIND_ON_PICKUP"] = "획득 시 귀속"
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -589,8 +666,7 @@ L["TRADE_CHANNEL"] = "채널"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s: 각 요약을 거래 상대에게 보냅니다. 파티 대화: 파티나 공격대에 게시하며, 파티에 없을 때는 귓속말로 보냅니다. 나만 보기: 내 대화창에만 표시하고 아무에게도 보내지 않습니다."
--- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_SELF"] = "나만 보기"
+-- The trade window checkbox: its tooltip and its caption.
 L["TRADE_TOOLTIP_DESCRIPTION"] = "이 거래가 완료되면 대화창에 거래 요약을 게시합니다."
 L["TRADE_CHECKBOX_LABEL"] = "공지"
 
@@ -628,6 +704,10 @@ L["LOOT_TOASTS_SWITCH_DESCRIPTION"] =
 L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "획득 알림 아이템 툴팁 사용"
 L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
 	"알림을 가리키면 아이템 툴팁을 보여줍니다. 끄면 알림이 마우스를 무시하므로 뒤에 있는 몹과 시체를 가리키고 클릭할 수 있습니다."
+-- The checkbox under Enable Tooltips on Loot Toast Items: the game's own "You Won" window, shown only on clients that have one.
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_ENABLE"] = "블리자드 기본 주사위 승자 창 사용"
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_DESCRIPTION"] =
+	"주사위에서 이기면 알림 옆에 게임 자체 창을 보여줍니다. 끄면 획득 알림만 무엇을 얻었는지 알려줍니다."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "기본 획득 메시지 사용 안 함"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "기본 획득 메시지 사용"
@@ -645,8 +725,6 @@ L["LOOT_TOASTS_TEXT_HEADER"] = "글자"
     carry a quality dropdown beside each ticked box. Argument in each tooltip:
     the row's item type, as the client names it.
 ]]
--- Shown on the Filters panel while Loot Toasts is off.
-L["LOOT_TOASTS_OFF_NOTE"] = "획득 알림이 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
 -- The Filters panel's description.
 L["LOOT_TOASTS_FILTERS_CAPTION"] =
 	"내 전리품과 파티의 전리품 각각에 대해 무엇을 알림으로 표시하고 어떤 내용을 담을지 선택하세요. 파티의 전리품에는 획득한 사람의 이름이 함께 표시됩니다."
@@ -691,7 +769,8 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
     reads as the game's own word for Need or Greed, then the number
     (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
     looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
-    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter,
+    the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "승리 주사위"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
@@ -771,12 +850,10 @@ L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"시체나 상자에서 선택한 품질 이상의 아이템을 획득하면 알림음을 재생합니다."
 L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] =
 	"획득 알림음을 재생하는 가장 낮은 아이템 품질입니다."
-L["LOOT_SOUNDS_TEST"] = "획득 알림음을 재생합니다."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "%s 소리 사용"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] =
 	"%s에 실제로 성공해 무언가를 얻으면 가방 소리를 재생합니다."
-L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "%s 소리를 재생합니다."
 
 --------------------------------------------------------------------------------
 -- Options: Automated Opening
@@ -810,9 +887,9 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"잠금이 풀리면 열리게 될 잠긴 상자를 획득하면 대화창으로 알려 줍니다."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"잠긴 상자 알림을 도적에게만 표시할지 모든 캐릭터에게 표시할지 정합니다."
--- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+-- Lockboxes' silver status line while Automated Opening is off. Arguments: Automated Opening in gold, then its page's name.
 L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
-	"자동 열기가 꺼져 있는 동안에는 잠긴 상자 알림이 사용되지 않습니다."
+	"%s 기능이 꺼져 있어 잠긴 상자 알림이 사용되지 않습니다. 스위치는 %s 페이지에 있습니다."
 L["LOCKBOXES_FOR_ROGUES"] = "도적만"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "모든 캐릭터"
 
@@ -832,8 +909,7 @@ L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
 	"GogoLoot가 아는 모든 상자와 자동 열기가 각 상자를 어떻게 처리하는지 보여 줍니다. 무시로 설정한 상자는 열지 않습니다. 변경 사항은 모든 캐릭터에 적용됩니다."
--- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] = "자동 열기가 꺼져 있는 동안에는 이 설정이 사용되지 않습니다."
+-- The Openables List's Restore Defaults: its tooltip and its confirmation.
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"목록을 기본값으로 되돌립니다: 모든 아이템이 기본 설정으로 돌아가고, 제거한 아이템은 다시 나타나며, 추가한 아이템은 사라집니다."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1047,7 +1123,7 @@ L["LOOT_MASTER_STATE_WAITING"] = "%d개가 주사위를 기다리는 중."
 -- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
 L["LOOT_MASTER_FOOTER"] = "분배할 아이템 %d개."
 L["LOOT_MASTER_FOOTER_CLOCK"] = "분배할 아이템 %d개, 다음 거래 기한은 %s 후 만료됩니다."
-L["LOOT_MASTER_ALT_CLICK_HINT"] = "가방 아이템을 Alt + 클릭하여 추가"
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "가방 아이템을 Alt + 클릭하면 추가됩니다."
 
 -- The Disqualify window.
 L["LOOT_MASTER_DISQUALIFY_TITLE"] = "주사위 실격"
@@ -1103,7 +1179,7 @@ L["LOOT_MASTER_FLOOR_OTHER"] = "기타"
 L["LOOT_MASTER_FLOOR_ADD_ALL"] = "모두 주사위 목록에 추가"
 -- Add from Bags' two headings.
 L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "이 인스턴스에서 획득"
-L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "가방에 있는 다른 아이템"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "가방에도 있는 아이템"
 -- Argument: what was typed.
 L["LOOT_MASTER_FLOOR_NOT_FOUND"] = '가방에 "%s"에 맞는 거래 가능 아이템이 없습니다.'
 

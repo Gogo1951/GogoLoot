@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 --------------------------------------------------------------------------------
 -- Characters
@@ -83,10 +84,6 @@ end
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
-local function AutomatedRollsOn()
-	return ns.db.profile.autoGreed
-end
-
 -- A section's caption: the game's own label where this client has one, GogoLoot's words where it doesn't.
 ---@param group table # a ns.CHARACTER_RULE_GROUPS or ns.CHARACTER_RULE_GEAR_GROUPS row
 ---@return string
@@ -98,112 +95,12 @@ local function GroupCaption(group)
 	return L[group.caption]
 end
 
---------------------------------------------------------------------------------
--- Sanity Check
---------------------------------------------------------------------------------
-
---[[
-    The Sanity Check's items, watched for this panel (Options-Utilities-Item-
-    Cache.lua), so a link still loading when the panel opens fills in on its
-    own.
-]]
-local sampleItems = {}
-
-local function WatchSampleItems()
-	local outstanding = false
-	for _, itemIdentifier in ipairs(ns.CHARACTER_RULE_SAMPLE_ITEMS or {}) do
-		sampleItems[itemIdentifier] = true
-		if ns.IsItemOutstanding(itemIdentifier) then
-			outstanding = true
-		end
-	end
-	ns.WatchItemList(ns.OPTIONS_REGISTRY.CharacterRules, function()
-		return sampleItems
-	end)
-	if outstanding then
-		ns.EnsureItemRefreshWatcher()
-	end
-end
-
--- The level a character had at its last login (Features/Character-Rules.lua), or the player's own.
----@param characterKey string
----@return number|nil
-local function CharacterLevel(characterKey)
-	if characterKey == ns.db.keys.char then
-		return UnitLevel("player")
-	end
-	local characters = ns.db.sv.char
-	local data = characters and characters[characterKey]
-	return type(data) == "table" and data.level or nil
-end
-
---[[
-    The stats Character Rules reads on a Sanity Check item, for the note under
-    its tooltip (GogoLoot_ItemLink draws the entry's desc there), or nil while
-    the item loads or carries none.
-]]
----@param itemIdentifier number
----@return string|nil
-local function SanityCheckStatsNote(itemIdentifier)
-	local _, itemLink = C_Item.GetItemInfo(itemIdentifier)
-	if not itemLink then
-		return nil
-	end
-	local found, names = ns.ReadCharacterRuleStats(itemLink), {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		if found[stat.key] then
-			names[#names + 1] = stat.label
-		end
-	end
-	if #names == 0 then
-		return nil
-	end
-	return L["CHARACTER_RULES_SANITY_STATS"]:format(table.concat(names, ", "))
-end
-
---[[
-    Why a roll goes the way it does, by ns.DecideRoll's reason, for the
-    outcomes the boxes alone don't explain. Matching and not matching say
-    nothing: Roll Window and Automated Roll speak for themselves.
-]]
-local SANITY_CHECK_REASONS = {
-	LOW_LEVEL = "CHARACTER_RULES_SANITY_LOW_LEVEL",
-	OVERRIDE = "TAB_ITEM_OVERRIDES",
-	OFF = "CHARACTER_RULES_SANITY_ROLLS_OFF",
-	QUALITY = "CHARACTER_RULES_SANITY_QUALITY",
-	ABOVE_QUALITY = "CHARACTER_RULES_SANITY_QUALITY",
-	MANUAL = "CHARACTER_RULES_SANITY_QUALITY",
-}
-
--- A Sanity Check row's outcome: Automated Roll or Roll Window, then why, in silver, where the boxes don't say.
----@param itemIdentifier number
----@param rules table|nil
----@param classFile string|nil
----@param level number|nil
----@return string
-local function SanityCheckOutcomeText(itemIdentifier, rules, classFile, level)
-	local _, itemLink = C_Item.GetItemInfo(itemIdentifier)
-	local itemInformation = itemLink and ns:SafeGetItemInfo(itemIdentifier)
-	if not itemInformation then
-		return ""
-	end
-	local rollAction, reason =
-		ns.DecideRoll(itemIdentifier, itemInformation, itemLink, itemInformation.quality, rules, classFile, level)
-	local outcome = rollAction and L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"]
-		or (ns.GetColor("INFO") .. L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] .. "|r")
-	local why = SANITY_CHECK_REASONS[reason]
-	if not why then
-		return outcome
-	end
-	return outcome .. "  " .. ns.GetColor("HELP") .. "(" .. L[why] .. ")|r"
-end
-
 --[[
     Two checkboxes to a line, each as wide as fits, so long type names
     ("Two-Handed Swords", "Zweihandschwerter") show whole. A full half of the
     row overflows the list's inset by a few pixels and drops to one column.
 ]]
-local CHECKBOX_WIDTH = ns.OPTIONS_TREE_ROW_WIDTH * 0.44
+local CHECKBOX_WIDTH = Kit.TREE_ROW_WIDTH * 0.44
 
 --[[
     One character's rules: a checkbox list per section, then the Everything
@@ -270,6 +167,7 @@ local function BuildCharacterArgs(characterKey)
 			end,
 			set = function(_, place, ticked)
 				SetTicked(byPlace[place], ticked)
+				ns.RefreshSettings()
 			end,
 		}
 	end
@@ -281,23 +179,19 @@ local function BuildCharacterArgs(characterKey)
 	local classFile = ClassFile()
 	local className = classFile and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[classFile]
 	if className then
-		args.classLine = {
-			type = "description",
-			name = L["CHARACTER_RULES_CLASS"]:format((ns.GetClassColor(classFile) or "") .. className .. "|r"),
-			fontSize = "large",
-			order = 0,
-		}
+		args.classLine =
+			Kit.Header(L["CHARACTER_RULES_CLASS"]:format((ns.GetClassColor(classFile) or "") .. className .. "|r"), 0)
 	end
-	args.spacerAfterClassLine = ns.OptionsSpacer(0.25)
+	args.spacerAfterClassLine = Kit.Spacer(0.25)
 	-- Automatically Greed on Low-Level Gear: Off, or Your Level - 1 to - 5; saved only once it differs from the default.
-	args.lowLevelGear = ns.OptionsRow(0.5, nil, {
-		ns.OptionsRowLabel(L["CHARACTER_RULES_LOW_LEVEL"], 0, ns.OPTIONS_TREE_LABEL_WIDTH),
+	args.lowLevelGear = Kit.Row(0.5, nil, {
+		Kit.Label(L["CHARACTER_RULES_LOW_LEVEL"], 0, Kit.TREE_LABEL_WIDTH),
 		{
 			type = "select",
 			name = "",
 			desc = L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"],
 			style = "dropdown",
-			width = ns.OPTIONS_CONTROL_WIDTH,
+			width = Kit.CONTROL_WIDTH,
 			values = ns.CHARACTER_RULE_LOW_LEVEL_LABELS,
 			sorting = ns.CHARACTER_RULE_LOW_LEVEL_ORDER,
 			get = function()
@@ -308,12 +202,13 @@ local function BuildCharacterArgs(characterKey)
 					value = nil
 				end
 				Save("unwanted", "lowLevelGear", value)
+				ns.RefreshSettings()
 			end,
 		},
 	})
 	local function AddHeader(key, caption)
-		args["spacerBefore" .. key] = ns.OptionsSpacer(order)
-		args["header" .. key] = ns.OptionsHeader(caption, order + 1)
+		args["spacerBefore" .. key] = Kit.Spacer(order)
+		args["header" .. key] = Kit.Header(caption, order + 1)
 		order = order + 2
 	end
 
@@ -350,14 +245,15 @@ local function BuildCharacterArgs(characterKey)
 		AddHeader(group.key, GroupCaption(group))
 		if group.catchAll then
 			--[[
-                The catch-all is one full-width toggle with a line saying what
-                lands there, since a box in a list truncates its name
-                and the name alone doesn't say what it catches.
+                The catch-all is one full-width toggle, since a box in a list
+                truncates its name, and its tooltip says what lands there,
+                which the name alone doesn't.
             ]]
 			local row = rows[1]
 			args["toggle" .. group.key] = {
 				type = "toggle",
 				name = row.label,
+				desc = L["CHARACTER_RULES_OTHER_GEAR_NOTE"],
 				width = "full",
 				order = order,
 				get = function()
@@ -365,11 +261,10 @@ local function BuildCharacterArgs(characterKey)
 				end,
 				set = function(_, ticked)
 					SetTicked(row, ticked)
+					ns.RefreshSettings()
 				end,
 			}
-			args["note" .. group.key] =
-				ns.OptionsDesc(ns.GetColor("HELP") .. L["CHARACTER_RULES_OTHER_GEAR_NOTE"] .. "|r", order + 1)
-			order = order + 2
+			order = order + 1
 		else
 			args["list" .. group.key] = CheckboxList(order, rows, IsTicked, SetTicked)
 			order = order + 1
@@ -412,93 +307,40 @@ local function BuildCharacterArgs(characterKey)
 				value = nil
 			end
 			Save("unwanted", field, value)
+			ns.RefreshSettings()
 		end
 	end
 
 	AddHeader("UNWANTED", L["CHARACTER_RULES_EVERYTHING_ELSE"])
-	args.unwantedAction = ns.OptionsRow(order, nil, {
-		ns.OptionsRowLabel(L["CHARACTER_RULES_UNWANTED_ACTION"], 0, ns.OPTIONS_TREE_LABEL_WIDTH),
+	args.unwantedAction = Kit.Row(order, nil, {
+		Kit.Label(L["CHARACTER_RULES_UNWANTED_ACTION"], 0, Kit.TREE_LABEL_WIDTH),
 		{
 			type = "select",
 			name = "",
 			style = "dropdown",
-			width = ns.OPTIONS_CONTROL_WIDTH,
+			width = Kit.CONTROL_WIDTH,
 			values = ns.CHARACTER_RULE_UNWANTED_LABELS,
 			sorting = ns.CHARACTER_RULE_UNWANTED_ORDER,
 			get = UnwantedGet("action"),
 			set = UnwantedSet("action"),
 		},
 	})
-	-- Up to Quality has nothing to limit while gear that doesn't match is left to the player.
-	local function UnwantedIsManual()
-		return ns.CharacterRuleUnwanted(Rules(), "action") == ns.MANUAL
-	end
-	args.spacerBetweenUnwantedRows = ns.OptionsSpacer(order + 1, UnwantedIsManual)
-	args.unwantedThreshold = ns.OptionsRow(order + 2, UnwantedIsManual, {
-		ns.OptionsRowLabel(L["ROLLS_UP_TO_QUALITY"], 0, ns.OPTIONS_TREE_LABEL_WIDTH),
-		{
-			type = "select",
-			name = "",
-			style = "dropdown",
-			width = ns.OPTIONS_CONTROL_WIDTH,
-			values = ns.ROLL_THRESHOLD_LABELS,
-			get = UnwantedGet("threshold"),
-			set = UnwantedSet("threshold"),
-		},
-	})
-	args.spacerBeforeReset = ns.OptionsSpacer(order + 3)
-	args.reset = {
-		type = "execute",
-		name = L["CHARACTER_RULES_RESET"],
-		width = ns.OPTIONS_CONTROL_WIDTH,
-		order = order + 4,
-		func = function()
-			GetCharacterData(characterKey).characterRules = nil
+	args.spacerBeforeReset = Kit.Spacer(order + 1)
+	-- Asks nothing (README-Notes): every box it puts back is one click to tick again.
+	args.reset = Kit.ResetRow(
+		order + 2,
+		nil,
+		L["CHARACTER_RULES_RESET"],
+		L["CHARACTER_RULES_RESET_DESCRIPTION"],
+		function()
+			return GetCharacterData(characterKey).characterRules == nil
 		end,
-	}
-	order = order + 5
-
-	--[[
-        Sanity Check: ten Bind on Equip greens (ns.CHARACTER_RULE_SAMPLE_ITEMS)
-        and what Automated Rolls would do with each for this character, through
-        the same ns.DecideRoll a real roll takes, so it follows every box as it
-        is ticked. Each row's text is a function, read whenever AceConfig
-        repaints.
-    ]]
-	AddHeader("SANITY_CHECK", L["CHARACTER_RULES_SANITY_CHECK"])
-	args.sanityCheckNote = ns.OptionsDesc(ns.GetColor("HELP") .. L["CHARACTER_RULES_SANITY_CHECK_NOTE"] .. "|r", order)
-	order = order + 1
-	--[[
-        Each row: the item through GogoLoot_ItemLink, which shows its tooltip
-        on hover with the stats Character Rules reads on it underneath, then
-        the outcome, with a spacer between rows.
-    ]]
-	for index, itemIdentifier in ipairs(ns.CHARACTER_RULE_SAMPLE_ITEMS or {}) do
-		local function NotOnClient()
-			return not ns.IsItemOnClient(itemIdentifier)
+		function()
+			GetCharacterData(characterKey).characterRules = nil
 		end
-		args["spacerBeforeSanityCheck" .. index] = ns.OptionsSpacer(order, NotOnClient)
-		order = order + 1
-		args["sanityCheck" .. index] = ns.OptionsRow(order, NotOnClient, {
-			{
-				type = "input",
-				dialogControl = ns.ITEM_LINK_WIDGET_TYPE,
-				name = "",
-				desc = function()
-					return SanityCheckStatsNote(itemIdentifier)
-				end,
-				width = ns.OPTIONS_TREE_LABEL_WIDTH,
-				get = function()
-					return tostring(itemIdentifier)
-				end,
-				set = function() end,
-			},
-			ns.OptionsRowLabel(function()
-				return SanityCheckOutcomeText(itemIdentifier, Rules(), ClassFile(), CharacterLevel(characterKey))
-			end, 0, ns.OPTIONS_CONTROL_WIDTH),
-		})
-		order = order + 1
-	end
+	)
+	-- A tree pane is narrower than a panel: the caption gives up the difference, so the button keeps the column.
+	args.reset.args.cell1.width = Kit.TREE_LABEL_WIDTH
 
 	return args
 end
@@ -517,7 +359,7 @@ end
 ---@return table
 function ns.BuildCharacterRulesOptions()
 	local args = {
-		description = ns.OptionsDesc(
+		description = Kit.Desc(
 			L["CHARACTER_RULES_PANEL_INTRO"]:format(
 				ITEM_MOD_STRENGTH_SHORT,
 				LOCALIZED_CLASS_NAMES_MALE.WARRIOR,
@@ -525,10 +367,9 @@ function ns.BuildCharacterRulesOptions()
 			),
 			1
 		),
-		spacerAfterDesc = ns.OptionsSpacer(2),
+		spacerAfterDesc = Kit.Spacer(2),
 	}
-	ns.AddFeatureOffNote(args, 3, L["ROLLS_OFF_NOTE"], AutomatedRollsOn)
-	WatchSampleItems()
+	ns.AddFeatureOffLine(args, 3, "autoGreed")
 
 	--[[
         Keyed by character, not by position: the tree remembers the picked node
@@ -552,31 +393,4 @@ function ns.BuildCharacterRulesOptions()
 		childGroups = "tree",
 		args = args,
 	}
-end
-
---[[
-    The panel opens on the character being played. AceConfigDialog keeps the
-    tree's picked node in its status table for the panel, and reads it each
-    time the panel is shown, so pointing it at the player's key once at
-    registration and again each time the panel hides is enough: picking
-    another character still sticks while the player stays on the page.
-]]
----@param registryName string
----@return nil
-local function SelectCurrentCharacter(registryName)
-	local status = LibStub("AceConfigDialog-3.0"):GetStatusTable(registryName)
-	status.groups = status.groups or {}
-	status.groups.selected = ns.db.keys.char
-end
-
----@param panelFrame table # the panel AddToBlizOptions returned
----@param registryName string
----@return nil
-function ns.OnCharacterRulesRegistered(panelFrame, registryName)
-	SelectCurrentCharacter(registryName)
-	if panelFrame and panelFrame.HookScript then
-		panelFrame:HookScript("OnHide", function()
-			SelectCurrentCharacter(registryName)
-		end)
-	end
 end

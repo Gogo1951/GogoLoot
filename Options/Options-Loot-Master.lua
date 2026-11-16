@@ -13,6 +13,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 local function LootMasterOff()
 	return not ns.db.profile.lootMaster
@@ -130,10 +131,9 @@ function ns.BuildLootMasterOptions()
 	switch.width = "full"
 	switch.order = 3
 
-	local notCountedExample = ns.OptionsExampleRow(31, NotCountedExample)
-	notCountedExample.hidden = LootMasterOff
+	local notCountedExample = Kit.Example(31, LootMasterOff, NotCountedExample)
 
-	local tradeWarnRow = ns.OptionsToggleRow(41, {
+	local tradeWarnRow = Kit.ToggleRow(41, {
 		type = "toggle",
 		name = L["LOOT_MASTER_TRADE_WARN"],
 		desc = L["LOOT_MASTER_TRADE_WARN_DESCRIPTION"],
@@ -152,18 +152,18 @@ function ns.BuildLootMasterOptions()
 		type = "group",
 		name = L["TAB_LOOT_MASTER"],
 		args = {
-			description = ns.OptionsDesc(L["LOOT_MASTER_PANEL_DESCRIPTION"], 1),
-			spacerAfterDesc = ns.OptionsSpacer(2),
+			description = Kit.Desc(L["LOOT_MASTER_PANEL_DESCRIPTION"], 1),
+			spacerAfterDesc = Kit.Spacer(2),
 			lootMaster = switch,
 
-			callingHeader = ns.OptionsHeader(L["LOOT_MASTER_CALLING_HEADER"], 10, LootMasterOff),
-			rollLength = ns.OptionsSelectRow(
+			callingHeader = Kit.Header(L["LOOT_MASTER_CALLING_HEADER"], 10, LootMasterOff),
+			rollLength = Kit.LabelRow(
 				11,
 				LootMasterOff,
 				L["LOOT_MASTER_ROLL_LENGTH"],
 				Select("rollLength", lengthValues, lengthSorting, L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"])
 			),
-			rollChannel = ns.OptionsSelectRow(
+			rollChannel = Kit.LabelRow(
 				12,
 				LootMasterOff,
 				L["LOOT_MASTER_ANNOUNCE_IN"],
@@ -171,7 +171,7 @@ function ns.BuildLootMasterOptions()
 			),
 			rollChannelNote = {
 				type = "description",
-				name = ns.OptionsSubLabel(L["LOOT_MASTER_ANNOUNCE_IN_NOTE"]),
+				name = Kit.SubLabel(L["LOOT_MASTER_ANNOUNCE_IN_NOTE"]),
 				fontSize = "medium",
 				order = 13,
 				hidden = LootMasterOff,
@@ -200,14 +200,14 @@ function ns.BuildLootMasterOptions()
 				L["LOOT_MASTER_REROLL_TIES_DESCRIPTION"],
 				17
 			),
-			rollAllPause = ns.OptionsSelectRow(
+			rollAllPause = Kit.LabelRow(
 				18,
 				LootMasterOff,
 				L["LOOT_MASTER_ROLL_ALL_PAUSE"],
 				Select("rollAllPause", pauseValues, pauseSorting, L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"])
 			),
 
-			countingHeader = ns.OptionsHeader(L["LOOT_MASTER_COUNTING_HEADER"], 20, LootMasterOff),
+			countingHeader = Kit.Header(L["LOOT_MASTER_COUNTING_HEADER"], 20, LootMasterOff),
 			countingDescription = {
 				type = "description",
 				name = L["LOOT_MASTER_COUNTING_DESCRIPTION"]:format(ns.ROLL_GRACE_SECONDS),
@@ -223,7 +223,7 @@ function ns.BuildLootMasterOptions()
 			),
 			notCountedExample = notCountedExample,
 
-			tradeHeader = ns.OptionsHeader(L["LOOT_MASTER_TRADE_HEADER"], 39, LootMasterOff),
+			tradeHeader = Kit.Header(L["LOOT_MASTER_TRADE_HEADER"], 39, LootMasterOff),
 			lootMasterOpenOnTradable = Toggle(
 				"lootMasterOpenOnTradable",
 				L["LOOT_MASTER_OPEN_ON_TRADABLE"],
@@ -238,7 +238,7 @@ function ns.BuildLootMasterOptions()
 				42
 			),
 
-			floorHeader = ns.OptionsHeader(L["LOOT_MASTER_FLOOR_HEADER"], 50, LootMasterOff),
+			floorHeader = Kit.Header(L["LOOT_MASTER_FLOOR_HEADER"], 50, LootMasterOff),
 			floorDescription = {
 				type = "description",
 				name = L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"],
@@ -259,7 +259,7 @@ function ns.BuildLootMasterOptions()
 				53
 			),
 
-			trackerHeader = ns.OptionsHeader(L["LOOT_TRACKER_TITLE"], 60, LootMasterOff),
+			trackerHeader = Kit.Header(L["LOOT_TRACKER_TITLE"], 60, LootMasterOff),
 			lootTrackerOpenOnRoll = Toggle(
 				"lootTrackerOpenOnRoll",
 				L["LOOT_TRACKER_OPEN_ON_ROLL"],
@@ -272,14 +272,14 @@ function ns.BuildLootMasterOptions()
 				L["LOOT_TRACKER_AUTO_CLOSE_DESCRIPTION"],
 				62
 			),
-			dropsKeepRaids = ns.OptionsSelectRow(
+			dropsKeepRaids = Kit.LabelRow(
 				63,
 				LootMasterOff,
 				L["LOOT_TRACKER_KEEP_DROPS"],
 				Select("dropsKeepRaids", keepValues, keepSorting, L["LOOT_TRACKER_KEEP_DROPS_DESCRIPTION"])
 			),
-			spacerBeforeOpen = ns.OptionsSpacer(70, LootMasterOff),
-			openRow = ns.OptionsRow(71, LootMasterOff, {
+			spacerBeforeOpen = Kit.Spacer(70, LootMasterOff),
+			openRow = Kit.Row(71, LootMasterOff, {
 				{
 					type = "execute",
 					name = L["LOOT_MASTER_OPEN"],

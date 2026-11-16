@@ -10,7 +10,8 @@
 
     Beside the toggle sits the dropdown that takes the game's own loot lines
     out of the General chat tab while the toasts are on (Standard Loot
-    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come Enable Tooltips on Loot Toast Items and the position buttons, then two sections
+    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come Enable Tooltips on Loot Toast Items, Enable Blizzard Default
+    Roll Winner Window (only on a client that has the window), and the position buttons, then two sections
     under headers of their own, Stack (how many, how long, which way) and Text
     (face, size, outline), their rows at the panel's own level rather than
     indented under the toggle. All of it, headers and spacers included, leaves
@@ -19,6 +20,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 -- Bare numbers, so no locale needs a singular or plural form of "second".
 local DURATION_VALUES = {}
@@ -47,14 +49,6 @@ local FONT_FLAG_VALUES = {
 	MONOCHROMEOUTLINE = L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"],
 }
 
---[[
-    The position row: a blank caption cell, then two buttons wide enough for
-    their captions. The caption cell takes what the buttons leave, so the row
-    ends where every other row does.
-]]
-local POSITION_BUTTON_WIDTH = 0.85
-local POSITION_LABEL_WIDTH = ns.OPTIONS_LABEL_WIDTH - (POSITION_BUTTON_WIDTH * 2 - ns.OPTIONS_CONTROL_WIDTH)
-
 local function LootToastsOff()
 	return not ns.db.profile.lootToasts
 end
@@ -68,8 +62,9 @@ local function SettingRow(captionKey, control, settingKey, afterSet)
 		ns.db.profile[settingKey] = value
 		local refresh = afterSet or ns.RefreshLootToastSamples
 		refresh()
+		ns.RefreshSettings()
 	end
-	return ns.OptionsSelectRow(0, nil, L[captionKey], control)
+	return Kit.LabelRow(0, nil, L[captionKey], control)
 end
 
 -- Font Size's steps, and a size saved between them, so it still reads back.
@@ -97,39 +92,15 @@ local function FontSizeValues()
 end
 
 --------------------------------------------------------------------------------
--- Shared Switch
---------------------------------------------------------------------------------
-
---[[
-    Enable Loot Toasts, drawn on this panel and again in the Features section of
-    the General panel. Built once here so the two can never drift; each caller
-    sets its own order and width.
-]]
----@return table
-function ns.LootToastsSwitch()
-	return {
-		type = "toggle",
-		name = L["LOOT_TOASTS_ENABLE"],
-		desc = L["LOOT_TOASTS_SWITCH_DESCRIPTION"],
-		get = function()
-			return ns.db.profile.lootToasts
-		end,
-		set = function(_, value)
-			ns.SetLootToastsEnabled(value)
-		end,
-	}
-end
-
---------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
 ---@return table
 function ns.BuildLootToastOptions()
 	local args = {
-		description = ns.OptionsDesc(L["LOOT_TOASTS_PANEL_DESCRIPTION"]:format(GENERAL), 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
-		lootToastsRow = ns.OptionsToggleRow(3, ns.LootToastsSwitch(), {
+		description = Kit.Desc(L["LOOT_TOASTS_PANEL_DESCRIPTION"]:format(GENERAL), 1),
+		spacerAfterDesc = Kit.Spacer(2),
+		lootToastsRow = Kit.ToggleRow(3, ns.FeatureSwitch("lootToasts"), {
 			control = {
 				type = "select",
 				desc = L["LOOT_TOASTS_STANDARD_MESSAGES_TOOLTIP"]:format(ITEM_LOOT, MONEY_LOOT, GENERAL),
@@ -139,12 +110,11 @@ function ns.BuildLootToastOptions()
 					[ns.STANDARD_LOOT_MESSAGES_ENABLE] = L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"],
 				},
 				sorting = { ns.STANDARD_LOOT_MESSAGES_DISABLE, ns.STANDARD_LOOT_MESSAGES_ENABLE },
-				get = function()
-					return ns.db.profile.standardLootMessages
-				end,
+				get = Kit.Get("profile", "standardLootMessages"),
 				set = function(_, value)
 					ns.db.profile.standardLootMessages = value
 					ns.SyncStandardLootMessages()
+					ns.RefreshSettings()
 				end,
 			},
 		}),
@@ -170,11 +140,11 @@ function ns.BuildLootToastOptions()
 		args[key] = entry
 	end
 	local function AddSpacer(key)
-		Add(key, ns.OptionsSpacer(0))
+		Add(key, Kit.Spacer(0))
 	end
 	local function AddHeader(key, titleKey)
 		AddSpacer("spacerBefore_" .. key)
-		Add(key, ns.OptionsHeader(L[titleKey], 0))
+		Add(key, Kit.Header(L[titleKey], 0))
 		AddSpacer("spacerAfter_" .. key)
 	end
 	local function AddSettingRows(rows)
@@ -193,33 +163,56 @@ function ns.BuildLootToastOptions()
 		name = L["LOOT_TOASTS_TOOLTIPS_ENABLE"],
 		desc = L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"],
 		width = "full",
-		get = function()
-			return ns.db.profile.lootToastTooltips
-		end,
+		get = Kit.Get("profile", "lootToastTooltips"),
 		set = function(_, value)
 			ns.db.profile.lootToastTooltips = value and true or false
 			ns.ApplyLootToastTooltips()
+			ns.RefreshSettings()
+		end,
+	})
+
+	-- Blizzard's own roll-won window: under Tooltips, and only on a client that has one, its spacer with it.
+	local blizzardRollWonSpacer = Kit.Spacer(0)
+	blizzardRollWonSpacer.hidden = function()
+		return not ns.HasBlizzardRollWonWindow()
+	end
+	Add("spacerBeforeBlizzardRollWon", blizzardRollWonSpacer)
+	Add("blizzardRollWonToggle", {
+		type = "toggle",
+		name = L["LOOT_TOASTS_BLIZZARD_ROLL_WON_ENABLE"],
+		desc = L["LOOT_TOASTS_BLIZZARD_ROLL_WON_DESCRIPTION"],
+		width = "full",
+		hidden = function()
+			return not ns.HasBlizzardRollWonWindow()
+		end,
+		get = Kit.Get("profile", "lootToastBlizzardRollWon"),
+		set = function(_, value)
+			ns.db.profile.lootToastBlizzardRollWon = value and true or false
+			ns.SyncBlizzardRollWonWindow()
+			ns.RefreshSettings()
 		end,
 	})
 
 	--[[
-        The position buttons come next, just under the switch, since where
-        the toasts sit is the first thing a player sets. They hide with the rest
-        rather than greying out: two dead buttons under a switched-off toggle
-        read as the feature being unfinished.
+        The position controls come next, just under the switch, since where
+        the toasts sit is the first thing a player sets: Lock or Unlock in the
+        control column, then Reset Position on a Reset row of its own, gray
+        while the toasts already sit where they start. They hide with the rest
+        rather than graying out: dead buttons under a switched-off toggle read
+        as the feature being unfinished.
     ]]
 	AddSpacer("spacerBeforePosition")
 	Add(
 		"positionRow",
-		ns.OptionsRow(0, nil, {
-			ns.OptionsRowLabel("", 0, POSITION_LABEL_WIDTH),
+		Kit.Row(0, nil, {
+			Kit.Label(" ", nil, Kit.LABEL_WIDTH),
 			{
 				type = "execute",
 				name = function()
 					return ns.AreLootToastsUnlocked() and L["LOOT_TOASTS_LOCK"] or L["LOOT_TOASTS_UNLOCK"]
 				end,
 				desc = L["LOOT_TOASTS_LOCK_DESCRIPTION"],
-				width = POSITION_BUTTON_WIDTH,
+				width = Kit.CONTROL_WIDTH,
 				func = function()
 					-- Locking from here counts as having met the handle, as right-clicking it does.
 					if ns.AreLootToastsUnlocked() then
@@ -228,18 +221,14 @@ function ns.BuildLootToastOptions()
 					ns.SetLootToastsUnlocked(not ns.AreLootToastsUnlocked())
 				end,
 			},
-			{
-				type = "execute",
-				name = L["LOOT_TOASTS_RESET"],
-				desc = L["LOOT_TOASTS_RESET_DESCRIPTION"],
-				width = POSITION_BUTTON_WIDTH,
-				confirm = true,
-				confirmText = L["LOOT_TOASTS_RESET_CONFIRM"],
-				func = function()
-					ns.ResetLootToastPosition()
-				end,
-			},
 		})
+	)
+	Add(
+		"resetPositionRow",
+		Kit.ResetRow(0, nil, L["LOOT_TOASTS_RESET"], L["LOOT_TOASTS_RESET_DESCRIPTION"], function()
+			local saved = ns.db.global.lootToastPosition
+			return not (saved and saved.point)
+		end, ns.ResetLootToastPosition, L["LOOT_TOASTS_RESET_CONFIRM"])
 	)
 
 	-- Stack: how many toasts, for how long, and which way they grow and line up.

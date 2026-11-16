@@ -81,22 +81,110 @@ ns.CLASS_STAT_STARTER = {
 }
 
 --[[
-    { itemId, ... }: ten Bind on Equip greens for Character Rules' Sanity
-    Check, in the order it lists them: one per armor material and stat mix
-    the starter lists split on, a weapon, a ring and a held off-hand. Crafted
-    pieces with fixed stats, so every client draws the same item.
+    The drops the Loot Roll Sanity Check draws ten from at a time, one list
+    per section (Options/Options-Sanity-Check.lua): { itemId, kind }. kind is
+    UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a
+    draw can promise each section its greens, blues and Bind on Equip epics,
+    or OTHER for a row that shows one of Automated Rolls' gates. A row this
+    client doesn't have is never drawn.
 ]]
-ns.CHARACTER_RULE_SAMPLE_ITEMS = {
-	12427, -- Imperial Plate Helm: plate, Strength and Stamina
-	7930, -- Heavy Mithril Breastplate: plate, Stamina only
-	3836, -- Green Iron Helm: mail, Strength and Stamina
-	8189, -- Turtle Scale Breastplate: mail, Intellect, Spirit and Stamina
-	8175, -- Nightscape Tunic: leather, Agility and Stamina
-	15094, -- Runic Leather Headband: leather, Intellect and Spirit
-	13857, -- Runecloth Tunic: cloth, Intellect and Spirit
-	7943, -- Wicked Mithril Blade: one-handed sword, Strength and Agility
-	5743, -- Prismstone Ring: ring, Intellect
-	15927, -- Bright Sphere: held in off-hand, Intellect and Spirit
+ns.SANITY_CHECK_TRASH = {
+	-- Uncommon
+	{ 81518, "UNCOMMON" }, -- Lory Feather Band (BoP)
+	{ 81672, "UNCOMMON" }, -- Faded Forest Diviner's Rod (BoP)
+	{ 82962, "UNCOMMON" }, -- Spiritguard Shield (BoE)
+	{ 83211, "UNCOMMON" }, -- Wasteland Armored Girdle (BoP)
+	{ 84097, "UNCOMMON" }, -- Shield of the Wakener (BoP)
+	{ 84330, "UNCOMMON" }, -- Grainlord's Choker (BoP)
+	-- Rare
+	{ 55080, "RARE" }, -- Ornate Pyrium Gauntlets (BoE)
+	{ 80895, "RARE" }, -- Yan-Zhu's Pressure Valve (BoP)
+	{ 81066, "RARE" }, -- Yan-Zhu's Pressure Valve (BoP)
+	{ 81134, "RARE" }, -- Barreldodger Boots (BoP)
+	{ 81565, "RARE" }, -- Temperature-Sensing Necklace (BoP)
+	{ 82419, "RARE" }, -- Tranquil Bracers (BoE)
+	{ 82925, "RARE" }, -- Masterwork Spiritguard Boots (BoE)
+	{ 82964, "RARE" }, -- Ghost-Forged Blade (BoE)
+	{ 82973, "RARE" }, -- Masterwork Spiritblade Decimator (BoE)
+	{ 87418, "RARE" }, -- Lerah's Ribsmasher (BoE)
+	-- Bind on Equip epics
+	{ 86189, "EPIC_BOE" }, -- Jagged Hornet Bracers (BoE)
+	{ 90590, "EPIC_BOE" }, -- Dorian's Necklace of Burgeoning Dreams (BoE)
+	{ 90721, "EPIC_BOE" }, -- Cournith Waterstrider's Silken Finery (BoE)
+	{ 94578, "EPIC_BOE" }, -- Mooncleaver, Reborn (BoE)
+	{ 94584, "EPIC_BOE" }, -- Dragonmaw, Reborn (BoE)
+	{ 98614, "EPIC_BOE" }, -- Gorge Stalker Belt (BoE)
+	-- Epics
+	{ 86331, "EPIC" }, -- Taoren, the Soul Burner (BoP)
+	{ 86973, "EPIC" }, -- Grasps of Panic (BoP)
+	{ 87058, "EPIC" }, -- Chestguard of Total Annihilation (BoP)
+	{ 89842, "EPIC" }, -- Gauntlets of the Shadow's Caress (BoP)
+}
+
+ns.SANITY_CHECK_DUNGEON_BOSSES = {
+	-- Uncommon
+	{ 80740, "UNCOMMON" }, -- Ambermist Gloves (BoP)
+	{ 82505, "UNCOMMON" }, -- Waterfall Robe (BoP)
+	{ 83226, "UNCOMMON" }, -- Wasteland Leather Armwraps (BoP)
+	{ 83703, "UNCOMMON" }, -- Steppebeast Gloves (BoP)
+	{ 92360, "UNCOMMON" }, -- Partisan Greatsword (BoP)
+	-- Rare
+	{ 80930, "RARE" }, -- Swarmbringer Chestguard (BoP)
+	{ 81079, "RARE" }, -- Staff of Trembling Will (BoP)
+	{ 81111, "RARE" }, -- Airstream Treads (BoP)
+	{ 81124, "RARE" }, -- Crystallized Droplet (BoP)
+	{ 81127, "RARE" }, -- Flameheart Sandals (BoP)
+	{ 81135, "RARE" }, -- Belt of Brazen Inebriation (BoP)
+	{ 81190, "RARE" }, -- Grenadier's Belt (BoP)
+	{ 81256, "RARE" }, -- Mind's Eye Breastplate (BoP)
+	{ 81263, "RARE" }, -- Flashfrozen Resin Globule (BoP)
+	{ 81271, "RARE" }, -- Engraved Amber Pendant (BoP)
+	{ 81272, "RARE" }, -- Girdle of Soothing Detonation (BoP)
+	{ 82816, "RARE" }, -- Melted Hypnotic Blade (BoP)
+	{ 100950, "RARE" }, -- Engraved Amber Pendant (BoP)
+	{ 100961, "RARE" }, -- Aerial Bombardment Cloak (BoP)
+	-- Epics
+	{ 87542, "EPIC" }, -- Mogu'Dar, Blade of the Thousand Slaves (BoP)
+	{ 95966, "EPIC" }, -- Deeproot Treads (BoP)
+	{ 95971, "EPIC" }, -- Abandoned Zandalari Moonstrap (BoP)
+	{ 95974, "EPIC" }, -- Abandoned Zandalari Greatbelt (BoP)
+}
+
+ns.SANITY_CHECK_RAID_BOSSES = {
+	-- Uncommon
+	{ 82530, "UNCOMMON" }, -- Summit Guardian Warboots (BoP)
+	{ 82568, "UNCOMMON" }, -- Band of the Unsealed Tomb (BoP)
+	{ 84610, "UNCOMMON" }, -- Ring of Shallowstep Pass (BoP)
+	{ 101286, "UNCOMMON" }, -- Oathsworn Vambraces (BoP)
+	-- Rare
+	{ 66975, "RARE" }, -- Hood of the Crying Rogue (BoE)
+	{ 80872, "RARE" }, -- Firebelcher Hand Cannon (BoP)
+	{ 83666, "RARE" }, -- Swampwalker Robe (BoP)
+	{ 90845, "RARE" }, -- Replica Shado-Pan Helmet (BoP)
+	{ 100953, "RARE" }, -- Girdle of Soothing Detonation (BoP)
+	-- Bind on Equip epics
+	{ 65103, "EPIC_BOE" }, -- Soul Blade (BoE)
+	{ 79330, "EPIC_BOE" }, -- Relic of Chi-Ji (BoE)
+	{ 86192, "EPIC_BOE" }, -- Darting Damselfly Cuffs (BoE)
+	{ 94580, "EPIC_BOE" }, -- Bloodmoon, Reborn (BoE)
+	{ 94591, "EPIC_BOE" }, -- Blazefury, Reborn (BoE)
+	{ 98612, "EPIC_BOE" }, -- Belt of the Night Sky (BoE)
+	-- Epics
+	{ 86204, "EPIC" }, -- Wingslasher Pauldrons (BoP)
+	{ 86214, "EPIC" }, -- Monstrous Stompers (BoP)
+	{ 86227, "EPIC" }, -- Kri'tak, Imperial Scepter of the Swarm (BoP)
+	{ 86318, "EPIC" }, -- Casque of Expelled Corruption (BoP)
+	{ 86389, "EPIC" }, -- Dreadwoven Leggings of Failure (BoP)
+	{ 86758, "EPIC" }, -- Imperial Ghostbinder's Robes (BoP)
+	{ 86834, "EPIC" }, -- Bonebreaker Gauntlets (BoP)
+	{ 86859, "EPIC" }, -- Treads of Deadly Secretions (BoP)
+	{ 87153, "EPIC" }, -- Asani's Uncleansed Sandals (BoP)
+	{ 89819, "EPIC" }, -- Mindshard Drape (BoP)
+	{ 90526, "EPIC" }, -- Cloak of Overwhelming Corruption (BoP)
+	{ 90528, "EPIC" }, -- Asani's Uncleansed Sandals (BoP)
+	-- Never Automated, quest items and Item Overrides
+	{ 89237, "OTHER" }, -- Chest of the Shadowy Conqueror (BoP)
+	{ 87777, "OTHER" }, -- Reins of the Astral Cloud Serpent (BoP)
 }
 
 --[[
@@ -106,7 +194,7 @@ Last Validated
 	Not yet checked in game (Play It Forward's tables: 2026-10-29, MoP Classic 5.5.4.70631)
 
 Notes
-	- CHARACTER_RULE_SAMPLE_ITEMS: items that are Uncommon and Bind on Equip with fixed stats (ItemSparse.OverallQualityID 2, Bonding 2, RandomSelect 0) on Classic Era, TBC, MoP Classic and WoW Forever alike, hand-picked to cover the armor materials and stat mixes the starter lists split on. The same ten in every folder.
+	- SANITY_CHECK_TRASH, SANITY_CHECK_DUNGEON_BOSSES and SANITY_CHECK_RAID_BOSSES: the Loot Roll Sanity Check's drops, picked from Wowhead's mop-classic item data (zone drop tables for the dungeons and raids of this expansion's last level band, and its most popular items of each quality for gear outside them), then each item checked one by one against Wowhead's tooltip for this client for its quality, its binding and fixed stats (no random enchantment), on 2026-11-16. Not literally from that kind of kill: a section mixes Bind on Pickup and Bind on Equip, and every section holds at least four greens and five blues, and Trash and Raid Bosses at least six Bind on Equip epics, so a draw can always show two of each (Options/Options-Sanity-Check.lua). OTHER rows are picked by hand to show a gate: a mount or legendary (Never Automated), a quest item or token, or a default Item Overrides row. Diagnostics' Validate Data lists each row with its kind, to compare against the item's quality in game.
 	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client. Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
 	- Weapons: every type the class can train (WEAPON_SPECS above 0), assuming the character has trained everything (maintainer, 2026-11-07).
@@ -122,7 +210,7 @@ SQL (CMaNGOS)
 	TODO: Add SQL Query
 
 Wowhead
-	None.
+	https://www.wowhead.com/mop-classic (dataEnv 15), the Sanity Check lists only
 
 wago.tools
 	https://wago.tools/db2/ItemSparse

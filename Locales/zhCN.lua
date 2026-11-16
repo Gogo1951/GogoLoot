@@ -62,6 +62,8 @@ L["MESSAGE_ITEM_NOT_OPENABLE"] = "%s使用时会被装备而不是打开，因�
 L["MESSAGE_ROLL_PRINT"] = "你选择了%s：%s。"
 -- The same after a Pass. Argument: the item's link.
 L["MESSAGE_ROLL_PASS_PRINT"] = "你放弃了：%s。"
+-- Automated Rolls' Safety Warning, on entering a dungeon or raid. Arguments: the game's word for the roll (Need or Pass), then the highest quality it rolls on, in that quality's color.
+L["MESSAGE_ROLL_SAFETY_WARNING"] = "注意！自动掷骰在这里会选择%s，适用于最高%s品质的物品。"
 --[[
     Hide Roll Messages' winner summary. Arguments: the winner, the item's link,
     then the winning roll as LOOT_TOASTS_ROLL_RESULT words it ("Greed 95"). The
@@ -116,10 +118,10 @@ L["ERROR_DISTRIBUTION_FAILED"] = "无法将战利品交给%s：%s"
 -- The first feature panel, holding the one Speedy Loot switch.
 L["TAB_SPEEDY_LOOT"] = "快速拾取"
 L["TAB_AUTOMATED_ROLLS"] = "自动掷骰"
-L["TAB_ITEM_OVERRIDES"] = "物品特例"
+L["TAB_ITEM_OVERRIDES"] = "全局物品特例"
 -- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
-L["TAB_CHARACTER_RULES"] = "角色规则"
--- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_CHARACTER_RULES"] = "角色特例"
+-- The panel for everything GogoLoot posts to chat; also its block in the mini-map button's menu.
 L["TAB_ANNOUNCEMENTS"] = "战利品通报"
 -- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "交易通报"
@@ -140,43 +142,55 @@ L["TAB_LOOT_DESTINATIONS"] = "战利品去向"
 L["TAB_IGNORE_LIST"] = "忽略列表"
 -- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
 L["TAB_ROLL_MACRO"] = "掷骰宏"
+L["TAB_SANITY_CHECK"] = "战利品掷骰检查"
 -- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
 L["TAB_LOOT_MASTER"] = "战利品分配器"
-
--- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
-L["TAB_NESTED_FORMAT"] = "%s: %s"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------
 
-L["STATUS_ENABLED"] = "已启用"
-L["STATUS_DISABLED"] = "已禁用"
 -- Automated Opening is on but waiting for empty bag slots.
-L["STATUS_PAUSED"] = "已暂停"
+L["MENU_PAUSED"] = "已暂停"
 
 --[[
-    The tooltip titles each feature with its options-panel name, and gives
-    each a description of its own, two lines at most: the panels' longer text
-    doesn't fit a tooltip.
+    The mini-map menu titles each feature with its options-panel name, and
+    gives each a description of its own, two lines at most: the panels' longer
+    text doesn't fit the menu.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "替你对符合条件、不高于所选品质的物品自动掷骰。"
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "开启背包中的蚌壳、板条箱、钱袋和已解锁的锁箱。"
+-- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+L["MENU_OPENING_WAITING"] = "正在等待 %d 个空闲背包格。"
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "将交易摘要和队长分配结果发到聊天频道。"
-L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] = "将战利品分配给你为各品质指定的玩家。"
 --[[
-    The tooltip's read-back of each group context's roll, one line each under
-    the description. Arguments: the game's own word for Party or Raid, the roll,
-    then (all but Manual) the highest quality it rolls on.
+    The menu's read-back of each group context's roll, on the right of its
+    Party or Raid row. Arguments: the roll, then the highest quality it rolls
+    on. Manual shows the roll alone.
 ]]
-L["MINIMAP_ROLLS_SETTING"] = "%s: %s, %s"
-L["MINIMAP_ROLLS_SETTING_MANUAL"] = "%s: %s"
+L["MENU_ROLLS_SETTING"] = "%s, %s"
+-- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
+L["MENU_ROLLS_AUTOMATION"] = "自动化"
+L["MENU_ROLLS_THRESHOLD"] = "阈值"
+--[[
+    Under the flyouts' choices, above links to both pages. Arguments:
+    TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
+    Overrides is off, the second line names TAB_CHARACTER_RULES alone.
+]]
+L["MENU_ROLLS_OVERRIDES_NOTE"] = "%s和%s仍然生效。"
+L["MENU_ROLLS_OVERRIDE_NOTE"] = "%s仍然生效。"
+L["MENU_ON"] = "开启"
+L["MENU_OFF"] = "关闭"
+L["MENU_MORE_FEATURES"] = "更多功能"
+L["MENU_FEATURE_COUNT_ON"] = "%d 项开启"
+L["MENU_FEATURE_COUNT_OFF"] = "%d 项关闭"
 
-L["MINIMAP_LEFT_CLICK"] = "左键点击"
-L["MINIMAP_RIGHT_CLICK"] = "右键点击"
-L["MINIMAP_SHIFT_LEFT_CLICK"] = "Shift + 左键点击"
-L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Shift + 右键点击"
-L["MINIMAP_TOGGLE"] = "开关"
+L["MENU_CLICK_LEFT"] = "左键点击"
+L["MENU_CLICK_RIGHT"] = "右键点击"
+L["MENU_CLICK_SHIFT_LEFT"] = "Shift + 左键点击"
+-- Middle-Click opens the loot windows, only while they are loaded.
+L["MENU_CLICK_MIDDLE"] = "中键点击"
+L["MENU_TOGGLE"] = "开关"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "已锁物品"
@@ -184,19 +198,11 @@ L["MINIMAP_LOCKED_ITEMS"] = "已锁物品"
 L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s可以帮你开锁。"
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "使用%s来开锁。"
-L["MINIMAP_OPTIONS"] = "GogoLoot选项"
-L["MINIMAP_OPTIONS_KEYBIND"] = "Shift + 中键点击"
+L["MENU_OPTIONS"] = "GogoLoot选项"
+L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + 中键点击"
 
--- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
-L["MINIMAP_TRADABLE_LOOT"] = "可交易战利品"
--- Under the first few of them. Argument: how many more there are.
-L["MINIMAP_TRADABLE_MORE"] = "还有%d件"
--- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
-L["MINIMAP_LOOT_WINDOWS"] = "战利品分配器和战利品追踪器"
-L["MINIMAP_TO_HAND_OUT"] = "%d件待分配"
-L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] = "通过掷骰分配仍可交易的物品，并关注每一次掷骰。"
-L["MINIMAP_MIDDLE_CLICK"] = "中键点击"
-L["MINIMAP_OPEN"] = "打开"
+-- Under the first eight rows of a menu list. Argument: how many more there are.
+L["MENU_MORE"] = "还有%d件"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -217,8 +223,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List and Item Overrides bring text of their own), the hint the
-    box shows while empty, and its button.
+    Openables List and Global Item Overrides bring text of their own), the
+    hint the box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "添加物品"
 L["ITEM_LIST_ADD_DESCRIPTION"] = "输入物品ID或将物品拖到此处，即可将其添加到列表中。"
@@ -229,7 +235,7 @@ L["ITEM_LIST_ADD_BUTTON"] = "添加"
 L["ITEM_LIST_FILTER_PLACEHOLDER"] = "筛选物品..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] = "只显示名称、物品ID、设置或标签中包含所输入内容的物品。"
 L["ITEM_LIST_NO_MATCHES"] = "没有符合筛选条件的物品。"
--- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+-- Shown in place of the rows when the Ignore List or Global Item Overrides is empty, since both refill at login.
 L["ITEM_LIST_EMPTY_REFILLS"] =
 	"此列表为空，因此默认物品会在你下次登录时恢复。点击恢复默认可立即恢复。"
 
@@ -242,7 +248,7 @@ L["ITEM_LIST_KIND_DESCRIPTION"] = "显示列表中的所有物品，或只显示
 
 --[[
     The Add from Bags dropdown beside every item list's add box: its resting
-    text and tooltip, then what it reads, greyed out, when everything carried
+    text and tooltip, then what it reads, grayed out, when everything carried
     is already on the list. The Openables List brings a tooltip of its own.
 ]]
 L["ITEM_LIST_ADD_FROM_BAGS"] = "从背包添加"
@@ -254,24 +260,36 @@ L["ITEM_LIST_BAGS_EMPTY_DESCRIPTION"] = "你携带的所有物品都已在列表
 L["ITEM_LIST_RESTORE"] = "恢复默认"
 
 -- Placeholder shown in the item lists until the client caches an item's info.
-L["ITEM_LOADING"] = "加载中...（ID：%d）"
+L["LOADING_ITEM"] = "加载中 ID：%d"
 
 --[[
-    Appended to the Automated Rolls description. Item Overrides is the one way
-    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
-    the way a Bind on Pickup item does; nothing ever rolls on the rest.
+    Appended to the Automated Rolls description. Global Item Overrides is the
+    one way a quest item gets rolled on, and Global Item Overrides or Include
+    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
+    the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	'它从不对配方、书籍、坐骑、宠物或传说物品掷骰；任务物品只有在物品特例中时才会掷骰；拾取后绑定物品只有在物品特例中或开启了"包括拾取后绑定"时才会掷骰。'
+	'它从不对配方、书籍、坐骑、宠物或传说物品掷骰；任务物品只有在全局物品特例中时才会掷骰；拾取后绑定物品只有在全局物品特例中或开启了"包括拾取后绑定"时才会掷骰。'
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "配方、书籍、坐骑、宠物和传说物品始终留给你处理。"
 
--- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+--[[
+    The channel choices shared by Trade Announcements' Channel, Raid Roll
+    Winner's output and the Loot Master's Announce In: Group Chat posts to the
+    party or raid, Me Only prints in the player's own chat and sends nothing.
+]]
 L["CHANNEL_GROUP_CHAT"] = "队伍聊天"
+L["CHANNEL_ME_ONLY"] = "仅自己"
 
--- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
-L["OPTIONS_EXAMPLE"] = "示例：%s"
+-- The silver label over every Example line, which shows a chat line the way it will arrive.
+L["SAMPLE_EXAMPLE"] = "示例"
+
+-- The tooltip on every sound row's speaker icon, which plays the row's sound.
+L["OPTIONS_SOUND_PREVIEW_DESCRIPTION"] = "立即播放此音效，无论它是否开启。"
+
+-- The button on a Reset row: Character Overrides' Reset to Class Defaults and the Loot Toasts position reset.
+L["OPTIONS_RESET"] = "重置"
 
 --------------------------------------------------------------------------------
 -- Options: General
@@ -283,7 +301,7 @@ L["WELCOME_MESSAGE"] = "启用欢迎消息"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "每次登录时显示GogoLoot的版本，以及这些设置的位置。"
 L["MINIMAP_BUTTON_ENABLE"] = "启用小地图按钮"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"在小地图上显示GogoLoot按钮。左键点击切换自动掷骰，右键点击切换自动开启，Shift + 左键点击切换战利品通报，Shift + 右键点击切换自动队长分配。"
+	"在小地图上显示GogoLoot按钮。鼠标悬停可打开GogoLoot菜单。左键点击切换自动掷骰，右键点击切换自动开启，Shift + 左键点击切换战利品通报。"
 
 L["OPTIONS_COMMANDS_HEADER"] = "/命令"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -291,6 +309,10 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "打开此插件的选项界面。"
 
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "功能"
+
+--------------------------------------------------------------------------------
+-- Options: Speedy Loot
+--------------------------------------------------------------------------------
 
 -- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] = "打开尸体的瞬间就拿走所有东西，让你再也不用等拾取窗口。"
@@ -303,6 +325,10 @@ L["SPEEDY_LOOT_ENABLE"] = "启用快速拾取"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"打开尸体的瞬间即将其拾取一空，不显示拾取窗口。拾取时按住Shift可照常显示窗口。会开启游戏的%s设置，你是%s时则暂停工作。"
 
+--------------------------------------------------------------------------------
+-- Options: Roll Macro
+--------------------------------------------------------------------------------
+
 --[[
     The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
     locale. General Macros is the tab of the game's Macros window that every
@@ -313,16 +339,26 @@ L["ROLL_MACRO_DESCRIPTION"] =
 	"在你的通用宏中添加一个名为%s、以金币为图标的宏，账号中的每个角色都能把它拖到动作条上。"
 --[[
     The three rows under it, each beside its mouse button's caption
-    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
+    (MENU_CLICK_LEFT and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "掷骰 1-100"
 L["ROLL_MACRO_RIGHT_CLICK"] = "掷骰 1-99"
 L["ROLL_MACRO_MIDDLE_CLICK"] = "团队掷骰"
 L["ROLL_MACRO_ENABLE"] = "启用掷骰宏"
--- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
-L["ROLL_MACRO_RAID_ROLL_NOTE"] =
-	"团队掷骰会把物品随机交给某个人。它从1掷到队伍中的玩家人数，每个数字代表一名玩家：在团队或小队列表中往下数到掷出的数字，就能找到获胜者。单人时则掷1-100。"
+-- Under the three rows, in silver: what Middle-Click's raid roll is.
+L["ROLL_MACRO_RAID_ROLL_NOTE"] = "团队掷骰从1掷到队伍中的玩家人数，每个数字代表一名玩家。"
+-- The Roll Macro panel's Raid Rolls section, shown whether or not the macro is on, since it reads anyone's raid roll.
+L["RAID_ROLL_HEADER"] = "团队掷骰"
+L["RAID_ROLL_WINNER_ENABLE"] = "启用团队掷骰获胜者"
+L["RAID_ROLL_WINNER_ENABLE_DESCRIPTION"] =
+	"队伍中任何人从1掷到队伍人数时，按团队或小队列表往下数，指出数字对应的玩家。"
+L["RAID_ROLL_OUTPUT_DESCRIPTION"] =
+	"仅自己会在你自己的聊天框中显示获胜者。队伍聊天会将其发送到你的小队或团队。"
+-- Printed when someone raid rolls. Arguments: the roller, the roll, the group's size, the player it lands on.
+L["MESSAGE_RAID_ROLL_PRINT"] = "%s 团队掷骰掷出 %d/%d，对应的是 %s。"
+-- The same, posted to group chat with plain names.
+L["MESSAGE_RAID_ROLL"] = "%s 团队掷骰掷出 %d/%d，对应的是 %s"
 L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 	"在你的通用宏中保留%s宏：左键点击掷1-100，右键点击掷1-99，中键点击进行团队掷骰。关闭此项会删除该宏。"
 --[[
@@ -379,7 +415,7 @@ L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
     leader. Hidden only while solo, where there is no leader to name.
 ]]
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "这些设置由%s控制。"
--- Shown in the same place while solo, where the two dropdowns are greyed out.
+-- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "加入队伍后才能更改这些设置，且只有队长可以更改。"
 
 -- Argument: the game's own word for Master Looter.
@@ -406,6 +442,17 @@ L["QUICK_SETTINGS_TITLE"] = "快捷设置"
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "每当你成为%s时，在窗口中打开这些设置。"
 L["MASTER_LOOTER_POPUP_ENABLE"] = "启用队长分配弹窗"
 
+-- Tradable Gear Tint, on the Automated Master Looting panel
+L["TRADABLE_TINT_HEADER"] = "可交易装备着色"
+L["TRADABLE_TINT_DESCRIPTION"] =
+	"为背包中仍可交易的拾取绑定装备着色，让你在绑定前一眼看出哪些还能分配。"
+L["TRADABLE_TINT_ENABLE"] = "启用可交易装备着色"
+L["TRADABLE_TINT_ENABLE_DESCRIPTION"] =
+	"开启或关闭着色。支持默认背包、Baganator、Bagnon、AdiBags、ArkInventory、BetterBags 和 ElvUI。"
+L["TRADABLE_TINT_COLOR"] = "着色颜色"
+L["TRADABLE_TINT_COLOR_DESCRIPTION"] = "着色的颜色和不透明度。不透明度越低，物品图标越清楚。"
+L["TRADABLE_TINT_BAGANATOR_WIDGET_LABEL"] = "可交易装备着色 (GogoLoot)"
+
 L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
 	"选择每种品质由谁接收。未指定人选的品质会留在拾取窗口中由你处理。"
 L["MASTER_LOOTER_DESTINATION_SELF"] = "自己"
@@ -420,8 +467,7 @@ L["MASTER_LOOTER_NO_DESTINATIONS_NOTE"] =
 
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 	"此列表中的物品永远不会被自动分配，而是留在拾取窗口中由你亲自分配。"
--- Shown on the Ignore List while Automated Master Looting is off.
-L["MASTER_LOOTER_OFF_NOTE"] = "自动队长分配已关闭，这些设置暂不生效。"
+-- The Ignore List's Restore Defaults: its tooltip and its confirmation.
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] = "用你所在资料片的默认物品替换忽略列表。"
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] = "要用你所在资料片的默认物品替换你的忽略列表吗？"
 L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "从忽略列表中移除此物品。"
@@ -434,16 +480,17 @@ L["MASTER_LOOTER_IGNORE_REMOVE_DESCRIPTION"] = "从忽略列表中移除此物�
 L["ROLLS_PANEL_DESCRIPTION"] =
 	"在队伍拾取时替你对不高于所选品质的物品选择%s、%s或%s，队伍和团队可分别设置。"
 L["ROLLS_ENABLE"] = "启用自动掷骰"
-L["ROLLS_ENABLE_DESCRIPTION"] = "开启或关闭自动掷骰，包括物品特例和角色规则。"
+L["ROLLS_ENABLE_DESCRIPTION"] = "开启或关闭自动掷骰，包括全局物品特例和角色特例。"
 L["ROLLS_IN_PARTY"] = "队伍中"
 L["ROLLS_IN_RAID"] = "团队中"
 -- The caption of the quality row under In Party and under In Raid, shown while that roll isn't Manual.
 L["ROLLS_UP_TO_QUALITY"] = "最高品质"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s：GogoLoot会掷骰的最高品质。"
 L["ROLLS_ACTION_CHOOSE"] = "%s：GogoLoot的掷骰选择。手动则由你自己掷骰。"
+-- A sub-row under In Party's and In Raid's Up to Quality, one setting each, and a row in the mini-map menu's Party and Raid flyouts.
 L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "包括拾取后绑定"
 L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
-	"让上面的掷骰和角色规则也对拾取后绑定的物品掷骰。默认关闭，因为拾取后绑定的战利品通常值得你自己掷骰。"
+	"让上面的掷骰和角色特例也对拾取后绑定的物品掷骰。默认关闭，因为拾取后绑定的战利品通常值得你自己掷骰。"
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "队伍与团队掷骰"
 L["ROLLS_MESSAGES_HEADER"] = "掷骰消息"
@@ -459,36 +506,44 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "显示获胜者摘要"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "不显示获胜者摘要"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	'"显示获胜者摘要"会为每次获胜在聊天中显示一行，写明获胜者、物品和获胜掷骰，取代游戏自己的那一行。"不显示获胜者摘要"则保留游戏自己说明谁获胜的那一行。'
+-- The Safety Warnings section on the Automated Rolls panel.
+L["ROLLS_SAFETY_HEADER"] = "安全警告"
+-- Arguments: the game's own words for Need and Pass, in both.
+L["ROLLS_SAFETY_WARNING"] = "进入设为%s或%s的地下城或团队副本时警告我"
+L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
+	"进入GogoLoot会替你选择%s或%s的地下城或团队副本时，在聊天中显示提醒，让你在第一件掉落前修改。"
+L["ROLLS_SAFETY_WARNING_SOUND"] = "播放声音"
+L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "在警告的同时播放提示音，适合聊天繁忙的时候。"
 
 --[[
-    Item Overrides, under Automated Rolls: items with a roll action of their
-    own.
+    Global Item Overrides, under Automated Rolls: items with a roll action of
+    their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	'为特定物品指定掷骰方式，优先于品质设置。这是让GogoLoot对任务物品掷骰的唯一方法；在"包括拾取后绑定"关闭时，也是对拾取后绑定物品掷骰的唯一方法。'
--- Shown on Item Overrides and Character Rules while Automated Rolls is off.
-L["ROLLS_OFF_NOTE"] = "自动掷骰已关闭，这些设置暂不生效。"
-L["ITEM_OVERRIDES_ENABLE"] = "启用物品特例"
+-- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
+L["OPTIONS_FEATURE_OFF_STATUS"] = "%s已关闭，因此这些设置不会生效。它的开关在%s页面。"
+L["ITEM_OVERRIDES_ENABLE"] = "启用全局物品特例"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"使用下方设置的掷骰方式。关闭后，这些物品和其他物品一样遵循品质设置。"
--- Shown under Enable Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] = "物品特例已关闭，这些掷骰设置暂不生效。"
-L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] = "用你所在资料片的默认物品替换物品特例。"
-L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "要用你所在资料片的默认物品替换你的物品特例吗？"
+-- Shown under Enable Global Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] = "全局物品特例已关闭，这些掷骰设置暂不生效。"
+L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] = "用你所在资料片的默认物品替换全局物品特例。"
+L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "要用你所在资料片的默认物品替换你的全局物品特例吗？"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "设置此物品的自动掷骰方式。"
-L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "从物品特例中移除此物品。"
-L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "要从物品特例中移除此物品及其掷骰方式吗？"
+L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "从全局物品特例中移除此物品。"
+L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "要从全局物品特例中移除此物品及其掷骰方式吗？"
 L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"输入物品ID或将物品拖到此处，即可将其添加到列表中，并设为手动。"
 
 --[[
-    Character Rules, under Automated Rolls: the stats and the armor and
+    Character Overrides, under Automated Rolls: the stats and the armor and
     weapon types each character wants, whose gear is left to the player. The
     stat, armor and weapon names come from the game's own strings.
 ]]
 -- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
 L["CHARACTER_RULES_PANEL_INTRO"] =
-	'想要%s装备？在你的%s上勾选%s以及你使用的护甲和武器类型。符合条件的装备留给你掷骰，其余的交给"其他一切"处理。物品特例仍然优先。'
+	'想要%s装备？在你的%s上勾选%s以及你使用的护甲和武器类型。符合条件的装备留给你掷骰，其余的交给"其他一切"处理。全局物品特例仍然优先。'
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -506,33 +561,52 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] = "鱼竿、杂项武器，以及上面各�
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "其他一切"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "不符合条件的装备"
 L["CHARACTER_RULES_RESET"] = "恢复职业默认值"
--- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
-L["CHARACTER_RULES_SANITY_CHECK"] = "检查"
-L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
-	"按上面的勾选，这些装备后绑定的绿色物品对这个角色会如何掷骰。"
---[[
-    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
-    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
-    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
-]]
-L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "掷骰窗口"
-L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "自动掷骰"
--- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
-L["CHARACTER_RULES_SANITY_STATS"] = "角色规则读取的属性：%s"
-L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "低等级装备"
-L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "自动掷骰已关闭"
-L["CHARACTER_RULES_SANITY_QUALITY"] = "品质设置"
+L["CHARACTER_RULES_RESET_DESCRIPTION"] = '将此角色的复选框和"其他一切"恢复为其职业的默认值。'
 -- Argument: the game's own name for the character's class.
 L["CHARACTER_RULES_CLASS"] = "职业：%s"
 L["CHARACTER_RULES_LOW_LEVEL"] = "对低等级装备自动贪婪"
 L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
-	"需求等级至少比你低这么多的护甲和武器，无论是否匹配，都会在其他一切的品质以内选择贪婪，让升级途中已经用不上的装备不再耽误你。"
+	'需求等级至少比你低这么多的护甲和武器，无论是否匹配，都会在你"队伍中"或"团队中"设置的品质以内选择贪婪，让升级途中已经用不上的装备不再耽误你。'
 -- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
 L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "关闭"
 L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "你的等级 - %d"
 -- Printed once per account, at the first login where Automated Rolls is on by default.
 L["MESSAGE_AUTOMATED_ROLLS_ON"] =
 	"自动掷骰现已开启：每个角色想要的装备留给你掷骰，其余的选择贪婪。可在 选项 > 插件 > GogoLoot > 自动掷骰 中更改。"
+
+--------------------------------------------------------------------------------
+-- Options: Loot Roll Sanity Check
+--------------------------------------------------------------------------------
+
+L["SANITY_CHECK_DESCRIPTION"] =
+	"每类敌人随机十件掉落，以及按你当前的设置，自动掷骰会为该角色如何处理每一件。"
+-- The button that draws a fresh ten for each section.
+L["SANITY_CHECK_REFRESH"] = "重新抽取掉落"
+L["SANITY_CHECK_REFRESH_DESCRIPTION"] = "为每类敌人重新抽取十件掉落。"
+-- The three sections, one per kind of kill. Trash: any enemy that isn't a boss.
+L["SANITY_CHECK_TRASH"] = "小怪"
+L["SANITY_CHECK_DUNGEON_BOSSES"] = "地下城首领"
+L["SANITY_CHECK_RAID_BOSSES"] = "团队副本首领"
+-- Under each section's header. Argument: the group settings it reads, ROLLS_IN_PARTY or ROLLS_IN_RAID.
+L["SANITY_CHECK_CONTEXT"] = '按"%s"设置掷骰。'
+--[[
+    Each drop's first line ends in its outcome: Manual Roll when the roll
+    window is left to the player, or Automatic and the roll, whose argument
+    is the game's own Need, Greed or Pass. The second line opens with its
+    tag line, the binding's short name then the game's names for its stats,
+    and ends in why, one of the reasons below or the page that decided it by
+    its panel name (TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES).
+]]
+L["SANITY_CHECK_MANUAL_ROLL"] = "手动掷骰"
+L["SANITY_CHECK_AUTOMATIC"] = "自动%s"
+L["SANITY_CHECK_BOP"] = "拾取绑定"
+L["SANITY_CHECK_BOE"] = "装备绑定"
+L["SANITY_CHECK_LOW_LEVEL"] = "低等级装备"
+L["SANITY_CHECK_ROLLS_OFF"] = "自动掷骰已关闭"
+L["SANITY_CHECK_QUALITY"] = "品质设置"
+L["SANITY_CHECK_NEVER"] = "从不自动"
+L["SANITY_CHECK_QUEST"] = "任务物品"
+L["SANITY_CHECK_BIND_ON_PICKUP"] = "拾取后绑定"
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -561,8 +635,7 @@ L["TRADE_CHANNEL"] = "频道"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	'"%s"将每条摘要发送给交易对象。"队伍聊天"将其发到队伍或团队频道，不在队伍中时仍以悄悄话发送。"仅自己"只显示在你自己的聊天框中，不发送给任何人。'
--- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_SELF"] = "仅自己"
+-- The trade window checkbox: its tooltip and its caption.
 L["TRADE_TOOLTIP_DESCRIPTION"] = "此交易完成时将交易摘要发到聊天频道。"
 L["TRADE_CHECKBOX_LABEL"] = "通报"
 
@@ -597,6 +670,10 @@ L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = '按照"筛选"中的选择，为你和队
 L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "启用拾取提示物品鼠标提示"
 L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
 	"指向拾取提示时显示物品的鼠标提示。关闭时拾取提示不响应鼠标，可以指向并点击其后方的怪物和尸体。"
+-- The checkbox under Enable Tooltips on Loot Toast Items: the game's own "You Won" window, shown only on clients that have one.
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_ENABLE"] = "启用暴雪默认掷骰获胜窗口"
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_DESCRIPTION"] =
+	"掷骰获胜时，在拾取提示旁显示游戏自带的窗口。关闭时只有拾取提示会告诉你赢得了什么。"
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "禁用标准拾取消息"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "启用标准拾取消息"
@@ -614,8 +691,6 @@ L["LOOT_TOASTS_TEXT_HEADER"] = "文字"
     carry a quality dropdown beside each ticked box. Argument in each tooltip:
     the row's item type, as the client names it.
 ]]
--- Shown on the Filters panel while Loot Toasts is off.
-L["LOOT_TOASTS_OFF_NOTE"] = "拾取提示已关闭，这些设置暂不生效。"
 -- The Filters panel's description.
 L["LOOT_TOASTS_FILTERS_CAPTION"] =
 	"选择哪些战利品显示提示以及提示的内容，你自己的和队伍的战利品分别设置。队伍的战利品旁会显示拾取者的名字。"
@@ -658,7 +733,8 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
     reads as the game's own word for Need or Greed, then the number
     (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
     looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
-    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter,
+    the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "获胜掷骰"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
@@ -736,11 +812,9 @@ L["LOOT_SOUNDS_ENABLE"] = "启用拾取提示音"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"从尸体或宝箱中拾取达到或高于所选品质的物品时播放提示音。"
 L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "会播放拾取提示音的最低物品品质。"
-L["LOOT_SOUNDS_TEST"] = "播放拾取提示音。"
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "启用%s音效"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] = "%s真正偷到东西时播放背包音效。"
-L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "播放%s音效。"
 
 --------------------------------------------------------------------------------
 -- Options: Automated Opening
@@ -773,8 +847,8 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"拾取到解锁后即会自动开启的锁箱时，在聊天框中提醒你。"
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"设置锁箱通知仅对潜行者显示，还是对所有角色显示。"
--- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
-L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] = "自动开启已关闭，锁箱通知暂不生效。"
+-- Lockboxes' silver status line while Automated Opening is off. Arguments: Automated Opening in gold, then its page's name.
+L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] = "%s已关闭，因此锁箱通知不会生效。它的开关在%s页面。"
 L["LOCKBOXES_FOR_ROGUES"] = "仅潜行者"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "所有角色"
 
@@ -794,8 +868,7 @@ L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
 	'GogoLoot认识的所有容器，以及自动开启会如何处理它们。"忽略"会让容器保持原封。你的更改对你的所有角色生效。'
--- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] = "自动开启已关闭，这些设置暂不生效。"
+-- The Openables List's Restore Defaults: its tooltip and its confirmation.
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"将列表恢复为默认：每件物品恢复默认设置，已移除的物品会回来，已添加的物品会被移除。"
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1004,7 +1077,7 @@ L["LOOT_MASTER_STATE_WAITING"] = "%d件等待掷骰。"
 -- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
 L["LOOT_MASTER_FOOTER"] = "%d件待分配。"
 L["LOOT_MASTER_FOOTER_CLOCK"] = "%d件待分配，最早的交易期限将在%s后结束。"
-L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt+点击背包物品即可添加"
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt+点击背包物品即可添加。"
 
 -- The Disqualify window.
 L["LOOT_MASTER_DISQUALIFY_TITLE"] = "取消掷骰资格"
@@ -1055,7 +1128,7 @@ L["LOOT_MASTER_FLOOR_OTHER"] = "其他"
 L["LOOT_MASTER_FLOOR_ADD_ALL"] = "全部加入掷骰列表"
 -- Add from Bags' two headings.
 L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "在此副本中拾取"
-L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "背包中的其他物品"
+L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "也在你的背包中"
 -- Argument: what was typed.
 L["LOOT_MASTER_FLOOR_NOT_FOUND"] = '背包中没有与"%s"匹配的可交易物品。'
 

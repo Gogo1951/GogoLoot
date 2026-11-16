@@ -3,6 +3,12 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 
+--[[
+    Every reader here returns nothing for a secret line (ns.IsSecretValue): WoW
+    Forever can hand an add-on a chat line as a secret value, which passes the
+    string check but can't be matched or compared.
+]]
+
 --------------------------------------------------------------------------------
 -- Client Format Strings
 --------------------------------------------------------------------------------
@@ -121,7 +127,7 @@ end
 ---@return string|nil itemLink
 ---@return number|nil quantity
 function ns.ParseOwnLootMessage(message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
 	for _, entry in ipairs(ownLootPatterns) do
@@ -147,7 +153,7 @@ end
 ---@return string|nil itemLink
 ---@return number|nil quantity
 function ns.ParseGroupLootMessage(message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
 	for _, entry in ipairs(groupLootPatterns) do
@@ -259,7 +265,7 @@ end
 ---@param message any
 ---@return table|nil # { matcher, itemLink, roll?, playerName?, historyLink? }
 local function MatchRollLine(matchers, message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
 	local text = (string.gsub(message, LEADING_HISTORY_LINK, ""))
@@ -290,14 +296,14 @@ end
 --[[
     True for a roll line that says only who picked what or rolled what. A roll
     opening prints its history link then the item alone (LOOT_ROLL_STARTED),
-    which as a format is nothing but "%s", so it is recognised by that shape
+    which as a format is nothing but "%s", so it is recognized by that shape
     instead, and never by a pattern that would match any line with a link in
     it.
 ]]
 ---@param message any
 ---@return boolean
 function ns.IsRollChatterMessage(message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return false
 	end
 	local rest = string.match(message, AFTER_LEADING_HISTORY_LINK)
@@ -344,6 +350,50 @@ function ns.ParseRollWonMessage(message)
 		return nil
 	end
 	return true, winnerName, found.itemLink, found.matcher.rollKind, found.roll, found.historyLink
+end
+
+--------------------------------------------------------------------------------
+-- A /roll
+--------------------------------------------------------------------------------
+
+--[[
+    A plain /roll's line, read through the client's own RANDOM_ROLL_RESULT so
+    every locale works. Only CHAT_MSG_SYSTEM is trusted for one: anyone can
+    type "Aero rolls 100 (1-100)" in normal chat. Read by Raid Roll Winner and
+    by the parked Roll Calls.
+]]
+local rollPattern, rollArgumentOrder = ns.BuildFormatPattern(RANDOM_ROLL_RESULT)
+if rollPattern then
+	rollPattern = "^" .. rollPattern .. "$"
+end
+
+--[[
+    Who rolled, what they got, and the range they rolled in, from a
+    CHAT_MSG_SYSTEM line; nil for any other line. The arguments are read in the
+    format's own order, whatever order the translation prints them in.
+]]
+---@param message any
+---@return string|nil playerName
+---@return number|nil roll
+---@return number|nil low
+---@return number|nil high
+function ns.ParseRandomRollMessage(message)
+	if not rollPattern or type(message) ~= "string" or ns.IsSecretValue(message) then
+		return nil
+	end
+	if not string.find(message, rollPattern) then
+		return nil
+	end
+	local captures = { string.match(message, rollPattern) }
+	local byArgument = {}
+	for index, argument in ipairs(rollArgumentOrder) do
+		byArgument[argument] = captures[index]
+	end
+	local roll, low, high = tonumber(byArgument[2]), tonumber(byArgument[3]), tonumber(byArgument[4])
+	if not byArgument[1] or not roll then
+		return nil
+	end
+	return byArgument[1], roll, low, high
 end
 
 --------------------------------------------------------------------------------

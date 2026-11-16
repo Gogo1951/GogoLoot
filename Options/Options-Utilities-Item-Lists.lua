@@ -11,70 +11,34 @@
     GogoLoot_ItemLink, GogoLoot_ItemListFilter and GogoLoot_ItemListAdd AceGUI
     widgets in Options-Utilities-Item-List-Widgets.lua, which reaches what it
     shares through ns.IsItemOnClient, ns.SetItemListFilter,
-    ns.ITEM_LIST_REMOVE_ICON, ns.MeasureCaptionPixels and ns:GetItemDisplayName.
+    ns.ITEM_LIST_REMOVE_ICON, ns.MeasureCaptionPixels (Features/Utilities.lua)
+    and ns:GetItemDisplayName.
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local Kit = ns.OptionsKit
 
 local GetColor = ns.GetColor
 
 --------------------------------------------------------------------------------
--- Item Input Parsing
+-- Item Names
 --------------------------------------------------------------------------------
 
 --[[
-    Accepts a typed item ID (digits only) or a full item link; returns the
-    item ID, or nil for anything else, a zero ID included.
+    Typed input goes through Kit.ParseItem (a bare ID or a whole item link) and
+    rows sort through Kit.SortItems (by name, uncached last, ties by ID), both
+    the Options-Kit's. What stays here is the name each row is filtered by.
+
+    Each name is read once and never for an item this client doesn't have.
+    Reading an uncached item asks the server for it, and the list repaints
+    often. A name the client has answered with is kept for the session, so a
+    repaint only asks about the items still loading.
 ]]
-
----@param rawInput any
----@return number|nil
-local function ParseItemInput(rawInput)
-	if not rawInput or rawInput == "" then
-		return nil
-	end
-
-	local digits = string.match(rawInput, "^%s*(%d+)%s*$") or string.match(rawInput, "item:(%d+)")
-	local itemIdentifier = digits and tonumber(digits)
-	if itemIdentifier and itemIdentifier > 0 then
-		return itemIdentifier
-	end
-	return nil
-end
-
---------------------------------------------------------------------------------
--- Item Identifier Sort
---------------------------------------------------------------------------------
-
---[[
-    Sorts in place alphabetically by name — quality is not a sort key. Each row
-    still shows its item link, so the quality colour reads at a glance without
-    also driving the order. The builder then splits the sorted list under its
-    item kind headers (Item Kind Sections, Options-Utilities-Item-List-Filter.lua),
-    keeping this order inside each.
-
-    Items whose info hasn't been cached yet have no name to sort on, so they
-    fall to the bottom of their section rather than clustering under an empty
-    string at the top; they re-sort into place as GET_ITEM_INFO_RECEIVED
-    repaints the list.
-
-    Each name is read once, before sorting, and never for an item this client
-    doesn't have. Reading an uncached item asks the server for it, the
-    comparator sees every item several times, and the list repaints often.
-    A name the client has answered with is kept for the session, so a repaint
-    only asks about the items still loading.
-
-    Equal names tie-break on item ID, which makes the comparator a total order.
-    Without it the nine identically-named Punctured Voodoo Dolls in the default
-    roll list compare equal, and their rows reshuffle on every repaint.
-]]
-
 local knownItemNames = {}
 
 ---@param identifiers number[]
 ---@return table # the name read for each identifier, "" where there is none yet
-local function SortItemIdentifiersByName(identifiers)
+local function ReadItemNames(identifiers)
 	local itemNames = {}
 	for _, itemIdentifier in ipairs(identifiers) do
 		local itemName = knownItemNames[itemIdentifier]
@@ -86,24 +50,6 @@ local function SortItemIdentifiersByName(identifiers)
 		end
 		itemNames[itemIdentifier] = itemName or ""
 	end
-
-	table.sort(identifiers, function(a, b)
-		local nameA = itemNames[a]
-		local nameB = itemNames[b]
-		if nameA == "" and nameB == "" then
-			return a < b
-		end
-		if nameA == "" then
-			return false
-		end
-		if nameB == "" then
-			return true
-		end
-		if nameA == nameB then
-			return a < b
-		end
-		return nameA < nameB
-	end)
 	return itemNames
 end
 
@@ -141,7 +87,7 @@ local function GetAddableBagItems(sourceTable, canAdd)
 	for itemIdentifier in pairs(counts) do
 		sorting[#sorting + 1] = itemIdentifier
 	end
-	SortItemIdentifiersByName(sorting)
+	Kit.SortItems(sorting)
 	local values = {}
 	for _, itemIdentifier in ipairs(sorting) do
 		local count = counts[itemIdentifier]
@@ -169,7 +115,11 @@ end
         an item; Add from Bags offers only those
       onRemove: optional function(itemId) that removes an item from the source;
         without it the rows have no remove column
-      notifyKey: AceConfigRegistry table name to NotifyChange on edits
+      notifyKey: the list's AceConfigRegistry table name, which keys its
+        filter, its New section and its item watch; every edit ends in
+        ns.RefreshSettings()
+      startOrder: optional first order, so a page can seat its own head above
+      rowWidth: optional row width, Kit.TREE_ROW_WIDTH in a tree pane
       labels: { restoreDesc, restoreConfirm, addDesc, addName, addFromBagsDesc,
         removeDesc, removeConfirm }; addName and addDesc are the title and body
         of the add box's tooltip, addFromBagsDesc Add from Bags' tooltip, which
@@ -216,7 +166,7 @@ local REMOVE_ICON_SIZE = 16
     One item's row: the item link, the optional reason tag, the optional action
     dropdown, and the remove icon, as an inline group of its own. The item label
     absorbs whatever the columns to its right leave behind, so an item row
-    spends the same ns.OPTIONS_ROW_WIDTH every other row does.
+    spends the same Kit.ROW_WIDTH every other row does.
 ]]
 ---@param args table
 ---@param spec table
@@ -267,6 +217,7 @@ local function AddItemRow(args, spec, itemIdentifier, order, widths)
 			end,
 			set = function(_, value)
 				spec.actionColumn.set(itemIdentifier, value)
+				ns.RefreshSettings()
 			end,
 		}
 	end
@@ -279,11 +230,11 @@ local function AddItemRow(args, spec, itemIdentifier, order, widths)
 			image = REMOVE_ICON,
 			imageWidth = REMOVE_ICON_SIZE,
 			imageHeight = REMOVE_ICON_SIZE,
-			width = ns.OPTIONS_REMOVE_ICON_WIDTH,
+			width = Kit.REMOVE_ICON_WIDTH,
 			order = 4,
 			func = function()
 				spec.onRemove(itemIdentifier)
-				AceConfigRegistry:NotifyChange(spec.notifyKey)
+				ns.RefreshSettings()
 			end,
 		}
 		if spec.actionColumn then
@@ -332,7 +283,7 @@ local function AddAddRow(args, order, spec)
 		if ns.IsItemOutstanding(itemIdentifier) then
 			ns.EnsureItemRefreshWatcher()
 		end
-		AceConfigRegistry:NotifyChange(spec.notifyKey)
+		ns.RefreshSettings()
 	end
 	local bagValues, bagSorting = GetAddableBagItems(spec.getSourceTable(), spec.canAdd)
 	local bagsEmpty = #bagSorting == 0
@@ -358,7 +309,7 @@ local function AddAddRow(args, order, spec)
 					return ""
 				end,
 				set = function(_, value)
-					local itemIdentifier = ParseItemInput(value)
+					local itemIdentifier = Kit.ParseItem(value)
 					if itemIdentifier then
 						AddItem(itemIdentifier)
 					end
@@ -373,7 +324,7 @@ local function AddAddRow(args, order, spec)
 				values = bagValues,
 				sorting = bagSorting,
 				disabled = bagsEmpty,
-				width = ns.OPTIONS_CONTROL_WIDTH,
+				width = Kit.CONTROL_WIDTH,
 				order = 2,
 				get = function()
 					return BAGS_CAPTION
@@ -386,7 +337,7 @@ local function AddAddRow(args, order, spec)
 			},
 		},
 	}
-	args.spacerAfterAddRow = ns.OptionsSpacer(order + 1)
+	args.spacerAfterAddRow = Kit.Spacer(order + 1)
 	return order + 2
 end
 
@@ -425,7 +376,7 @@ local function AddFilterRow(args, order, spec, kindLabels, kindOrder)
 				desc = L["ITEM_LIST_KIND_DESCRIPTION"],
 				values = kindLabels,
 				sorting = kindOrder,
-				width = ns.OPTIONS_CONTROL_WIDTH,
+				width = Kit.CONTROL_WIDTH,
 				order = 2,
 				get = function()
 					return ns.GetItemListKind(spec.notifyKey) or ns.ITEM_LIST_ALL_KINDS
@@ -433,7 +384,7 @@ local function AddFilterRow(args, order, spec, kindLabels, kindOrder)
 				set = function(_, value)
 					ns.SetItemListKind(spec.notifyKey, value)
 					ns.ClearNewListItems(spec.notifyKey)
-					AceConfigRegistry:NotifyChange(spec.notifyKey)
+					ns.RefreshSettings()
 				end,
 			},
 		},
@@ -514,12 +465,12 @@ local function AddSectionRows(args, order, spec, sections, itemNames, chosenKind
 		end
 		if #matches > 0 and section.heading ~= "" then
 			if shownRows > 0 then
-				args["spacerBeforeSection" .. sectionIndex] = ns.OptionsSpacer(order)
+				args["spacerBeforeSection" .. sectionIndex] = Kit.Spacer(order)
 				order = order + 1
 			end
-			args["sectionHeader" .. sectionIndex] = ns.OptionsHeader(section.heading, order)
+			args["sectionHeader" .. sectionIndex] = Kit.Header(section.heading, order)
 			order = order + 1
-			args["spacerAfterSectionHeader" .. sectionIndex] = ns.OptionsSpacer(order)
+			args["spacerAfterSectionHeader" .. sectionIndex] = Kit.Spacer(order)
 			order = order + 1
 		end
 		for _, itemIdentifier in ipairs(matches) do
@@ -536,7 +487,8 @@ end
 function ns:BuildItemListOptions(spec)
 	local labels = spec.labels
 	local args = {}
-	local order = 1
+	local order = spec.startOrder or 1
+	local rowWidth = spec.rowWidth or Kit.ROW_WIDTH
 
 	ns.WatchItemList(spec.notifyKey, spec.getSourceTable)
 
@@ -546,7 +498,8 @@ function ns:BuildItemListOptions(spec)
 			table.insert(sortedIdentifiers, itemIdentifier)
 		end
 	end
-	local itemNames = SortItemIdentifiersByName(sortedIdentifiers)
+	local itemNames = ReadItemNames(sortedIdentifiers)
+	Kit.SortItems(sortedIdentifiers)
 	local sections = ns.GroupItemListByKind(sortedIdentifiers)
 
 	--[[
@@ -584,7 +537,7 @@ function ns:BuildItemListOptions(spec)
 	end
 	order = AddFilterRow(args, order, spec, kindLabels, kindOrder)
 
-	args.spacerBeforeItems = ns.OptionsSpacer(order)
+	args.spacerBeforeItems = Kit.Spacer(order)
 	order = order + 1
 
 	local widths = { action = 0, tag = 0 }
@@ -594,9 +547,9 @@ function ns:BuildItemListOptions(spec)
 	if spec.tagFor then
 		widths.tag = ns.OPTIONS_ITEM_TAG_WIDTH
 	end
-	widths.label = ns.OPTIONS_ROW_WIDTH - widths.action - widths.tag
+	widths.label = rowWidth - widths.action - widths.tag
 	if spec.onRemove then
-		widths.label = widths.label - ns.OPTIONS_REMOVE_ICON_WIDTH
+		widths.label = widths.label - Kit.REMOVE_ICON_WIDTH
 	end
 
 	local needle = ns.GetItemListFilterNeedle(spec.notifyKey)
@@ -606,10 +559,10 @@ function ns:BuildItemListOptions(spec)
 
 	-- A picked kind always has rows of its own, so only the filter's text can leave the list empty.
 	if shownRows == 0 and needle ~= "" then
-		args.noFilterMatches = ns.OptionsDesc(GetColor("HELP") .. L["ITEM_LIST_NO_MATCHES"] .. "|r", order)
+		args.noFilterMatches = Kit.Desc(GetColor("HELP") .. L["ITEM_LIST_NO_MATCHES"] .. "|r", order)
 		order = order + 1
 	elseif #sortedIdentifiers == 0 and spec.refillsWhenEmpty then
-		args.emptyListNote = ns.OptionsDesc(GetColor("HELP") .. L["ITEM_LIST_EMPTY_REFILLS"] .. "|r", order)
+		args.emptyListNote = Kit.Desc(GetColor("HELP") .. L["ITEM_LIST_EMPTY_REFILLS"] .. "|r", order)
 		order = order + 1
 	end
 
@@ -619,10 +572,10 @@ function ns:BuildItemListOptions(spec)
         once in a while shouldn't be the biggest button there. It confirms, as
         every list's own restore undoes real work.
     ]]
-	args.spacerBeforeRestore = ns.OptionsSpacer(order)
+	args.spacerBeforeRestore = Kit.Spacer(order)
 	order = order + 1
-	args.restoreRow = ns.OptionsRow(order, nil, {
-		ns.OptionsRowLabel("", 0, ns.OPTIONS_ROW_WIDTH - ns.OPTIONS_RESTORE_BUTTON_WIDTH),
+	args.restoreRow = Kit.Row(order, nil, {
+		Kit.Label("", 0, rowWidth - ns.OPTIONS_RESTORE_BUTTON_WIDTH),
 		{
 			type = "execute",
 			name = L["ITEM_LIST_RESTORE"],
@@ -632,7 +585,7 @@ function ns:BuildItemListOptions(spec)
 			confirmText = labels.restoreConfirm,
 			func = function()
 				spec.onRestore()
-				AceConfigRegistry:NotifyChange(spec.notifyKey)
+				ns.RefreshSettings()
 			end,
 		},
 	})

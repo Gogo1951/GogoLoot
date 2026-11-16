@@ -169,12 +169,12 @@ end
     a stale callback from firing, and ns:CancelTimer kills one outright.
 
     The scheduled closure checks its own generation before running:
-    C_Timer.After has no cancel, so a superseded or cancelled timer still fires
+    C_Timer.After has no cancel, so a superseded or canceled timer still fires
     and must no-op.
-    Generations are globally unique rather than counted per identifier: cancelling
+    Generations are globally unique rather than counted per identifier: canceling
     forgets the identifier, so a per-identifier count would restart and let a
-    cancelled timer match the generation of the one that replaced it, running the
-    cancelled callback and swallowing the replacement.
+    canceled timer match the generation of the one that replaced it, running the
+    canceled callback and swallowing the replacement.
 ]]
 local scheduledTimers = {}
 local timerGeneration = 0
@@ -321,6 +321,27 @@ end
 -- Name / Text Helpers
 --------------------------------------------------------------------------------
 
+local captionMeasure
+
+--[[
+    The width in pixels of a caption in GameFontHighlight, read off a hidden
+    font string without drawing anything. GameFontNormal, a button's caption
+    font, differs only in color, so it measures the same: how the item lists'
+    Add button and the loot windows' buttons size themselves. (A checkbox's
+    width in options units is the kit's Kit.ToggleWidth.)
+]]
+---@param caption string
+---@return number
+function ns.MeasureCaptionPixels(caption)
+	if not captionMeasure then
+		local measureFrame = CreateFrame("Frame")
+		measureFrame:Hide()
+		captionMeasure = measureFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	end
+	captionMeasure:SetText(caption)
+	return captionMeasure:GetStringWidth()
+end
+
 -- 1240 as "1,240", for Diagnostic Tools' progress and tallies.
 ---@param number number
 ---@return string
@@ -433,7 +454,7 @@ end
     players sharing a first name read identically in chat; the candidate
     matching still tells them apart, only the message does not.
 
-    Nothing here decorates the name. Chat escapes colour codes into literal
+    Nothing here decorates the name. Chat escapes color codes into literal
     text, so how it renders is the receiving client's business.
 ]]
 ---@param playerName string

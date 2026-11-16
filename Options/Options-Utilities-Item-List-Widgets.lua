@@ -53,7 +53,7 @@ local function OnItemLinkWidgetEnter(frame)
     ]]
 	local option = self:GetUserDataTable().option
 	local note = option and option.desc
-	-- A note that waits on the item (Character Rules' Sanity Check) is a function, read as the tooltip opens.
+	-- A note that waits on the item is a function, read as the tooltip opens.
 	if type(note) == "function" then
 		note = note()
 	end
@@ -331,7 +331,7 @@ local function FilterWidgetConstructor()
 	editbox:SetScript("OnEnter", FilterBox_OnEnter)
 	editbox:SetScript("OnLeave", FilterBox_OnLeave)
 
-	-- The same small grey hint as the add box above it (GogoLoot_ItemListAdd), so the two boxes match.
+	-- The same small gray hint as the add box above it (GogoLoot_ItemListAdd), so the two boxes match.
 	local placeholder = editbox:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
 	placeholder:SetPoint("LEFT", editbox, "LEFT", 0, 0)
 	placeholder:SetPoint("RIGHT", editbox, "RIGHT", 0, 0)

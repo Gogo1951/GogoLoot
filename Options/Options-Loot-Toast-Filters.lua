@@ -11,6 +11,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 local TOAST_QUALITY_VALUES, TOAST_QUALITY_SORTING = ns.OptionsQualityChoices(0, "+")
 
@@ -109,6 +110,7 @@ local function FilterColumnCells(side, row, caption)
 				if side == "Mine" and row.rarity then
 					ns.RefreshLootToastSamples()
 				end
+				ns.RefreshSettings()
 			end,
 		},
 	}
@@ -131,6 +133,7 @@ local function FilterColumnCells(side, row, caption)
 				if side == "Mine" then
 					ns.RefreshLootToastSamples()
 				end
+				ns.RefreshSettings()
 			end,
 		}
 		cells[#cells + 1] = {
@@ -147,7 +150,7 @@ end
 ---@param caption string
 ---@return table
 local function FilterRow(row, caption)
-	local cells = { ns.OptionsRowLabel(caption, 0, ns.OPTIONS_FILTER_LABEL_WIDTH) }
+	local cells = { Kit.Label(caption, 0, ns.OPTIONS_FILTER_LABEL_WIDTH) }
 	for _, cell in ipairs(FilterColumnCells("Mine", row, caption)) do
 		cells[#cells + 1] = cell
 	end
@@ -156,7 +159,7 @@ local function FilterRow(row, caption)
 			cells[#cells + 1] = cell
 		end
 	end
-	return ns.OptionsRow(0, nil, cells)
+	return Kit.Row(0, nil, cells)
 end
 
 --[[
@@ -197,7 +200,7 @@ local EXAMPLE_GROUP_ROLL = 87
 ---@param boxes table[] # { side = "Mine" | "Group", setting = string, desc = string, descText? = string }
 ---@return table
 local function ToastTextRow(captionKey, boxes)
-	local cells = { ns.OptionsRowLabel(L[captionKey], 0, ns.OPTIONS_FILTER_LABEL_WIDTH) }
+	local cells = { Kit.Label(L[captionKey], 0, ns.OPTIONS_FILTER_LABEL_WIDTH) }
 	for _, box in ipairs(boxes) do
 		cells[#cells + 1] = {
 			type = "toggle",
@@ -209,27 +212,24 @@ local function ToastTextRow(captionKey, boxes)
 			end,
 			set = function(_, value)
 				ns.db.profile[box.setting] = value
+				ns.RefreshSettings()
 			end,
 		}
 	end
-	return ns.OptionsRow(0, nil, cells)
+	return Kit.Row(0, nil, cells)
 end
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
-local function LootToastsOn()
-	return ns.db.profile.lootToasts
-end
-
 ---@return table
 function ns.BuildLootToastFilterOptions()
 	local args = {
-		description = ns.OptionsDesc(L["LOOT_TOASTS_FILTERS_CAPTION"], 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
+		description = Kit.Desc(L["LOOT_TOASTS_FILTERS_CAPTION"], 1),
+		spacerAfterDesc = Kit.Spacer(2),
 	}
-	local order = ns.AddFeatureOffNote(args, 3, L["LOOT_TOASTS_OFF_NOTE"], LootToastsOn) - 1
+	local order = ns.AddFeatureOffLine(args, 3, "lootToasts") - 1
 	local function Add(key, entry)
 		order = order + 1
 		entry.order = order
@@ -239,7 +239,7 @@ function ns.BuildLootToastFilterOptions()
 	-- The rows in their groups, a blank line between each.
 	for groupIndex, group in ipairs(FilterRowGroups()) do
 		if groupIndex > 1 then
-			Add("spacerBeforeFilterGroup" .. groupIndex, ns.OptionsSpacer(0))
+			Add("spacerBeforeFilterGroup" .. groupIndex, Kit.Spacer(0))
 		end
 		for _, entry in ipairs(group) do
 			Add("filterRow_" .. entry.row.key, FilterRow(entry.row, entry.caption))

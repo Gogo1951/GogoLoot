@@ -191,8 +191,8 @@ function ns:GetItemDisplayName(itemIdentifier)
 	elseif itemLink then
 		return itemLink
 	elseif icon then
-		return "|T" .. icon .. ":16|t " .. GetColor("MUTED") .. string.format(L["ITEM_LOADING"], itemIdentifier) .. "|r"
+		return "|T" .. icon .. ":16|t " .. GetColor("MUTED") .. string.format(L["LOADING_ITEM"], itemIdentifier) .. "|r"
 	end
 
-	return GetColor("MUTED") .. string.format(L["ITEM_LOADING"], itemIdentifier) .. "|r"
+	return GetColor("MUTED") .. string.format(L["LOADING_ITEM"], itemIdentifier) .. "|r"
 end

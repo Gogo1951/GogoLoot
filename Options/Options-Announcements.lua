@@ -33,7 +33,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local Kit = ns.OptionsKit
 
 local function LootNotificationsOff()
 	return not ns.db.profile.lootNotifications
@@ -49,7 +49,7 @@ end
     the destination the player is about to pick in that window is exactly what
     this decides whether to announce, so the answer belongs beside the question
     rather than a panel away. Built once here so the two can
-    never drift, and it repaints both surfaces because they can be open at once.
+    never drift, and ns.RefreshSettings() repaints both, since they can be open at once.
     It leaves both with the master switch, since nothing it decides can be
     posted while that is off.
 ]]
@@ -64,13 +64,10 @@ function ns.AddDestinationMessagesRow(args, order)
 		width = "full",
 		order = order,
 		hidden = LootNotificationsOff,
-		get = function()
-			return ns.db.profile.announceDestinations
-		end,
+		get = Kit.Get("profile", "announceDestinations"),
 		set = function(_, value)
 			ns.db.profile.announceDestinations = value
-			ns:RefreshMasterLooterPanels()
-			AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.Announcements)
+			ns.RefreshSettings()
 		end,
 	}
 	return order + 1
@@ -81,12 +78,12 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    What each announcement posts, drawn by ns.OptionsExampleRow (Message
-    Examples in Options-Utilities.lua) from the template and decoration the
-    real one uses, ns:BuildAnnounceMessage, as party chat. The trade example
-    follows Send Trade Summary To: a whisper as Aero receives it, party chat,
-    or for Me Only the printed line from the _PRINT template. Each leaves with
-    the master switch, like everything else below it.
+    What each announcement posts, drawn by Kit.Example from the template and
+    decoration the real one uses, ns:BuildAnnounceMessage, as party chat. The
+    trade example follows Send Trade Summary To: a whisper as Aero receives
+    it, party chat, or for Me Only the printed line from the _PRINT template.
+    Each leaves while its own toggle is off, and with the master switch, like
+    everything else below it.
 ]]
 local EXAMPLE_PLAYER_CLASS = "DRUID"
 -- Two of one item for 5 gold: a trade that shows a count and money both.
@@ -106,7 +103,7 @@ local function TradeExample()
 	end
 	local partner = ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS]
 	local message = ns:BuildAnnounceMessage("MESSAGE_TRADE_GAVE_RECEIVED", gave, partner, received)
-	return ns.OptionsSentLine(output == "whisper" and "WHISPER" or "PARTY", message)
+	return Kit.SentLine(output == "whisper" and "WHISPER" or "PARTY", message)
 end
 
 local function DestinationExample()
@@ -115,21 +112,21 @@ local function DestinationExample()
 		ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS],
 		ns.QUALITY_DISPLAY_NAMES.epic
 	)
-	return ns.OptionsSentLine("PARTY", message)
+	return Kit.SentLine("PARTY", message)
 end
 
 -- The item is the threshold's quality, so the example answers the dropdown beside its toggle.
 local function AutomatedHandOutExample()
 	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[ns.db.profile.announceMasterLootAutoThreshold])
 	local message = ns:BuildAnnounceMessage("MESSAGE_GAVE", item, ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS])
-	return ns.OptionsSentLine("PARTY", message)
+	return Kit.SentLine("PARTY", message)
 end
 
 -- Hand-outs by hand are announced at any quality, so this example follows no dropdown.
 local function ManualHandOutExample()
 	local item = ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[3])
 	local message = ns:BuildAnnounceMessage("MESSAGE_GAVE", item, ns.SAMPLE_NAMES[EXAMPLE_PLAYER_CLASS])
-	return ns.OptionsSentLine("PARTY", message)
+	return Kit.SentLine("PARTY", message)
 end
 
 --------------------------------------------------------------------------------
@@ -150,51 +147,21 @@ end
 local ANNOUNCE_THRESHOLD_VALUES, ANNOUNCE_THRESHOLD_SORTING = ns.OptionsQualityChoices(1, "+")
 
 --------------------------------------------------------------------------------
--- Shared Switch
---------------------------------------------------------------------------------
-
---[[
-    Enable Announcements, drawn on this panel and again in the Features section
-    of the General panel. Built once here so the two can never drift; each
-    caller sets its own order and width.
-]]
----@return table
-function ns.AnnouncementsSwitch()
-	return {
-		type = "toggle",
-		name = L["ANNOUNCEMENTS_ENABLE"],
-		desc = L["ANNOUNCEMENTS_ENABLE_DESCRIPTION"],
-		get = function()
-			return ns.db.profile.lootNotifications
-		end,
-		set = function(_, value)
-			ns.db.profile.lootNotifications = value
-			-- The trade window's checkbox and the pop-up's destination toggle leave and return with it.
-			ns:SyncTradeCheckbox()
-			ns:RefreshMasterLooterPanels()
-		end,
-	}
-end
-
---------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
 --[[
     Each toggle carries what belongs to it the way every GogoLoot panel does
-    (see Toggle Rows in Options-Utilities.lua): a single setting on the toggle's
+    (Kit.ToggleRow, Kit.SubLabelRow): a single setting on the toggle's
     own line, which leaves the line while the toggle is off, and a captioned
     setting on an indented row below, which leaves the panel with it.
 ]]
 ---@return table
 function ns.BuildAnnouncementOptions()
-	local lootNotifications = ns.AnnouncementsSwitch()
-	lootNotifications.width = "full"
-	lootNotifications.order = 3
 	local args = {
-		description = ns.OptionsDesc(L["ANNOUNCEMENTS_DESCRIPTION"], 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
-		lootNotifications = lootNotifications,
+		description = Kit.Desc(L["ANNOUNCEMENTS_DESCRIPTION"], 1),
+		spacerAfterDesc = Kit.Spacer(2),
+		lootNotifications = ns.FeatureSwitch("lootNotifications", 3),
 	}
 
 	--[[
@@ -217,27 +184,26 @@ function ns.BuildAnnouncementOptions()
 		args[key] = entry
 	end
 	local function AddSpacer(key)
-		Add(key, ns.OptionsSpacer(0))
+		Add(key, Kit.Spacer(0))
 	end
 
 	-- Trade Announcements
 	AddSpacer("spacerBeforeTrade")
-	Add("tradeHeader", ns.OptionsHeader(L["TAB_TRADE_ANNOUNCEMENTS"], 0))
+	Add("tradeHeader", Kit.Header(L["TAB_TRADE_ANNOUNCEMENTS"], 0))
 	AddSpacer("spacerAfterTradeHeader")
-	Add("tradeDesc", ns.OptionsDesc(L["TRADE_DESCRIPTION"], 0))
+	Add("tradeDesc", Kit.Desc(L["TRADE_DESCRIPTION"], 0))
 	AddSpacer("spacerAfterTradeDesc")
 	Add(
 		"tradeRow",
-		ns.OptionsToggleRow(0, {
+		Kit.ToggleRow(0, {
 			type = "toggle",
 			name = L["TRADE_ENABLE"],
 			desc = L["TRADE_ENABLE_DESCRIPTION"],
-			get = function()
-				return ns.db.profile.announceTrade
-			end,
+			get = Kit.Get("profile", "announceTrade"),
 			set = function(_, value)
 				ns.db.profile.announceTrade = value
 				ns:SyncTradeCheckbox()
+				ns.RefreshSettings()
 			end,
 		}, {
 			control = {
@@ -246,12 +212,8 @@ function ns.BuildAnnouncementOptions()
 				style = "dropdown",
 				values = ns.TRADE_CONDITION_LABELS,
 				sorting = ns.TRADE_CONDITION_ORDER,
-				get = function()
-					return ns.db.profile.announceTradeCondition
-				end,
-				set = function(_, value)
-					ns.db.profile.announceTradeCondition = value
-				end,
+				get = Kit.Get("profile", "announceTradeCondition"),
+				set = Kit.Set("profile", "announceTradeCondition"),
 			},
 		})
 	)
@@ -263,45 +225,42 @@ function ns.BuildAnnouncementOptions()
 	]]
 	Add(
 		"tradeOutputRow",
-		ns.OptionsSubSelectRow(0, TradeAnnouncementsOff, L["TRADE_CHANNEL"], {
+		Kit.SubLabelRow(0, TradeAnnouncementsOff, L["TRADE_CHANNEL"], {
 			type = "select",
 			desc = L["TRADE_CHANNEL_TOOLTIP"]:format(WHISPER),
 			style = "dropdown",
 			values = ns.TRADE_OUTPUT_LABELS,
 			sorting = { "whisper", "group", "self" },
-			get = function()
-				return ns.db.profile.announceTradeOutput
-			end,
-			set = function(_, value)
-				ns.db.profile.announceTradeOutput = value
-			end,
+			get = Kit.Get("profile", "announceTradeOutput"),
+			set = Kit.Set("profile", "announceTradeOutput"),
 		})
 	)
-	Add("tradeExampleRow", ns.OptionsExampleRow(0, TradeExample))
+	Add("tradeExampleRow", Kit.Example(0, TradeAnnouncementsOff, TradeExample))
 
 	-- Master Looter Announcements
 	AddSpacer("spacerBeforeMasterLooter")
-	Add("masterLooterHeader", ns.OptionsHeader(L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"], 0))
+	Add("masterLooterHeader", Kit.Header(L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"], 0))
 	AddSpacer("spacerAfterMasterLooterHeader")
-	Add("masterLooterDesc", ns.OptionsDesc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 0))
+	Add("masterLooterDesc", Kit.Desc(L["MASTER_LOOTER_ANNOUNCE_DESCRIPTION"], 0))
 	AddSpacer("spacerAfterMasterLooterDesc")
 	-- Shared with the pop-up, so its own builder adds it, and hides it with the master switch itself.
 	order = order + 1
 	ns.AddDestinationMessagesRow(args, order)
-	Add("destinationExampleRow", ns.OptionsExampleRow(0, DestinationExample))
+	Add(
+		"destinationExampleRow",
+		Kit.Example(0, function()
+			return not ns.db.profile.announceDestinations
+		end, DestinationExample)
+	)
 	AddSpacer("spacerBeforeAuto")
 	Add(
 		"autoAnnounceRow",
-		ns.OptionsToggleRow(0, {
+		Kit.ToggleRow(0, {
 			type = "toggle",
 			name = L["MASTER_LOOTER_ANNOUNCE_AUTO"],
 			desc = L["MASTER_LOOTER_ANNOUNCE_AUTO_DESCRIPTION"],
-			get = function()
-				return ns.db.profile.announceMasterLootAuto
-			end,
-			set = function(_, value)
-				ns.db.profile.announceMasterLootAuto = value
-			end,
+			get = Kit.Get("profile", "announceMasterLootAuto"),
+			set = Kit.Set("profile", "announceMasterLootAuto"),
 		}, {
 			control = {
 				type = "select",
@@ -309,16 +268,17 @@ function ns.BuildAnnouncementOptions()
 				style = "dropdown",
 				values = ANNOUNCE_THRESHOLD_VALUES,
 				sorting = ANNOUNCE_THRESHOLD_SORTING,
-				get = function()
-					return ns.db.profile.announceMasterLootAutoThreshold
-				end,
-				set = function(_, value)
-					ns.db.profile.announceMasterLootAutoThreshold = value
-				end,
+				get = Kit.Get("profile", "announceMasterLootAutoThreshold"),
+				set = Kit.Set("profile", "announceMasterLootAutoThreshold"),
 			},
 		})
 	)
-	Add("autoExampleRow", ns.OptionsExampleRow(0, AutomatedHandOutExample))
+	Add(
+		"autoExampleRow",
+		Kit.Example(0, function()
+			return not ns.db.profile.announceMasterLootAuto
+		end, AutomatedHandOutExample)
+	)
 	--[[
 	    Items handed out by hand post the same line as the automated ones, and
 	    take no threshold: each one was a deliberate choice. They still get an
@@ -331,14 +291,15 @@ function ns.BuildAnnouncementOptions()
 		name = L["MASTER_LOOTER_ANNOUNCE_MANUAL"],
 		desc = L["MASTER_LOOTER_ANNOUNCE_MANUAL_TOOLTIP"]:format(MASTER_LOOTER),
 		width = "full",
-		get = function()
-			return ns.db.profile.announceMasterLootManual
-		end,
-		set = function(_, value)
-			ns.db.profile.announceMasterLootManual = value
-		end,
+		get = Kit.Get("profile", "announceMasterLootManual"),
+		set = Kit.Set("profile", "announceMasterLootManual"),
 	})
-	Add("manualExampleRow", ns.OptionsExampleRow(0, ManualHandOutExample))
+	Add(
+		"manualExampleRow",
+		Kit.Example(0, function()
+			return not ns.db.profile.announceMasterLootManual
+		end, ManualHandOutExample)
+	)
 
 	return {
 		type = "group",

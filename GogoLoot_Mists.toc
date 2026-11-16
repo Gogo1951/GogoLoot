@@ -91,6 +91,10 @@ Features/Character-Rules.lua
 Features/Roll-Messages.lua
 Features/Automated-Rolls.lua
 Features/Roll-Macro.lua
+Features/Raid-Roll-Winner.lua
+Features/Tint-Tradable-Gear.lua
+Features/Menu-Kit.lua
+Features/Minimap-Menu.lua
 Features/Minimap-Button.lua
 
 # Diagnostics
@@ -104,6 +108,7 @@ Diagnostics/Localization-Reports.lua
 Diagnostics/Report-Runner.lua
 
 # Options
+Options/Options-Kit.lua
 Options/Options-Utilities.lua
 Options/Options-Utilities-Item-Cache.lua
 Options/Options-Utilities-Item-List-Filter.lua
@@ -118,6 +123,7 @@ Options/Options-Master-Looter.lua
 Options/Options-Master-Looter-Ignore-List.lua
 Options/Options-Master-Looter-Popup.lua
 Options/Options-Roll-Macro.lua
+Options/Options-Sanity-Check.lua
 Options/Options-Automated-Opening.lua
 Options/Options-Openable-Items.lua
 Options/Options-Lockboxes.lua

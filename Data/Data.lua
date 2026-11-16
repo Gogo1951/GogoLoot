@@ -16,8 +16,9 @@ ns.SAVED_VARIABLES_NAME = "GogoLootDB"
 --------------------------------------------------------------------------------
 
 --[[
-    Prefer the client's own symbol, fall back to the numeric value, which is
-    correct on every flavor we target. Reading the symbol first means a future
+    Prefer the client's own symbol: the modern Enum first, then for an item
+    class the legacy LE_ITEM_CLASS_* global, then the numeric value, which is
+    correct on every flavor we target. Reading a symbol first means a future
     renumbering doesn't silently reclassify items.
 ]]
 
@@ -26,10 +27,10 @@ ns.BIND_ON_EQUIP = (Enum and Enum.ItemBind and Enum.ItemBind.OnEquip) or 2
 ns.BIND_ON_USE = (Enum and Enum.ItemBind and Enum.ItemBind.OnUse) or 3
 ns.BIND_QUEST_ITEM = (Enum and Enum.ItemBind and Enum.ItemBind.Quest) or 4
 
-ns.ITEM_CLASS_RECIPE = LE_ITEM_CLASS_RECIPE or (Enum and Enum.ItemClass and Enum.ItemClass.Recipe) or 9
-ns.ITEM_CLASS_QUEST = LE_ITEM_CLASS_QUESTITEM or (Enum and Enum.ItemClass and Enum.ItemClass.Questitem) or 12
-ns.ITEM_CLASS_MISCELLANEOUS = LE_ITEM_CLASS_MISCELLANEOUS
-	or (Enum and Enum.ItemClass and Enum.ItemClass.Miscellaneous)
+ns.ITEM_CLASS_RECIPE = (Enum and Enum.ItemClass and Enum.ItemClass.Recipe) or LE_ITEM_CLASS_RECIPE or 9
+ns.ITEM_CLASS_QUEST = (Enum and Enum.ItemClass and Enum.ItemClass.Questitem) or LE_ITEM_CLASS_QUESTITEM or 12
+ns.ITEM_CLASS_MISCELLANEOUS = (Enum and Enum.ItemClass and Enum.ItemClass.Miscellaneous)
+	or LE_ITEM_CLASS_MISCELLANEOUS
 	or 15
 ns.ITEM_SUBCLASS_COMPANION_PET = (
 	Enum
@@ -44,16 +45,16 @@ ns.ITEM_SUBCLASS_MOUNT = (Enum and Enum.ItemMiscellaneousSubclass and Enum.ItemM
     by id, never by class. Quivers and ammo pouches are their own class rather
     than bags, so each gets a Filters row of its own on the Loot Toasts panel.
 ]]
-ns.ITEM_CLASS_BAG = LE_ITEM_CLASS_CONTAINER or (Enum and Enum.ItemClass and Enum.ItemClass.Container) or 1
-ns.ITEM_CLASS_QUIVER = LE_ITEM_CLASS_QUIVER or (Enum and Enum.ItemClass and Enum.ItemClass.Quiver) or 11
-ns.ITEM_CLASS_KEY = LE_ITEM_CLASS_KEY or (Enum and Enum.ItemClass and Enum.ItemClass.Key) or 13
-ns.ITEM_CLASS_CONSUMABLE = LE_ITEM_CLASS_CONSUMABLE or (Enum and Enum.ItemClass and Enum.ItemClass.Consumable) or 0
-ns.ITEM_CLASS_WEAPON = LE_ITEM_CLASS_WEAPON or (Enum and Enum.ItemClass and Enum.ItemClass.Weapon) or 2
-ns.ITEM_CLASS_GEM = LE_ITEM_CLASS_GEM or (Enum and Enum.ItemClass and Enum.ItemClass.Gem) or 3
-ns.ITEM_CLASS_ARMOR = LE_ITEM_CLASS_ARMOR or (Enum and Enum.ItemClass and Enum.ItemClass.Armor) or 4
-ns.ITEM_CLASS_REAGENT = LE_ITEM_CLASS_REAGENT or (Enum and Enum.ItemClass and Enum.ItemClass.Reagent) or 5
-ns.ITEM_CLASS_PROJECTILE = LE_ITEM_CLASS_PROJECTILE or (Enum and Enum.ItemClass and Enum.ItemClass.Projectile) or 6
-ns.ITEM_CLASS_TRADE_GOODS = LE_ITEM_CLASS_TRADEGOODS or (Enum and Enum.ItemClass and Enum.ItemClass.Tradegoods) or 7
+ns.ITEM_CLASS_BAG = (Enum and Enum.ItemClass and Enum.ItemClass.Container) or LE_ITEM_CLASS_CONTAINER or 1
+ns.ITEM_CLASS_QUIVER = (Enum and Enum.ItemClass and Enum.ItemClass.Quiver) or LE_ITEM_CLASS_QUIVER or 11
+ns.ITEM_CLASS_KEY = (Enum and Enum.ItemClass and Enum.ItemClass.Key) or LE_ITEM_CLASS_KEY or 13
+ns.ITEM_CLASS_CONSUMABLE = (Enum and Enum.ItemClass and Enum.ItemClass.Consumable) or LE_ITEM_CLASS_CONSUMABLE or 0
+ns.ITEM_CLASS_WEAPON = (Enum and Enum.ItemClass and Enum.ItemClass.Weapon) or LE_ITEM_CLASS_WEAPON or 2
+ns.ITEM_CLASS_GEM = (Enum and Enum.ItemClass and Enum.ItemClass.Gem) or LE_ITEM_CLASS_GEM or 3
+ns.ITEM_CLASS_ARMOR = (Enum and Enum.ItemClass and Enum.ItemClass.Armor) or LE_ITEM_CLASS_ARMOR or 4
+ns.ITEM_CLASS_REAGENT = (Enum and Enum.ItemClass and Enum.ItemClass.Reagent) or LE_ITEM_CLASS_REAGENT or 5
+ns.ITEM_CLASS_PROJECTILE = (Enum and Enum.ItemClass and Enum.ItemClass.Projectile) or LE_ITEM_CLASS_PROJECTILE or 6
+ns.ITEM_CLASS_TRADE_GOODS = (Enum and Enum.ItemClass and Enum.ItemClass.Tradegoods) or LE_ITEM_CLASS_TRADEGOODS or 7
 
 ns.TRADE_ENCHANT_SLOT = 7
 ns.TRADE_ITEM_SLOT_COUNT = 6
@@ -164,12 +165,20 @@ ns.ROLL_OVERRIDE_LABELS = {
 ]]
 ns.ROLL_OVERRIDE_ORDER = { ns.MANUAL, ns.PASS, ns.GREED, ns.NEED }
 
+-- The roll window's own button art for each roll, as the mini-map menu shows it; Manual has none.
+ns.ROLL_ICONS = {
+	[ns.PASS] = "Interface\\Buttons\\UI-GroupLoot-Pass-Up",
+	[ns.GREED] = "Interface\\Buttons\\UI-GroupLoot-Coin-Up",
+	[ns.NEED] = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
+}
+
 --[[
     Character Rules: what each character wants. Gear that is a ticked armor
     or weapon type and carries a ticked stat is left to the player to roll;
     every other armor or weapon is rolled the way the character's Everything
     Else row says (Greed up to Epic by default; Bind on Pickup only while
-    Include Bind on Pickup, rollBindOnPickup, is on).
+    the group context's Include Bind on Pickup, rollBindOnPickupParty or
+    rollBindOnPickupRaid, is on).
     Every character starts on its class's list (Data/{Folder}/
     Character-Rule-Gear-Types-{Folder}.lua) and saves only the boxes the
     player changes (maintainer, 2026-11-07).
@@ -367,11 +376,10 @@ ns.CHARACTER_RULE_SKIPPED_SLOTS = {
 ]]
 ns.CHARACTER_RULE_UNWANTED_DEFAULTS = {
 	action = ns.GREED,
-	threshold = 4,
 	--[[
         Gear whose required level is at least this many levels below the
         character's Greeds whatever it matches, so outgrown gear never waits
-        on a levelling player; 0 is off (maintainer, 2026-11-07).
+        on a leveling player; 0 is off (maintainer, 2026-11-07).
     ]]
 	lowLevelGear = 5,
 }
@@ -426,34 +434,15 @@ ns.DESTINATION_LOOT_WINDOW = "lootwindow"
 --------------------------------------------------------------------------------
 
 --[[
-    AceConfig draws a control's own `name` above it, which spends a line per
-    setting. Every labeled control in the add-on instead pairs an unlabeled
-    control with a description cell beside it (ns.OptionsRowLabel), so the label
-    sits to its left and the setting is one line.
-
-    Every such row — a plain label + control, an item row, a Filters row —
-    spends OPTIONS_ROW_WIDTH in total, so all of them share a right edge no
-    matter which panel they are on. Tune these here and nowhere else.
+    The panel grid (row, label, control, sub-row, tree and remove-icon widths)
+    is the Options-Kit's (Options/Options-Kit.lua), published as ns.OPTIONS_*.
+    It loads with the Options group, after this file, so what is left here
+    reads no grid width; the list and filter widths built from the grid sit in
+    Options/Options-Utilities.lua.
 ]]
-
-ns.OPTIONS_ROW_WIDTH = 3.4
-ns.OPTIONS_LABEL_WIDTH = 2.1
-ns.OPTIONS_CONTROL_WIDTH = ns.OPTIONS_ROW_WIDTH - ns.OPTIONS_LABEL_WIDTH
-
---[[
-    A row inside a tree panel's pane (Character Rules): the character list on
-    the left takes its share of the panel first. The control keeps the shared
-    control width, so the dropdowns match every other panel's, and the label
-    gives up the difference. MagicEraser's list panels use the same width.
-]]
-ns.OPTIONS_TREE_ROW_WIDTH = 2.5
-ns.OPTIONS_TREE_LABEL_WIDTH = ns.OPTIONS_TREE_ROW_WIDTH - ns.OPTIONS_CONTROL_WIDTH
 
 -- The action column of the Item Overrides and Openables lists.
 ns.ROLL_ACTION_DROPDOWN_WIDTH = 0.7
-
--- The item lists' remove column, sized to its icon rather than a caption.
-ns.OPTIONS_REMOVE_ICON_WIDTH = 0.25
 
 -- The Openables List's reason column (Locked, Sell Sealed, May Hold Unique), taken from the item's share of the row.
 ns.OPTIONS_ITEM_TAG_WIDTH = 0.65
@@ -462,63 +451,14 @@ ns.OPTIONS_ITEM_TAG_WIDTH = 0.65
 ns.OPTIONS_RESTORE_BUTTON_WIDTH = 1
 
 --[[
-    An item list's add box and its filter each take a line above the rows, in
-    the label column: the add box first, sharing its line with Add from Bags in
-    the control column, then the filter, sharing its line with the kind filter.
-    The one width for both boxes stacks them in one column and keeps either from
-    reading as the more important.
-]]
-ns.OPTIONS_ITEM_LIST_TOOL_WIDTH = ns.OPTIONS_LABEL_WIDTH
-
---[[
     The Loot Toasts Filters rows: a narrow caption column for the item type,
-    then a Mine column and a Group column of one width each, so every Group box
-    lines up whatever sits in the Mine column. A column holds its box, and on a
-    rarity row the quality dropdown beside it.
+    then a Mine column and a Group column of one width each (in
+    Options-Utilities.lua), so every Group box lines up whatever sits in the
+    Mine column. A column holds its box, and on a rarity row the quality
+    dropdown beside it.
 ]]
 ns.OPTIONS_FILTER_LABEL_WIDTH = 1
-ns.OPTIONS_FILTER_COLUMN_WIDTH = (ns.OPTIONS_ROW_WIDTH - ns.OPTIONS_FILTER_LABEL_WIDTH) / 2
 ns.OPTIONS_FILTER_BOX_WIDTH = 0.45
-ns.OPTIONS_FILTER_QUALITY_WIDTH = ns.OPTIONS_FILTER_COLUMN_WIDTH - ns.OPTIONS_FILTER_BOX_WIDTH
-
---[[
-    The blank cell a sub-option row leads with. AceConfig pins a checkbox at the
-    left edge of its own widget, so padding the label indents the caption and
-    leaves the box behind, lined up with its parent's; leading the row with this
-    cell instead moves the box itself.
-
-    Sized so the sub-option's box starts where its parent's box visually ends.
-    That lands short of a full checkbox: AceGUI's checkbox is a 24px texture
-    anchored flush left and the flow layout adds no gap between widgets, but
-    UI-CheckBox-Up carries transparent padding, so the gold square the player
-    actually sees is inset a couple of pixels inside that footprint. Matching the
-    footprint (0.14) therefore reads as a step too far; this matches the square.
-    Nudge here if the two edges drift apart on a different UI scale. Shared with
-    MagicEraser, which sizes its Auto-Vend sub-options the same way.
-]]
-ns.OPTIONS_SUB_INDENT_WIDTH = 0.115
-
--- The caption beside a sub-option's dropdown: one label column, less the indent it pays for.
-ns.OPTIONS_SUB_LABEL_WIDTH = ns.OPTIONS_LABEL_WIDTH - ns.OPTIONS_SUB_INDENT_WIDTH
-
---[[
-    A sub-option checkbox carries a short caption, so it takes one label column,
-    which leaves room to spare rather than an exact fit.
-]]
-ns.OPTIONS_SUB_TOGGLE_WIDTH = ns.OPTIONS_LABEL_WIDTH
-
--- AceConfigDialog draws one width unit as this many pixels: how a measured caption becomes a width, and a row the pop-up's.
-ns.OPTIONS_PIXELS_PER_WIDTH_UNIT = 170
-
---[[
-    The sound-preview speaker, sized to its icon, as Control Freak sizes its
-    own. A sound row runs one speaker wider than the rest, because the speaker
-    sits after its dropdown rather than inside the label. That is the one place
-    a row is allowed past OPTIONS_ROW_WIDTH: an icon in the right margin costs
-    nothing, where taking the room out of the label would push the sound
-    dropdown out of the column every other dropdown lines up in.
-]]
-ns.OPTIONS_SPEAKER_WIDTH = 0.15
 
 --------------------------------------------------------------------------------
 -- Quality Constants
@@ -676,6 +616,11 @@ ns.OPENING_ACTION_ORDER = {
 -- The rare-loot chime; play with PlaySoundFile.
 ns.LOOT_SOUND_FILE = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Includes\\Sounds\\item-pick-up.ogg"
 
+-- Automated Rolls' Safety Warning alert, played on entering a dungeon or raid set to Need or Pass.
+ns.ROLL_SAFETY_WARNING_SOUND_FILE = "Interface\\AddOns\\"
+	.. ADDON_NAME
+	.. "\\Includes\\Sounds\\Loot-Threshold-Warning.ogg"
+
 -- Seconds after a corpse or chest's loot window closes during which a loot message may still play the chime.
 ns.LOOT_SOUND_WINDOW = 1
 
@@ -766,6 +711,16 @@ ns.ROLL_MACRO_ICON = 133784 -- Interface\Icons\INV_Misc_Coin_01
 ns.ROLL_MACRO_BODY =
 	'/run local b,n=GetMouseButtonClicked(),GetNumGroupMembers() RandomRoll(1,b=="MiddleButton" and n>0 and n or b=="RightButton" and 99 or 100)'
 
+--[[
+    Raid Roll Winner (Features/Raid-Roll-Winner.lua): where the winner goes,
+    the raidRollOutput setting's two values, and how long each GogoLoot user
+    in the group waits per roster place before posting, so the first in the
+    roster posts and the rest hear its claim and stay quiet.
+]]
+ns.RAID_ROLL_OUTPUT_SELF = "SELF"
+ns.RAID_ROLL_OUTPUT_GROUP = "GROUP"
+ns.RAID_ROLL_CLAIM_STEP = 0.2 -- seconds
+
 ns.COPPER_PER_SILVER = 100
 ns.COPPER_PER_GOLD = 10000
 
@@ -789,7 +744,7 @@ ns.MONEY_PALETTE = {
 ns.TRADE_OUTPUT_LABELS = {
 	["whisper"] = WHISPER,
 	["group"] = ns.L["CHANNEL_GROUP_CHAT"],
-	["self"] = ns.L["TRADE_OUTPUT_SELF"],
+	["self"] = ns.L["CHANNEL_ME_ONLY"],
 }
 
 -- Maps the announceTradeCondition setting values to their display labels, in the dropdown's order.
@@ -884,6 +839,9 @@ ns.TRADE_FILL_DELAY = 0.3
 -- Roll List rows only offer tradable loot at or above this quality.
 ns.TRADABLE_MIN_QUALITY = 2
 
+-- Seconds between Tradable Gear Tint checks for a trade clock that ran out, so the tint leaves as the item binds.
+ns.TRADABLE_TINT_CHECK_SECONDS = 30
+
 -- How many finished rolls the Loot Tracker keeps under Earlier tonight.
 ns.ROLL_HISTORY_LIMIT = 30
 
@@ -921,6 +879,7 @@ ns.OPTIONS_REGISTRY = {
 	LootSounds = ADDON_NAME .. "_LootSounds",
 	Announcements = ADDON_NAME .. "_Announcements",
 	RollMacro = ADDON_NAME .. "_RollMacro",
+	SanityCheck = ADDON_NAME .. "_SanityCheck",
 	LootMaster = ADDON_NAME .. "_LootMaster",
 	-- Registered but never added to the Blizzard tree: it opens as its own window.
 	MasterLooterPopup = ADDON_NAME .. "_MasterLooterPopup",
@@ -928,15 +887,6 @@ ns.OPTIONS_REGISTRY = {
 	FeedbackSupport = ADDON_NAME .. "_FeedbackSupport",
 	Diagnostics = ADDON_NAME .. "_Diagnostics",
 }
-
---[[
-    Whether a panel's child panels nest beneath it in the Settings tree, a third
-    level down, or sit as siblings right after it under the add-on, titled
-    "Parent: Child" (TAB_NESTED_FORMAT). AceConfigDialog documents one child
-    level only, so the nested form holds only where a client's Settings panel
-    shows a third level; Options.lua registers either form from one table.
-]]
-ns.OPTIONS_NESTED_PANELS = true
 
 ns.ITEM_LINK_WIDGET_TYPE = ADDON_NAME .. "_ItemLink"
 ns.ITEM_LIST_FILTER_WIDGET_TYPE = ADDON_NAME .. "_ItemListFilter"

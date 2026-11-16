@@ -13,7 +13,6 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --------------------------------------------------------------------------------
 -- State Management
@@ -525,7 +524,7 @@ local function CreateTradeAnnounceCheckbox()
 
 	local checkbox = CreateFrame("CheckButton", "GogoLootTradeAnnounceCheckbox", UIParent, "UICheckButtonTemplate")
 	checkbox:Hide()
-	checkbox:SetSize(26, 26)
+	checkbox:SetSize(32, 32)
 	checkbox:SetPoint("BOTTOMLEFT", TradeFrame, "BOTTOMLEFT", 8, 4)
 
 	local label = checkbox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -534,7 +533,7 @@ local function CreateTradeAnnounceCheckbox()
 
 	checkbox:SetScript("OnClick", function(self)
 		ns.db.profile.announceTrade = self:GetChecked() and true or false
-		AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.Announcements)
+		ns.RefreshSettings()
 	end)
 
 	checkbox:SetScript("OnEnter", function(self)

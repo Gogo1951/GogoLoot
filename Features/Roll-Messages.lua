@@ -72,4 +72,8 @@ function ns.OnRollWon(winnerName, itemLink, rollText)
 	end
 end
 
-ChatFrameUtil.AddMessageEventFilter("CHAT_MSG_LOOT", FilterRollChatter)
+-- The modern ChatFrameUtil first, then the legacy global, for a client that has only the one.
+local AddMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
+if AddMessageEventFilter then
+	AddMessageEventFilter("CHAT_MSG_LOOT", FilterRollChatter)
+end

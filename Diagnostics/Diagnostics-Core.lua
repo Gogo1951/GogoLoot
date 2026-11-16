@@ -136,7 +136,7 @@ ns.DiagnosticsStrings = {
 	LOOT_TITLE = "Loot Method",
 	LOOT_DESCRIPTION = "Shows what the game reports for your group's loot method and threshold, how "
 		.. TITLE
-		.. " reads it, the Automated Master Looting settings and destinations, why each slot in an open loot window would or wouldn't be handed out, and which message IDs resolved.",
+		.. " reads it, the Automated Master Looting settings and destinations, what Tradable Gear Tint reads on your Bind on Pickup gear, why each slot in an open loot window would or wouldn't be handed out, and which message IDs resolved.",
 	LOOTING_TITLE = "Speedy Loot Context",
 	LOOTING_DESCRIPTION = "Shows whether Speedy Loot can take loot right now: its switch, the game's Auto Loot setting and modifier key, the master looter stand-down, free space in each bag and the keyring, which loot window it hides, and what it reads on each slot of an open one. Then what the Loot Sounds read: their switches, where the open loot came from, and the game's sound settings.",
 	OPENING_TITLE = "Automated Opening Context",
@@ -146,13 +146,13 @@ ns.DiagnosticsStrings = {
 		.. TITLE
 		.. " reads it as locked, whether it would open, and the Lockpicking it needs. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
 	ROLLS_TITLE = "Automated Rolls Context",
-	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Rules with the stats this client offers, and any roll open now.",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Global Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Overrides with the stats this client offers, whether the Roll Safety Warning would fire here, and any roll open now.",
 	VERDICTS_TITLE = "Roll Verdicts",
 	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
-	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Rules reads on each, where each came from (ITEM, TOOLTIP or EQUIP), and whether this character wants each (Character Rules' verdict).",
+	GEAR_DESCRIPTION = "Lists the armor and weapons in your bags and on your character with the stats Character Overrides reads on each, where each came from (ITEM, TOOLTIP or EQUIP), and whether this character wants each (Character Overrides' verdict).",
 	TOASTS_TITLE = "Loot Toasts Context",
-	TOASTS_DESCRIPTION = "Shows the Loot Toasts switch and look, every Filters row for Mine and Group, and whether the General chat tab still shows the game's own loot and money lines.",
+	TOASTS_DESCRIPTION = "Shows the Loot Toasts switch and look, every Filters row for Mine and Group, whether the game's own won-roll window is listening, and whether the General chat tab still shows the game's own loot and money lines.",
 	LINES_TITLE = "Loot Line Reading",
 	LINES_DESCRIPTION = "Builds the game's own loot, money and roll lines with an item from your bags and shows whether "
 		.. TITLE
@@ -161,17 +161,17 @@ ns.DiagnosticsStrings = {
 	ANNOUNCE_DESCRIPTION = "Shows the Enable Loot Announcements switch, the trade and master loot announcement settings, and the chat channel "
 		.. TITLE
 		.. " would send to right now, and the welcome message switch.",
-	MACRO_TITLE = "Roll Macro Context",
+	MACRO_TITLE = "Roll Macro & Raid Roll Context",
 	MACRO_DESCRIPTION = "Shows the Enable Roll Macro switch, whether the macro is in your General Macros as "
 		.. TITLE
-		.. " writes it, how full that tab is, combat, and what each mouse button would roll right now.",
+		.. " writes it, how full that tab is, combat, and what each mouse button would roll right now. Then whether Raid Roll Winner would count a roll in this group, where it would say the winner, and whether it reads the game's roll line back.",
 	PLAYER_TITLE = "Player & Spells",
 	PLAYER_DESCRIPTION = "Shows your class, race, level and the Rogue spells " .. TITLE .. " watches.",
 	VALIDATE_TITLE = "Validate Data: %s",
 	VALIDATE_DESCRIPTION = "Checks every id in this data file against this client and exports the results as tab-separated text.",
 	VALIDATE_PROGRESS = "%s / %s IDs",
 	DISPLAY_TITLE = "Display Context",
-	DISPLAY_DESCRIPTION = "Shows your screen size, UI scale, the mini-map button's saved position and the loot toast anchor.",
+	DISPLAY_DESCRIPTION = "Shows your screen size, UI scale, the mini-map button's saved position, whether its menu can open, and the loot toast anchor.",
 	ADDONS_TITLE = "Other Add-ons",
 	ADDONS_DESCRIPTION = "Lists every installed add-on with its version, and whether it is loadable or disabled.",
 	SAVED_TITLE = "Saved Variables",

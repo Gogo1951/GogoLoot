@@ -75,6 +75,8 @@ function Fake.newEnvironment()
 		blizOptions = {},
 		-- AceConfigDialog status tables by registry name.
 		dialogStatus = {},
+		-- Every options table registered, by registry name: the builder function or the table.
+		optionsTables = {},
 		itemNames = {},
 		itemsNotOnClient = {},
 		-- GetItemStats tables by item id, as { ITEM_MOD_STRENGTH_SHORT = 5 }; an item without one reports no stats.
@@ -126,6 +128,7 @@ function Fake.newEnvironment()
 		playerLevel = 60,
 		-- Every LibDataBroker object the add-on made, by name, so a test can click the button.
 		brokerObjects = {},
+		minimapButtons = {},
 		-- Every frame the add-on created, in order, so a test can find the toasts it drew.
 		createdFrames = {},
 		-- Every AceGUI widget type the add-on registered, by name, so a test can build one and drive it.
@@ -150,6 +153,10 @@ function Fake.newEnvironment()
 		["AceDB-3.0"] = {
 			New = function(_, _, defaults)
 				local db = { profile = {}, global = {}, char = {} }
+				-- What an earlier release left account-wide (state.savedGlobal), under the defaults as AceDB lays them.
+				for key, value in pairs(state.savedGlobal or {}) do
+					db.global[key] = value
+				end
 				copyDefaults(db.profile, defaults.profile or {})
 				copyDefaults(db.global, defaults.global or {})
 				copyDefaults(db.char, defaults.char or {})
@@ -159,6 +166,7 @@ function Fake.newEnvironment()
 				]]
 				db.keys = { char = state.characterKey or "Aero - Realm", profile = "Default" }
 				db.sv = {
+					global = db.global,
 					profiles = { Default = db.profile },
 					char = { [db.keys.char] = db.char },
 					profileKeys = { [db.keys.char] = "Default" },
@@ -212,6 +220,7 @@ function Fake.newEnvironment()
 				if builder == nil then
 					error("RegisterOptionsTable got nil builder for " .. tostring(name), 2)
 				end
+				state.optionsTables[name] = builder
 				--[[
 				    Build immediately, the way AceConfig does on first open, so a
 				    broken options table fails here instead of silently in game.
@@ -290,7 +299,19 @@ function Fake.newEnvironment()
 				return state.brokerObjects[name]
 			end,
 		},
-		["LibDBIcon-1.0"] = stub("LibDBIcon"),
+		-- The table each button is registered and refreshed with, so a test can see which saved table it reads.
+		["LibDBIcon-1.0"] = setmetatable({
+			Register = function(_, name, _, db)
+				state.minimapButtons[name] = { db = db, refreshes = 0 }
+			end,
+			Refresh = function(_, name, db)
+				local button = state.minimapButtons[name]
+				if button then
+					button.db = db or button.db
+					button.refreshes = button.refreshes + 1
+				end
+			end,
+		}, { __index = stub("LibDBIcon") }),
 		["LibSharedMedia-3.0"] = {
 			List = function()
 				return { "Friz Quadrata TT" }
@@ -1002,6 +1023,9 @@ function Fake.newEnvironment()
 			GetStringWidth = function()
 				return 0
 			end,
+			GetStringHeight = function()
+				return 12
+			end,
 			SetText = function(self, text)
 				self.text = text
 			end,
@@ -1080,6 +1104,16 @@ function Fake.newEnvironment()
 	end
 	function frameMethods:CreateTexture()
 		return newObject()
+	end
+	-- The menu places itself from the button's center and the screen's size; a fake frame has neither, so 0.
+	function frameMethods:GetEffectiveScale()
+		return 1
+	end
+	function frameMethods:GetWidth()
+		return self.width or 0
+	end
+	function frameMethods:GetHeight()
+		return self.height or 0
 	end
 	-- A frame's size and its last anchor, so a test can measure a layout.
 	function frameMethods:SetSize(width, height)
@@ -1199,6 +1233,8 @@ function Fake.newEnvironment()
 
 	env.UIParent = env.CreateFrame("Frame", "UIParent")
 	env.GameTooltip = env.CreateFrame("GameTooltip", "GameTooltip")
+	-- The frames Escape closes; the mini-map menu adds itself.
+	env.UISpecialFrames = {}
 	env.LootFrame = env.CreateFrame("Frame", "LootFrame")
 	-- The interaction windows opening waits on; hidden unless a test sets state.shownFrames[name].
 	for _, frameName in ipairs({
@@ -1259,8 +1295,23 @@ function Fake.newEnvironment()
 	env.UnitSex = function()
 		return 2
 	end
-	env.UnitClass = function()
-		return "Class", state.playerClassFile
+	-- A unit's class from state.unitClasses, else the player's, as the tests that put no classes in a group expect.
+	env.UnitClass = function(unitIdentifier)
+		return "Class", state.unitClasses and state.unitClasses[unitIdentifier] or state.playerClassFile
+	end
+	-- A raid slot's name and class token (the first and sixth returns), from the raidN unit's name and class.
+	env.GetRaidRosterInfo = function(index)
+		local unit = "raid" .. index
+		local name = state.unitNames[unit]
+		if not name then
+			return nil
+		end
+		local classFile = state.unitClasses and state.unitClasses[unit] or state.playerClassFile
+		return name, 0, 1, 60, "Class", classFile
+	end
+	-- The short form drops a "-Realm" suffix, as the client's does for a name from another realm.
+	env.Ambiguate = function(name)
+		return (name:gsub("%-.*$", ""))
 	end
 	-- The two classes the tests put in a group, in the client's own colorStr shape.
 	env.RAID_CLASS_COLORS = {

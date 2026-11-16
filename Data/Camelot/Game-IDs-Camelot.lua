@@ -39,7 +39,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-07, WoW Forever 1.60.1.70862
+	2026-11-16, WoW Forever 1.60.1.70938
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.

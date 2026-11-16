@@ -3,14 +3,11 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
 --------------------------------------------------------------------------------
-
-local function AutomatedRollsOn()
-	return ns.db.profile.autoGreed
-end
 
 --[[
     Items with a roll action of their own, which Automated Rolls takes ahead of
@@ -59,22 +56,18 @@ function ns.BuildItemOverridesOptions()
 	})
 
 	local args = {
-		description = ns.OptionsDesc(L["ITEM_OVERRIDES_DESCRIPTION"], 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
+		description = Kit.Desc(L["ITEM_OVERRIDES_DESCRIPTION"], 1),
+		spacerAfterDesc = Kit.Spacer(2),
 	}
-	local order = ns.AddFeatureOffNote(args, 3, L["ROLLS_OFF_NOTE"], AutomatedRollsOn)
+	local order = ns.AddFeatureOffLine(args, 3, "autoGreed")
 	args.itemOverridesEnable = {
 		type = "toggle",
 		name = L["ITEM_OVERRIDES_ENABLE"],
 		desc = L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"],
 		width = "full",
 		order = order,
-		get = function()
-			return ns.db.profile.customRollList
-		end,
-		set = function(_, value)
-			ns.db.profile.customRollList = value
-		end,
+		get = Kit.Get("profile", "customRollList"),
+		set = Kit.Set("profile", "customRollList"),
 	}
 	-- The list stays live while its own switch is off, so a red line says its rolls are skipped.
 	args.itemOverridesOffNote = {
@@ -87,7 +80,7 @@ function ns.BuildItemOverridesOptions()
 		end,
 	}
 	-- The list's add line below is a control in its own right, not part of the toggle.
-	args.spacerBeforeItemOverrides = ns.OptionsSpacer(order + 2)
+	args.spacerBeforeItemOverrides = Kit.Spacer(order + 2)
 	args.itemOverrides = {
 		type = "group",
 		name = "",
