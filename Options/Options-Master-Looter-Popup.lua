@@ -19,12 +19,13 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 --[[
     Sized to the window's tallest state: the three toggles, the leader note and
     its spacer, and all three label-plus-dropdown rows. The note always shows,
-    naming the group leader in a group and saying why the dropdowns are greyed
+    naming the group leader in a group and saying why the dropdowns are grayed
     out while solo, so only the rows below it change the height.
 
     One height serves every open. Rows that do not apply to the current loot
@@ -32,12 +33,11 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
     frame size from the status table this writes and never from how much content
     is on show, so a height sized to anything less scrolls in the fullest case.
 
-    The width is one options row, in pixels, plus the frame's borders and
-    padding.
+    The width is one options row plus the frame's borders and padding, rounded
+    up to the next multiple of 16.
 ]]
-local POPUP_FRAME_PADDING = 58
-local POPUP_WIDTH = math.ceil(ns.OPTIONS_ROW_WIDTH * ns.OPTIONS_PIXELS_PER_WIDTH_UNIT) + POPUP_FRAME_PADDING
-local POPUP_HEIGHT = 346
+local POPUP_WIDTH = 640
+local POPUP_HEIGHT = 352
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -57,21 +57,19 @@ function ns.BuildMasterLooterPopupOptions()
 	    is exactly what it decides whether to announce.
 	]]
 	order = ns.AddPopupToggleRow(args, order)
-	args.autoMasterLoot = ns.AutomatedMasterLootingSwitch()
-	args.autoMasterLoot.width = "full"
-	args.autoMasterLoot.order = order
+	args.autoMasterLoot = ns.FeatureSwitch("autoMasterLoot", order)
 	order = order + 1
 	order = ns.AddDestinationMessagesRow(args, order)
-	args.spacerAfterToggles = ns.OptionsSpacer(order)
+	args.spacerAfterToggles = Kit.Spacer(order)
 	order = order + 1
 
 	-- Says who controls the two dropdowns below: the group leader, you included, or the solo line.
 	order = ns.AddLeaderNoteRow(args, order)
 	order = ns.AddLootMethodRow(args, order)
-	args.spacerAfterLootType = ns.OptionsSpacer(order, ns.IsLootThresholdIrrelevant)
+	args.spacerAfterLootType = Kit.Spacer(order, ns.IsLootThresholdIrrelevant)
 	order = order + 1
 	order = ns.AddLootThresholdRow(args, order)
-	args.spacerAfterLootThreshold = ns.OptionsSpacer(order)
+	args.spacerAfterLootThreshold = Kit.Spacer(order)
 	order = order + 1
 	--[[
 	    The destination only means anything under master loot with the

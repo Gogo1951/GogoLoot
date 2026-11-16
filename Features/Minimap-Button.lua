@@ -5,150 +5,101 @@ local ADDON_NAME, ns = ...
 local L = ns.L
 local LibDataBroker = LibStub("LibDataBroker-1.1")
 local LibDBIcon = LibStub("LibDBIcon-1.0")
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
-local GetColor = ns.GetColor
 
 local brokerObject
-
--- Matches the tooltip's own line height, so an icon sits on the text baseline.
-local TOOLTIP_ICON_SIZE = 16
-
---[[
-    The roll read-back under Automated Rolls: one line per group context, named
-    with the game's own word for it, and set in by two spaces so the pair reads
-    as detail under the description rather than as more of it.
-]]
-local ROLL_SETTING_INDENT = "  "
-local ROLL_CONTEXTS = {
-	{ name = PARTY, actionKey = "autoRollActionParty", thresholdKey = "autoRollThresholdParty" },
-	{ name = RAID, actionKey = "autoRollActionRaid", thresholdKey = "autoRollThresholdRaid" },
-}
-
----@param context table
----@return string
-local function RollSettingLine(context)
-	local action = ns.db.profile[context.actionKey]
-	local actionLabel = ns.ROLL_OVERRIDE_LABELS[action] or ""
-	if action == ns.MANUAL then
-		return ROLL_SETTING_INDENT .. L["MINIMAP_ROLLS_SETTING_MANUAL"]:format(context.name, actionLabel)
-	end
-	local thresholdLabel = ns.ROLL_THRESHOLD_LABELS[ns.db.profile[context.thresholdKey]] or ""
-	return ROLL_SETTING_INDENT .. L["MINIMAP_ROLLS_SETTING"]:format(context.name, actionLabel, thresholdLabel)
-end
 
 --------------------------------------------------------------------------------
 -- Icon State
 --------------------------------------------------------------------------------
 
 --[[
-    The minimap icon reflects the Automated Rolls toggle: on/off swap. Called
-    from the click handler here and from the matching Options toggle so the icon
-    stays in sync no matter where the user flips it.
+    The icon reflects the Automated Rolls switch: on/off swap. Assigning the
+    launcher's icon is enough, since LibDBIcon and every LDB display redraw
+    from it. ns.RefreshSettings() calls this, so the icon follows the switch
+    whichever surface flipped it.
 ]]
-
 ---@return nil
-function ns:UpdateMinimapIcon()
-	if not brokerObject then
+function ns.UpdateMinimapIcon()
+	if not brokerObject or not ns.db then
 		return
 	end
-
-	local state = ns.db.profile.autoGreed and "on" or "off"
-	brokerObject.icon = ns.MINIMAP_ICONS[state] or ns.MINIMAP_ICONS.off
-
-	if ns.db.global.minimap then
-		LibDBIcon:Refresh(ADDON_NAME, ns.db.global.minimap)
-	end
+	local iconState = ns.db.profile.autoGreed and "on" or "off"
+	brokerObject.icon = ns.MINIMAP_ICONS[iconState] or ns.MINIMAP_ICONS.off
 end
 
 --------------------------------------------------------------------------------
--- Utility Functions
---------------------------------------------------------------------------------
-
-local function GetStatusText(isEnabled, isPaused)
-	if not isEnabled then
-		return GetColor("OFF") .. L["STATUS_DISABLED"] .. "|r"
-	end
-	if isPaused then
-		return GetColor("SEPARATOR") .. L["STATUS_PAUSED"] .. "|r"
-	end
-	return GetColor("ON") .. L["STATUS_ENABLED"] .. "|r"
-end
-
---------------------------------------------------------------------------------
--- Click Handlers
+-- Placement
 --------------------------------------------------------------------------------
 
 --[[
-    The button toggles the four features a player switches in play: Automated
-    Rolls on left-click, Automated Opening on right-click, Announcements and
-    Automated Master Looting on the same clicks with Shift held. Speedy Loot
-    isn't one of them: it simply stays on, so its switch lives on its own panel
-    and in the General panel's Features section. Each toggle repaints every
-    panel carrying its switch:
-    its own and the General panel's Features section, and for the last two the
-    master looter pop-up too.
+    Shown or hidden in one place. The position and the Enable Mini-map Button
+    preference (minimap.hide, inverted) live on the profile, so Refresh re-points
+    the button at the current profile's table after a profile switch or reset.
 ]]
-local function ToggleAutomatedOpening()
-	ns.db.profile.autoOpen = not ns.db.profile.autoOpen
-	if ns.db.profile.autoOpen then
-		ns.EnsureAutoLoot()
+---@return nil
+function ns:ApplyMinimapButton()
+	if not ns.db or not brokerObject then
+		return
 	end
-	ns.ScheduleOpeningScan(true)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.AutomatedOpening)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
+	LibDBIcon:Refresh(ADDON_NAME, ns.db.profile.minimap)
 end
 
-local function ToggleAutomatedRolls()
-	ns.db.profile.autoGreed = not ns.db.profile.autoGreed
-	ns:UpdateMinimapIcon()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.AutomatedRolls)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
-end
-
--- As the panel's own switch does: the trade window's checkbox and the pop-up's destination toggle follow it.
-local function ToggleAnnouncements()
-	ns.db.profile.lootNotifications = not ns.db.profile.lootNotifications
-	ns:SyncTradeCheckbox()
-	ns:RefreshMasterLooterPanels()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.Announcements)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
-end
-
-local function ToggleAutomatedMasterLooting()
-	ns.db.profile.autoMasterLoot = not ns.db.profile.autoMasterLoot
-	if ns.db.profile.autoMasterLoot and not ns:AreWeMasterLooter() then
-		ns:PrintMessage(L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"]:format(MASTER_LOOTER))
-	end
-	ns:RefreshMasterLooterPanels()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.General)
-end
-
--- Which toggle each click runs: the plain clicks, then the same clicks with Shift held.
-local CLICK_TOGGLES = {
-	LeftButton = ToggleAutomatedRolls,
-	RightButton = ToggleAutomatedOpening,
-}
-local SHIFT_CLICK_TOGGLES = {
-	LeftButton = ToggleAnnouncements,
-	RightButton = ToggleAutomatedMasterLooting,
-}
+--------------------------------------------------------------------------------
+-- Toggles
+--------------------------------------------------------------------------------
 
 --[[
-    Middle-Click, the one click left, opens the loot windows: the Loot Master
-    for a player with loot to hand out (tradable loot on the Roll List, or
-    Master Looter), the Loot Tracker for everyone else.
+    Flips a feature the way its options switch does: its ns.FEATURES apply,
+    with every side effect (Auto Loot, the opening scan, the trade window's
+    checkbox, the not-master-looter chat line), or a plain write. The caller
+    refreshes after (Minimap-Menu.lua's AfterChange).
 ]]
+---@param setting string # an ns.FEATURES setting
+---@return nil
+function ns.FlipFeature(setting)
+	local feature = ns.GetFeature(setting)
+	local store = ns.db[feature.store]
+	local value = not store[feature.setting]
+	if feature.apply then
+		feature.apply(value)
+	else
+		store[feature.setting] = value
+	end
+end
 
--- The loot windows are parked out of the TOCs for now; with their files unloaded, the button leaves them out.
-local function LootWindowsOn()
-	return ns.db.profile.lootMaster and ns.GetRollListEntries ~= nil
+-- The three clicks that switch a feature (Minimap-Menu.lua → Button Clicks).
+function ns.ToggleAutomatedRolls()
+	ns.FlipFeature("autoGreed")
+end
+
+function ns.ToggleAutomatedOpening()
+	ns.FlipFeature("autoOpen")
+end
+
+function ns.ToggleAnnouncements()
+	ns.FlipFeature("lootNotifications")
+end
+
+--------------------------------------------------------------------------------
+-- Loot Windows
+--------------------------------------------------------------------------------
+
+--[[
+    Middle-Click opens the loot windows: the Loot Master for a player with loot
+    to hand out (tradable loot on the Roll List, or Master Looter), the Loot
+    Tracker for everyone else. The windows are parked out of the TOCs for now;
+    with their files unloaded, the click does nothing.
+]]
+---@return boolean
+function ns.LootWindowsLoaded()
+	return ns.db.profile.lootMaster and ns.GetRollListEntries ~= nil or false
 end
 
 local function HasLootToHandOut()
 	return #ns:GetRollListEntries() > 0 or ns:AreWeMasterLooter()
 end
 
-local function OpenLootWindow()
+function ns.OpenLootWindow()
 	if HasLootToHandOut() then
 		ns:ToggleLootMaster()
 	else
@@ -156,158 +107,22 @@ local function OpenLootWindow()
 	end
 end
 
--- How many Tradable Loot lines the tooltip lists before it says how many more there are.
-local TRADABLE_TOOLTIP_LINES = 3
-
 --------------------------------------------------------------------------------
--- Tooltip
+-- Interaction
 --------------------------------------------------------------------------------
 
 --[[
-    One feature block: its name and state, its description, any silver detail
-    lines under it (Automated Rolls' read-back), its click, then a blank line.
+    Hovering opens the menu (Minimap-Menu.lua). A click runs its job from the
+    menu's click table. Left-Click has a job (Automated Rolls), so hover alone
+    opens the menu, and a click with no entry (Shift + Right-Click, held for
+    the Master Looting Window) does nothing.
 ]]
-local function AddFeatureBlock(tooltip, title, status, description, click, detailLines)
-	tooltip:AddDoubleLine(GetColor("TITLE") .. title .. "|r", status)
-	ns:AddTooltipLine(tooltip, description, "BODY", true)
-	for _, line in ipairs(detailLines or {}) do
-		ns:AddTooltipLine(tooltip, line, "HELP")
-	end
-	tooltip:AddDoubleLine(GetColor("INFO") .. click .. "|r", GetColor("INFO") .. L["MINIMAP_TOGGLE"] .. "|r")
-	tooltip:AddLine(" ")
+function ns.HandleLauncherClick(_, button)
+	ns.RunButtonClick(button)
 end
 
-local function ShowTooltip(anchor)
-	local tooltip = GameTooltip
-	tooltip:SetOwner(anchor, "ANCHOR_NONE")
-	tooltip:SetPoint("TOPRIGHT", anchor, "BOTTOMLEFT")
-	tooltip:ClearLines()
-
-	tooltip:AddDoubleLine(GetColor("TITLE") .. L["ADDON_TITLE"] .. "|r", GetColor("MUTED") .. ns.Version .. "|r")
-	tooltip:AddLine(" ")
-	tooltip:AddLine(" ")
-
-	--[[
-	    Locked Items leads, above the feature blocks, and appears only while
-	    boxes are actually waiting on a lock. It is the one part that changes
-	    with the bags rather than with a setting, so it is what the player opened
-	    the tooltip to check. One line per distinct box, icon then name, with a
-	    count only when there is more than one, so no locale needs a plural. The
-	    name comes from the item's own link, already localized and
-	    quality-colored, with the brackets stripped: a tooltip line isn't
-	    running text. A silver line closes the list with what to do: a Rogue is
-	    told to use Pick Lock, anyone else that a Rogue can pick them. The Rogue
-	    line waits for the spell's name rather than printing a blank one.
-	]]
-	local lockedBoxes = ns.GetLockedBoxes()
-	if #lockedBoxes > 0 then
-		ns:AddTooltipLine(tooltip, L["MINIMAP_LOCKED_ITEMS"], "TITLE")
-		for _, row in ipairs(lockedBoxes) do
-			local icon = row.icon and ("|T" .. row.icon .. ":" .. TOOLTIP_ICON_SIZE .. "|t ") or ""
-			local name = row.link and string.gsub(row.link, "|h%[(.-)%]|h", "|h%1|h")
-				or (GetColor("TEXT") .. row.itemIdentifier .. "|r")
-			tooltip:AddLine(icon .. name .. (row.count > 1 and (" " .. L["ITEM_QUANTITY"]:format(row.count)) or ""))
-		end
-		local hint
-		if ns.IsPlayerRogue() then
-			local pickLock = C_Spell.GetSpellName(ns.SPELLS.PICK_LOCK)
-			hint = pickLock and L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"]:format(pickLock)
-		else
-			hint = L["MINIMAP_LOCKED_ITEMS_HINT"]:format(LOCALIZED_CLASS_NAMES_MALE.ROGUE or "")
-		end
-		if hint then
-			ns:AddTooltipLine(tooltip, hint, "HELP", true)
-		end
-		tooltip:AddLine(" ")
-	end
-
-	--[[
-	    Tradable Loot follows, the same way: only while the Roll List holds
-	    items on a trade clock, soonest first, each with the time left in the
-	    window's colors, and a count of the rest.
-	]]
-	local timed = {}
-	if LootWindowsOn() then
-		for _, entry in ipairs(ns:GetRollListEntries()) do
-			local left = ns:GetEntrySecondsLeft(entry)
-			if left and left > 0 then
-				timed[#timed + 1] = { entry = entry, left = left }
-			end
-		end
-	end
-	if #timed > 0 then
-		table.sort(timed, function(a, b)
-			return a.left < b.left
-		end)
-		ns:AddTooltipLine(tooltip, L["MINIMAP_TRADABLE_LOOT"], "TITLE")
-		for index = 1, math.min(#timed, TRADABLE_TOOLTIP_LINES) do
-			local row = timed[index]
-			local colorKey = row.left < ns.TRADE_RED_SECONDS and "OFF"
-				or row.left < ns.TRADE_YELLOW_SECONDS and "TITLE"
-				or "TEXT"
-			local name = string.gsub(row.entry.link, "|h%[(.-)%]|h", "|h%1|h")
-			tooltip:AddDoubleLine(name, GetColor(colorKey) .. ns.FormatClock(row.left) .. "|r")
-		end
-		if #timed > TRADABLE_TOOLTIP_LINES then
-			ns:AddTooltipLine(tooltip, L["MINIMAP_TRADABLE_MORE"]:format(#timed - TRADABLE_TOOLTIP_LINES), "HELP")
-		end
-		tooltip:AddLine(" ")
-	end
-
-	-- The feature blocks, in the order of their clicks: left, right, then the two with Shift held.
-	local profile = ns.db.profile
-	local rollLines = {}
-	for _, context in ipairs(ROLL_CONTEXTS) do
-		rollLines[#rollLines + 1] = RollSettingLine(context)
-	end
-	AddFeatureBlock(
-		tooltip,
-		L["TAB_AUTOMATED_ROLLS"],
-		GetStatusText(profile.autoGreed),
-		L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"],
-		L["MINIMAP_LEFT_CLICK"],
-		rollLines
-	)
-	AddFeatureBlock(
-		tooltip,
-		L["TAB_AUTOMATED_OPENING"],
-		GetStatusText(profile.autoOpen, ns:IsAutomatedOpeningPaused()),
-		L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"],
-		L["MINIMAP_RIGHT_CLICK"]
-	)
-	AddFeatureBlock(
-		tooltip,
-		L["TAB_ANNOUNCEMENTS"],
-		GetStatusText(profile.lootNotifications),
-		L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"],
-		L["MINIMAP_SHIFT_LEFT_CLICK"]
-	)
-	AddFeatureBlock(
-		tooltip,
-		L["TAB_MASTER_LOOTER"],
-		GetStatusText(profile.autoMasterLoot),
-		L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"],
-		L["MINIMAP_SHIFT_RIGHT_CLICK"]
-	)
-
-	if LootWindowsOn() then
-		local handOut = #ns:GetRollListEntries()
-		tooltip:AddDoubleLine(
-			GetColor("TITLE") .. L["MINIMAP_LOOT_WINDOWS"] .. "|r",
-			handOut > 0 and L["MINIMAP_TO_HAND_OUT"]:format(handOut) or ""
-		)
-		ns:AddTooltipLine(tooltip, L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"], "BODY", true)
-		tooltip:AddDoubleLine(
-			GetColor("INFO") .. L["MINIMAP_MIDDLE_CLICK"] .. "|r",
-			GetColor("INFO") .. L["MINIMAP_OPEN"] .. "|r"
-		)
-		tooltip:AddLine(" ")
-	end
-
-	ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS"], "TITLE")
-	ns:AddTooltipLine(tooltip, L["MINIMAP_OPTIONS_KEYBIND"], "INFO")
-
-	tooltip:Show()
+function ns.HandleLauncherEnter(frame)
+	ns.ShowMenu(frame, nil, "hover")
 end
 
 --------------------------------------------------------------------------------
@@ -322,54 +137,34 @@ function ns:InitMinimap()
 		type = "launcher",
 		label = L["ADDON_TITLE"],
 		icon = ns.MINIMAP_ICONS[initialState],
-		OnClick = function(frame, button)
-			if button == "MiddleButton" and IsShiftKeyDown() then
-				if ns.OpenOptionsPanel then
-					ns:OpenOptionsPanel()
-				end
-				return
-			end
-			if button == "MiddleButton" then
-				if LootWindowsOn() then
-					OpenLootWindow()
-				end
-				return
-			end
-			local toggle = (IsShiftKeyDown() and SHIFT_CLICK_TOGGLES or CLICK_TOGGLES)[button]
-			if toggle then
-				toggle()
-			end
-
-			-- Re-render the tooltip in place so the status reflects the click
-			if GameTooltip:GetOwner() == frame then
-				ShowTooltip(frame)
-			end
-		end,
-		OnEnter = function(frame)
-			ShowTooltip(frame)
-		end,
-		OnLeave = function()
-			GameTooltip:Hide()
-		end,
+		OnClick = ns.HandleLauncherClick,
+		--[[
+		    OnEnter rather than OnTooltipShow: LibDBIcon and every LDB display
+		    call it on hover, and the menu closes itself once the cursor leaves,
+		    so OnLeave has nothing to do.
+		]]
+		OnEnter = ns.HandleLauncherEnter,
+		OnLeave = function() end,
 	})
 
-	LibDBIcon:Register(ADDON_NAME, brokerObject, ns.db.global.minimap)
+	LibDBIcon:Register(ADDON_NAME, brokerObject, ns.db.profile.minimap)
 
 	--[[
-	    On WoW Forever, LibDBIcon centers an 18px square icon on the button under a ring
-	    (file 136430, Retail's art) whose hole is off-center
-	    and wider than the icon. The square's corners then show against the
-	    ring's lopsided shading and the icon reads as off-center. So the icon
-	    is masked round, grown to 20 so its rim tucks under the gold, and
-	    nudged onto the hole. The nudge was tuned by eye on Forever, where one
-	    unit is about two screen pixels; the texture alone doesn't predict it.
-	    Refresh leaves all of this alone, and a click swaps the icon's texture
-	    (brokerObject.icon), which keeps the size, anchor and mask. The icon is sized and anchored by hand rather than
-	    through SetButtonIcon, whose ResetButtonIcon calls icon:UpdateCoord()
-	    and errors when another add-on has replaced the button's icon.
+	    Icon Fit. On Camelot and Mainline, LibDBIcon centers an 18px square icon
+	    on the button under a ring (file 136430, Retail's art) whose hole is
+	    off-center and wider than the icon. The square's corners then show
+	    against the ring's lopsided shading and the icon reads as off-center. So
+	    the icon is masked round, grown to 20 so its rim tucks under the gold,
+	    and nudged onto the hole. The nudge was tuned by eye on Forever, where
+	    one unit is about two screen pixels; the texture alone doesn't predict
+	    it. Refresh leaves all of this alone, and a click swaps the icon's
+	    texture (brokerObject.icon), which keeps the size, anchor and mask. The
+	    icon is sized and anchored by hand rather than through SetButtonIcon,
+	    whose ResetButtonIcon calls icon:UpdateCoord() and errors when another
+	    add-on has replaced the button's icon.
 	]]
 	local button = LibDBIcon:GetMinimapButton(ADDON_NAME)
-	if ns.FLAVOR == "Camelot" and button and button.icon then
+	if (ns.FLAVOR == "Camelot" or ns.FLAVOR == "Mainline") and button and button.icon then
 		button.icon:SetSize(20, 20)
 		button.icon:ClearAllPoints()
 		button.icon:SetPoint("CENTER", 1, -0.35)

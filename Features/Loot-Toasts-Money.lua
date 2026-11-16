@@ -19,12 +19,13 @@ local copperPattern = ns.BuildFormatPattern(COPPER_AMOUNT)
     Copper"). The client hands over the sentence, not the number, and matching
     its OWN GOLD_AMOUNT, SILVER_AMOUNT and COPPER_AMOUNT formats is what makes
     that work in every locale. A unit the message doesn't mention simply doesn't
-    match, which is the same as none of it.
+    match, which is the same as none of it. A secret line (WoW Forever, see
+    Utilities-Chat-Lines.lua) reads as no money.
 ]]
 ---@param message any
 ---@return number
 function ns.ParseMoney(message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return 0
 	end
 	local gold = goldPattern and tonumber(string.match(message, goldPattern)) or 0
@@ -151,7 +152,7 @@ end
 ---@return string|nil currencyLink
 ---@return number|nil quantity
 function ns.ParseCurrencyMessage(message)
-	if type(message) ~= "string" then
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
 	for _, entry in ipairs(currencyPatterns) do

@@ -34,8 +34,9 @@ local scanPending = false
 local scanDueAt = 0
 
 --[[
-    Opens the game refused. An open the game takes always answers with a loot
-    window, so one still unanswered ns.OPEN_ANSWER_TIMEOUT later was refused:
+    Opens the game refused. An open the game takes answers with a loot session
+    (LOOT_READY or LOOT_OPENED) or, failing that, leaves fewer of the item in
+    its slot, so one still unanswered ns.OPEN_ANSWER_TIMEOUT later was refused:
     a holiday, or another rule no API reports, rules it out for this character.
     After ns.OPEN_REFUSAL_LIMIT refusals in a row the item is left alone until
     the next level-up or login, rather than tried every tick into the same red
@@ -242,6 +243,26 @@ local function CountRefusedOpen()
 	pendingOpenItem = nil
 end
 
+--[[
+    The game took the open, so its item's refusal streak ends. openedAt, when
+    given, ties the answer to one open: a late signal from an earlier open of
+    the same item can't claim a newer one.
+]]
+local function ConfirmOpen(openedAt)
+	if not pendingOpenItem or (openedAt and openedAt ~= pendingOpenAt) then
+		return false
+	end
+	refusedOpenCounts[pendingOpenItem] = nil
+	pendingOpenItem = nil
+	return true
+end
+
+-- How many of the item the slot holds; 0 for an empty slot.
+local function GetSlotStackCount(bagIndex, slotIndex)
+	local itemInfo = C_Container.GetContainerItemInfo(bagIndex, slotIndex)
+	return itemInfo and itemInfo.stackCount or 0
+end
+
 local function BuildQueue()
 	wipe(queue)
 	queueHead, queueTail = 1, 0
@@ -258,10 +279,10 @@ end
 --[[
     The boxes in the bags still waiting on a lock: anything Automated Opening
     would open that still reads Locked. One row per distinct item with a stack
-    count, sorted by name, for the mini-map tooltip's Locked Items list and
+    count, sorted by name, for the mini-map menu's Locked Items list and
     Diagnostics.
 
-    Worked out on demand and deliberately not cached: it runs once per tooltip
+    Worked out on demand and deliberately not cached: it runs once per menu
     render, and a cache would need clearing on every bag, trade and pick-lock
     event. The name comes from the container's own item link, already localized
     and quality-colored, with no C_Item.GetItemInfo round trip.
@@ -322,10 +343,18 @@ end
     After an open, the slot is looked at again: a stack still holds more of the
     same item, and an open the server didn't take leaves the item where it was.
     Either way it goes back on the queue if it still should be opened.
+
+    Fewer of the item in the slot than before the open means the game took it,
+    whatever the loot events did: a loot session Speedy Loot empties can close
+    before LOOT_OPENED, or even LOOT_READY, reaches the add-on.
 ]]
-local function RecheckSlot(bagIndex, slotIndex, itemIdentifier)
+local function RecheckSlot(bagIndex, slotIndex, itemIdentifier, stackBefore, openedAt)
 	C_Timer.After(ns.OPEN_RECHECK_DELAY, function()
 		local stillThere = ns.GetBagItemIdentifier(bagIndex, slotIndex)
+		local stackNow = stillThere == itemIdentifier and GetSlotStackCount(bagIndex, slotIndex) or 0
+		if stackNow < stackBefore and pendingOpenItem == itemIdentifier then
+			ConfirmOpen(openedAt)
+		end
 		if stillThere == itemIdentifier and ShouldOpen(bagIndex, slotIndex, stillThere) then
 			QueuePush(bagIndex, slotIndex, stillThere)
 		end
@@ -364,9 +393,10 @@ OpenTick = function()
 
 	-- The bags may have moved since the scan; only open what is still where it was.
 	if ns.GetBagItemIdentifier(bagIndex, slotIndex) == queuedIdentifier and not refusedItems[queuedIdentifier] then
+		local stackBefore = GetSlotStackCount(bagIndex, slotIndex)
 		pendingOpenItem, pendingOpenAt = queuedIdentifier, GetTime()
 		C_Container.UseContainerItem(bagIndex, slotIndex)
-		RecheckSlot(bagIndex, slotIndex, queuedIdentifier)
+		RecheckSlot(bagIndex, slotIndex, queuedIdentifier, stackBefore, pendingOpenAt)
 	end
 	if queueHead <= queueTail then
 		StartOpenTick()
@@ -589,12 +619,17 @@ end
 -- Whether the loot window now open answers one of GogoLoot's own opens.
 local lootWindowFromOpen = false
 
--- A loot window answers the last open, so the game took it.
-local function OnLootOpened()
-	lootWindowFromOpen = pendingOpenItem ~= nil
-	if pendingOpenItem then
-		refusedOpenCounts[pendingOpenItem] = nil
-		pendingOpenItem = nil
+--[[
+    A loot session answers the last open, so the game took it. Speedy Loot
+    empties the window on LOOT_READY, and the session can close before
+    LOOT_OPENED ever fires, so either event claims the open. Only a pending
+    open is claimed, and only a claim sets the flag: LOOT_READY can fire more
+    than once per session, and LOOT_OPENED can still follow it, so a later
+    event must not clear what the first one set. LOOT_CLOSED clears it.
+]]
+local function OnLootAnswer()
+	if ConfirmOpen() then
+		lootWindowFromOpen = true
 	end
 end
 
@@ -640,5 +675,6 @@ ns:RegisterModuleEvent("QUEST_FINISHED", OnInteractionClosed)
 ns:RegisterModuleEvent("LOOT_CLOSED", OnLootClosed)
 ns:RegisterModuleEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", OnInteractionClosed)
 ns:RegisterModuleEvent("TRADE_CLOSED", OnTradeClosed)
-ns:RegisterModuleEvent("LOOT_OPENED", OnLootOpened)
+ns:RegisterModuleEvent("LOOT_READY", OnLootAnswer)
+ns:RegisterModuleEvent("LOOT_OPENED", OnLootAnswer)
 ns:RegisterModuleEvent("PLAYER_LEVEL_UP", OnPlayerLevelUp)

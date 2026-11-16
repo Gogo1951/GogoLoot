@@ -24,7 +24,6 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --------------------------------------------------------------------------------
 -- API Wrappers (Classic Compatibility)
@@ -534,18 +533,6 @@ end
 local wasInGroup = IsInGroup()
 
 --[[
-    The Master Looter panel and the pop-up render the same rows, so a change made
-    in either has to repaint both or the other keeps showing the stale value. The
-    panel also redraws on its own inputs: the roster fills its destination
-    dropdowns and the loot threshold decides which quality rows show.
-]]
----@return nil
-function ns:RefreshMasterLooterPanels()
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooter)
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.MasterLooterPopup)
-end
-
---[[
     Pop the master looter window on every false-to-true transition, tracked from
     a starting assumption of false so logging in already master looter counts as
     becoming one. Both events that can change the answer route through here, and
@@ -629,7 +616,7 @@ end
 
 local function OnPartyLootMethodChanged()
 	ClearDestinationsOnLootMethodChange()
-	ns:RefreshMasterLooterPanels()
+	ns.RefreshSettings()
 	CheckMasterLooterPopup()
 end
 
@@ -666,7 +653,7 @@ local function OnGroupRosterUpdate()
 	if wasInGroup and not isCurrentlyInGroup then
 		ResetAllDestinations()
 		lastPanelSignature = nil
-		ns:RefreshMasterLooterPanels()
+		ns.RefreshSettings()
 		wasInGroup = false
 		wasMasterLooter = false
 		lastObservedLootMethod = nil
@@ -680,7 +667,7 @@ local function OnGroupRosterUpdate()
 	local signature = PanelSignature()
 	if signature ~= lastPanelSignature then
 		lastPanelSignature = signature
-		ns:RefreshMasterLooterPanels()
+		ns.RefreshSettings()
 	end
 	CheckMasterLooterPopup()
 end

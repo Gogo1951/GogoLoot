@@ -15,37 +15,10 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 local function AutomatedOpeningOff()
 	return not ns.db.profile.autoOpen
-end
-
---------------------------------------------------------------------------------
--- Shared Switch
---------------------------------------------------------------------------------
-
---[[
-    Enable Automated Opening, drawn on this panel and again in the Features
-    section of the General panel. Built once here so the two can never drift;
-    each caller sets its own order and width.
-]]
----@return table
-function ns.AutomatedOpeningSwitch()
-	return {
-		type = "toggle",
-		name = L["AUTOMATED_OPENING_ENABLE"],
-		desc = L["AUTOMATED_OPENING_SWITCH_DESCRIPTION"]:format(AUTO_LOOT_DEFAULT_TEXT),
-		get = function()
-			return ns.db.profile.autoOpen
-		end,
-		set = function(_, value)
-			ns.db.profile.autoOpen = value
-			if value then
-				ns.EnsureAutoLoot()
-			end
-			ns.ScheduleOpeningScan(true)
-		end,
-	}
 end
 
 --------------------------------------------------------------------------------
@@ -54,17 +27,14 @@ end
 
 ---@return table
 function ns.BuildAutomatedOpeningOptions()
-	local autoOpen = ns.AutomatedOpeningSwitch()
-	autoOpen.width = "full"
-	autoOpen.order = 3
 	return {
 		type = "group",
 		name = L["TAB_AUTOMATED_OPENING"],
 		args = {
-			description = ns.OptionsDesc(L["AUTOMATED_OPENING_DESCRIPTION"]:format(ns.MIN_FREE_SLOTS), 1),
-			spacerAfterDesc = ns.OptionsSpacer(2),
-			autoOpen = autoOpen,
-			outsideInstancesRow = ns.OptionsSubToggleRow(4, AutomatedOpeningOff, {
+			description = Kit.Desc(L["AUTOMATED_OPENING_DESCRIPTION"]:format(ns.MIN_FREE_SLOTS), 1),
+			spacerAfterDesc = Kit.Spacer(2),
+			autoOpen = ns.FeatureSwitch("autoOpen", 3),
+			outsideInstancesRow = Kit.SubToggleRow(4, AutomatedOpeningOff, {
 				type = "toggle",
 				name = L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES"],
 				desc = L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"],
@@ -74,9 +44,10 @@ function ns.BuildAutomatedOpeningOptions()
 				set = function(_, value)
 					ns.db.profile.autoOpenWhere = value and "OUTSIDE_INSTANCES" or "ALWAYS"
 					ns.ScheduleOpeningScan(true)
+					ns.RefreshSettings()
 				end,
 			}),
-			soloOnlyRow = ns.OptionsSubToggleRow(5, AutomatedOpeningOff, {
+			soloOnlyRow = Kit.SubToggleRow(5, AutomatedOpeningOff, {
 				type = "toggle",
 				name = L["AUTOMATED_OPENING_ONLY_SOLO"],
 				desc = L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"],
@@ -86,6 +57,7 @@ function ns.BuildAutomatedOpeningOptions()
 				set = function(_, value)
 					ns.db.profile.autoOpenGroup = value and "SOLO_ONLY" or "ALWAYS"
 					ns.ScheduleOpeningScan(true)
+					ns.RefreshSettings()
 				end,
 			}),
 		},

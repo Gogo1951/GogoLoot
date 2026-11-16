@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 local GetColor = ns.GetColor
 local GetQualityColor = ns.GetQualityColor
 
@@ -16,8 +17,7 @@ local GetQualityColor = ns.GetQualityColor
     args table asks for them: the pop-up toggle, the leader note, loot method,
     loot threshold and Send All Loot To, each taking (args, order) and
     returning the next free order. The Enable Automated Master Looting switch
-    (ns.AutomatedMasterLootingSwitch) takes nothing and returns a bare entry
-    for the caller to place. The pop-up's remaining shared row, the
+    is ns.FeatureSwitch("autoMasterLoot"), placed by each caller. The pop-up's remaining shared row, the
     destination-messages toggle, is built in Options-Announcements.lua, which
     owns that setting.
 ]]
@@ -67,7 +67,7 @@ end
     Automated Master Looting's master switch really is the master switch:
     ns:WillAutoMasterLoot returns false outright when autoMasterLoot is off, so
     nothing that tunes the automation changes anything until it is on. That is
-    why those rows hide rather than grey — a control that is never drawn has no
+    why those rows hide rather than gray — a control that is never drawn has no
     use for a disabled state.
 ]]
 local function IsAutomationOff()
@@ -122,8 +122,8 @@ ns.IsLootThresholdIrrelevant = IsLootThresholdIrrelevant
     Who controls the two dropdowns, said once above them rather than repeated
     around them. It names the leader whoever that is, the player included, so the
     line reads as a statement about whose group it is rather than as a complaint
-    about a control being greyed out. Solo, where there is no leader to name, a
-    silver line says why both are greyed out and how to change them.
+    about a control being grayed out. Solo, where there is no leader to name, a
+    silver line says why both are grayed out and how to change them.
 ]]
 ---@param args table
 ---@param order number
@@ -141,34 +141,25 @@ function ns.AddLeaderNoteRow(args, order)
 		fontSize = "medium",
 		order = order,
 	}
-	args.spacerAfterLeaderNote = ns.OptionsSpacer(order + 1)
+	args.spacerAfterLeaderNote = Kit.Spacer(order + 1)
 	return order + 2
 end
 
 --[[
     Loot method, loot threshold and Send All Loot To answer to no toggle, so they
-    are label-beside-control rows rather than sub-options: the label cell, then
-    the dropdown with no name of its own, ordered straight after it so the two
-    flow onto one line at one row's width. The label is `key .. "Label"`. Neither
-    half may hide without the other, so a hidden check goes on both.
+    are label-beside-control rows (Kit.LabelRow) rather than sub-options, one
+    arg each under `key`, hidden whole.
 ]]
 ---@param args table
 ---@param key string
 ---@param order number
 ---@param label string
----@param control table # a select; its name, width and order are set here
+---@param control table # a select; its name and width are set by the kit
 ---@param hidden? function
 ---@return number # the next free order
 local function AddLabeledRow(args, key, order, label, control, hidden)
-	local labelCell = ns.OptionsRowLabel(label, order)
-	labelCell.hidden = hidden
-	control.name = ""
-	control.width = ns.OPTIONS_CONTROL_WIDTH
-	control.order = order + 1
-	control.hidden = hidden
-	args[key .. "Label"] = labelCell
-	args[key] = control
-	return order + 2
+	args[key] = Kit.LabelRow(order, hidden, label, control)
+	return order + 1
 end
 
 ---@param args table
@@ -186,7 +177,7 @@ function ns.AddLootMethodRow(args, order)
 		end,
 		set = function(_, value)
 			ns:SafeSetLootMethod(value)
-			ns:RefreshMasterLooterPanels()
+			ns.RefreshSettings()
 		end,
 	})
 end
@@ -206,7 +197,7 @@ function ns.AddLootThresholdRow(args, order)
 		end,
 		set = function(_, value)
 			ns:SafeSetLootThreshold(value)
-			ns:RefreshMasterLooterPanels()
+			ns.RefreshSettings()
 		end,
 	}, IsLootThresholdIrrelevant)
 end
@@ -236,7 +227,7 @@ function ns.AddSendAllDestinationRow(args, order, hidden)
 		end,
 		set = function(_, value)
 			ns:SetAllDestinations(value)
-			ns:RefreshMasterLooterPanels()
+			ns.RefreshSettings()
 		end,
 	}, hidden)
 end
@@ -258,39 +249,13 @@ function ns.AddPopupToggleRow(args, order)
 		desc = L["MASTER_LOOTER_POPUP_TOOLTIP"]:format(MASTER_LOOTER),
 		width = "full",
 		order = order,
-		get = function()
-			return ns.db.profile.masterLooterPopup
-		end,
+		get = Kit.Get("profile", "masterLooterPopup"),
 		set = function(_, value)
 			ns.db.profile.masterLooterPopup = value
-			ns:RefreshMasterLooterPanels()
+			ns.RefreshSettings()
 		end,
 	}
 	return order + 1
-end
-
---[[
-    Enable Automated Master Looting, drawn on this panel and again in the
-    Features section of the General panel. Built once here so the two can never
-    drift; each caller sets its own order and width.
-]]
----@return table
-function ns.AutomatedMasterLootingSwitch()
-	return {
-		type = "toggle",
-		name = L["MASTER_LOOTER_AUTO_ENABLE"],
-		desc = L["MASTER_LOOTER_AUTO_ENABLE_DESCRIPTION"],
-		get = function()
-			return ns.db.profile.autoMasterLoot
-		end,
-		set = function(_, value)
-			ns.db.profile.autoMasterLoot = value
-			if value and not ns:AreWeMasterLooter() then
-				ns:PrintMessage(L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"]:format(MASTER_LOOTER))
-			end
-			ns:RefreshMasterLooterPanels()
-		end,
-	}
 end
 
 --------------------------------------------------------------------------------
@@ -348,7 +313,7 @@ local function AddDestinationRows(args, order)
 		end
 
 		local caption = GetQualityColor(entry.quality) .. entry.label .. "|r"
-		args["destinationRow_" .. qualityKey] = ns.OptionsSubSelectRow(order, HiddenQualityRow, caption, {
+		args["destinationRow_" .. qualityKey] = Kit.SubLabelRow(order, HiddenQualityRow, caption, {
 			type = "select",
 			desc = string.format(L["MASTER_LOOTER_DESTINATION_CHOOSE"], entry.label),
 			style = "dropdown",
@@ -375,14 +340,71 @@ local function AddDestinationRows(args, order)
 					ns.db.profile.destinations[qualityKey] = value
 					ns:AnnounceDestinationSet(value, qualityKey)
 				end
-				ns:RefreshMasterLooterPanels()
+				ns.RefreshSettings()
 			end,
 		})
 		order = order + 1
-		args["spacer_destination_" .. qualityKey] = ns.OptionsSpacer(order, HiddenQualityRow)
+		args["spacer_destination_" .. qualityKey] = Kit.Spacer(order, HiddenQualityRow)
 		order = order + 1
 	end
 	return order
+end
+
+--------------------------------------------------------------------------------
+-- Tradable Gear Tint
+--------------------------------------------------------------------------------
+
+--[[
+    The switch in the label column and its color in the control column, on
+    one line like Magic Eraser's Junk Item Tint, the color leaving while the
+    switch is off. Its own switch,
+    not Automated Master Looting's: the tint is on whether or not anything is
+    handed out, and sits here because raid leaders are the ones who need it.
+    Both repaint the bags at once (Features/Tint-Tradable-Gear.lua).
+]]
+local function IsTradableTintOff()
+	return not ns.db.profile.tradableTintEnabled
+end
+
+---@param order number
+---@return table
+local function BuildTradableTintRow(order)
+	return Kit.Row(order, nil, {
+		{
+			type = "toggle",
+			width = Kit.LABEL_WIDTH,
+			name = L["TRADABLE_TINT_ENABLE"],
+			desc = L["TRADABLE_TINT_ENABLE_DESCRIPTION"],
+			get = Kit.Get("profile", "tradableTintEnabled"),
+			set = function(_, value)
+				ns.db.profile.tradableTintEnabled = value
+				if ns.RefreshTradableTints then
+					ns:RefreshTradableTints()
+				end
+				ns.RefreshSettings()
+			end,
+		},
+		{
+			type = "color",
+			width = Kit.CONTROL_WIDTH,
+			name = L["TRADABLE_TINT_COLOR"],
+			desc = L["TRADABLE_TINT_COLOR_DESCRIPTION"],
+			hasAlpha = true,
+			hidden = IsTradableTintOff,
+			get = function()
+				local color = ns.db.profile.tradableTintColor
+				return color.r, color.g, color.b, color.a
+			end,
+			set = function(_, r, g, b, a)
+				local color = ns.db.profile.tradableTintColor
+				color.r, color.g, color.b, color.a = r, g, b, a
+				if ns.RefreshTradableTints then
+					ns:RefreshTradableTints()
+				end
+				ns.RefreshSettings()
+			end,
+		},
+	})
 end
 
 --------------------------------------------------------------------------------
@@ -405,52 +427,42 @@ function ns.BuildMasterLooterOptions()
 	local args = {}
 	local order = 1
 
-	args.autoDesc = ns.OptionsDesc(
+	args.autoDesc = Kit.Desc(
 		L["MASTER_LOOTER_AUTO_PANEL_DESCRIPTION"]:format(MASTER_LOOTER) .. " " .. L["SAFETY_SKIP_NOTE_MASTER_LOOTER"],
 		order
 	)
 	order = order + 1
-	args.spacerAfterAutoDesc = ns.OptionsSpacer(order)
+	args.spacerAfterAutoDesc = Kit.Spacer(order)
 	order = order + 1
-	args.autoMasterLoot = ns.AutomatedMasterLootingSwitch()
-	args.autoMasterLoot.width = "full"
-	args.autoMasterLoot.order = order
+	args.autoMasterLoot = ns.FeatureSwitch("autoMasterLoot", order)
 	order = order + 1
-	args.outsideInstancesRow = ns.OptionsSubToggleRow(order, IsAutomationOff, {
+	args.outsideInstancesRow = Kit.SubToggleRow(order, IsAutomationOff, {
 		type = "toggle",
 		name = L["MASTER_LOOTER_AUTO_OUTSIDE"],
 		desc = L["MASTER_LOOTER_OUTSIDE_INSTANCES_DESCRIPTION"],
-		get = function()
-			return ns.db.profile.autoMasterLootOutsideInstances
-		end,
-		set = function(_, value)
-			ns.db.profile.autoMasterLootOutsideInstances = value
-		end,
+		get = Kit.Get("profile", "autoMasterLootOutsideInstances"),
+		set = Kit.Set("profile", "autoMasterLootOutsideInstances"),
 	})
 	order = order + 1
-	args.questItemsRow = ns.OptionsSubToggleRow(order, IsAutomationOff, {
+	args.questItemsRow = Kit.SubToggleRow(order, IsAutomationOff, {
 		type = "toggle",
 		name = L["MASTER_LOOTER_AUTO_QUEST_ITEMS"],
 		desc = L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"],
-		get = function()
-			return ns.db.profile.autoMasterLootQuestItems
-		end,
-		set = function(_, value)
-			ns.db.profile.autoMasterLootQuestItems = value
-		end,
+		get = Kit.Get("profile", "autoMasterLootQuestItems"),
+		set = Kit.Set("profile", "autoMasterLootQuestItems"),
 	})
 	order = order + 1
 
 	-- Loot Destinations
-	args.spacerBeforeDestinations = HideWhenAutomationOff(ns.OptionsSpacer(order))
+	args.spacerBeforeDestinations = HideWhenAutomationOff(Kit.Spacer(order))
 	order = order + 1
-	args.destinationsHeader = ns.OptionsHeader(L["TAB_LOOT_DESTINATIONS"], order, IsAutomationOff)
+	args.destinationsHeader = Kit.Header(L["TAB_LOOT_DESTINATIONS"], order, IsAutomationOff)
 	order = order + 1
-	args.spacerAfterDestinationsHeader = HideWhenAutomationOff(ns.OptionsSpacer(order))
+	args.spacerAfterDestinationsHeader = HideWhenAutomationOff(Kit.Spacer(order))
 	order = order + 1
-	args.destinationsDesc = HideWhenAutomationOff(ns.OptionsDesc(L["MASTER_LOOTER_DESTINATION_DESCRIPTION"], order))
+	args.destinationsDesc = HideWhenAutomationOff(Kit.Desc(L["MASTER_LOOTER_DESTINATION_DESCRIPTION"], order))
 	order = order + 1
-	args.spacerAfterDestinationsDesc = HideWhenAutomationOff(ns.OptionsSpacer(order))
+	args.spacerAfterDestinationsDesc = HideWhenAutomationOff(Kit.Spacer(order))
 	order = order + 1
 	args.noDestinationNote = {
 		type = "description",
@@ -460,28 +472,41 @@ function ns.BuildMasterLooterOptions()
 		hidden = NoDestinationNoteHidden,
 	}
 	order = order + 1
-	args.spacerAfterNoDestinationNote = ns.OptionsSpacer(order, NoDestinationNoteHidden)
+	args.spacerAfterNoDestinationNote = Kit.Spacer(order, NoDestinationNoteHidden)
 	order = order + 1
 	order = ns.AddSendAllDestinationRow(args, order, IsAutomationOff)
-	args.spacerAfterSendAll = HideWhenAutomationOff(ns.OptionsSpacer(order))
+	args.spacerAfterSendAll = HideWhenAutomationOff(Kit.Spacer(order))
 	order = order + 1
 	order = AddDestinationRows(args, order)
 
 	-- Group Loot Settings
-	args.spacerBeforeCurrentLoot = ns.OptionsSpacer(order)
+	args.spacerBeforeCurrentLoot = Kit.Spacer(order)
 	order = order + 1
-	args.currentLootHeader = ns.OptionsHeader(L["MASTER_LOOTER_CURRENT_LOOT_HEADER"], order)
+	args.currentLootHeader = Kit.Header(L["MASTER_LOOTER_CURRENT_LOOT_HEADER"], order)
 	order = order + 1
-	args.spacerAfterCurrentLootHeader = ns.OptionsSpacer(order)
+	args.spacerAfterCurrentLootHeader = Kit.Spacer(order)
 	order = order + 1
 	order = ns.AddLeaderNoteRow(args, order)
 	order = ns.AddLootMethodRow(args, order)
-	args.spacerAfterLootType = ns.OptionsSpacer(order, ns.IsLootThresholdIrrelevant)
+	args.spacerAfterLootType = Kit.Spacer(order, ns.IsLootThresholdIrrelevant)
 	order = order + 1
 	order = ns.AddLootThresholdRow(args, order)
-	args.spacerBeforePopupToggle = ns.OptionsSpacer(order)
+	args.spacerBeforePopupToggle = Kit.Spacer(order)
 	order = order + 1
-	ns.AddPopupToggleRow(args, order)
+	order = ns.AddPopupToggleRow(args, order)
+
+	-- Tradable Gear Tint
+	args.spacerBeforeTradableTint = Kit.Spacer(order)
+	order = order + 1
+	args.tradableTintHeader = Kit.Header(L["TRADABLE_TINT_HEADER"], order)
+	order = order + 1
+	args.spacerAfterTradableTintHeader = Kit.Spacer(order)
+	order = order + 1
+	args.tradableTintDesc = Kit.Desc(L["TRADABLE_TINT_DESCRIPTION"], order)
+	order = order + 1
+	args.spacerAfterTradableTintDesc = Kit.Spacer(order)
+	order = order + 1
+	args.tradableTintRow = BuildTradableTintRow(order)
 
 	return {
 		type = "group",

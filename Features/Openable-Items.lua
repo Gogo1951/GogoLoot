@@ -31,8 +31,12 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
+--[[
+    The two choices a row offers (maintainer, 2026-09-28). Open when Unlocked
+    opened exactly as Open does, and the three Ignores only changed the reason
+    printed, so the reasons live on as tags rather than as choices.
+]]
 local VALID_ACTIONS = {
 	[ns.OPENING_OPEN] = true,
 	[ns.OPENING_IGNORE] = true,
@@ -140,7 +144,7 @@ local function AfterOpeningActionsChanged()
 	if ns.ScheduleOpeningScan then
 		ns.ScheduleOpeningScan(true)
 	end
-	AceConfigRegistry:NotifyChange(ns.OPTIONS_REGISTRY.OpenableItems)
+	ns.RefreshSettings()
 end
 
 ---@param itemIdentifier number

@@ -22,8 +22,8 @@
     same rules, with the caller keeping the final say.
 
     Only CHAT_MSG_SYSTEM is trusted for a roll: anyone can type "Aero rolls
-    100 (1-100)" in normal chat. The line is read through the client's own
-    RANDOM_ROLL_RESULT, so every locale works.
+    100 (1-100)" in normal chat. The line is read by ns.ParseRandomRollMessage
+    (Features/Utilities-Chat-Lines.lua), so every locale works.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -59,44 +59,6 @@ end
 ]]
 local IsSecretValue = issecretvalue or function()
 	return false
-end
-
---------------------------------------------------------------------------------
--- Reading /roll
---------------------------------------------------------------------------------
-
-local rollPattern, rollArgumentOrder = ns.BuildFormatPattern(RANDOM_ROLL_RESULT)
-if rollPattern then
-	rollPattern = "^" .. rollPattern .. "$"
-end
-
---[[
-    Who rolled, what they got, and the range they rolled in, from a
-    CHAT_MSG_SYSTEM line; nil for any other line. The arguments are read in the
-    format's own order, whatever order the translation prints them in.
-]]
----@param message any
----@return string|nil playerName
----@return number|nil roll
----@return number|nil low
----@return number|nil high
-function ns.ParseRandomRollMessage(message)
-	if not rollPattern or type(message) ~= "string" or IsSecretValue(message) then
-		return nil
-	end
-	if not string.find(message, rollPattern) then
-		return nil
-	end
-	local captures = { string.match(message, rollPattern) }
-	local byArgument = {}
-	for index, argument in ipairs(rollArgumentOrder) do
-		byArgument[argument] = captures[index]
-	end
-	local roll, low, high = tonumber(byArgument[2]), tonumber(byArgument[3]), tonumber(byArgument[4])
-	if not byArgument[1] or not roll then
-		return nil
-	end
-	return byArgument[1], roll, low, high
 end
 
 --------------------------------------------------------------------------------

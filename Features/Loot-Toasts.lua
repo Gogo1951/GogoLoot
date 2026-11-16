@@ -59,14 +59,14 @@ local ICON_ART_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon
     A dark shade behind each row, darkest at the icon and fading to nothing a
     few characters past the end of the text, so the text holds up over a bright
     world without a hard box edge. BACKDROP_TAIL_UNITS is that fade-out run
-    beyond the text, on the grid (48 at the default size). The shade starts
+    beyond the text, on the grid (64 at the default size). The shade starts
     under the middle of the icon, so its square end stays hidden behind the
     rounded frame.
 ]]
 local BACKDROP_ALPHA = 0.7
 local BACKDROP_DARK = CreateColor(0, 0, 0, BACKDROP_ALPHA)
 local BACKDROP_CLEAR = CreateColor(0, 0, 0, 0)
-local BACKDROP_TAIL_UNITS = 48
+local BACKDROP_TAIL_UNITS = 64
 
 --[[
     Motion. A new row slides in from the side the stack lines up on and fades
@@ -657,11 +657,11 @@ local function EnterToast(icon, text, itemLink, countItem, countQuantity, qualit
 end
 
 --[[
-    Rows enter one per ns.LOOT_TOAST_ENTRY_INTERVAL. A row with nothing ahead of it and no
-    row just entered goes up at once; anything else waits its turn in
-    `pending`, which drains on one timer at a time. Bag Count is read as a row
-    enters, not as it queues, so a queued row still lands on the true count.
-    Turning the toasts off empties the queue.
+    Rows enter one per ns.LOOT_TOAST_ENTRY_INTERVAL. A row with nothing ahead
+    of it and no row just entered goes up at once; anything else waits its turn
+    in `pending`, which drains on one timer at a time. Bag Count is read as a
+    row enters, not as it queues, so a queued row still lands on the true
+    count. Turning the toasts off empties the queue.
 ]]
 local pending = {}
 local lastEntryAt = nil
@@ -713,22 +713,22 @@ local function LooterNameColor(looterName)
 end
 
 --[[
-    The square brackets a link carries are chat punctuation, marking where a link
-    starts and ends in running text; a toast is one item on its own line, so they
-    go. The escape sequence stays, so the text is still a real link.
-
-    A group member's loot names its looter after the item, so every row's item
-    still starts at its icon. An item won on a roll adds the winning roll, in
-    silver, after the looter, or after "You Won" when it was the player's,
-    while Winning Roll is on for that side.
-]]
---[[
     Another member's item may not be cached yet, and its bind type, which the
     Bind on Pickup and Quest rows read, is unknown until it is. One the filters
     turn down while uncached is asked for and judged once more a moment later.
 ]]
 local GROUP_ITEM_RETRY_SECONDS = 1
 
+--[[
+    The square brackets a link carries are chat punctuation, marking where a
+    link starts and ends in running text; a toast is one item on its own line,
+    so they go. The escape sequence stays, so the text is still a real link.
+
+    A group member's loot names its looter after the item, so every row's item
+    still starts at its icon. An item won on a roll adds the winning roll, in
+    silver, after the looter, or after "You Won" when it was the player's,
+    while Winning Roll is on for that side.
+]]
 ---@param itemLink string
 ---@param quantity number|nil
 ---@param looterName string|nil # nil for the player's own loot
@@ -780,16 +780,6 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    While the handle is up it stands in one "Example Item" sample per row the
-    cap allows, each in a random quality at or above the lowest quality ticked
-    on a Mine rarity row (Poor when none is), with a
-    potion icon to match. The preview shows at once where the stack sits, how
-    many rows it holds, what the font looks like, and which qualities the
-    Mine rarity rows let through. The samples are rebuilt on every appearance change,
-    and the reshuffled colors make the preview visibly answer each one. Samples
-    never fade; they go when the handle does.
-]]
---[[
     ReleaseLootToast takes the frame out of `samples` itself, so drain the tail.
     Its caller, ns.RefreshLootToastSamples, restacks once afterwards.
 ]]
@@ -835,6 +825,16 @@ local function LowestMineQuality()
 	return math.min(lowest or 0, MAX_SAMPLE_QUALITY)
 end
 
+--[[
+    While the handle is up it stands in one "Example Item" sample per row the
+    cap allows, each in a random quality at or above the lowest quality ticked
+    on a Mine rarity row (Poor when none is), with a potion icon to match. The
+    preview shows at once where the stack sits, how many rows it holds, what
+    the font looks like, and which qualities the Mine rarity rows let through.
+    The samples are rebuilt on every appearance change, and the reshuffled
+    colors make the preview visibly answer each one. Samples never fade; they
+    go when the handle does.
+]]
 ---@return nil
 function ns.RefreshLootToastSamples()
 	ReleaseSamples()

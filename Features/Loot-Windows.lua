@@ -148,7 +148,7 @@ function ns.LootWindowIconButton(parent, texture, size, tooltip, onClick)
 	button:SetSize(size, size)
 	button:SetNormalTexture(texture)
 	button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
-	-- Greyed out while it can't be used, such as the top row's Move Up.
+	-- Grayed out while it can't be used, such as the top row's Move Up.
 	button:SetDisabledTexture(texture)
 	local disabled = button:GetDisabledTexture()
 	if disabled then

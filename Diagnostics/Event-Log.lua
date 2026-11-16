@@ -41,6 +41,50 @@ ns.MESSAGE_ID_FILTERED_EVENTS = {
 }
 
 --[[
+    A secret value (WoW Forever) errors when compared, concatenated or used as
+    a table key, so the log never turns one into text. Clients without secret
+    values have no issecretvalue, and every value there is plain.
+]]
+local IsSecretValue = rawget(_G, "issecretvalue")
+
+local function IsPlain(value)
+	return not (IsSecretValue and IsSecretValue(value))
+end
+
+-- The counter id a secret message id folds into, since a secret can't key a table.
+local SECRET_ID = 0
+
+--[[
+    Folds one uncorrelated firing into its counter: the first-seen text plus a
+    count. Counters are keyed by event, then id, so one id arriving on two
+    events stays two rows. A secret id counts under SECRET_ID with the text
+    <secret>.
+]]
+local function CountUncorrelated(event, id, text)
+	local suppressed = ns.diagnostics.suppressed
+	if not suppressed then
+		return
+	end
+	if not IsPlain(id) then
+		id, text = SECRET_ID, "<secret>"
+	elseif not IsPlain(text) then
+		text = "<secret>"
+	end
+	local counters = suppressed[event]
+	if not counters then
+		counters = {}
+		suppressed[event] = counters
+	end
+	local entry = counters[id]
+	if entry then
+		entry.count = entry.count + 1
+		return
+	end
+	local raw = string.sub(tostring(text or ""), 1, EVENT_LOG_MAX_ARG_LENGTH)
+	counters[id] = { text = (raw:gsub("|", "||")), count = 1 }
+end
+
+--[[
     The ids GogoLoot acts on, which are the filter's allowlist: the master-loot
     errors and the trade results, resolved through the same one walk the live
     handlers use, and the pickups the bags refused (inventory full, which also
@@ -74,11 +118,12 @@ end
 
 --[[
     Per-firing filter for the events above. A firing whose id the add-on does
-    not correlate folds into a per-id counter (first-seen text plus a count)
-    rendered as one block at the end of the report, so firehose traffic can't
-    evict the entries the log exists to carry. A firing carrying no numeric id
-    in the filtered position is unclassifiable, and unclassifiable is signal:
-    it logs verbatim.
+    not correlate folds into its counter, rendered as one block at the end of
+    the report, so firehose traffic can't evict the entries the log exists to
+    carry. A secret id counts too, since it can't be checked against the
+    allowlist. A plain firing carrying no numeric id in the filtered position is
+    unclassifiable, and unclassifiable is signal: it logs verbatim. The
+    counter's text is the argument after the id, or blank when none follows.
 
     Returns true when the firing was counted and must not reach the buffer.
 ]]
@@ -88,24 +133,14 @@ function ns:SuppressUncorrelatedMessage(event, ...)
 		return false
 	end
 	local messageID = select(idPosition, ...)
-	if type(messageID) ~= "number" or IsCorrelatedMessageId(messageID) then
+	if IsPlain(messageID) and (type(messageID) ~= "number" or IsCorrelatedMessageId(messageID)) then
 		return false
 	end
-	local suppressed = ns.diagnostics.suppressed
-	if not suppressed then
-		return true
-	end
-	local entry = suppressed[messageID]
-	if entry then
-		entry.count = entry.count + 1
-		return true
-	end
-	local text = ""
+	local text
 	if select("#", ...) > idPosition then
-		local raw = string.sub(tostring((select(idPosition + 1, ...))), 1, EVENT_LOG_MAX_ARG_LENGTH)
-		text = (raw:gsub("|", "||"))
+		text = select(idPosition + 1, ...)
 	end
-	suppressed[messageID] = { event = event, text = text, count = 1 }
+	CountUncorrelated(event, messageID, text)
 	return true
 end
 
@@ -124,6 +159,8 @@ end
     Snapshots arguments to strings immediately -- never retain references, since
     some events carry frames or tables that would leak memory or go stale. Caps
     the arg count and per-argument byte length so a single entry can't run away.
+    A secret argument (WoW Forever) can't be turned into text, so it records as
+    <secret>.
 
     Pipes are escaped (| -> ||) AFTER the length cut so each argument shows
     verbatim in the report editbox instead of rendering as a clickable item
@@ -140,8 +177,13 @@ local function AppendEntry(event, ...)
 		if index > EVENT_LOG_MAX_ARGS then
 			break
 		end
-		local raw = string.sub(tostring((select(index, ...))), 1, EVENT_LOG_MAX_ARG_LENGTH)
-		parts[index] = (raw:gsub("|", "||"))
+		local value = select(index, ...)
+		if IsPlain(value) then
+			local raw = string.sub(tostring(value), 1, EVENT_LOG_MAX_ARG_LENGTH)
+			parts[index] = (raw:gsub("|", "||"))
+		else
+			parts[index] = "<secret>"
+		end
 	end
 	log[#log + 1] = string.format("%.3f %s(%s)", GetTime(), event, table.concat(parts, ", "))
 	if #log > EVENT_LOG_SIZE then
@@ -185,8 +227,10 @@ local function AppendSuppressedSummary(lines)
 		return
 	end
 	local rows = {}
-	for messageID, entry in pairs(suppressed) do
-		rows[#rows + 1] = { id = messageID, entry = entry }
+	for event, counters in pairs(suppressed) do
+		for id, entry in pairs(counters) do
+			rows[#rows + 1] = { event = event, id = id, entry = entry }
+		end
 	end
 	if #rows == 0 then
 		return
@@ -195,12 +239,19 @@ local function AppendSuppressedSummary(lines)
 		if a.entry.count ~= b.entry.count then
 			return a.entry.count > b.entry.count
 		end
+		if a.event ~= b.event then
+			return a.event < b.event
+		end
 		return a.id < b.id
 	end)
 	lines[#lines + 1] = ""
 	lines[#lines + 1] = "Suppressed uncorrelated traffic:"
 	for _, row in ipairs(rows) do
-		lines[#lines + 1] = string.format("%s(%d, %s) x%d", row.entry.event, row.id, row.entry.text, row.entry.count)
+		if row.id == SECRET_ID then
+			lines[#lines + 1] = string.format("%s(<secret>) x%d", row.event, row.entry.count)
+		else
+			lines[#lines + 1] = string.format("%s(%d, %s) x%d", row.event, row.id, row.entry.text, row.entry.count)
+		end
 	end
 end
 

@@ -8,7 +8,7 @@ GogoLoot speeds up looting, rolls and opens for you, and hands out loot as maste
 
 1. Log in after updating: chat says once that Automated Rolls is now on.
 2. Open **Automated Rolls → Character Rules**: the armor, weapon types and stats your class uses start ticked, and **Reset to Class Defaults** puts back anything you change.
-3. In a Group Loot party, gear your character wants keeps its roll window and the rest is greeded, just as **Sanity Check** at the bottom of Character Rules says.
+3. In a Group Loot party, gear your character wants keeps its roll window and the rest is greeded, just as the **Loot Roll Sanity Check** page says (also linked from the mini-map menu); **Pick New Drops** draws another ten for Trash, Dungeon Bosses and Raid Bosses, each with at least two greens and two blues, and two Bind on Equip epics in Trash and Raid Bosses.
 4. While leveling, loot gear five or more levels below you: it's greeded, until you set **Automatically Greed on Low-Level Gear** to Off.
 5. In a group, a Bind on Pickup item keeps its roll window until you turn on **Include Bind on Pickup** under Automated Rolls.
 6. Set a clam to **Ignore** on the **Openables List**, then fish one up with **Enable Speedy Loot** on: it goes into your bags and stays shut.

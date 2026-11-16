@@ -359,7 +359,7 @@ end
 
 -- One Everything Else field for a character: what it saved, or ns.CHARACTER_RULE_UNWANTED_DEFAULTS.
 ---@param rules table|nil
----@param field string # "action", "threshold" or "lowLevelGear"
+---@param field string # "action" or "lowLevelGear"
 ---@return any
 function ns.CharacterRuleUnwanted(rules, field)
 	local saved
@@ -448,8 +448,8 @@ ns.CHARACTER_RULE_UNWANTED = "UNWANTED"
     What this character's rules say about an item: WANTED, UNWANTED, or nil
     for an item they don't judge (see ns.GetCharacterRuleGearRow). Wanted is a
     ticked type, or a typeless slot, that carries a ticked stat or no stat
-    Character Rules reads at all. The stat read scans a tooltip, so it runs only once the
-    type has passed. Also returns the gear row, for Diagnostics.
+    Character Rules reads at all. The stat read scans a tooltip, so it runs
+    only once the type has passed. Also returns the gear row, for Diagnostics.
 ]]
 ---@param itemInformation table
 ---@param itemLink string
@@ -503,11 +503,15 @@ function ns.DropOldCharacterRules()
 			--[[
                 Include Bind on Pickup moved to the Automated Rolls panel, for
                 every character at once, and the max-level box became
-                Automatically Greed on Low-Level Gear.
+                Automatically Greed on Low-Level Gear. Everything Else's own
+                Up to Quality went too: it fought the In Party and In Raid
+                quality, which now caps Character Rules as well (maintainer,
+                2026-11-15).
             ]]
 			if type(rules.unwanted) == "table" then
 				rules.unwanted.bindOnPickup = nil
 				rules.unwanted.greedBindOnEquipAtMaxLevel = nil
+				rules.unwanted.threshold = nil
 				if next(rules.unwanted) == nil then
 					rules.unwanted = nil
 				end
@@ -531,10 +535,6 @@ end
 ]]
 local function OnPlayerLogin()
 	EquipLinePatterns() -- asks the client for every Equip spell's description, ahead of the first roll
-	-- The level at this login, for another character's Sanity Check on the Character Rules panel.
-	if ns.db then
-		ns.db.char.level = UnitLevel("player")
-	end
 	if not ns.db or not ns.db.profile.autoGreed or ns.db.global.automatedRollsOnNoticeShown then
 		return
 	end

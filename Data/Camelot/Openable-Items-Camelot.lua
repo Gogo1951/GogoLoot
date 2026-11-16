@@ -247,7 +247,7 @@ ns.OPENABLE_ITEMS = {
 How We Got the Data
 
 Last Validated
-	2026-11-07, WoW Forever 1.60.1.70862
+	2026-11-16, WoW Forever 1.60.1.70938
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
@@ -256,6 +256,7 @@ Notes
 	- Season of Discovery's items, the Classic Era IDs first seen after build 1.14.4.51829, are left out.
 	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): this client's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
 	- Rechecked against Forever's tables at build 1.60.1.70862, which flag every row here but 285366 (Whirleygig's Supply Stash, which its ItemSparse still lacks). Every other openable item in them is a test or placeholder item, a Season of Discovery item or a "Level N" box, except Scorched Rocket Boots (7190), added then: Goblin Rocket Boots can turn into it through their Rocket Boots Malfunction spell (8893). It has no lock and isn't Bind on Pickup, and no source here says what it holds, so it sits on ns.OPENING_OPEN.
+	- Rechecked against Forever's tables at build 1.60.1.70938, which flag the same openable items as build 1.60.1.70862, with the same names.
 	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
 	- No client table records what a container holds or drops from, so those come from the CMaNGOS Classic world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside. README-Technical describes the method.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
@@ -275,6 +276,8 @@ wago.tools
 	https://wago.tools/db2/Item?build=1.60.1.70862
 	https://wago.tools/db2/SpellEffect?build=1.60.1.70862
 	https://wago.tools/db2/SpellName?build=1.60.1.70862
+	https://wago.tools/db2/ItemSparse?build=1.60.1.70938
+	https://wago.tools/db2/Item?build=1.60.1.70938
 
 QuestieDB
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Forever/foreverItemDB.lua

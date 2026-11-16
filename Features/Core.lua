@@ -2,7 +2,6 @@
 -- GogoLoot Core
 --------------------------------------------------------------------------------
 local ADDON_NAME, ns = ...
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --------------------------------------------------------------------------------
 -- Version
@@ -62,12 +61,14 @@ end
 --[[
     GogoLootDB is an AceDB-3.0 database: every profile is stored account-wide in
     GogoLootDB.profiles, each character's active profile choice in
-    GogoLootDB.profileKeys, and loot policy lives inside the active profile
-    (ns.db.profile). The presentation keys and the account-wide records (the
-    global table in Data/Default-Settings.lua) live in ns.db.global instead, so
+    GogoLootDB.profileKeys. Loot policy, the mini-map button and the loot
+    toasts' look live inside the active profile (ns.db.profile). The
+    account-wide records (the global table in Data/Default-Settings.lua: the
+    notices, Speedy Loot, the Roll Macro, the Openables List changes and where
+    the toasts and loot windows sit) live in ns.db.global instead, so
     switching, resetting, or deleting a profile never touches them: they are
     decisions about the client, the items and the screen rather than about a
-    loot setup.
+    loot setup. What belongs to one character lives in ns.db.char.
 
     Defaults come from ns.DATABASE_DEFAULTS in Data/Default-Settings.lua. There
     is no manual defaults merge anywhere in the add-on.
@@ -94,11 +95,12 @@ end
     caches or displays profile state is repainted here: the item lists re-seed
     if empty, Auto Loot is enforced if the new profile opens containers, the
     opening queue is rebuilt under the new profile's rules, the loot toasts take
-    the new profile's look, the minimap icon re-reads autoGreed, the General tab's loot lines follow a changed Loot Toasts setting, the trade
-    checkbox re-reads announceTrade, and every options panel repaints. The
-    minimap position is account-wide (ns.db.global.minimap), so it is not
-    re-pointed on a profile switch; the icon refresh only reflects the new
-    profile's autoGreed state.
+    the new profile's look, the minimap icon re-reads autoGreed, the General
+    tab's loot lines follow a changed Loot Toasts setting, the trade checkbox
+    re-reads announceTrade, the mini-map button moves to the new profile's
+    position (ns.db.profile.minimap) and takes its Enable Mini-map Button
+    preference, and every options panel, the menu and the icon repaint through
+    ns.RefreshSettings().
 ]]
 ---@return nil
 function ns:ApplyProfile()
@@ -112,18 +114,19 @@ function ns:ApplyProfile()
 	if ns.ApplyLootToastSettings then
 		ns.ApplyLootToastSettings()
 	end
-	if ns.UpdateMinimapIcon then
-		ns:UpdateMinimapIcon()
+	if ns.ApplyMinimapButton then
+		ns:ApplyMinimapButton()
 	end
 	if ns.SyncStandardLootMessages then
 		ns.SyncStandardLootMessages()
 	end
+	if ns.SyncBlizzardRollWonWindow then
+		ns.SyncBlizzardRollWonWindow()
+	end
 	if ns.SyncTradeCheckbox then
 		ns:SyncTradeCheckbox()
 	end
-	for _, registryName in pairs(ns.OPTIONS_REGISTRY) do
-		AceConfigRegistry:NotifyChange(registryName)
-	end
+	ns.RefreshSettings()
 end
 
 --------------------------------------------------------------------------------
@@ -389,6 +392,63 @@ local function PruneOtherClientCharacters()
 	end
 end
 
+--[[
+    MIGRATION (remove after 2026-12-16): the mini-map button's position and
+    its Enable Mini-map Button preference moved from ns.db.global.minimap to
+    ns.db.profile.minimap, since GogoLoot keeps the Simple save model (Style
+    Guide → MINIMAP BUTTON → Building the Button). The old table is copied to
+    every saved profile that has none of its own, so no button moves, then
+    dropped; with it gone, this does nothing on later loads.
+]]
+---@return nil
+local function MoveMinimapPositionToProfile()
+	local sv = ns.db.sv
+	local old = sv and type(sv.global) == "table" and sv.global.minimap
+	if type(old) ~= "table" then
+		return
+	end
+	local current = ns.db.profile.minimap
+	if next(current) == nil then
+		for key, value in pairs(old) do
+			current[key] = value
+		end
+	end
+	for _, profile in pairs(sv.profiles or {}) do
+		if type(profile) == "table" and profile.minimap == nil then
+			local copy = {}
+			for key, value in pairs(old) do
+				copy[key] = value
+			end
+			profile.minimap = copy
+		end
+	end
+	sv.global.minimap = nil
+end
+
+--[[
+    MIGRATION (remove after 2026-12-16): Include Bind on Pickup split from one
+    switch, rollBindOnPickup, into one per group context, rollBindOnPickupParty
+    and rollBindOnPickupRaid. Every saved profile that set the old switch gets
+    its value in both, so nothing rolls differently, and the old key is
+    dropped; with it gone, this does nothing on later loads.
+]]
+---@return nil
+local function SplitBindOnPickupByContext()
+	local sv = ns.db.sv
+	for _, profile in pairs(sv and sv.profiles or {}) do
+		if type(profile) == "table" and profile.rollBindOnPickup ~= nil then
+			-- rawget: the current profile reads AceDB's defaults through its metatable, which would hide a missing key.
+			if rawget(profile, "rollBindOnPickupParty") == nil then
+				profile.rollBindOnPickupParty = profile.rollBindOnPickup
+			end
+			if rawget(profile, "rollBindOnPickupRaid") == nil then
+				profile.rollBindOnPickupRaid = profile.rollBindOnPickup
+			end
+			profile.rollBindOnPickup = nil
+		end
+	end
+end
+
 local function OnAddonLoaded(loadedAddonName)
 	if loadedAddonName ~= ADDON_NAME then
 		return
@@ -399,6 +459,8 @@ local function OnAddonLoaded(loadedAddonName)
 	RebuildEmptyItemLists()
 	RecordCharacterClass()
 	ns.DropOldCharacterRules() -- MIGRATION (remove after 2026-12-07)
+	MoveMinimapPositionToProfile() -- MIGRATION (remove after 2026-12-16)
+	SplitBindOnPickupByContext() -- MIGRATION (remove after 2026-12-16)
 	for _, msg in ipairs({ "OnProfileChanged", "OnProfileReset", "OnProfileCopied" }) do
 		ns.db.RegisterCallback(ns, msg, "ApplyProfile")
 	end

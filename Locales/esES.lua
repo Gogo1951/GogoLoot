@@ -66,6 +66,8 @@ L["MESSAGE_ITEM_NOT_OPENABLE"] =
 L["MESSAGE_ROLL_PRINT"] = "Has elegido %s para %s."
 -- The same after a Pass. Argument: the item's link.
 L["MESSAGE_ROLL_PASS_PRINT"] = "Has dejado pasar %s."
+-- Automated Rolls' Safety Warning, on entering a dungeon or raid. Arguments: the game's word for the roll (Need or Pass), then the highest quality it rolls on, in that quality's color.
+L["MESSAGE_ROLL_SAFETY_WARNING"] = "¡Atención! Las tiradas automáticas elegirán %s en objetos hasta %s aquí."
 --[[
     Hide Roll Messages' winner summary. Arguments: the winner, the item's link,
     then the winning roll as LOOT_TOASTS_ROLL_RESULT words it ("Greed 95"). The
@@ -120,10 +122,10 @@ L["ERROR_DISTRIBUTION_FAILED"] = "No se pudo entregar el botín a %s: %s"
 -- The first feature panel, holding the one Speedy Loot switch.
 L["TAB_SPEEDY_LOOT"] = "Despojo rápido"
 L["TAB_AUTOMATED_ROLLS"] = "Tiradas automáticas"
-L["TAB_ITEM_OVERRIDES"] = "Excepciones de objetos"
+L["TAB_ITEM_OVERRIDES"] = "Excepciones globales de objetos"
 -- A child panel of Automated Rolls: each character's rolls by the stats and gear types it wants.
-L["TAB_CHARACTER_RULES"] = "Reglas por personaje"
--- The panel for everything GogoLoot posts to chat; also its row in the mini-map button's tooltip.
+L["TAB_CHARACTER_RULES"] = "Excepciones de personaje"
+-- The panel for everything GogoLoot posts to chat; also its block in the mini-map button's menu.
 L["TAB_ANNOUNCEMENTS"] = "Anuncios de botín"
 -- Headers of the two sections on the Loot Announcements panel; Trade Announcements also titles the trade window checkbox's tooltip.
 L["TAB_TRADE_ANNOUNCEMENTS"] = "Anuncios de comercio"
@@ -144,45 +146,57 @@ L["TAB_LOOT_DESTINATIONS"] = "Destinos del botín"
 L["TAB_IGNORE_LIST"] = "Lista de ignorados"
 -- The panel after Automated Master Looting, named for its switch, Enable Roll Macro.
 L["TAB_ROLL_MACRO"] = "Macro de tirada"
+L["TAB_SANITY_CHECK"] = "Comprobación de tiradas de botín"
 -- The panel after Roll Macro, for the Loot Master and Loot Tracker windows; also the Loot Master window's title.
 L["TAB_LOOT_MASTER"] = "Gestor de botín"
-
--- A child panel's title where the Settings tree can't nest it: the parent's title, then its own.
-L["TAB_NESTED_FORMAT"] = "%s: %s"
 
 --------------------------------------------------------------------------------
 -- Minimap Button
 --------------------------------------------------------------------------------
 
-L["STATUS_ENABLED"] = "Activado"
-L["STATUS_DISABLED"] = "Desactivado"
 -- Automated Opening is on but waiting for empty bag slots.
-L["STATUS_PAUSED"] = "En pausa"
+L["MENU_PAUSED"] = "En pausa"
 
 --[[
-    The tooltip titles each feature with its options-panel name, and gives
-    each a description of its own, two lines at most: the panels' longer text
-    doesn't fit a tooltip.
+    The mini-map menu titles each feature with its options-panel name, and
+    gives each a description of its own, two lines at most: the panels' longer
+    text doesn't fit the menu.
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Tira por ti en los objetos elegibles hasta la calidad que elijas."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Abre almejas, cajones, monederos y cajas fuertes desbloqueadas de tus bolsas."
+-- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+L["MENU_OPENING_WAITING"] = "Esperando %d huecos libres en las bolsas."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 	"Publica en el chat los resúmenes de comercio y los repartos del maestro despojador."
-L["MINIMAP_AUTOMATED_MASTER_LOOTING_DESCRIPTION"] = "Reparte el botín a los jugadores que elegiste para cada calidad."
 --[[
-    The tooltip's read-back of each group context's roll, one line each under
-    the description. Arguments: the game's own word for Party or Raid, the roll,
-    then (all but Manual) the highest quality it rolls on.
+    The menu's read-back of each group context's roll, on the right of its
+    Party or Raid row. Arguments: the roll, then the highest quality it rolls
+    on. Manual shows the roll alone.
 ]]
-L["MINIMAP_ROLLS_SETTING"] = "%s: %s, %s"
-L["MINIMAP_ROLLS_SETTING_MANUAL"] = "%s: %s"
+L["MENU_ROLLS_SETTING"] = "%s, %s"
+-- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
+L["MENU_ROLLS_AUTOMATION"] = "Automatización"
+L["MENU_ROLLS_THRESHOLD"] = "Umbral"
+--[[
+    Under the flyouts' choices, above links to both pages. Arguments:
+    TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
+    Overrides is off, the second line names TAB_CHARACTER_RULES alone.
+]]
+L["MENU_ROLLS_OVERRIDES_NOTE"] = "%s y %s siguen aplicándose."
+L["MENU_ROLLS_OVERRIDE_NOTE"] = "%s siguen aplicándose."
+L["MENU_ON"] = "Activado"
+L["MENU_OFF"] = "Desactivado"
+L["MENU_MORE_FEATURES"] = "Más funciones"
+L["MENU_FEATURE_COUNT_ON"] = "%d activadas"
+L["MENU_FEATURE_COUNT_OFF"] = "%d desactivadas"
 
-L["MINIMAP_LEFT_CLICK"] = "Clic izquierdo"
-L["MINIMAP_RIGHT_CLICK"] = "Clic derecho"
-L["MINIMAP_SHIFT_LEFT_CLICK"] = "Mayús + clic izquierdo"
-L["MINIMAP_SHIFT_RIGHT_CLICK"] = "Mayús + clic derecho"
-L["MINIMAP_TOGGLE"] = "Activar/desactivar"
+L["MENU_CLICK_LEFT"] = "Clic izquierdo"
+L["MENU_CLICK_RIGHT"] = "Clic derecho"
+L["MENU_CLICK_SHIFT_LEFT"] = "Mayús + clic izquierdo"
+-- Middle-Click opens the loot windows, only while they are loaded.
+L["MENU_CLICK_MIDDLE"] = "Clic central"
+L["MENU_TOGGLE"] = "Activar/desactivar"
 
 -- Heads the list of lockboxes in the bags still waiting to be unlocked.
 L["MINIMAP_LOCKED_ITEMS"] = "Objetos bloqueados"
@@ -190,19 +204,11 @@ L["MINIMAP_LOCKED_ITEMS"] = "Objetos bloqueados"
 L["MINIMAP_LOCKED_ITEMS_HINT"] = "Un %s puede forzarlos por ti."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Usa %s para abrirlos."
-L["MINIMAP_OPTIONS"] = "Opciones de GogoLoot"
-L["MINIMAP_OPTIONS_KEYBIND"] = "Mayús + clic central"
+L["MENU_OPTIONS"] = "Opciones de GogoLoot"
+L["MENU_CLICK_SHIFT_MIDDLE"] = "Mayús + clic central"
 
--- Heads the items on the Roll List still on a trade clock, soonest first, under Locked Items.
-L["MINIMAP_TRADABLE_LOOT"] = "Botín comerciable"
--- Under the first few of them. Argument: how many more there are.
-L["MINIMAP_TRADABLE_MORE"] = "%d más"
--- The loot windows' block: its title, how many items are on the Roll List, its description and its click.
-L["MINIMAP_LOOT_WINDOWS"] = "Gestor de botín y Rastreador de botín"
-L["MINIMAP_TO_HAND_OUT"] = "%d por repartir"
-L["MINIMAP_LOOT_WINDOWS_DESCRIPTION"] = "Sortea con tiradas lo que aún puedes comerciar y sigue cada tirada."
-L["MINIMAP_MIDDLE_CLICK"] = "Clic central"
-L["MINIMAP_OPEN"] = "Abrir"
+-- Under the first eight rows of a menu list. Argument: how many more there are.
+L["MENU_MORE"] = "%d más"
 
 --------------------------------------------------------------------------------
 -- Shared Labels
@@ -223,8 +229,8 @@ L["ITEM_QUANTITY_LINK"] = "%sx%d"
 
 --[[
     The add box above every item list: its tooltip's title and text (the
-    Openables List and Item Overrides bring text of their own), the hint the
-    box shows while empty, and its button.
+    Openables List and Global Item Overrides bring text of their own), the
+    hint the box shows while empty, and its button.
 ]]
 L["ITEM_LIST_ADD"] = "Añadir objeto"
 L["ITEM_LIST_ADD_DESCRIPTION"] = "Escribe el ID de un objeto o arrastra un objeto aquí para añadirlo a la lista."
@@ -236,7 +242,7 @@ L["ITEM_LIST_FILTER_PLACEHOLDER"] = "Filtrar objetos..."
 L["ITEM_LIST_FILTER_DESCRIPTION"] =
 	"Muestra solo los objetos cuyo nombre, ID, ajuste o etiqueta contenga lo que escribas."
 L["ITEM_LIST_NO_MATCHES"] = "Ningún objeto coincide con el filtro."
--- Shown in place of the rows when the Ignore List or Item Overrides is empty, since both refill at login.
+-- Shown in place of the rows when the Ignore List or Global Item Overrides is empty, since both refill at login.
 L["ITEM_LIST_EMPTY_REFILLS"] =
 	"Esta lista está vacía, así que sus valores predeterminados volverán la próxima vez que entres en el juego. Restaurar predeterminados los recupera ahora."
 
@@ -249,7 +255,7 @@ L["ITEM_LIST_KIND_DESCRIPTION"] = "Muestra todos los objetos de la lista, o solo
 
 --[[
     The Add from Bags dropdown beside every item list's add box: its resting
-    text and tooltip, then what it reads, greyed out, when everything carried
+    text and tooltip, then what it reads, grayed out, when everything carried
     is already on the list. The Openables List brings a tooltip of its own.
 ]]
 L["ITEM_LIST_ADD_FROM_BAGS"] = "Añadir desde las bolsas"
@@ -261,24 +267,36 @@ L["ITEM_LIST_BAGS_EMPTY_DESCRIPTION"] = "Todos los objetos que llevas ya están 
 L["ITEM_LIST_RESTORE"] = "Restaurar predeterminados"
 
 -- Placeholder shown in the item lists until the client caches an item's info.
-L["ITEM_LOADING"] = "Cargando... (ID: %d)"
+L["LOADING_ITEM"] = "Cargando ID: %d"
 
 --[[
-    Appended to the Automated Rolls description. Item Overrides is the one way
-    a quest item gets rolled on, and Item Overrides or Include Bind on Pickup
-    the way a Bind on Pickup item does; nothing ever rolls on the rest.
+    Appended to the Automated Rolls description. Global Item Overrides is the
+    one way a quest item gets rolled on, and Global Item Overrides or Include
+    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
+    the rest.
 ]]
 L["SAFETY_SKIP_NOTE"] =
-	"Nunca tira en recetas, libros, monturas, mascotas ni legendarios, solo tira en objetos de misión si están en Excepciones de objetos, y solo tira en objetos ligados al recogerlos si están en Excepciones de objetos o Incluir ligados al recogerlos está activado."
+	"Nunca tira en recetas, libros, monturas, mascotas ni legendarios, solo tira en objetos de misión si están en Excepciones globales de objetos, y solo tira en objetos ligados al recogerlos si están en Excepciones globales de objetos o Incluir ligados al recogerlos está activado."
 
 -- The Automated Master Looting variant: quest items are a toggle there, so they are not on this list.
 L["SAFETY_SKIP_NOTE_MASTER_LOOTER"] = "Las recetas, libros, monturas, mascotas y legendarios siempre se quedan para ti."
 
--- The channel choice that posts to the party or raid: Trade Announcements' Channel and the Loot Master's Announce In.
+--[[
+    The channel choices shared by Trade Announcements' Channel, Raid Roll
+    Winner's output and the Loot Master's Announce In: Group Chat posts to the
+    party or raid, Me Only prints in the player's own chat and sends nothing.
+]]
 L["CHANNEL_GROUP_CHAT"] = "Chat de grupo"
+L["CHANNEL_ME_ONLY"] = "Solo yo"
 
--- Shown under every setting that prints or sends a chat line. Argument: the message, drawn as it arrives in chat.
-L["OPTIONS_EXAMPLE"] = "Ejemplo: %s"
+-- The silver label over every Example line, which shows a chat line the way it will arrive.
+L["SAMPLE_EXAMPLE"] = "Ejemplo"
+
+-- The tooltip on every sound row's speaker icon, which plays the row's sound.
+L["OPTIONS_SOUND_PREVIEW_DESCRIPTION"] = "Reproduce este sonido ahora, esté activado o no."
+
+-- The button on a Reset row: Character Overrides' Reset to Class Defaults and the Loot Toasts position reset.
+L["OPTIONS_RESET"] = "Restablecer"
 
 --------------------------------------------------------------------------------
 -- Options: General
@@ -291,7 +309,7 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"Muestra la versión de GogoLoot y dónde encontrar estos ajustes cada vez que entras en el juego."
 L["MINIMAP_BUTTON_ENABLE"] = "Activar botón del minimapa"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Muestra el botón de GogoLoot en el minimapa. Clic izquierdo activa o desactiva Tiradas automáticas; clic derecho, Apertura automática; Mayús + clic izquierdo, Anuncios de botín; y Mayús + clic derecho, Reparto automático."
+	"Muestra el botón de GogoLoot en el minimapa. Pasa el cursor por encima para abrir el menú de GogoLoot. Clic izquierdo activa o desactiva Tiradas automáticas; clic derecho, Apertura automática; y Mayús + clic izquierdo, Anuncios de botín."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Comandos"
 L["OPTIONS_COMMAND"] = "/gogo"
@@ -299,6 +317,10 @@ L["OPTIONS_COMMAND_DESCRIPTION"] = "Abre la ventana de opciones de este accesori
 
 -- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Funciones"
+
+--------------------------------------------------------------------------------
+-- Options: Speedy Loot
+--------------------------------------------------------------------------------
 
 -- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
@@ -312,6 +334,10 @@ L["SPEEDY_LOOT_ENABLE"] = "Activar Despojo rápido"
 L["SPEEDY_LOOT_SWITCH_DESCRIPTION"] =
 	"Vacía cada cadáver en cuanto lo abres, sin mostrar la ventana de botín. Mantén pulsado Mayús al despojar para ver la ventana. Activa la opción %s del juego y no actúa mientras eres %s."
 
+--------------------------------------------------------------------------------
+-- Options: Roll Macro
+--------------------------------------------------------------------------------
+
 --[[
     The Roll Macro panel. %s is the macro's name, "- Roll", the same in every
     locale. General Macros is the tab of the game's Macros window that every
@@ -322,16 +348,27 @@ L["ROLL_MACRO_DESCRIPTION"] =
 	"Añade a tus Macros generales una macro llamada %s, con un icono de monedas de oro, para que todos los personajes de tu cuenta puedan arrastrarla a una barra de acción."
 --[[
     The three rows under it, each beside its mouse button's caption
-    (MINIMAP_LEFT_CLICK and its neighbors). Right-click is the off-spec roll;
+    (MENU_CLICK_LEFT and its neighbors). Right-click is the off-spec roll;
     a raid roll picks a number from 1 to the group's size.
 ]]
 L["ROLL_MACRO_LEFT_CLICK"] = "Tirar 1-100"
 L["ROLL_MACRO_RIGHT_CLICK"] = "Tirar 1-99"
 L["ROLL_MACRO_MIDDLE_CLICK"] = "Tirada de banda"
 L["ROLL_MACRO_ENABLE"] = "Activar Macro de tirada"
--- Under the three rows, in silver: what Middle-Click's raid roll is for and how to read it.
+-- Under the three rows, in silver: what Middle-Click's raid roll is.
 L["ROLL_MACRO_RAID_ROLL_NOTE"] =
-	"Una tirada de banda entrega un objeto a alguien al azar. Tira del 1 al número de jugadores de tu grupo, así que cada número corresponde a un jugador: cuenta en tu lista de banda o de grupo hasta el número que salga para encontrar al ganador. Si estás solo, tira 1-100."
+	"Una tirada de banda tira del 1 al número de jugadores de tu grupo, un número por jugador."
+-- The Roll Macro panel's Raid Rolls section, shown whether or not the macro is on, since it reads anyone's raid roll.
+L["RAID_ROLL_HEADER"] = "Tiradas de banda"
+L["RAID_ROLL_WINNER_ENABLE"] = "Activar Ganador de tirada de banda"
+L["RAID_ROLL_WINNER_ENABLE_DESCRIPTION"] =
+	"Cuando alguien de tu grupo tira del 1 al tamaño del grupo, nombra al jugador al que corresponde el número, contando en la lista de banda o de grupo."
+L["RAID_ROLL_OUTPUT_DESCRIPTION"] =
+	"Solo yo muestra al ganador en tu propio chat. Chat de grupo lo publica en tu grupo o banda."
+-- Printed when someone raid rolls. Arguments: the roller, the roll, the group's size, the player it lands on.
+L["MESSAGE_RAID_ROLL_PRINT"] = "%s sacó %d de %d en una tirada de banda, que corresponde a %s."
+-- The same, posted to group chat with plain names.
+L["MESSAGE_RAID_ROLL"] = "%s sacó %d de %d en una tirada de banda, que corresponde a %s"
 L["ROLL_MACRO_SWITCH_DESCRIPTION"] =
 	"Mantiene la macro %s en tus Macros generales: clic izquierdo tira 1-100, clic derecho 1-99 y clic central hace una tirada de banda. Al desactivarlo, se borra."
 --[[
@@ -389,7 +426,7 @@ L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
     leader. Hidden only while solo, where there is no leader to name.
 ]]
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Estos ajustes los controla %s."
--- Shown in the same place while solo, where the two dropdowns are greyed out.
+-- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "Únete a un grupo para cambiar estos ajustes. Solo el líder del grupo puede hacerlo."
 
 -- Argument: the game's own word for Master Looter.
@@ -416,6 +453,18 @@ L["QUICK_SETTINGS_TITLE"] = "Ajustes rápidos"
 L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Abre estos ajustes en una ventana cada vez que pasas a ser %s."
 L["MASTER_LOOTER_POPUP_ENABLE"] = "Activar ventana de maestro despojador"
 
+-- Tradable Gear Tint, on the Automated Master Looting panel
+L["TRADABLE_TINT_HEADER"] = "Tinte de equipo comerciable"
+L["TRADABLE_TINT_DESCRIPTION"] =
+	"Tiñe el equipo que se liga al recogerlo y que aún se puede comerciar, para que veas de un vistazo lo que puedes repartir antes de que se ligue."
+L["TRADABLE_TINT_ENABLE"] = "Activar tinte de equipo comerciable"
+L["TRADABLE_TINT_ENABLE_DESCRIPTION"] =
+	"Activa o desactiva el tinte. Funciona con las bolsas predeterminadas, Baganator, Bagnon, AdiBags, ArkInventory, BetterBags y ElvUI."
+L["TRADABLE_TINT_COLOR"] = "Color del tinte"
+L["TRADABLE_TINT_COLOR_DESCRIPTION"] =
+	"El color y la opacidad del tinte. Una opacidad más baja deja ver mejor el icono del objeto."
+L["TRADABLE_TINT_BAGANATOR_WIDGET_LABEL"] = "Tinte de equipo comerciable (GogoLoot)"
+
 L["MASTER_LOOTER_DESTINATION_DESCRIPTION"] =
 	"Elige quién recibe cada calidad. Una calidad sin nadie elegido se queda en la ventana de botín para ti."
 L["MASTER_LOOTER_DESTINATION_SELF"] = "Yo"
@@ -430,8 +479,7 @@ L["MASTER_LOOTER_NO_DESTINATIONS_NOTE"] =
 
 L["MASTER_LOOTER_IGNORE_DESCRIPTION"] =
 	"Los objetos de esta lista nunca se reparten automáticamente. Esperan en la ventana de botín para que los repartas tú."
--- Shown on the Ignore List while Automated Master Looting is off.
-L["MASTER_LOOTER_OFF_NOTE"] = "Estos ajustes no se usan mientras Reparto automático está desactivado."
+-- The Ignore List's Restore Defaults: its tooltip and its confirmation.
 L["MASTER_LOOTER_IGNORE_RESTORE_DESCRIPTION"] =
 	"Sustituye la Lista de ignorados por los objetos predeterminados de tu expansión."
 L["MASTER_LOOTER_IGNORE_RESTORE_CONFIRM"] =
@@ -447,16 +495,17 @@ L["ROLLS_PANEL_DESCRIPTION"] =
 	"Tira %s, %s o %s por ti en el botín de grupo, hasta la calidad que elijas, con ajustes distintos para grupos y bandas."
 L["ROLLS_ENABLE"] = "Activar Tiradas automáticas"
 L["ROLLS_ENABLE_DESCRIPTION"] =
-	"Activa o desactiva las tiradas automáticas, incluidas Excepciones de objetos y Reglas por personaje."
+	"Activa o desactiva las tiradas automáticas, incluidas Excepciones globales de objetos y Excepciones de personaje."
 L["ROLLS_IN_PARTY"] = "En grupo"
 L["ROLLS_IN_RAID"] = "En banda"
 -- The caption of the quality row under In Party and under In Raid, shown while that roll isn't Manual.
 L["ROLLS_UP_TO_QUALITY"] = "Hasta la calidad"
 L["ROLLS_THRESHOLD_CHOOSE"] = "%s: la calidad más alta en la que tira GogoLoot."
 L["ROLLS_ACTION_CHOOSE"] = "%s: la tirada que hace GogoLoot. Manual te deja la tirada a ti."
+-- A sub-row under In Party's and In Raid's Up to Quality, one setting each, and a row in the mini-map menu's Party and Raid flyouts.
 L["ROLLS_INCLUDE_BIND_ON_PICKUP"] = "Incluir ligados al recogerlos"
 L["ROLLS_INCLUDE_BIND_ON_PICKUP_DESCRIPTION"] =
-	"Hace que las tiradas de arriba y Reglas por personaje también tiren en objetos ligados al recogerlos. Desactivado por defecto, porque en el botín ligado al recogerlo suele valer la pena tirar tú mismo."
+	"Hace que la tirada de arriba y Excepciones de personaje también tiren en objetos ligados al recogerlos. Desactivado por defecto, porque en el botín ligado al recogerlo suele valer la pena tirar tú mismo."
 -- Section headers on the Automated Rolls panel.
 L["ROLLS_PARTY_AND_RAID_HEADER"] = "Tiradas en grupo y banda"
 L["ROLLS_MESSAGES_HEADER"] = "Mensajes de tiradas"
@@ -472,38 +521,48 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Mostrar resumen del ganador"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "No mostrar resumen del ganador"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Mostrar resumen del ganador pone una línea en el chat por cada victoria, con el ganador, el objeto y la tirada ganadora, en lugar de la línea del propio juego. No mostrar resumen del ganador deja la línea del juego que dice quién ganó."
+-- The Safety Warnings section on the Automated Rolls panel.
+L["ROLLS_SAFETY_HEADER"] = "Avisos de seguridad"
+-- Arguments: the game's own words for Need and Pass, in both.
+L["ROLLS_SAFETY_WARNING"] = "Avisarme al entrar en una mazmorra o banda con %s o %s"
+L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
+	"Al entrar en una mazmorra o banda donde GogoLoot tirará %s o %s por ti, muestra un recordatorio en el chat para que puedas cambiarlo antes del primer botín."
+L["ROLLS_SAFETY_WARNING_SOUND"] = "Reproducir sonido"
+L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
+	"Reproduce un aviso junto al mensaje, para cuando el chat está muy movido."
 
 --[[
-    Item Overrides, under Automated Rolls: items with a roll action of their
-    own.
+    Global Item Overrides, under Automated Rolls: items with a roll action of
+    their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Fija la tirada de objetos concretos, por encima de los ajustes de calidad. Es la única forma de que GogoLoot tire en un objeto de misión, o en un objeto ligado al recogerlo mientras Incluir ligados al recogerlos esté desactivado."
--- Shown on Item Overrides and Character Rules while Automated Rolls is off.
-L["ROLLS_OFF_NOTE"] = "Estos ajustes no se usan mientras Tiradas automáticas está desactivado."
-L["ITEM_OVERRIDES_ENABLE"] = "Activar Excepciones de objetos"
+-- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
+L["OPTIONS_FEATURE_OFF_STATUS"] =
+	"%s está desactivado, así que estos ajustes no se usan. Su interruptor está en la página %s."
+L["ITEM_OVERRIDES_ENABLE"] = "Activar Excepciones globales de objetos"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
 	"Usa las tiradas fijadas abajo. Si está desactivado, estos objetos siguen los ajustes de calidad como cualquier otro."
--- Shown under Enable Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] = "Estas tiradas no se usan mientras Excepciones de objetos está desactivado."
+-- Shown under Enable Global Item Overrides while it is off.
+L["ITEM_OVERRIDES_OFF_NOTE"] = "Estas tiradas no se usan mientras Excepciones globales de objetos está desactivado."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
-	"Sustituye tus Excepciones de objetos por los objetos predeterminados de tu expansión."
+	"Sustituye tus Excepciones globales de objetos por los objetos predeterminados de tu expansión."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
-	"¿Sustituir tus Excepciones de objetos por los objetos predeterminados de tu expansión?"
+	"¿Sustituir tus Excepciones globales de objetos por los objetos predeterminados de tu expansión?"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "Fija la tirada automática para este objeto."
-L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "Quita este objeto de Excepciones de objetos."
-L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "¿Quitar este objeto y su tirada de Excepciones de objetos?"
+L["ITEM_OVERRIDES_REMOVE_DESCRIPTION"] = "Quita este objeto de Excepciones globales de objetos."
+L["ITEM_OVERRIDES_REMOVE_CONFIRM"] = "¿Quitar este objeto y su tirada de Excepciones globales de objetos?"
 L["ITEM_OVERRIDES_ADD_DESCRIPTION"] =
 	"Escribe el ID de un objeto o arrastra un objeto aquí para añadirlo a la lista con la opción Manual."
 
 --[[
-    Character Rules, under Automated Rolls: the stats and the armor and
+    Character Overrides, under Automated Rolls: the stats and the armor and
     weapon types each character wants, whose gear is left to the player. The
     stat, armor and weapon names come from the game's own strings.
 ]]
 -- Arguments: the game's own name for Strength, then for the Warrior class, then Strength again.
 L["CHARACTER_RULES_PANEL_INTRO"] =
-	"¿Quieres equipo con %s en tu %s? Marca %s y los tipos de armadura y arma que usas. El equipo que coincida se te deja para que tires tú, y Todo lo demás se encarga del resto. Excepciones de objetos sigue teniendo prioridad."
+	"¿Quieres equipo con %s en tu %s? Marca %s y los tipos de armadura y arma que usas. El equipo que coincida se te deja para que tires tú, y Todo lo demás se encarga del resto. Excepciones globales de objetos sigue teniendo prioridad."
 --[[
     The two section captions in a character's pane, on clients without the
     game's own STAT_CATEGORY_PRIMARY_ATTRIBUTES / _SECONDARY_ATTRIBUTES labels
@@ -522,33 +581,53 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Todo lo demás"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "Equipo que no coincide"
 L["CHARACTER_RULES_RESET"] = "Restablecer valores de la clase"
--- Sanity Check, at the foot of each character's page: ten sample items and how each would roll.
-L["CHARACTER_RULES_SANITY_CHECK"] = "Comprobación rápida"
-L["CHARACTER_RULES_SANITY_CHECK_NOTE"] =
-	"Cómo se tiraría por estos verdes ligados al equiparlos para este personaje, según las casillas de arriba."
---[[
-    A Sanity Check row's outcome, Roll Window or Automated Roll, then in
-    brackets why, where the boxes don't say: one of the SANITY_ reasons below,
-    or Item Overrides by its panel name (TAB_ITEM_OVERRIDES).
-]]
-L["CHARACTER_RULES_SANITY_ROLL_WINDOW"] = "Ventana de tirada"
-L["CHARACTER_RULES_SANITY_AUTOMATED_ROLL"] = "Tirada automática"
--- The note under a sample item's tooltip. Argument: the game's own names for the stats it carries, joined by commas.
-L["CHARACTER_RULES_SANITY_STATS"] = "Estadísticas que leen las Reglas por personaje: %s"
-L["CHARACTER_RULES_SANITY_LOW_LEVEL"] = "Equipo de nivel bajo"
-L["CHARACTER_RULES_SANITY_ROLLS_OFF"] = "Tiradas automáticas desactivadas"
-L["CHARACTER_RULES_SANITY_QUALITY"] = "Ajustes de calidad"
+L["CHARACTER_RULES_RESET_DESCRIPTION"] =
+	'Devuelve las casillas y "Todo lo demás" de este personaje a los valores de su clase.'
 -- Argument: the game's own name for the character's class.
 L["CHARACTER_RULES_CLASS"] = "Clase: %s"
 L["CHARACTER_RULES_LOW_LEVEL"] = "Codicia automática en equipo de nivel bajo"
 L["CHARACTER_RULES_LOW_LEVEL_DESCRIPTION"] =
-	"Tira Codicia en armaduras y armas cuyo nivel requerido esté al menos así de por debajo del tuyo, coincidan o no, hasta la calidad de Todo lo demás, para que el equipo que ya superaste no te frene mientras subes de nivel."
+	"Tira Codicia en armaduras y armas cuyo nivel requerido esté al menos así de por debajo del tuyo, coincidan o no, hasta tu calidad de En grupo o En banda, para que el equipo que ya superaste no te frene mientras subes de nivel."
 -- The dropdown beside it: Off, then a level gap. Argument: how many levels below the character's own, 1 to 5.
 L["CHARACTER_RULES_LOW_LEVEL_OFF"] = "Desactivado"
 L["CHARACTER_RULES_LOW_LEVEL_BELOW"] = "Tu nivel - %d"
 -- Printed once per account, at the first login where Automated Rolls is on by default.
 L["MESSAGE_AUTOMATED_ROLLS_ON"] =
 	"Tiradas automáticas ya está activado: el equipo que quiere cada personaje se te deja para que tires tú, y en el resto se tira Codicia. Cámbialo en Opciones > Accesorios > GogoLoot > Tiradas automáticas."
+
+--------------------------------------------------------------------------------
+-- Options: Loot Roll Sanity Check
+--------------------------------------------------------------------------------
+
+L["SANITY_CHECK_DESCRIPTION"] =
+	"Diez objetos al azar de cada tipo de enemigo y lo que harían las tiradas automáticas con cada uno para este personaje, con tus ajustes actuales."
+-- The button that draws a fresh ten for each section.
+L["SANITY_CHECK_REFRESH"] = "Elegir botín nuevo"
+L["SANITY_CHECK_REFRESH_DESCRIPTION"] = "Saca diez objetos nuevos de cada tipo de enemigo."
+-- The three sections, one per kind of kill. Trash: any enemy that isn't a boss.
+L["SANITY_CHECK_TRASH"] = "Enemigos menores"
+L["SANITY_CHECK_DUNGEON_BOSSES"] = "Jefes de mazmorra"
+L["SANITY_CHECK_RAID_BOSSES"] = "Jefes de banda"
+-- Under each section's header. Argument: the group settings it reads, ROLLS_IN_PARTY or ROLLS_IN_RAID.
+L["SANITY_CHECK_CONTEXT"] = 'Se tira con tus ajustes de "%s".'
+--[[
+    Each drop's first line ends in its outcome: Manual Roll when the roll
+    window is left to the player, or Automatic and the roll, whose argument
+    is the game's own Need, Greed or Pass. The second line opens with its
+    tag line, the binding's short name then the game's names for its stats,
+    and ends in why, one of the reasons below or the page that decided it by
+    its panel name (TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES).
+]]
+L["SANITY_CHECK_MANUAL_ROLL"] = "Tirada manual"
+L["SANITY_CHECK_AUTOMATIC"] = "Automático: %s"
+L["SANITY_CHECK_BOP"] = "Ligado al recoger"
+L["SANITY_CHECK_BOE"] = "Ligado al equipar"
+L["SANITY_CHECK_LOW_LEVEL"] = "Equipo de nivel bajo"
+L["SANITY_CHECK_ROLLS_OFF"] = "Tiradas automáticas desactivadas"
+L["SANITY_CHECK_QUALITY"] = "Ajustes de calidad"
+L["SANITY_CHECK_NEVER"] = "Nunca automático"
+L["SANITY_CHECK_QUEST"] = "Objeto de misión"
+L["SANITY_CHECK_BIND_ON_PICKUP"] = "Se liga al recogerlo"
 
 --------------------------------------------------------------------------------
 -- Options: Announcements
@@ -578,8 +657,7 @@ L["TRADE_CHANNEL"] = "Canal"
 -- Argument: the game's own word for Whisper.
 L["TRADE_CHANNEL_TOOLTIP"] =
 	"%s envía cada resumen a la persona con quien comercias. Chat de grupo lo publica en tu grupo o banda, y fuera de un grupo lo susurra igualmente. Solo yo lo muestra en tu propio chat y no lo envía a nadie."
--- The Channel dropdown's choices (Whisper is the client's WHISPER, Group Chat is CHANNEL_GROUP_CHAT), and the trade window checkbox tooltip's Channel value.
-L["TRADE_OUTPUT_SELF"] = "Solo yo"
+-- The trade window checkbox: its tooltip and its caption.
 L["TRADE_TOOLTIP_DESCRIPTION"] = "Publica un resumen del comercio en el chat cuando se complete."
 L["TRADE_CHECKBOX_LABEL"] = "Anunciar"
 
@@ -615,6 +693,10 @@ L["LOOT_TOASTS_SWITCH_DESCRIPTION"] = "Muestra un aviso para el botín que elija
 L["LOOT_TOASTS_TOOLTIPS_ENABLE"] = "Activar descripciones de objetos en Avisos de botín"
 L["LOOT_TOASTS_TOOLTIPS_DESCRIPTION"] =
 	"Muestra la descripción de un objeto al señalar su aviso. Desactivado, los avisos ignoran el ratón, así que puedes señalar y pulsar enemigos y cadáveres detrás de ellos."
+-- The checkbox under Enable Tooltips on Loot Toast Items: the game's own "You Won" window, shown only on clients that have one.
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_ENABLE"] = "Activar la ventana predeterminada de Blizzard del ganador de la tirada"
+L["LOOT_TOASTS_BLIZZARD_ROLL_WON_DESCRIPTION"] =
+	"Muestra la ventana propia del juego cuando ganas una tirada, junto a tus avisos. Desactivado, solo los avisos te dicen qué ganaste."
 -- The dropdown beside Enable Loot Toasts: the game's Item Loot and Money Loot chat settings for the General tab.
 L["LOOT_TOASTS_STANDARD_MESSAGES_DISABLE"] = "Desactivar mensajes de botín estándar"
 L["LOOT_TOASTS_STANDARD_MESSAGES_ENABLE"] = "Activar mensajes de botín estándar"
@@ -632,8 +714,6 @@ L["LOOT_TOASTS_TEXT_HEADER"] = "Texto"
     carry a quality dropdown beside each ticked box. Argument in each tooltip:
     the row's item type, as the client names it.
 ]]
--- Shown on the Filters panel while Loot Toasts is off.
-L["LOOT_TOASTS_OFF_NOTE"] = "Estos ajustes no se usan mientras Avisos de botín está desactivado."
 -- The Filters panel's description.
 L["LOOT_TOASTS_FILTERS_CAPTION"] =
 	"Elige qué recibe un aviso y qué dice, para tu propio botín y el de tu grupo. El botín de tu grupo muestra al lado el nombre de quien lo despoja."
@@ -678,7 +758,8 @@ L["LOOT_TOASTS_LOOTED_BY"] = "%s (%s)"
     reads as the game's own word for Need or Greed, then the number
     (LOOT_TOASTS_ROLL_RESULT). On the player's own toast "You Won" takes the
     looter's place (LOOT_TOASTS_YOU_WON_ROLL: the item, the roll); on a group
-    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter, the roll).
+    member's, their name (LOOT_TOASTS_LOOTED_BY_ROLL: the item, the looter,
+    the roll).
 ]]
 L["LOOT_TOASTS_WINNING_ROLL"] = "Tirada ganadora"
 -- Argument: an example roll, as LOOT_TOASTS_ROLL_RESULT words it ("Greed 54").
@@ -758,11 +839,9 @@ L["LOOT_SOUNDS_ENABLE"] = "Activar campanilla de botín"
 L["LOOT_SOUNDS_ENABLE_DESCRIPTION"] =
 	"Reproduce un sonido cuando despojas de un cadáver o cofre un objeto de la calidad que elijas o superior."
 L["LOOT_SOUNDS_MINIMUM_QUALITY_DESCRIPTION"] = "La calidad mínima de objeto que hace sonar la campanilla de botín."
-L["LOOT_SOUNDS_TEST"] = "Reproduce la campanilla de botín."
 -- Argument in each: the game's own name for Pick Pocket.
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_ENABLE"] = "Activar sonido de %s"
 L["LOOT_SOUNDS_PICK_POCKET_SOUND_DESCRIPTION"] = "Reproduce un sonido de bolsa cuando %s se lleva algo de verdad."
-L["LOOT_SOUNDS_PICK_POCKET_SOUND_TEST"] = "Reproduce el sonido de %s."
 
 --------------------------------------------------------------------------------
 -- Options: Automated Opening
@@ -796,9 +875,9 @@ L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 	"Te avisa en el chat cuando despojas una caja fuerte que se abrirá en cuanto se desbloquee."
 L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"] =
 	"Elige si los avisos de cajas fuertes aparecen solo para pícaros o para todos los personajes."
--- Shown under Enable Lockbox Notifications while it is on and Automated Opening is off.
+-- Lockboxes' silver status line while Automated Opening is off. Arguments: Automated Opening in gold, then its page's name.
 L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] =
-	"Los avisos de cajas fuertes no se usan mientras Apertura automática está desactivada."
+	"%s está desactivado, así que los avisos de cajas fuertes no se usan. Su interruptor está en la página %s."
 L["LOCKBOXES_FOR_ROGUES"] = "Para pícaros"
 L["LOCKBOXES_FOR_ALL_CHARACTERS"] = "Para todos los personajes"
 
@@ -818,8 +897,7 @@ L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"] =
 -- Openables List
 L["OPENABLE_ITEMS_DESCRIPTION"] =
 	"Todos los contenedores que conoce GogoLoot y qué hace Apertura automática con cada uno. Ignorar mantiene un contenedor cerrado. Tus cambios se aplican a todos tus personajes."
--- Shown on the Openables List while Automated Opening is off.
-L["OPENABLE_ITEMS_OFF_NOTE"] = "Estos ajustes no se usan mientras Apertura automática está desactivada."
+-- The Openables List's Restore Defaults: its tooltip and its confirmation.
 L["OPENABLE_ITEMS_RESTORE_DESCRIPTION"] =
 	"Devuelve la lista a sus valores predeterminados: cada objeto recupera su ajuste predeterminado, los quitados vuelven y los añadidos se van."
 L["OPENABLE_ITEMS_RESTORE_CONFIRM"] =
@@ -1029,7 +1107,7 @@ L["LOOT_MASTER_STATE_WAITING"] = "%d esperando tirada."
 -- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
 L["LOOT_MASTER_FOOTER"] = "%d por repartir."
 L["LOOT_MASTER_FOOTER_CLOCK"] = "%d por repartir; la próxima ventana de comercio se cierra en %s."
-L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + clic en un objeto de las bolsas para añadirlo"
+L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt + clic en un objeto de las bolsas para añadirlo."
 
 -- The Disqualify window.
 L["LOOT_MASTER_DISQUALIFY_TITLE"] = "Descalificar una tirada"

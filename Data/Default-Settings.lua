@@ -8,14 +8,17 @@ local _, ns = ...
 --------------------------------------------------------------------------------
 
 --[[
-    AceDB-3.0 defaults table, passed to AceDB:New in Features/Core.lua. Loot
-    policy lives in the active profile (ns.db.profile), and with it the
-    Automated Opening, lockbox, loot sound and loot toast settings; the
-    presentation keys and the account-wide records live in global, per the
-    comment on that table below, and per-character state lives in char.
-    AceDB serves these defaults through
-    metatables and strips them from the saved table at logout, so there is no
-    manual merge anywhere. The empty
+    AceDB-3.0 defaults table, passed to AceDB:New in Features/Core.lua. Three
+    scopes:
+      * profile: loot policy (Automated Rolls, Automated Opening, lockboxes,
+        loot sounds, announcements, master looting), plus the mini-map
+        button (minimap) and the loot toasts' look, so each profile carries
+        its own.
+      * global: account-wide, per the comment on that table below.
+      * char: what belongs to one character, such as its Character Rules and
+        the General tab's loot lines GogoLoot took off it.
+    AceDB serves these defaults through metatables and strips them from the
+    saved table at logout, so there is no manual merge anywhere. The empty
     ignoredItemsMaster / ignoredItemsSolo lists are seeded from this client's
     Data/{Folder}/Default-Item-Lists-{Folder}.lua by Core's refill-on-empty
     rule, never here.
@@ -23,6 +26,8 @@ local _, ns = ...
 
 ns.DATABASE_DEFAULTS = {
 	profile = {
+		-- The mini-map button's position and its Enable Mini-map Button preference (hide), handed straight to LibDBIcon.
+		minimap = {},
 		-- Enable Announcements: the master switch over everything GogoLoot posts to chat.
 		lootNotifications = true,
 		announceDestinations = true,
@@ -47,11 +52,13 @@ ns.DATABASE_DEFAULTS = {
 		autoRollActionRaid = ns.GREED,
 		autoRollThresholdRaid = 2,
 		--[[
-            Include Bind on Pickup: off, so the party and raid rolls and
-            Character Rules' Everything Else leave Bind on Pickup gear to the
-            player. Only Item Overrides roll on it then.
+            Include Bind on Pickup, per group context: off in both, so the
+            party and raid rolls and Character Overrides' Everything Else leave
+            Bind on Pickup gear to the player. Only Item Overrides roll on it
+            then.
         ]]
-		rollBindOnPickup = false,
+		rollBindOnPickupParty = false,
+		rollBindOnPickupRaid = false,
 		--[[
             Print Item in Chat: on, since the roll window closes the moment
             GogoLoot rolls, and this line is the only record of what came up
@@ -66,6 +73,19 @@ ns.DATABASE_DEFAULTS = {
 		hideRollMessages = true,
 		-- With Hide Roll Messages on, one GogoLoot line per win in place of the game's won line.
 		winnerSummary = "PRINT",
+		--[[
+            Safety Warnings: on, with its sound. Entering a dungeon or raid
+            while that group's roll is Need or Pass prints a reminder, since
+            either one gives away loot the player may have wanted.
+        ]]
+		rollSafetyWarning = true,
+		rollSafetyWarningSound = true,
+		--[[
+            Raid Roll Winner: on, printing to the player only. It reads anyone's
+            raid roll, so it doesn't wait on the Roll Macro.
+        ]]
+		raidRollWinner = true,
+		raidRollOutput = "SELF",
 		-- Off by default (maintainer, 2026-10-05), with no migration: a profile that never set it reads off after updating.
 		autoMasterLoot = false,
 		autoMasterLootOutsideInstances = false,
@@ -77,6 +97,13 @@ ns.DATABASE_DEFAULTS = {
         ]]
 		autoMasterLootQuestItems = false,
 		masterLooterPopup = true,
+		--[[
+            Tradable Gear Tint: Bind on Pickup gear in the bags that can still
+            be traded, tinted pink. On by default and apart from Automated
+            Master Looting, though it sits on that panel for raid leaders.
+        ]]
+		tradableTintEnabled = true,
+		tradableTintColor = { r = 1, g = 0, b = 128 / 255, a = 0.5 },
 		customRollList = true,
 		--[[
             Quality key -> recipient, and deliberately empty: an absent tier is
@@ -121,6 +148,12 @@ ns.DATABASE_DEFAULTS = {
         ]]
 		lootToastTooltips = false,
 		--[[
+            The game's own "You Won" window (WoW Forever's LootAlertSystem) for
+            a roll the player wins. Off, so with the toasts on they are the one
+            word of the win rather than a second, unmatched copy beside it.
+        ]]
+		lootToastBlizzardRollWon = false,
+		--[[
             Whether this profile has been shown the drag handle and put it away.
             Per profile on purpose: a new or reset profile is one that has not
             been introduced to the feature, and should be.
@@ -139,7 +172,7 @@ ns.DATABASE_DEFAULTS = {
 
             Group ships with quest items and Uncommon-or-better weapons and armor:
             what a group member picks up that the player might be waiting on or
-            rolling for, and none of their cloth and greys. A row left out here is
+            rolling for, and none of their cloth and grays. A row left out here is
             off, and AceDB saves only what the player changes.
         ]]
 		lootToastMine = {
@@ -226,10 +259,11 @@ ns.DATABASE_DEFAULTS = {
 		dropsKeepRaids = 5,
 	},
 	--[[
-		Account-wide: how GogoLoot presents itself and what it does to the
-		client, which never varies by loot context. A profile switch, reset, or
-		delete leaves all of it alone. Everything in profile above is loot
-		policy, which is exactly what a second profile is for.
+		Account-wide: the welcome and one-time notices, Speedy Loot and the Roll
+		Macro (which change the client rather than a loot setup), the Openables
+		List changes, and where the toasts and loot windows sit on screen. A
+		profile switch, reset, or delete leaves all of it alone. The mini-map
+		button and the toasts' look are not here: they are in profile.
 	]]
 	global = {
 		showWelcome = true,
@@ -239,7 +273,6 @@ ns.DATABASE_DEFAULTS = {
 		speedyLoot = true,
 		-- The Roll Macro is a General macro, shared by every character, so its switch is too.
 		rollMacro = false,
-		minimap = {},
 		--[[
             The player's Openables List changes, { [itemId] = action }: the
             listed items set differently from their default (ns.OPENING_OPEN or

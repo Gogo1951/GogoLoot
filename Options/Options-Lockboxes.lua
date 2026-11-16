@@ -7,16 +7,17 @@
     player is told one is waiting. It sits under Automated Opening because a
     picked lockbox is one more thing that opens, but it isn't part of opening:
     the tooltips work whether or not anything opens on its own, so nothing here
-    hides behind that switch. The notices speak for Automated Opening, so a red
-    line under their row says so while it is off. Both features
+    hides behind that switch. The notices speak for Automated Opening, so a
+    silver status line under the page's description says so while it is off,
+    naming the feature and the page its switch is on. Both features
     carry a scope on their toggle's line rather than only an on/off, since a
     non-Rogue can't pick a lock and has little use for either; the scope leaves
-    the line while its toggle is off (ns.OptionsToggleRow). The scope rule both
+    the line while its toggle is off (Kit.ToggleRow). The scope rule both
     apply lives in Features/Utilities.lua.
 ]]
 local _, ns = ...
 local L = ns.L
-local GetColor = ns.GetColor
+local Kit = ns.OptionsKit
 
 --[[
     The example the Enable Lockbox Notifications row names: the lowest item ID
@@ -40,7 +41,7 @@ function ns.ExampleLockedContainer()
 	return exampleLockedContainer
 end
 
--- What Enable Lockbox Notifications prints, drawn as printed (Message Examples in Options-Utilities.lua).
+-- What Enable Lockbox Notifications prints, drawn as printed by Kit.Example while that toggle is on.
 local function LockboxNotificationExample()
 	local item = ns.OptionsExampleLink(ns.ExampleLockedContainer() or ns.SAMPLE_ITEM_IDS[2])
 	return ns.OptionsPrintedLine(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(item))
@@ -70,24 +71,30 @@ function ns.BuildLockboxOptions()
 		type = "group",
 		name = L["TAB_LOCKBOXES"],
 		args = {
-			description = ns.OptionsDesc(
+			description = Kit.Desc(
 				L["LOCKBOXES_SECTION_DESCRIPTION"]:format(
 					LOCALIZED_CLASS_NAMES_MALE.ROGUE or "",
 					ns.GetLockpickingSkillName() or ""
 				),
 				1
 			),
-			spacerAfterDesc = ns.OptionsSpacer(2),
-			tooltipsRow = ns.OptionsToggleRow(3, {
+			spacerAfterDesc = Kit.Spacer(2),
+			notificationsOffNote = Kit.StatusLine(function()
+				if ns.db.profile.autoOpen then
+					return nil
+				end
+				local name = L["TAB_AUTOMATED_OPENING"]
+				return L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"]:format(Kit.Color("TITLE", name), name)
+			end, 3),
+			spacerAfterNotificationsOffNote = Kit.Spacer(4, function()
+				return ns.db.profile.autoOpen
+			end),
+			tooltipsRow = Kit.ToggleRow(5, {
 				type = "toggle",
 				name = L["LOCKBOXES_TOOLTIPS_ENABLE"],
 				desc = L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"]:format(ns.GetLockpickingSkillName() or ""),
-				get = function()
-					return ns.db.profile.lockboxTooltips
-				end,
-				set = function(_, value)
-					ns.db.profile.lockboxTooltips = value
-				end,
+				get = Kit.Get("profile", "lockboxTooltips"),
+				set = Kit.Set("profile", "lockboxTooltips"),
 			}, {
 				control = ScopeControl(L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"], function()
 					return ns.db.profile.lockboxTooltipsScope
@@ -95,17 +102,13 @@ function ns.BuildLockboxOptions()
 					ns.db.profile.lockboxTooltipsScope = value
 				end),
 			}),
-			spacerBeforeNotifications = ns.OptionsSpacer(4),
-			notificationsRow = ns.OptionsToggleRow(5, {
+			spacerBeforeNotifications = Kit.Spacer(6),
+			notificationsRow = Kit.ToggleRow(7, {
 				type = "toggle",
 				name = L["LOCKBOXES_NOTIFICATIONS_ENABLE"],
 				desc = L["LOCKBOXES_NOTIFICATIONS_ENABLE_DESCRIPTION"],
-				get = function()
-					return ns.db.profile.lockboxNotifications
-				end,
-				set = function(_, value)
-					ns.db.profile.lockboxNotifications = value
-				end,
+				get = Kit.Get("profile", "lockboxNotifications"),
+				set = Kit.Set("profile", "lockboxNotifications"),
 			}, {
 				control = ScopeControl(L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"], function()
 					return ns.db.profile.lockboxNotificationsScope
@@ -113,16 +116,9 @@ function ns.BuildLockboxOptions()
 					ns.db.profile.lockboxNotificationsScope = value
 				end),
 			}),
-			notificationsExampleRow = ns.OptionsExampleRow(6, LockboxNotificationExample),
-			notificationsOffNote = {
-				type = "description",
-				name = GetColor("OFF") .. L["LOCKBOXES_NOTIFICATIONS_OFF_NOTE"] .. "|r",
-				fontSize = "medium",
-				order = 7,
-				hidden = function()
-					return ns.db.profile.autoOpen or not ns.db.profile.lockboxNotifications
-				end,
-			},
+			notificationsExampleRow = Kit.Example(8, function()
+				return not ns.db.profile.lockboxNotifications
+			end, LockboxNotificationExample),
 		},
 	}
 end

@@ -3,16 +3,17 @@
 --------------------------------------------------------------------------------
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 local GetColor = ns.GetColor
 
 --[[
-    The four link rows split ns.OPTIONS_ROW_WIDTH unevenly: their labels are one
+    The four link rows split Kit.ROW_WIDTH unevenly: their labels are one
     short word, while the box beside them holds a full URL the player is meant
     to select and copy, so the label takes 0.6 and the box the rest of the row.
 ]]
 local LINK_LABEL_WIDTH = 0.6
-local LINK_URL_WIDTH = ns.OPTIONS_ROW_WIDTH - LINK_LABEL_WIDTH
+local LINK_URL_WIDTH = Kit.ROW_WIDTH - LINK_LABEL_WIDTH
 
 -- { captionKey, linkKey }, in display order. The URLs live in ns.LINKS (Data/Data.lua).
 local LINKS = {
@@ -48,26 +49,25 @@ function ns.BuildFeedbackSupportOptions()
 
 	for index, key in ipairs(LEVEL_UP_PARAGRAPHS) do
 		if index > 1 then
-			args["spacerLevelUp" .. index] = ns.OptionsSpacer(order)
+			args["spacerLevelUp" .. index] = Kit.Spacer(order)
 			order = order + 1
 		end
-		args["descLevelUp" .. index] = ns.OptionsDesc(L[key], order)
+		args["descLevelUp" .. index] = Kit.Desc(L[key], order)
 		order = order + 1
 	end
 
-	args.spacerLinks0 = ns.OptionsSpacer(50)
-	args.headerLinks = ns.OptionsHeader(L["OPTIONS_FEEDBACK_LINKS_HEADER"], 51)
-	args.spacerLinks1 = ns.OptionsSpacer(52)
+	args.spacerLinks0 = Kit.Spacer(50)
+	args.headerLinks = Kit.Header(L["OPTIONS_FEEDBACK_LINKS_HEADER"], 51)
+	args.spacerLinks1 = Kit.Spacer(52)
 
 	order = 53
 	for index, entry in ipairs(LINKS) do
 		local captionKey, linkKey = entry[1], entry[2]
 		if index > 1 then
-			args["spacerLink" .. index] = ns.OptionsSpacer(order)
+			args["spacerLink" .. index] = Kit.Spacer(order)
 			order = order + 1
 		end
-		args["labelLink" .. index] =
-			ns.OptionsRowLabel(GetColor("TITLE") .. L[captionKey] .. "|r", order, LINK_LABEL_WIDTH)
+		args["labelLink" .. index] = Kit.Label(GetColor("TITLE") .. L[captionKey] .. "|r", order, LINK_LABEL_WIDTH)
 		args["link" .. index] = {
 			type = "input",
 			name = "",
@@ -81,8 +81,8 @@ function ns.BuildFeedbackSupportOptions()
 		order = order + 2
 	end
 
-	args.spacerCopyLink = ns.OptionsSpacer(order)
-	args.descCopyLink = ns.OptionsDesc(GetColor("HELP") .. L["OPTIONS_COPY_LINK"] .. "|r", order + 1)
+	args.spacerCopyLink = Kit.Spacer(order)
+	args.descCopyLink = Kit.Desc(GetColor("HELP") .. L["OPTIONS_COPY_LINK"] .. "|r", order + 1)
 
 	args.spaceVersion0 = {
 		type = "description",

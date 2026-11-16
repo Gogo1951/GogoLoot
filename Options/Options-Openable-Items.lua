@@ -21,6 +21,7 @@
 ]]
 local _, ns = ...
 local L = ns.L
+local Kit = ns.OptionsKit
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -40,14 +41,9 @@ local function AddItem(itemIdentifier)
 	ns:PrintMessage(L["MESSAGE_ITEM_NOT_OPENABLE"]:format(itemLink or tostring(itemIdentifier)))
 end
 
-local function AutomatedOpeningOn()
-	return ns.db.profile.autoOpen
-end
-
 --[[
-    What Enable Ignore Notifications prints, drawn by ns.OptionsExampleRow
-    (Message Examples in Options-Utilities.lua), run through its real template
-    and drawn as printed. The container is the lowest item ID this flavor's
+    What Enable Ignore Notifications prints, drawn by Kit.Example, run through
+    its real template and drawn as printed, while that toggle is on. The container is the lowest item ID this flavor's
     data sets to plain Ignore, the default that notice is for, so every client
     shows a real one of its own.
 ]]
@@ -117,25 +113,23 @@ function ns.BuildOpenableItemsOptions()
 	})
 
 	local args = {
-		description = ns.OptionsDesc(L["OPENABLE_ITEMS_DESCRIPTION"], 1),
-		spacerAfterDesc = ns.OptionsSpacer(2),
+		description = Kit.Desc(L["OPENABLE_ITEMS_DESCRIPTION"], 1),
+		spacerAfterDesc = Kit.Spacer(2),
 	}
-	local order = ns.AddFeatureOffNote(args, 3, L["OPENABLE_ITEMS_OFF_NOTE"], AutomatedOpeningOn)
+	local order = ns.AddFeatureOffLine(args, 3, "autoOpen")
 	args.ignoreNotifications = {
 		type = "toggle",
 		name = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE"],
 		desc = L["OPENABLE_ITEMS_NOTIFICATIONS_ENABLE_DESCRIPTION"],
 		width = "full",
 		order = order,
-		get = function()
-			return ns.db.profile.openingIgnoreNotifications
-		end,
-		set = function(_, value)
-			ns.db.profile.openingIgnoreNotifications = value
-		end,
+		get = Kit.Get("profile", "openingIgnoreNotifications"),
+		set = Kit.Set("profile", "openingIgnoreNotifications"),
 	}
-	args.ignoreNotificationsExampleRow = ns.OptionsExampleRow(order + 1, IgnoreNotificationExample)
-	args.spacerAfterIgnoreNotifications = ns.OptionsSpacer(order + 2)
+	args.ignoreNotificationsExampleRow = Kit.Example(order + 1, function()
+		return not ns.db.profile.openingIgnoreNotifications
+	end, IgnoreNotificationExample)
+	args.spacerAfterIgnoreNotifications = Kit.Spacer(order + 2)
 	args.itemList = {
 		type = "group",
 		name = "",

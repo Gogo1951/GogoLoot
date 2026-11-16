@@ -421,6 +421,12 @@ ns.DIAGNOSTIC_API_CHECKS = {
 			return type(C_ChatInfo) == "table" and type(C_ChatInfo.SendChatMessage) == "function"
 		end,
 	},
+	-- Raid Roll Winner's claim, sent and heard on the group's add-on channel — Raid-Roll-Winner.lua
+	{ "C_ChatInfo.SendAddonMessage", MemberIsFunction("C_ChatInfo", "SendAddonMessage") },
+	{ "C_ChatInfo.RegisterAddonMessagePrefix", MemberIsFunction("C_ChatInfo", "RegisterAddonMessagePrefix") },
+	-- The /roll line it reads back, and the raid list it counts the winner down
+	{ "RANDOM_ROLL_RESULT (string)", GlobalIsType("RANDOM_ROLL_RESULT", "string") },
+	{ "GetRaidRosterInfo", GlobalIsType("GetRaidRosterInfo", "function") },
 
 	-- Timers & events — Core.lua / Master-Looter.lua / Diagnostic Tools
 	{
@@ -566,6 +572,22 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "ChatFrame1.ContainsMessageGroup", MemberIsFunction("ChatFrame1", "ContainsMessageGroup") },
 	{ "ChatFrame1.AddMessageGroup", MemberIsFunction("ChatFrame1", "AddMessageGroup") },
 	{ "ChatFrame1.RemoveMessageGroup", MemberIsFunction("ChatFrame1", "RemoveMessageGroup") },
+	-- Blizzard Roll Winner Window off stops the game's own alert listening for a won roll — Standard-Loot-Messages.lua
+	{ "AlertFrame.IsEventRegistered", MemberIsFunction("AlertFrame", "IsEventRegistered") },
+
+	--[[
+	    Tradable Gear Tint — Tint-Tradable-Gear.lua: the trade clock line it
+	    reads off an item's tooltip, with the units it counts in, and the
+	    default bags' redraw it hooks. Clients with the modern bag frames
+	    redraw through each frame's own UpdateItems instead, so a FAIL on
+	    ContainerFrame_Update is expected there; Loot Method lists the bag
+	    windows it hooked.
+	]]
+	{ "BIND_TRADE_TIME_REMAINING (string)", GlobalIsType("BIND_TRADE_TIME_REMAINING", "string") },
+	{ "INT_SPELL_DURATION_HOURS (string)", GlobalIsType("INT_SPELL_DURATION_HOURS", "string") },
+	{ "INT_SPELL_DURATION_MIN (string)", GlobalIsType("INT_SPELL_DURATION_MIN", "string") },
+	{ "INT_SPELL_DURATION_SEC (string)", GlobalIsType("INT_SPELL_DURATION_SEC", "string") },
+	{ "ContainerFrame_Update", GlobalIsType("ContainerFrame_Update", "function") },
 
 	-- The Loot Toasts Quest row's quest-starter read — Utilities-Scan-Tooltip.lua
 	{ "ITEM_STARTS_QUEST (string)", GlobalIsType("ITEM_STARTS_QUEST", "string") },
@@ -811,6 +833,52 @@ end
 local ZONE_SETTLE_TIMER = "GogoLoot.MasterLooter.ZoneSettle"
 
 --[[
+    Tradable Gear Tint (Features/Tint-Tradable-Gear.lua) answers to its own
+    switch: the bag windows it hooked, the color it lays (an alpha of 0 draws
+    nothing), and each carried item it reads, Bind on Pickup at or above
+    ns.TRADABLE_MIN_QUALITY, with the trade clock its tooltip gives. No clock
+    means Soulbound, so no tint. Reading a tooltip is a read.
+]]
+local function AppendTradableTintLines(lines, profile)
+	local color = profile.tradableTintColor or {}
+	local hooked = ns.GetTradableTintAdapterNames and ns:GetTradableTintAdapterNames() or {}
+	lines[#lines + 1] = string.format(
+		"Tradable Gear Tint: %s, color r=%s g=%s b=%s a=%s, bag windows hooked: %s",
+		OnOff(profile.tradableTintEnabled),
+		tostring(color.r),
+		tostring(color.g),
+		tostring(color.b),
+		tostring(color.a),
+		#hooked > 0 and table.concat(hooked, ", ") or "none"
+	)
+	local read = {}
+	for bagIndex = 0, NUM_BAG_SLOTS do
+		for slotIndex = 1, C_Container.GetContainerNumSlots(bagIndex) or 0 do
+			local link = C_Container.GetContainerItemLink(bagIndex, slotIndex)
+			local info = link and ns:SafeGetItemInfo(link)
+			if info and (info.quality or 0) >= ns.TRADABLE_MIN_QUALITY and info.bindType == ns.BIND_ON_PICKUP then
+				local seconds = ns.GetBagSlotTradeSeconds(bagIndex, slotIndex)
+				read[#read + 1] = string.format(
+					"  bag %d slot %d %s: %s",
+					bagIndex,
+					slotIndex,
+					LinkCell(link),
+					seconds and string.format("trade clock %ds, gets the tint", seconds) or "no trade clock, no tint"
+				)
+			end
+		end
+	end
+	lines[#lines + 1] = string.format(
+		"  Bind on Pickup items it reads in the bags (quality %d and up): %d",
+		ns.TRADABLE_MIN_QUALITY,
+		#read
+	)
+	for _, line in ipairs(read) do
+		lines[#lines + 1] = line
+	end
+end
+
+--[[
     What Automated Master Looting reads before it hands anything out: the group
     and instance it is in, its switches, and each quality's destination with
     whether the loot threshold lets that quality reach the master looter at
@@ -845,6 +913,7 @@ local function AppendMasterLootSettings(lines)
 		OnOff(profile.autoMasterLootQuestItems),
 		OnOff(profile.masterLooterPopup)
 	)
+	AppendTradableTintLines(lines, profile)
 	lines[#lines + 1] =
 		string.format("Ignore List: %d items, never handed out automatically", CountKeys(profile.ignoredItemsMaster))
 	lines[#lines + 1] = "Destinations (quality = recipient, reached by the loot threshold):"
@@ -1644,6 +1713,30 @@ local function EquipSpellsLoaded()
 	end
 	return loaded, total
 end
+
+--[[
+    The Roll Safety Warning (CheckRollSafety in Features/Automated-Rolls.lua)
+    prints a moment after a loading screen into a dungeon or raid, with
+    Automated Rolls on, when the roll that applies there is Need or Pass. A
+    /reload stays quiet, and so does coming back to the same instance with the
+    same roll within half an hour, which this can't see.
+]]
+local SAFETY_WARNING_ROLLS = { [ns.NEED] = true, [ns.PASS] = true }
+
+local function AppendRollSafetyLines(lines, profile)
+	local _, instanceType = GetInstanceInfo()
+	local action = IsInRaid() and profile.autoRollActionRaid or profile.autoRollActionParty
+	local inInstance = instanceType == "party" or instanceType == "raid"
+	lines[#lines + 1] = string.format(
+		"Roll Safety Warning: %s, sound %s; here: instance type %s, roll %s, so zoning in here would warn: %s",
+		OnOff(profile.rollSafetyWarning),
+		OnOff(profile.rollSafetyWarningSound),
+		tostring(instanceType),
+		tostring(action),
+		YesNo(profile.autoGreed and profile.rollSafetyWarning and inInstance and SAFETY_WARNING_ROLLS[action])
+	)
+end
+
 function ns:BuildRollsContextReport()
 	local lines = { GetClientHeader(), "" }
 	AppendProfileLines(lines)
@@ -1660,15 +1753,21 @@ function ns:BuildRollsContextReport()
 		IsInRaid() and "raid" or (IsInGroup() and "party" or "not grouped"),
 		IsInRaid() and "raid" or "party"
 	)
-	lines[#lines + 1] = "  Party: " .. RollSettingText(profile.autoRollActionParty, profile.autoRollThresholdParty)
-	lines[#lines + 1] = "  Raid: " .. RollSettingText(profile.autoRollActionRaid, profile.autoRollThresholdRaid)
+	lines[#lines + 1] = "  Party: "
+		.. RollSettingText(profile.autoRollActionParty, profile.autoRollThresholdParty)
+		.. ", Bind on Pickup "
+		.. YesNo(ns.RollsBindOnPickup(false))
+	lines[#lines + 1] = "  Raid: "
+		.. RollSettingText(profile.autoRollActionRaid, profile.autoRollThresholdRaid)
+		.. ", Bind on Pickup "
+		.. YesNo(ns.RollsBindOnPickup(true))
 
 	local byAction = {}
 	for _, action in pairs(profile.ignoredItemsSolo) do
 		byAction[action] = (byAction[action] or 0) + 1
 	end
 	lines[#lines + 1] = string.format(
-		"Item Overrides: %s, %d items (need %d, greed %d, pass %d, manual %d)",
+		"Global Item Overrides: %s, %d items (need %d, greed %d, pass %d, manual %d)",
 		OnOff(profile.customRollList),
 		CountKeys(profile.ignoredItemsSolo),
 		byAction[ns.NEED] or 0,
@@ -1686,16 +1785,15 @@ function ns:BuildRollsContextReport()
 	)
 	local rules = ns.db.char.characterRules
 	lines[#lines + 1] = string.format(
-		"Character Rules on %s (%s): ticked %s",
+		"Character Overrides on %s (%s): ticked %s",
 		tostring(ns.db.keys and ns.db.keys.char),
 		tostring(select(2, UnitClass("player"))),
 		TickedBoxes() or "nothing"
 	)
 	lines[#lines + 1] = string.format(
-		"  Everything Else: %s up to quality %s, Bind on Pickup %s",
+		"  Everything Else: %s up to the group context's quality, Bind on Pickup %s here",
 		tostring(ns.CharacterRuleUnwanted(rules, "action")),
-		tostring(ns.CharacterRuleUnwanted(rules, "threshold")),
-		YesNo(ns.db.profile.rollBindOnPickup)
+		YesNo(ns.RollsBindOnPickup(IsInRaid()))
 	)
 	lines[#lines + 1] = string.format(
 		"  Low-level gear: Greeds gear whose required level is at least %s below yours (%s), whatever the boxes say; 0 is off",
@@ -1705,6 +1803,12 @@ function ns:BuildRollsContextReport()
 	lines[#lines + 1] = "  Saved (anything not saved follows the class defaults): " .. (SavedRules() or "nothing")
 	lines[#lines + 1] = "  Stats this client offers: " .. table.concat(ns.CHARACTER_RULE_STAT_KEYS, ", ")
 	lines[#lines + 1] = string.format("  Equip-line stat spells loaded this session: %d of %d", EquipSpellsLoaded())
+	lines[#lines + 1] = ""
+	AppendRollSafetyLines(lines, profile)
+	lines[#lines + 1] = string.format(
+		"Automated Rolls on notice printed (once, at the first login with the switch on): %s",
+		YesNo(ns.db.global.automatedRollsOnNoticeShown)
+	)
 	lines[#lines + 1] = ""
 	lines[#lines + 1] = "Rolls open now:"
 	AppendOpenRolls(lines)
@@ -1716,72 +1820,56 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    What Automated Rolls would do with one item if it dropped now, check by
-    check in the order EvaluateRoll in Features/Automated-Rolls.lua makes them,
-    under the group context's setting. A live roll also says whether Need or
-    Greed is open to the player, which decides a Need that falls back to Greed;
-    an item can't, so a NEED verdict may roll Greed.
+    What Automated Rolls would do with one item if it dropped now, decided by
+    the live roll's own ns.DecideRoll (Features/Automated-Rolls.lua) under the
+    group the player is in: the check that settled it, then the roll or ROLL
+    WINDOW for one left to the player. A live roll also says whether Need or
+    Greed is open to the player, which decides a Need that falls back to
+    Greed; an item can't, so a NEED verdict may roll Greed.
 ]]
-local function RollVerdict(profile, itemLink, itemIdentifier, rollAction, rollThreshold)
-	if not profile.autoGreed then
-		return "AUTOMATED ROLLS OFF"
-	end
+local ROLL_REASON_LABELS = {
+	OFF = "AUTOMATED ROLLS OFF",
+	NEVER = "NEVER AUTOMATED",
+	OVERRIDE = "GLOBAL ITEM OVERRIDES",
+	QUEST = "QUEST ITEM",
+	LOW_LEVEL = "CHARACTER OVERRIDES: LOW-LEVEL GEAR",
+	WANTED = "CHARACTER OVERRIDES: WANTED",
+	EVERYTHING_ELSE = "CHARACTER OVERRIDES: NOT WANTED",
+	BIND_ON_PICKUP = "BIND ON PICKUP",
+	MANUAL = "SETTING IS MANUAL",
+	QUALITY = "WITHIN THE QUALITY SETTING",
+	ABOVE_QUALITY = "ABOVE THRESHOLD",
+}
+
+-- The Character Overrides box an item fell under, for the reasons that come from one.
+local RULE_REASONS = { LOW_LEVEL = true, WANTED = true, EVERYTHING_ELSE = true }
+
+local function RollVerdict(itemLink, itemIdentifier)
 	local itemInformation = ns:SafeGetItemInfo(itemIdentifier)
 	if not itemInformation then
 		return "NOT CACHED (a live roll waits for it)"
 	end
-	if ns:IsNeverAutomatedItem(itemInformation) then
-		return "NEVER AUTOMATED"
-	end
-	local override = profile.customRollList and profile.ignoredItemsSolo[itemIdentifier]
-	if override then
-		return "ITEM OVERRIDES: " .. string.upper(tostring(override))
-	end
-	if ns:IsQuestClassItem(itemInformation) then
-		return "QUEST ITEM"
-	end
-	local verdict, group, row =
-		ns.CharacterRuleVerdict(itemInformation, itemLink, ns.db.char.characterRules, select(2, UnitClass("player")))
-	local where = type(group) == "table" and ns.CharacterRuleGearKey(group, row) or tostring(group)
 	local rules = ns.db.char.characterRules
-	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or ns.db.profile.rollBindOnPickup
-	if
-		verdict
-		and bindOk
-		and rollAction ~= ns.MANUAL
-		and ns.IsLowLevelGear(rules, itemInformation.requiredLevel, UnitLevel("player"))
-		and itemInformation.quality <= ns.CharacterRuleUnwanted(rules, "threshold")
-	then
-		return "CHARACTER RULES: LOW-LEVEL GEAR (REQUIRED LEVEL "
-			.. tostring(itemInformation.requiredLevel)
-			.. ", "
-			.. where
-			.. "), ROLLS GREED"
-	end
-	if verdict == ns.CHARACTER_RULE_WANTED then
-		return "CHARACTER RULES: WANTED (" .. where .. "), ROLL WINDOW"
-	end
-	if verdict == ns.CHARACTER_RULE_UNWANTED and rollAction ~= ns.MANUAL then
-		if ns.CharacterRuleUnwanted(rules, "action") == ns.MANUAL then
-			return "CHARACTER RULES: NOT WANTED (" .. where .. "), EVERYTHING ELSE IS MANUAL, ROLL WINDOW"
+	local classFile = select(2, UnitClass("player"))
+	local rollAction, reason = ns.DecideRoll(
+		itemIdentifier,
+		itemInformation,
+		itemLink,
+		itemInformation.quality,
+		rules,
+		classFile,
+		UnitLevel("player")
+	)
+	local label = ROLL_REASON_LABELS[reason] or tostring(reason)
+	if RULE_REASONS[reason] then
+		local _, group, row = ns.CharacterRuleVerdict(itemInformation, itemLink, rules, classFile)
+		local where = type(group) == "table" and ns.CharacterRuleGearKey(group, row) or tostring(group)
+		if reason == "LOW_LEVEL" then
+			where = "REQUIRED LEVEL " .. tostring(itemInformation.requiredLevel) .. ", " .. where
 		end
-		if bindOk and itemInformation.quality <= ns.CharacterRuleUnwanted(rules, "threshold") then
-			return "CHARACTER RULES: NOT WANTED ("
-				.. where
-				.. "), ROLLS "
-				.. string.upper(tostring(ns.CharacterRuleUnwanted(rules, "action")))
-		end
+		label = label .. " (" .. where .. ")"
 	end
-	if itemInformation.bindType == ns.BIND_ON_PICKUP and not ns.db.profile.rollBindOnPickup then
-		return "BIND ON PICKUP"
-	end
-	if rollAction == ns.MANUAL then
-		return "SETTING IS MANUAL"
-	end
-	if itemInformation.quality > rollThreshold then
-		return "ABOVE THRESHOLD"
-	end
-	return "ROLLS " .. string.upper(tostring(rollAction))
+	return label .. ", " .. (rollAction and ("ROLLS " .. string.upper(tostring(rollAction))) or "ROLL WINDOW")
 end
 
 --[[
@@ -1819,7 +1907,7 @@ function ns:BuildRollVerdictsReport()
 				itemIdentifier,
 				LinkCell(link),
 				tostring(ns.GetLinkQuality(link)),
-				RollVerdict(profile, link, itemIdentifier, rollAction, rollThreshold),
+				RollVerdict(link, itemIdentifier),
 			}, "\t")
 		end
 	end
@@ -2015,11 +2103,18 @@ function ns:BuildLootToastsContextReport()
 		profile.lootToastMaxVisible == ns.LOOT_TOAST_UNLIMITED and "unlimited" or tostring(profile.lootToastMaxVisible)
 	)
 	lines[#lines + 1] = string.format(
-		"Tooltips %s; Bag Count %s; Winning Roll: Mine %s, Group %s",
+		"Tooltips %s; Blizzard Roll Winner Window %s%s; Bag Count %s; Winning Roll: Mine %s, Group %s",
 		OnOff(profile.lootToastTooltips),
+		OnOff(profile.lootToastBlizzardRollWon),
+		ns.HasBlizzardRollWonWindow() and "" or " (no window on this client)",
 		OnOff(profile.lootToastBagCount),
 		OnOff(profile.lootToastWinningRollMine),
 		OnOff(profile.lootToastWinningRollGroup)
+	)
+	-- The game's own won-roll window shows only while its alert listens; ns.SyncBlizzardRollWonWindow sets that at each loading screen.
+	lines[#lines + 1] = string.format(
+		"The game's won-roll alert listening now: %s",
+		ns.HasBlizzardRollWonWindow() and YesNo(AlertFrame:IsEventRegistered("LOOT_ITEM_ROLL_WON")) or "n/a"
 	)
 
 	lines[#lines + 1] = ""
@@ -2442,6 +2537,64 @@ end
     middle-click rolls up to the group's size, which GetNumGroupMembers reads
     as 0 alone.
 ]]
+--[[
+    Raid Roll Winner (Features/Raid-Roll-Winner.lua) names the winner only for
+    a /roll from exactly 1 to the group's size, two players or more, read from
+    the game's own roll line. Group Chat posts it, after a wait of the
+    player's roster place minus one steps, unless another GogoLoot user claims
+    the roll first over the add-on channel; with Enable Loot Announcements off
+    it prints instead. The prefix registration is read through _G, since
+    GogoLoot itself never asks for it.
+]]
+local function AppendRaidRollLines(lines, groupSize)
+	local profile = ns.db.profile
+	local posts = profile.raidRollOutput == ns.RAID_ROLL_OUTPUT_GROUP and profile.lootNotifications
+	lines[#lines + 1] = ""
+	lines[#lines + 1] = string.format(
+		"Raid Roll Winner: %s, output %s, so a counted roll %s",
+		OnOff(profile.raidRollWinner),
+		tostring(profile.raidRollOutput),
+		posts and string.format("posts to %s", tostring(ns:GetGroupChatChannel() or "no channel (not grouped)"))
+			or "prints to you"
+	)
+	if IsInGroup() and groupSize >= 2 then
+		lines[#lines + 1] = string.format(
+			"  Counts now: a /roll 1-%d in this %d-player group: %s",
+			groupSize,
+			groupSize,
+			YesNo(profile.raidRollWinner)
+		)
+	else
+		lines[#lines + 1] = string.format(
+			"  Counts now: nothing (grouped %s, %d members; a raid roll needs a group of 2 or more)",
+			YesNo(IsInGroup()),
+			groupSize
+		)
+	end
+	local isRegistered = C_ChatInfo.IsAddonMessagePrefixRegistered
+	lines[#lines + 1] = string.format(
+		"  Add-on channel prefix %q registered: %s, claim step %ss",
+		ns.ADDON_MESSAGE_PREFIX,
+		type(isRegistered) == "function" and YesNo(isRegistered(ns.ADDON_MESSAGE_PREFIX)) or "unreadable",
+		tostring(ns.RAID_ROLL_CLAIM_STEP)
+	)
+	local high = groupSize >= 2 and groupSize or 5
+	local line, problem = BuildLine(RANDOM_ROLL_RESULT, EXAMPLE_LOOTER, 3, 1, high)
+	if line then
+		local roller, roll, low, top = ns.ParseRandomRollMessage(line)
+		lines[#lines + 1] = string.format(
+			"  Roll line %q read back as roller %s, roll %s, range %s-%s",
+			(line:gsub("|", "||")),
+			tostring(roller),
+			tostring(roll),
+			tostring(low),
+			tostring(top)
+		)
+	else
+		lines[#lines + 1] = "  Roll line: ERROR, " .. tostring(problem)
+	end
+end
+
 ---@return string
 function ns:BuildRollMacroContextReport()
 	local lines = { GetClientHeader(), "" }
@@ -2489,6 +2642,7 @@ function ns:BuildRollMacroContextReport()
 		groupSize > 0 and groupSize or 100,
 		groupSize
 	)
+	AppendRaidRollLines(lines, groupSize)
 	return table.concat(lines, "\n")
 end
 
@@ -2938,7 +3092,25 @@ ns.DIAGNOSTIC_DATA_SOURCES = {
 		sources = {
 			{ table = "CHARACTER_RULE_ARMOR_TYPES", kind = "other", rowId = ValueIsId },
 			{ table = "CHARACTER_RULE_WEAPON_TYPES", kind = "other", rowId = ValueIsId },
-			{ table = "CHARACTER_RULE_SAMPLE_ITEMS", kind = "item", rowId = ValueIsId },
+			-- The Loot Roll Sanity Check's drops, each with its kind, to hold against its quality and binding in game.
+			{
+				table = "SANITY_CHECK_TRASH",
+				kind = "item",
+				rowId = FirstFieldIsId,
+				dataColumns = { { "DATA_KIND", SecondField } },
+			},
+			{
+				table = "SANITY_CHECK_DUNGEON_BOSSES",
+				kind = "item",
+				rowId = FirstFieldIsId,
+				dataColumns = { { "DATA_KIND", SecondField } },
+			},
+			{
+				table = "SANITY_CHECK_RAID_BOSSES",
+				kind = "item",
+				rowId = FirstFieldIsId,
+				dataColumns = { { "DATA_KIND", SecondField } },
+			},
 			-- The boxes each class starts with, by class file: row counts, since a class file is no game id.
 			{ table = "CLASS_ARMOR_STARTER", kind = "other", rowId = KeyIsId },
 			{ table = "CLASS_WEAPON_STARTER", kind = "other", rowId = KeyIsId },

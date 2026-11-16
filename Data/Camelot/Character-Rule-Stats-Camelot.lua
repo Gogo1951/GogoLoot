@@ -22,7 +22,7 @@ ns.CHARACTER_RULE_EQUIP_SPELLS = {}
 How We Got the Data
 
 Last Validated
-	2026-11-07, WoW Forever 1.60.1.70862
+	2026-11-16, WoW Forever 1.60.1.70938
 
 Notes
 	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rules.lua drops the rest, and any section left empty, at load.

@@ -21,7 +21,7 @@ local rollsInitiatedByAddon = {}
 --[[
     Rolls whose item info wasn't cached when START_LOOT_ROLL fired are polled by
     a named timer until the info resolves or the roll ends — CANCEL_LOOT_ROLL
-    cancelling the timer is the real teardown. The timer identifier carries the
+    canceling the timer is the real teardown. The timer identifier carries the
     roll id, so ns:IsTimerPending is the duplicate-ticker guard — no hand-rolled
     flag doubling as a self-cancel token.
 
@@ -65,16 +65,33 @@ end
 
 --[[
     The threshold path is configured per group context: raids read the raid
-    pair, everything else (party, and the rare ungrouped roll) reads the party
-    pair. Nothing here looks at the loot method — GogoLoot acts on every
-    START_LOOT_ROLL the client raises, so a roll that opens during a master-loot
-    session is automated exactly like one from Group Loot or Need Before Greed.
+    settings, everything else (party, and the rare ungrouped roll) reads the
+    party settings: the roll, its Up to Quality, and Include Bind on Pickup.
+    Nothing here looks at the loot method — GogoLoot acts on every
+    START_LOOT_ROLL the client raises, so a roll that opens during a
+    master-loot session is automated exactly like one from Group Loot or Need
+    Before Greed.
 ]]
-local function GetContextRollSettings()
-	if IsInRaid() then
-		return ns.db.profile.autoRollActionRaid, ns.db.profile.autoRollThresholdRaid
+-- A group context's Include Bind on Pickup: the raid's in a raid, the party's anywhere else.
+---@param inRaid boolean
+---@return boolean
+function ns.RollsBindOnPickup(inRaid)
+	local profile = ns.db.profile
+	if inRaid then
+		return profile.rollBindOnPickupRaid and true or false
 	end
-	return ns.db.profile.autoRollActionParty, ns.db.profile.autoRollThresholdParty
+	return profile.rollBindOnPickupParty and true or false
+end
+
+---@param inRaid boolean|nil # the group context to read; nil reads the group the player is in
+local function GetContextRollSettings(inRaid)
+	if inRaid == nil then
+		inRaid = IsInRaid()
+	end
+	if inRaid then
+		return ns.db.profile.autoRollActionRaid, ns.db.profile.autoRollThresholdRaid, ns.RollsBindOnPickup(inRaid)
+	end
+	return ns.db.profile.autoRollActionParty, ns.db.profile.autoRollThresholdParty, ns.RollsBindOnPickup(inRaid)
 end
 
 local function ExecuteRollOverride(rollIdentifier, rollItemLink, rollOverride, rollGreedAllowed, rollNeedAllowed)
@@ -101,11 +118,12 @@ end
     What Automated Rolls does with one item, for a character's rules and
     class: the roll to make (ns.NEED, ns.GREED or ns.PASS), or nil to leave
     the roll window to the player, then why ("OFF", "NEVER", "OVERRIDE",
-    "QUEST", "LOW_LEVEL", "WANTED", "EVERYTHING_ELSE", "BIND_ON_PICKUP", "MANUAL",
-    "QUALITY" or "ABOVE_QUALITY"). EvaluateRoll makes the roll it returns;
-    Character Rules' Sanity Check shows it. The gates run in a fixed order,
-    and the order is the design (README-Technical.md, Item Overrides vs. the
-    Automated Rolls Toggle).
+    "QUEST", "LOW_LEVEL", "WANTED", "EVERYTHING_ELSE", "BIND_ON_PICKUP",
+    "MANUAL", "QUALITY" or "ABOVE_QUALITY"). EvaluateRoll makes the roll it
+    returns; the Loot Roll Sanity Check shows it, passing inRaid to read the In
+    Party or In Raid settings whatever group the player is in. The gates run
+    in a fixed order, and the order is the design (README-Technical.md, Item
+    Overrides vs. the Automated Rolls Toggle).
 ]]
 ---@param itemIdentifier number
 ---@param itemInformation table
@@ -114,9 +132,10 @@ end
 ---@param rules table|nil
 ---@param classFile string|nil
 ---@param level number|nil
+---@param inRaid boolean|nil # nil reads the group the player is in
 ---@return string|nil rollAction
 ---@return string reason
-function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules, classFile, level)
+function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules, classFile, level, inRaid)
 	if not ns.db.profile.autoGreed then
 		return nil, "OFF"
 	end
@@ -149,24 +168,24 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		return nil, "QUEST"
 	end
 
-	local contextRollAction, contextRollThreshold = GetContextRollSettings()
+	local contextRollAction, contextRollThreshold, contextBindOnPickup = GetContextRollSettings(inRaid)
 
 	--[[
         Character Rules: gear this character wants (a ticked type carrying a
         ticked stat) keeps its roll window, whatever the quality settings
         say. Gear it doesn't want rolls the way its Everything Else row says
-        (Greed up to Epic by default; Bind on Pickup only while Include Bind
-        on Pickup is on), as an Item Override does, unless the group context
-        is set to Manual. Gear past that row's reach falls through to the
+        (Greed by default), up to the group context's Up to Quality, Bind on
+        Pickup only while Include Bind on Pickup is on, unless the group
+        context is set to Manual. Gear past that quality falls through to the
         threshold path below.
     ]]
 	local verdict = ns.CharacterRuleVerdict(itemInformation, itemLink, rules, classFile)
-	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or ns.db.profile.rollBindOnPickup
+	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or contextBindOnPickup
 
 	--[[
         Automatically Greed on Low-Level Gear: gear whose required level is
         far enough below the character's (Your Level - 5 by default) Greeds,
-        matching or not, up to Everything Else's quality, so a levelling
+        matching or not, up to the group context's Up to Quality, so a leveling
         character never waits on gear it has outgrown. Bind on Pickup only
         while Include Bind on Pickup is on, and never while the group context
         is set to Manual.
@@ -176,7 +195,7 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		and bindOk
 		and contextRollAction ~= ns.MANUAL
 		and ns.IsLowLevelGear(rules, itemInformation.requiredLevel, level)
-		and quality <= ns.CharacterRuleUnwanted(rules, "threshold")
+		and quality <= contextRollThreshold
 	then
 		return ns.GREED, "LOW_LEVEL"
 	end
@@ -189,13 +208,13 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		if ns.CharacterRuleUnwanted(rules, "action") == ns.MANUAL then
 			return nil, "EVERYTHING_ELSE"
 		end
-		if bindOk and quality <= ns.CharacterRuleUnwanted(rules, "threshold") then
+		if bindOk and quality <= contextRollThreshold then
 			return ns.CharacterRuleUnwanted(rules, "action"), "EVERYTHING_ELSE"
 		end
 	end
 
 	-- The threshold path touches BoP items only while Include Bind on Pickup is on
-	if itemInformation.bindType == ns.BIND_ON_PICKUP and not ns.db.profile.rollBindOnPickup then
+	if itemInformation.bindType == ns.BIND_ON_PICKUP and not contextBindOnPickup then
 		return nil, "BIND_ON_PICKUP"
 	end
 
@@ -285,7 +304,7 @@ end
 --[[
     Polls a roll whose item info wasn't cached at START_LOOT_ROLL time. Runs
     every ROLL_RETRY_INTERVAL until the info resolves and the roll is decided.
-    Each tick re-arms the same named timer, so CANCEL_LOOT_ROLL cancelling that
+    Each tick re-arms the same named timer, so CANCEL_LOOT_ROLL canceling that
     name is all it takes to tear the poll down when the roll ends; the attempt
     cap only bounds a cancel that never arrives. There is deliberately no
     "still live?" probe inside the tick — the one read that could answer it,
@@ -339,3 +358,87 @@ end
 
 ns:RegisterModuleEvent("CONFIRM_LOOT_ROLL", OnConfirmLootRoll)
 ns:RegisterModuleEvent("CANCEL_LOOT_ROLL", OnCancelLootRoll)
+
+--------------------------------------------------------------------------------
+-- Safety Warnings
+--------------------------------------------------------------------------------
+
+--[[
+    Need and Pass both give loot away without asking: Need takes it from the
+    group, Pass leaves it to them. So entering a dungeon or raid while the roll
+    GogoLoot will make there is one of those prints a reminder in chat, and,
+    with Play Sound on, plays an alert. The roll is the one the rolls
+    themselves read (GetContextRollSettings): the raid's in a raid group, the
+    party's otherwise. Greed and Manual say nothing.
+
+    It waits a moment after the loading screen so the line lands below the
+    zone-in chatter, and checks again then in case the player has already
+    left. A /reload inside the instance stays quiet. Coming back into the same
+    instance with the same roll inside SAFETY_WARNING_REPEAT_SECONDS stays
+    quiet too, so a corpse run doesn't repeat it; a later run warns again.
+]]
+local SAFETY_WARNING_TIMER = "GogoLoot.RollSafetyWarning"
+local SAFETY_WARNING_DELAY = 3
+local SAFETY_WARNING_REPEAT_SECONDS = 30 * 60
+
+local SAFETY_WARNING_INSTANCE_TYPES = { party = true, raid = true }
+local SAFETY_WARNING_ACTIONS = { [ns.NEED] = NEED, [ns.PASS] = PASS }
+
+local lastSafetyWarning
+
+-- The warning's text: the roll in the game's word, then the quality ceiling in its color.
+---@param action string ns.NEED or ns.PASS
+---@param threshold number
+---@return string
+function ns.BuildRollSafetyWarning(action, threshold)
+	local qualityName = _G["ITEM_QUALITY" .. threshold .. "_DESC"] or tostring(threshold)
+	local quality = ns.GetQualityColor(threshold) .. qualityName .. "|r"
+	return L["MESSAGE_ROLL_SAFETY_WARNING"]:format(SAFETY_WARNING_ACTIONS[action] or action, quality)
+end
+
+-- The alert, on the Master channel so it's heard with sound effects off; the panel's speaker plays it too.
+function ns.PlayRollSafetyWarning()
+	PlaySoundFile(ns.ROLL_SAFETY_WARNING_SOUND_FILE, "Master")
+end
+
+local function CheckRollSafety()
+	local profile = ns.db and ns.db.profile
+	if not (profile and profile.autoGreed and profile.rollSafetyWarning) then
+		return
+	end
+	local instanceName, instanceType, _, _, _, _, _, instanceIdentifier = GetInstanceInfo()
+	if not SAFETY_WARNING_INSTANCE_TYPES[instanceType] then
+		return
+	end
+	local action, threshold = GetContextRollSettings()
+	if not SAFETY_WARNING_ACTIONS[action] then
+		return
+	end
+
+	local instanceKey = instanceIdentifier or instanceName
+	local now = GetTime()
+	local last = lastSafetyWarning
+	if
+		last
+		and last.instance == instanceKey
+		and last.action == action
+		and now - last.at < SAFETY_WARNING_REPEAT_SECONDS
+	then
+		return
+	end
+	lastSafetyWarning = { instance = instanceKey, action = action, at = now }
+
+	ns:PrintMessage(ns.BuildRollSafetyWarning(action, threshold))
+	if profile.rollSafetyWarningSound then
+		ns.PlayRollSafetyWarning()
+	end
+end
+
+local function OnSafetyWarningEnteringWorld(_, isReloadingUi)
+	if isReloadingUi then
+		return
+	end
+	ns:After(SAFETY_WARNING_TIMER, SAFETY_WARNING_DELAY, CheckRollSafety)
+end
+
+ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnSafetyWarningEnteringWorld)
