@@ -70,9 +70,9 @@ ns.CLASS_STAT_STARTER = {
 	WARRIOR = { "ATTACK_POWER", "STRENGTH" },
 	PALADIN = { "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
 	HUNTER = { "AGILITY", "ATTACK_POWER" },
-	ROGUE = { "AGILITY", "ATTACK_POWER" },
+	ROGUE = { "AGILITY", "ATTACK_POWER", "STRENGTH" },
 	PRIEST = { "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT" },
-	SHAMAN = { "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
+	SHAMAN = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
 	MAGE = { "INTELLECT", "SPELL_POWER" },
 	WARLOCK = { "INTELLECT", "SPELL_POWER" },
 	DRUID = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT", "STRENGTH" },
@@ -197,6 +197,7 @@ Notes
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
 	- Weapons: every type the class can train (WEAPON_SPECS above 0), assuming the character has trained everything (maintainer, 2026-11-07).
 	- Stats: each spec's main stats, plus the role stats its useful list names (attack power, spell power, healing, mana per 5, Spirit), mapped to Character Rules' stat keys: RANGED_AP and FERAL_AP are ATTACK_POWER, SPELL_DAMAGE and the school damages are SPELL_POWER, HEALING is HEALING_POWER. A useful primary stat (a warrior's Agility, a hunter's Intellect) is left out, so gear built on it isn't held for the class. Stamina starts unticked for every class, and crit and hit ticked for every class (everyClass in ns.CHARACTER_RULE_STATS), so neither is listed here.
+	- Stats the maintainer added beyond the spec mapping (2026-11-18): Strength for rogues, and Agility for shamans, so melee gear built on either is held for them. Shamans already start with Strength and Intellect.
 	- "HELD" is the held off-hand row (orbs, tomes, lanterns). Those items are armor subclass 0 Miscellaneous, like rings, so Features/Character-Rules.lua tells them apart by their INVTYPE_HOLDABLE slot.
 	- Cloaks are cloth (armor subclass 1) on every client, so Features/Character-Rules.lua treats INVTYPE_CLOAK as a slot with no type, like rings, necks and trinkets: stats alone decide them. Shirts and tabards never get a rule.
 	- Weapon subclasses with no row of their own (9, 11 and 12, obsolete and exotic; 14 Miscellaneous; 17 Spears; 20 Fishing Poles) fall to the Other row (Data/Data.lua), which starts unticked for every class.
