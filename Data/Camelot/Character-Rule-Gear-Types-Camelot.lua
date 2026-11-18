@@ -50,12 +50,12 @@ ns.CLASS_WEAPON_STARTER = {
 	WARRIOR = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18 },
 	PALADIN = { 0, 1, 4, 5, 6, 7, 8 },
 	HUNTER = { 0, 1, 2, 3, 6, 7, 8, 10, 13, 15, 16, 18 },
-	ROGUE = { 2, 3, 4, 7, 13, 15, 16, 18 },
+	ROGUE = { 0, 2, 3, 4, 7, 13, 15, 16, 18 },
 	PRIEST = { 4, 10, 15, 19 },
 	SHAMAN = { 0, 1, 4, 5, 10, 13, 15 },
 	MAGE = { 7, 10, 15, 19 },
 	WARLOCK = { 7, 10, 15, 19 },
-	DRUID = { 4, 5, 10, 13, 15 },
+	DRUID = { 4, 5, 6, 10, 13, 15 },
 }
 
 -- [classFile] = { stat key (ns.CHARACTER_RULE_STATS) ticked for the class, ... }; a stat this client doesn't offer is skipped.
@@ -63,9 +63,9 @@ ns.CLASS_STAT_STARTER = {
 	WARRIOR = { "ATTACK_POWER", "STRENGTH" },
 	PALADIN = { "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
 	HUNTER = { "AGILITY", "ATTACK_POWER" },
-	ROGUE = { "AGILITY", "ATTACK_POWER" },
+	ROGUE = { "AGILITY", "ATTACK_POWER", "STRENGTH" },
 	PRIEST = { "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT" },
-	SHAMAN = { "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
+	SHAMAN = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "STRENGTH" },
 	MAGE = { "INTELLECT", "SPELL_POWER" },
 	WARLOCK = { "INTELLECT", "SPELL_POWER" },
 	DRUID = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT", "STRENGTH" },
@@ -197,6 +197,8 @@ Notes
 	- "HELD" is the held off-hand row (orbs, tomes, lanterns). Those items are armor subclass 0 Miscellaneous, like rings, so Features/Character-Rules.lua tells them apart by their INVTYPE_HOLDABLE slot.
 	- Cloaks are cloth (armor subclass 1) on every client, so Features/Character-Rules.lua treats INVTYPE_CLOAK as a slot with no type, like rings, necks and trinkets: stats alone decide them. Shirts and tabards never get a rule.
 	- Weapon subclasses with no row of their own (9, 11 and 12, obsolete and exotic; 14 Miscellaneous; 17 Spears; 20 Fishing Poles) fall to the Other row (Data/Data.lua), which starts unticked for every class.
+	- Forever's weapon changes, checked against this build's SkillRaceClassInfo and SkillLineAbility (wago.tools, 1.60.1.70938) beside Classic Era's (1.15.8.66129), 2026-11-18. Rogues train One-Handed Axes here (the trainer spell's class mask gained Rogue), so they start with it ticked. Druids start with Polearms ticked: the client's tables carry a druid Polearms row on Era too, so they can't settle it alone, but Forever's class guides list it, and the maintainer asked for it (2026-11-18). Play It Forward's WEAPON_SPECS still counts both at 0. Every other class matches Era.
+	- Stats the maintainer added beyond the spec mapping (2026-11-18): Strength for rogues, and Agility for shamans, so melee gear built on either is held for them. Shamans already start with Strength and Intellect.
 	- Hunters start with Thrown ticked: Play It Forward counts it 0 because no hunter spec builds on it, but a hunter trains it, and the user asked for every trainable weapon (2026-11-07).
 
 SQL (CMaNGOS)
