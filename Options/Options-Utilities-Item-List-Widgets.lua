@@ -3,133 +3,19 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The three custom AceGUI widgets the shared item list builder
-    (Options-Utilities-Item-Lists.lua) draws with: GogoLoot_ItemLink, a row's
-    item; GogoLoot_ItemListFilter, the filter box; and GogoLoot_ItemListAdd,
-    the add box and its button.
+    The two custom AceGUI widgets the shared item list builder
+    (Options-Utilities-Item-Lists.lua) draws with: GogoLoot_ItemListFilter, the
+    filter box, and GogoLoot_ItemListAdd, the add box and its button. A row's
+    item is the Options-Kit's Kit.ITEM_LINK_WIDGET.
 ]]
 local _, ns = ...
 local L = ns.L
 
-local GetColor = ns.GetColor
 local MeasureCaptionPixels = ns.MeasureCaptionPixels
-local IsItemOnClient = ns.IsItemOnClient
 local SetListFilter = ns.SetItemListFilter
 local REMOVE_ICON = ns.ITEM_LIST_REMOVE_ICON
 
---------------------------------------------------------------------------------
--- Custom AceGUI Widget: GogoLoot_ItemLink
---------------------------------------------------------------------------------
-
---[[
-    A lightweight label that shows the full item tooltip on hover. Used via
-    dialogControl on the AceConfig "input" entries built by
-    BuildItemListOptions; the get() function returns the item ID as a
-    string, and SetText handles lookup + rendering via ns:GetItemDisplayName
-    (defined in Options-Utilities-Item-Cache.lua).
-]]
-
 local AceGUI = LibStub("AceGUI-3.0")
-local widgetType = ns.ITEM_LINK_WIDGET_TYPE
-local widgetVersion = 1
-
-local function OnItemLinkWidgetEnter(frame)
-	local self = frame.obj
-	if not self.itemIdentifier or not IsItemOnClient(self.itemIdentifier) then
-		return
-	end
-	local _, itemLink = C_Item.GetItemInfo(self.itemIdentifier)
-	if not itemLink then
-		return
-	end
-	GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-	GameTooltip:SetHyperlink(itemLink)
-
-	--[[
-        The row's note (spec.noteFor), under the item's own tooltip.
-        AceConfigDialog hangs the option table off the widget's user data, and
-        this widget replaces AceConfigDialog's OnEnter, so the note is drawn here
-        or not at all.
-    ]]
-	local option = self:GetUserDataTable().option
-	local note = option and option.desc
-	-- A note that waits on the item is a function, read as the tooltip opens.
-	if type(note) == "function" then
-		note = note()
-	end
-	if note then
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")
-		GameTooltip:AddLine(GetColor("HELP") .. note .. "|r", nil, nil, nil, true)
-	end
-	GameTooltip:Show()
-end
-
-local function OnItemLinkWidgetLeave()
-	GameTooltip:Hide()
-end
-
-local widgetMethods = {}
-
-function widgetMethods:OnAcquire()
-	self.itemIdentifier = nil
-	self:SetHeight(20)
-end
-
-function widgetMethods:OnRelease()
-	self.itemIdentifier = nil
-end
-
-function widgetMethods:SetText(text)
-	local itemId = tonumber(text)
-	if itemId then
-		self.itemIdentifier = itemId
-		self.label:SetText(ns:GetItemDisplayName(itemId))
-	else
-		self.label:SetText(text or "")
-	end
-end
-
-function widgetMethods:GetText()
-	return self.itemIdentifier and tostring(self.itemIdentifier) or ""
-end
-
-function widgetMethods:SetLabel() end
-function widgetMethods:SetMaxLetters() end
-function widgetMethods:SetDisabled() end
-
-local function ItemLinkWidgetConstructor()
-	local frame = CreateFrame("Frame", nil, UIParent)
-	frame:SetHeight(20)
-	frame:EnableMouse(true)
-	frame:SetScript("OnEnter", OnItemLinkWidgetEnter)
-	frame:SetScript("OnLeave", OnItemLinkWidgetLeave)
-
-	local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	label:SetJustifyH("LEFT")
-	--[[
-        One line, cut short with an ellipsis. Wrapped, a name too long for the
-        column drops whole onto a second line and leaves its icon on the first;
-        the hover tooltip shows the full name.
-    ]]
-	label:SetWordWrap(false)
-	label:SetPoint("TOPLEFT")
-	label:SetPoint("BOTTOMRIGHT")
-
-	local widget = {
-		label = label,
-		frame = frame,
-		type = widgetType,
-	}
-
-	for method, func in pairs(widgetMethods) do
-		widget[method] = func
-	end
-
-	return AceGUI:RegisterAsWidget(widget)
-end
-
-AceGUI:RegisterWidgetType(widgetType, ItemLinkWidgetConstructor, widgetVersion)
 
 --------------------------------------------------------------------------------
 -- Custom AceGUI Widget: GogoLoot_ItemListFilter
@@ -158,13 +44,16 @@ local FILTER_FOCUS_HANDOVER_SECONDS = 1
 local focusedFilterList, focusedFilterCursor
 local focusHandoverUntil = 0
 
-local FILTER_WIDGET_HEIGHT = 26
+local FILTER_WIDGET_HEIGHT = 32
+-- Kept off the spacing scale: fitted to InputBoxTemplate's art, which clips its text any shorter and stretches its caps any taller.
 local FILTER_BOX_HEIGHT = 19
+-- The box's top and bottom text insets, fitted to that same art.
+local FILTER_BOX_TEXT_INSET = 3
 local SEARCH_ICON = "Interface\\Common\\UI-Searchbox-Icon"
-local SEARCH_ICON_SIZE = 14
-local SEARCH_ICON_LEFT = 2
+local SEARCH_ICON_SIZE = 16
+local SEARCH_ICON_LEFT = 0
 -- InputBoxTemplate draws its left cap past the box's edge, so the box starts this far right of the icon.
-local SEARCH_ICON_GAP = 12
+local SEARCH_ICON_GAP = 16
 --[[
     Where the box starts, clear of the icon, and how far in from the widget's
     right edge it ends (its right cap sits on its edge). The add pair on the
@@ -175,7 +64,10 @@ local FILTER_BOX_LEFT = SEARCH_ICON_LEFT + SEARCH_ICON_SIZE + SEARCH_ICON_GAP
 local FILTER_BOX_RIGHT_INSET = 2
 -- The rows' red remove icon, as Connoisseur's Restocker clears its filter: the same "get rid of this" mark everywhere on the panel.
 local CLEAR_ICON = REMOVE_ICON
-local CLEAR_ICON_SIZE = 14
+local CLEAR_ICON_SIZE = 16
+-- The clear icon's inset from the box's right edge, and the room the text keeps clear of it.
+local CLEAR_ICON_INSET = 4
+local CLEAR_ICON_TEXT_GAP = 8
 
 local function UpdateFilterDecorations(widget)
 	if widget.editbox:GetText() == "" then
@@ -318,7 +210,7 @@ local function FilterWidgetConstructor()
 	local editbox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
 	editbox:SetAutoFocus(false)
 	editbox:SetFontObject(ChatFontNormal)
-	editbox:SetTextInsets(0, CLEAR_ICON_SIZE + 6, 3, 3)
+	editbox:SetTextInsets(0, CLEAR_ICON_SIZE + CLEAR_ICON_TEXT_GAP, FILTER_BOX_TEXT_INSET, FILTER_BOX_TEXT_INSET)
 	editbox:SetMaxLetters(64)
 	editbox:SetHeight(FILTER_BOX_HEIGHT)
 	editbox:SetPoint("LEFT", icon, "RIGHT", SEARCH_ICON_GAP, 0)
@@ -341,7 +233,7 @@ local function FilterWidgetConstructor()
 
 	local clearButton = CreateFrame("Button", nil, editbox)
 	clearButton:SetSize(CLEAR_ICON_SIZE, CLEAR_ICON_SIZE)
-	clearButton:SetPoint("RIGHT", editbox, "RIGHT", -3, 0)
+	clearButton:SetPoint("RIGHT", editbox, "RIGHT", -CLEAR_ICON_INSET, 0)
 	clearButton.texture = clearButton:CreateTexture(nil, "ARTWORK")
 	clearButton.texture:SetTexture(CLEAR_ICON)
 	clearButton.texture:SetAllPoints()
@@ -389,12 +281,13 @@ local addWidgetType = ns.ITEM_LIST_ADD_WIDGET_TYPE
 local addWidgetVersion = 1
 
 -- The widget and its box take the filter's heights, so the two lines match.
+-- Kept off the spacing scale: UIPanelButtonTemplate's stock height, which its art is drawn for.
 local ADD_BUTTON_HEIGHT = 22
 -- Tucks the box's right cap under the button, so the pair reads as one control.
-local ADD_BOX_BUTTON_OVERLAP = 3
+local ADD_BOX_BUTTON_OVERLAP = 4
 -- Fitted to its caption and never narrower than this, so a longer word in another locale widens the button.
-local ADD_BUTTON_MIN_WIDTH = 60
-local ADD_BUTTON_CAPTION_PADDING = 24
+local ADD_BUTTON_MIN_WIDTH = 64
+local ADD_BUTTON_CAPTION_PADDING = 32
 
 local function UpdateAddPlaceholder(widget)
 	if widget.editbox:GetText() == "" then
@@ -518,7 +411,7 @@ local function AddWidgetConstructor()
 	local editbox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
 	editbox:SetAutoFocus(false)
 	editbox:SetFontObject(ChatFontNormal)
-	editbox:SetTextInsets(0, 0, 3, 3)
+	editbox:SetTextInsets(0, 0, FILTER_BOX_TEXT_INSET, FILTER_BOX_TEXT_INSET)
 	editbox:SetHeight(FILTER_BOX_HEIGHT)
 	-- Over the filter's box, clear of its magnifying glass, so the two boxes stack in one column.
 	editbox:SetPoint("LEFT", frame, "LEFT", FILTER_BOX_LEFT, 0)

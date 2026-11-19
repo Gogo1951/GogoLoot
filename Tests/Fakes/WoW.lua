@@ -254,6 +254,10 @@ function Fake.newEnvironment()
 					self.hooks[scriptName] = self.hooks[scriptName] or {}
 					table.insert(self.hooks[scriptName], hook)
 				end
+				-- On screen only when a test says so (panelFrame.visible = true).
+				function panelFrame:IsVisible()
+					return self.visible == true
+				end
 				state.blizOptions[#state.blizOptions].frame = panelFrame
 				return panelFrame, categoryID
 			end,
@@ -264,6 +268,8 @@ function Fake.newEnvironment()
 			end,
 			Open = function() end,
 			SetDefaultSize = function() end,
+			-- The windows AceConfigDialog has open, by registry name; none unless a test opens one.
+			OpenFrames = {},
 		},
 		--[[
 		    Records each widget type's constructor, and gives a widget it builds
@@ -549,6 +555,19 @@ function Fake.newEnvironment()
 			return nil
 		end
 		return name, state.unitRealms[unit]
+	end
+	--[[
+	    A unit exists while it has a name, unless state.unitExists says
+	    otherwise: a member who is there but can't be named yet (a secret name
+	    on WoW Forever) is unitExists true with no name.
+	]]
+	state.unitExists = {}
+	env.UnitExists = function(unitIdentifier)
+		local override = state.unitExists[unitIdentifier]
+		if override ~= nil then
+			return override
+		end
+		return state.unitNames[unitIdentifier] ~= nil
 	end
 	-- The name alone, as the options panels' Example lines read the player's.
 	env.GetUnitName = function(unitIdentifier)
@@ -1082,6 +1101,11 @@ function Fake.newEnvironment()
 		end
 		return self.shown == true
 	end
+	-- Shown, and every parent shown, as the client answers it.
+	function frameMethods:IsVisible()
+		local parent = self:GetParent()
+		return self:IsShown() and (parent == nil or parent.IsVisible == nil or parent:IsVisible())
+	end
 	function frameMethods:GetName()
 		return self.frameName
 	end
@@ -1473,6 +1497,7 @@ function Fake.newEnvironment()
 	env.COPPER_AMOUNT_SYMBOL = "c"
 	-- A number on every client, like the real one.
 	env.LE_GAME_ERR_INV_FULL = 3
+	env.INVSLOT_MAINHAND = 16
 
 	--[[
 	    Globals Classic Era genuinely does not have, which the catch-all below
@@ -1497,6 +1522,7 @@ function Fake.newEnvironment()
 		LE_ITEM_CLASS_REAGENT = true,
 		LE_ITEM_CLASS_PROJECTILE = true,
 		LE_ITEM_CLASS_TRADEGOODS = true,
+		LE_ITEM_WEAPON_FISHINGPOLE = true,
 		GetLootMethod = true,
 		SetLootMethod = true,
 		-- WoW Forever's shape: no skill-line API. A test that needs a rank defines both.

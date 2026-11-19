@@ -4,18 +4,6 @@
 
 ## Exceptions
 
-### Two Showcase images
-
-- **Departs from:** `09 - Optional Create README.md` → Showcase, one image under the TL;DR.
-- **Instead:** The README's Showcase carries two images, each under its own heading naming the feature it shows.
-- **Why:** Automated Opening and Automated Rolls are separate reasons to install, and one picture can't show both at work.
-
-### Target marker on WoW Forever
-
-- **Departs from:** MESSAGES → Target Marker, the marker left off on WoW Forever.
-- **Instead:** Sent lines lead with the target marker on WoW Forever too.
-- **Why:** Forever blocks raid markers only in /say and public channels such as General, which GogoLoot never sends to.
-
 ### Locked Items leads the mini-map menu
 
 - **Departs from:** MINIMAP MENU → Layout, the feature blocks directly under the title.
@@ -93,7 +81,3 @@
 - **Departs from:** `08 - Prelaunch Review.md` → Load-time integrity, every Lua file listed in at least one TOC.
 - **Instead:** Feature files still in development stay in the repo, guarded off and listed in no TOC, with their strings, defaults and offline tests, so they ship in the zip but never load.
 - **Why:** Work in progress keeps passing lint, tests and localization with the rest of the add-on without reaching players before it is finished.
-
-## Decisions
-
-- **Openables List defaults.** A row's default follows the maintainer's rules, first match wins, and carries its reason as the row's tag: Ignore, tagged Sell Sealed, for a tradeable container that drops only from raid or world bosses; Open, tagged Locked, for a locked one; Ignore, tagged May Hold Unique, for a tradeable one that can hold a Unique item; Ignore, tagged Sell Sealed, for a tradeable one that can hold a Bind on Pickup item; the rest on Open, untagged. Tradeable means the container isn't itself Bind on Pickup or a quest item: one that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03). One exception is set by hand in every flavor folder: Gnarlpine Necklace (8049), a quest item holding the unique Tallonkai's Jewel, stays on Ignore, tagged May Hold Unique, and a regenerated list must keep it there. Two readings are mine, pending the maintainer's word: a lockbox stays on Open even though its random table reaches Unique and Bind on Pickup items, and Unique gear (the rare world-drop rings and trinkets) doesn't count as a unique item.

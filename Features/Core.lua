@@ -99,7 +99,8 @@ end
     tab's loot lines follow a changed Loot Toasts setting, the trade checkbox
     re-reads announceTrade, the mini-map button moves to the new profile's
     position (ns.db.profile.minimap) and takes its Enable Mini-map Button
-    preference, and every options panel, the menu and the icon repaint through
+    preference, the bag tints take the new profile's Tradable Gear Tint, and
+    every options panel, the menu and the icon repaint through
     ns.RefreshSettings().
 ]]
 ---@return nil
@@ -125,6 +126,9 @@ function ns:ApplyProfile()
 	end
 	if ns.SyncTradeCheckbox then
 		ns:SyncTradeCheckbox()
+	end
+	if ns.RefreshTradableTints then
+		ns:RefreshTradableTints()
 	end
 	ns.RefreshSettings()
 end
@@ -180,6 +184,7 @@ ns.EVENT_NAMES = {
 	"MERCHANT_CLOSED",
 	"PARTY_LOOT_METHOD_CHANGED",
 	"PLAYER_ENTERING_WORLD",
+	"PLAYER_EQUIPMENT_CHANGED",
 	"PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
 	"PLAYER_LEVEL_UP",
 	"PLAYER_LOGIN",
@@ -459,6 +464,7 @@ local function OnAddonLoaded(loadedAddonName)
 	RebuildEmptyItemLists()
 	RecordCharacterClass()
 	ns.DropOldCharacterRules() -- MIGRATION (remove after 2026-12-07)
+	ns.DropRetiredCharacterRuleKeys() -- MIGRATION (remove after 2026-12-16)
 	MoveMinimapPositionToProfile() -- MIGRATION (remove after 2026-12-16)
 	SplitBindOnPickupByContext() -- MIGRATION (remove after 2026-12-16)
 	for _, msg in ipairs({ "OnProfileChanged", "OnProfileReset", "OnProfileCopied" }) do

@@ -132,6 +132,7 @@ Notes
 	- On this client the solo list adds, at Manual, the Outland gems (the six rare cuts from Living Ruby to Nightseye and the six epic ones from Crimson Spinel to Seaspray Emerald), the Primals from Air to Water, Primal Nether, Nether Vortex, and the Arcane Tome and Fel Armament turn-ins.
 	- The Wartorn scraps are listed at Manual on purpose. They are an AQ40 Cenarion Circle turn-in with real value, so auto-needing one in a pug reads as ninja-ing; the entry exists so the row is in the UI ready to change, not so the add-on rolls on it.
 	- ns.DEFAULT_IGNORE_LIST_MASTER seeds the Master Looter Ignore List: items automated master looting leaves in the loot window for the master looter to hand out by hand (Features/Master-Looter-Distribution.lua). The crafting materials Demonic Rune, Dark Rune, Primal Nether, Nether Vortex, Heart of Darkness and Sunmote, then Onyxia Hide Backpack, Panther Hide Sack, Pit Lord's Satchel and Black Sack of Gems.
+	- Rechecked against this client's tables at build 2.5.6.70577: every item is in ItemSparse under the name its comment gives.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -140,7 +141,7 @@ Wowhead
 	None.
 
 wago.tools
-	None.
+	https://wago.tools/db2/ItemSparse?build=2.5.6.70577
 
 QuestieDB
 	None.

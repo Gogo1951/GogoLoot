@@ -28,14 +28,17 @@
     left in the window can be lost for good, a fishing catch above all
     (maintainer, 2026-11-07). A removed item is no container to GogoLoot at
     all: it is never opened.
+
+    Bag Rows, at the end, lists the locked and sealed containers carried, for
+    the mini-map menu and Diagnostics.
 ]]
 local _, ns = ...
 local L = ns.L
 
 --[[
-    The two choices a row offers (maintainer, 2026-09-28). Open when Unlocked
-    opened exactly as Open does, and the three Ignores only changed the reason
-    printed, so the reasons live on as tags rather than as choices.
+    A row offers two choices, Open and Ignore (maintainer, 2026-09-28). Why a
+    row starts where it does (Locked, Sell Sealed, May Hold Unique) is a tag on
+    the row, not a choice.
 ]]
 local VALID_ACTIONS = {
 	[ns.OPENING_OPEN] = true,
@@ -223,6 +226,17 @@ function ns:RestoreDefaultOpeningActions()
 	AfterOpeningActionsChanged()
 end
 
+-- Whether every saved choice is the data's own default, so Restore Defaults has nothing to undo.
+---@return boolean
+function ns:AreOpeningActionsDefault()
+	for itemIdentifier, action in pairs(ns.db.global.openingActions) do
+		if action ~= ns:GetDefaultOpeningAction(itemIdentifier) then
+			return false
+		end
+	end
+	return true
+end
+
 --[[
     The reason an item's default carries, as its row's tag and as the line
     under its tooltip; nil for an item whose default gives none, and for one the
@@ -238,4 +252,79 @@ end
 ---@return string|nil
 function ns:GetOpeningNote(itemIdentifier)
 	return DEFAULT_NOTES[ns:GetOpeningDefault(itemIdentifier)]
+end
+
+--------------------------------------------------------------------------------
+-- Bag Rows
+--------------------------------------------------------------------------------
+
+--[[
+    One row per distinct bag item the test accepts, with a stack count, sorted
+    by name, for the mini-map menu's lists and Diagnostics. Worked out on demand
+    and deliberately not cached: it runs once per menu render, and a cache would
+    need clearing on every bag, trade and pick-lock event. The name comes from
+    the item's own link, already localized and quality-colored, with no
+    C_Item.GetItemInfo round trip.
+]]
+---@param matches function # (bagIndex, slotIndex, itemIdentifier) -> boolean
+---@return table[]
+local function CollectBagRows(matches)
+	local rowsByIdentifier, rows = {}, {}
+	for bagIndex = 0, NUM_BAG_SLOTS do
+		for slotIndex = 1, C_Container.GetContainerNumSlots(bagIndex) or 0 do
+			local itemIdentifier = ns.GetBagItemIdentifier(bagIndex, slotIndex)
+			if itemIdentifier and matches(bagIndex, slotIndex, itemIdentifier) then
+				local row = rowsByIdentifier[itemIdentifier]
+				if row then
+					row.count = row.count + 1
+				else
+					local itemLink = C_Container.GetContainerItemLink(bagIndex, slotIndex)
+					row = {
+						itemIdentifier = itemIdentifier,
+						count = 1,
+						icon = ns.GetItemIconByID(itemIdentifier),
+						name = itemLink and string.match(itemLink, "|h%[(.-)%]|h"),
+						link = itemLink,
+					}
+					rowsByIdentifier[itemIdentifier] = row
+					rows[#rows + 1] = row
+				end
+			end
+		end
+	end
+	table.sort(rows, function(a, b)
+		if (a.name ~= nil) ~= (b.name ~= nil) then
+			return a.name ~= nil
+		end
+		if a.name and b.name and a.name ~= b.name then
+			return a.name < b.name
+		end
+		return a.itemIdentifier < b.itemIdentifier
+	end)
+	return rows
+end
+
+-- The boxes in the bags still waiting on a lock: anything Automated Opening would open that still reads Locked.
+---@return table[]
+function ns.GetLockedBoxes()
+	return CollectBagRows(function(bagIndex, slotIndex, itemIdentifier)
+		return ns:GetOpeningAction(itemIdentifier) == ns.OPENING_OPEN and ns.IsItemLocked(bagIndex, slotIndex)
+	end)
+end
+
+--[[
+    The containers in the bags the Openables List keeps sealed (Ignore), each
+    row with its reason tag (Sell Sealed, May Hold Unique) where its default
+    gives one, for the menu's Automated Opening block.
+]]
+---@return table[]
+function ns.GetSealedContainers()
+	local rows = CollectBagRows(function(_, _, itemIdentifier)
+		return ns:GetOpeningAction(itemIdentifier) == ns.OPENING_IGNORE
+	end)
+	for _, row in ipairs(rows) do
+		row.tag = ns:GetOpeningTag(row.itemIdentifier)
+		row.note = ns:GetOpeningNote(row.itemIdentifier)
+	end
+	return rows
 end

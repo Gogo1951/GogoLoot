@@ -52,6 +52,7 @@ Notes
 	- SAMPLE_ITEM_IDS is one real item at each quality from Poor to Epic, so the options panels' Example lines show a real item link in the player's language (Options/Options-Automated-Rolls.lua, Options-Announcements.lua, Options-Automated-Opening.lua). Options-Utilities-Item-Cache.lua asks the client for all five when the options open, so the links are ready.
 	- SOUND_KIT_IDS.PICK_POCKET is the bag-pickup sound played for a pick-pocket loot window (Features/Loot-Sounds.lua) and previewed beside its option. BAG_FULL_BY_RACE is each race's "inventory is full" voice line, by sex as UnitSex returns it (2 male, 3 female), played when Automated Opening stops for a full bag (Features/Automated-Opening.lua); BAG_FULL_FALLBACK plays for a race with no row.
 	- Validate Data looks up ITEM_IDS and SAMPLE_ITEM_IDS as items. SKILL_LINE_IDS and SOUND_KIT_IDS hold IDs no client API looks up, so it only counts their rows.
+	- Rechecked against this client's tables at build 1.15.9.70576: the Lockpicking skill line is in SkillLine, the bind probe and every sample item are in ItemSparse, each sample at the quality its key names, and every sound kit is in SoundKit.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -62,6 +63,7 @@ Wowhead
 wago.tools
 	https://wago.tools/db2/SoundKit?build=1.15.9.70576
 	https://wago.tools/db2/SkillLine?build=1.15.9.70576
+	https://wago.tools/db2/ItemSparse?build=1.15.9.70576
 
 QuestieDB
 	None.

@@ -7,7 +7,7 @@
     and the group's, and what a toast says. A row per item type with a Mine and
     a Group box, then Bag Count and Winning Roll in the same columns. Not
     hidden behind the Loot Toasts switch, which would leave a child panel
-    opening onto a blank page; a red line says so while the switch is off.
+    opening onto a blank page; a silver status line says so while the switch is off.
 ]]
 local _, ns = ...
 local L = ns.L

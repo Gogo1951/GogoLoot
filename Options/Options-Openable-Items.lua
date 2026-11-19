@@ -76,6 +76,9 @@ function ns.BuildOpenableItemsOptions()
 		onRestore = function()
 			ns:RestoreDefaultOpeningActions()
 		end,
+		isDefault = function()
+			return ns:AreOpeningActionsDefault()
+		end,
 		onAdd = AddItem,
 		canAdd = function(itemIdentifier)
 			return ns:CanAddOpeningItem(itemIdentifier)
@@ -104,9 +107,6 @@ function ns.BuildOpenableItemsOptions()
 				ns:SetOpeningAction(itemIdentifier, value)
 			end,
 		},
-		noteFor = function(itemIdentifier)
-			return ns:GetOpeningNote(itemIdentifier)
-		end,
 		tagFor = function(itemIdentifier)
 			return ns:GetOpeningTag(itemIdentifier)
 		end,
@@ -126,8 +126,9 @@ function ns.BuildOpenableItemsOptions()
 		get = Kit.Get("profile", "openingIgnoreNotifications"),
 		set = Kit.Set("profile", "openingIgnoreNotifications"),
 	}
+	-- Leaves while Automated Opening is off, when there is nothing to leave alone.
 	args.ignoreNotificationsExampleRow = Kit.Example(order + 1, function()
-		return not ns.db.profile.openingIgnoreNotifications
+		return not (ns.db.profile.autoOpen and ns.db.profile.openingIgnoreNotifications)
 	end, IgnoreNotificationExample)
 	args.spacerAfterIgnoreNotifications = Kit.Spacer(order + 2)
 	args.itemList = {

@@ -91,7 +91,7 @@ end
 --[[
     One pass over a tooltip's lines for both questions the block asks: whether
     the block is already there, and whether the client states the requirement.
-    The add-on title is matched as a substring, because our own lines carry a
+    The add-on's Short Name is matched as a substring, because our own lines carry a
     color escape the raw text doesn't.
 ]]
 ---@return boolean hasOurBlock
@@ -131,8 +131,8 @@ local function AddLockboxLine(tooltip, itemIdentifier)
 		return
 	end
 	--[[
-        The add-on title doubles as the "already added" mark: a tooltip can be
-        re-processed without being cleared, and one check on the title covers
+        The add-on's Short Name doubles as the "already added" mark: a tooltip can
+        be re-processed without being cleared, and one check on the name covers
         every line the block adds below it.
     ]]
 	local hasOurBlock, statesRequirement = ScanTooltipLines(tooltip)
@@ -205,10 +205,37 @@ end
     tooltip on its own schedule, can still land below it. A row out of place
     beats a tooltip that strobes.
 
-    SetBagItem is hooked unguarded: a widget method on every client GogoLoot ships for, firing
-    for the bag and bank slots the feature is about and nothing else.
+    SetBagItem is hooked unguarded: a widget method on every client GogoLoot
+    ships for, firing for the carried bags and the bank's bags. The bank's own
+    slots show through SetInventoryItem on clients where the bank is container
+    -1; that is hooked too, and only a bank slot can hold a lockbox there. The
+    block also goes wherever else a lockbox is weighed before it reaches the
+    bags: the loot window (SetLootItem), both sides of the trade window
+    (SetTradePlayerItem, SetTradeTargetItem), and a link clicked in chat
+    (ItemRefTooltip's SetHyperlink). Those are hooked only where the client has
+    them, each through the item link the slot holds.
 ]]
 local hookInstalled = false
+
+---@param itemLink string|nil
+---@return number|nil
+local function LinkItemIdentifier(itemLink)
+	return itemLink and tonumber(string.match(itemLink, "item:(%d+)")) or nil
+end
+
+-- Each tooltip method beyond the bags, with how to read the item it shows from the method's own arguments.
+local LINK_HOOKS = {
+	{ tooltip = "GameTooltip", method = "SetLootItem", link = GetLootSlotLink },
+	{ tooltip = "GameTooltip", method = "SetTradePlayerItem", link = GetTradePlayerItemLink },
+	{ tooltip = "GameTooltip", method = "SetTradeTargetItem", link = GetTradeTargetItemLink },
+	{
+		tooltip = "ItemRefTooltip",
+		method = "SetHyperlink",
+		link = function(itemLink)
+			return itemLink
+		end,
+	},
+}
 
 local function OnPlayerLogin()
 	if hookInstalled then
@@ -218,6 +245,19 @@ local function OnPlayerLogin()
 	hooksecurefunc(GameTooltip, "SetBagItem", function(tooltip, bagIndex, slotIndex)
 		AddLockboxLine(tooltip, C_Container.GetContainerItemID(bagIndex, slotIndex))
 	end)
+	if GameTooltip.SetInventoryItem then
+		hooksecurefunc(GameTooltip, "SetInventoryItem", function(tooltip, unitIdentifier, slotIndex)
+			AddLockboxLine(tooltip, LinkItemIdentifier(GetInventoryItemLink(unitIdentifier, slotIndex)))
+		end)
+	end
+	for _, hook in ipairs(LINK_HOOKS) do
+		local tooltipFrame = _G[hook.tooltip]
+		if tooltipFrame and tooltipFrame[hook.method] and hook.link then
+			hooksecurefunc(tooltipFrame, hook.method, function(tooltip, argument)
+				AddLockboxLine(tooltip, LinkItemIdentifier(hook.link(argument)))
+			end)
+		end
+	end
 end
 
 ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)

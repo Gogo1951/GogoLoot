@@ -26,8 +26,9 @@ local lastLootAttemptTime = nil
 --[[
     True only when the most recent pass took everything with bag space to spare,
     so nothing was left in the window and nothing it asked for can still bounce
-    off full bags. The LootFrame OnShow hook at the bottom of this file re-hides
-    the window the instant the default UI shows it on LOOT_OPENED. That re-show
+    off full bags. The hook below (LootFrame's OnShow, or its Open method on WoW
+    Forever) re-hides the window the instant the default UI shows it on
+    LOOT_OPENED. That re-show
     is what makes the window flash for half a second: a plain LootFrame:Hide()
     on LOOT_READY is a no-op because the frame isn't shown yet, and nothing
     re-hides it after. Hooking OnShow rather than handling LOOT_OPENED makes the
@@ -59,17 +60,19 @@ local GetItemFamily = C_Item.GetItemFamily or GetItemFamily
 
 --[[
     Whether this client has a keyring, asked the way the client itself asks:
-    MoP Classic still defines KEYRING_CONTAINER but has no keyring.
+    MoP Classic still defines KEYRING_CONTAINER but has no keyring. The modern
+    C_ActionBar question goes first; IsKeyRingEnabled answers only where it is
+    missing.
 ]]
 local function HasKeyring()
 	if not KEYRING_CONTAINER then
 		return false
 	end
-	if IsKeyRingEnabled then
-		return IsKeyRingEnabled() and true or false
-	end
 	if C_ActionBar and C_ActionBar.ShouldShowKeyring then
 		return C_ActionBar.ShouldShowKeyring() and true or false
+	end
+	if IsKeyRingEnabled then
+		return IsKeyRingEnabled() and true or false
 	end
 	return false
 end
@@ -117,7 +120,7 @@ end
 
     An item the client hasn't loaded reads no stack size and no family, and a
     slot with no link reads nothing at all, so either falls through to a
-    general slot: conservative, as before.
+    general slot, the conservative choice.
 ]]
 local function TakeSpaceFor(space, itemLink, itemIdentifier, quantity)
 	local stackSize = itemLink and select(8, C_Item.GetItemInfo(itemLink))

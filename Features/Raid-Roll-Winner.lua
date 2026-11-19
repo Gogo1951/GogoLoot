@@ -11,18 +11,16 @@
 
     Me Only, the default, prints it to the player. Group Chat posts it instead,
     since the sent line shows in the player's own chat too. So several GogoLoot
-    users in one group don't all post the same roll, each waits its roster
-    place minus one times ns.RAID_ROLL_CLAIM_STEP, then posts only if no other
-    GogoLoot user claimed that roll meanwhile, sending its own claim as an
-    add-on message just before it posts. With Loot Announcements off, the
-    master switch over everything GogoLoot posts, Group Chat prints instead.
+    users in one group don't all post the same roll, each sends a claim
+    carrying its roster place as an add-on message the moment it reads the
+    roll, waits ns.RAID_ROLL_CLAIM_WAIT, and posts only if no claim it heard
+    came from an earlier roster place. A claim with no place (an older
+    GogoLoot, which claims only as it posts) holds everyone back. With Loot
+    Announcements off, the master switch over everything GogoLoot posts, Group
+    Chat prints instead.
 
     Only CHAT_MSG_SYSTEM is read for a roll (ns.ParseRandomRollMessage):
     anyone can type a roll's words in normal chat.
-
-    Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
-      raidRollWinner   - on by default
-      raidRollOutput   - ns.RAID_ROLL_OUTPUT_SELF or ns.RAID_ROLL_OUTPUT_GROUP
 ]]
 local _, ns = ...
 local L = ns.L
@@ -30,9 +28,10 @@ local L = ns.L
 -- The claim's first field, so it never reads as any other GogoLoot add-on message.
 local CLAIM_KIND = "RAIDROLL"
 local CLAIM_SEPARATOR = ":"
--- How long a claim is remembered; well past the last roster place's wait.
+-- How long a claim is remembered; well past the wait.
 local CLAIM_MEMORY_SECONDS = 30
 
+-- [claim key] = { heardAt, place }: the earliest roster place heard claiming it, 0 for a claim with no place.
 local claims = {}
 
 --------------------------------------------------------------------------------
@@ -134,33 +133,50 @@ local function ClaimKey(roller, roll, high)
 end
 
 local function ForgetOldClaims(now)
-	for key, heardAt in pairs(claims) do
-		if now - heardAt > CLAIM_MEMORY_SECONDS then
+	for key, claim in pairs(claims) do
+		if now - claim.heardAt > CLAIM_MEMORY_SECONDS then
 			claims[key] = nil
 		end
 	end
 end
 
--- Sends this player's claim on a roll, just before posting it, on the group's add-on channel.
-local function SendClaim(key)
+---@param key string
+---@param place number
+---@return nil
+local function RecordClaim(key, place)
+	local now = GetTime()
+	ForgetOldClaims(now)
+	local claim = claims[key]
+	if not claim or place < claim.place then
+		claims[key] = { heardAt = now, place = place }
+	end
+end
+
+-- Sends this player's claim on a roll, with its roster place, on the group's add-on channel.
+local function SendClaim(key, place)
 	local channel = ns:GetGroupChatChannel()
 	if channel and C_ChatInfo.SendAddonMessage then
-		C_ChatInfo.SendAddonMessage(ns.ADDON_MESSAGE_PREFIX, CLAIM_KIND .. CLAIM_SEPARATOR .. key, channel)
+		C_ChatInfo.SendAddonMessage(
+			ns.ADDON_MESSAGE_PREFIX,
+			table.concat({ CLAIM_KIND, place, key }, CLAIM_SEPARATOR),
+			channel
+		)
 	end
 end
 
 --[[
-    Group Chat: wait this player's roster place minus one steps, then post
-    unless someone claimed the roll first. The winner's name is read now, when
-    the roll is, so a roster change in the wait can't move it.
+    Group Chat: claim the roll now, wait, then post unless an earlier roster
+    place claimed it too. The winner's name is read now, when the roll is, so
+    a roster change in the wait can't move it.
 ]]
 local function PostWhenUnclaimed(key, roller, roll, groupSize, winner)
 	local ownPlace = RosterPlace(OwnName()) or 1
-	ns:After("raidRollWinner:" .. key, (ownPlace - 1) * ns.RAID_ROLL_CLAIM_STEP, function()
-		if claims[key] then
+	SendClaim(key, ownPlace)
+	ns:After("raidRollWinner:" .. key, ns.RAID_ROLL_CLAIM_WAIT, function()
+		local claim = claims[key]
+		if claim and claim.place < ownPlace then
 			return
 		end
-		SendClaim(key)
 		ns:Announce(
 			ns:GetGroupChatChannel(),
 			nil,
@@ -175,7 +191,7 @@ end
 
 ---@param message any
 ---@return nil
-local function OnSystemMessage(message)
+local function OnChatMsgSystem(message)
 	local roller, roll, low, high = ns.ParseRandomRollMessage(message)
 	local rollerPlace = roller and CountedRoll(roller, roll, low, high)
 	if not rollerPlace then
@@ -195,7 +211,7 @@ local function OnSystemMessage(message)
 end
 
 -- Another GogoLoot user's claim on a roll; this player's own come back too, and are ignored.
-local function OnAddonMessage(prefix, message, _, sender)
+local function OnChatMsgAddon(prefix, message, _, sender)
 	if prefix ~= ns.ADDON_MESSAGE_PREFIX or type(message) ~= "string" or ns.IsSecretValue(message) then
 		return
 	end
@@ -206,9 +222,13 @@ local function OnAddonMessage(prefix, message, _, sender)
 	if sender and ns:NormalizePlayerName(sender) == ns:NormalizePlayerName(OwnName()) then
 		return
 	end
-	local now = GetTime()
-	ForgetOldClaims(now)
-	claims[message:sub(#kindPrefix + 1)] = now
+	local body = message:sub(#kindPrefix + 1)
+	local place, key = body:match("^(%d+)" .. CLAIM_SEPARATOR .. "(.+)$")
+	if place then
+		RecordClaim(key, tonumber(place))
+	else
+		RecordClaim(body, 0)
+	end
 end
 
 --[[
@@ -222,5 +242,5 @@ local function OnPlayerLogin()
 end
 
 ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)
-ns:RegisterModuleEvent("CHAT_MSG_SYSTEM", OnSystemMessage)
-ns:RegisterModuleEvent("CHAT_MSG_ADDON", OnAddonMessage)
+ns:RegisterModuleEvent("CHAT_MSG_SYSTEM", OnChatMsgSystem)
+ns:RegisterModuleEvent("CHAT_MSG_ADDON", OnChatMsgAddon)

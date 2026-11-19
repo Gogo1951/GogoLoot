@@ -15,21 +15,23 @@ local TOAST_HANDLE_WIDTH = 400 -- The drag handle only; rows size themselves
 
 --[[
     The handle carries its caption as three blank-line-separated rows, the name
-    and the two gestures, over a button in the bottom corner, so it stands as a
+    and the two gestures, over two buttons side by side in the bottom corner, so it stands as a
     panel rather than a strip of text the bottom toast sits on.
 
-    BOTH NUMBERS ARE FIXED, never font-derived: the handle marks where rows
-    start, so a size that drifted with the font would walk the whole stack. The
-    height holds the caption's five rendered lines from the top, the button at
+    THE SIZE IS FIXED, never font-derived: the handle marks where rows start,
+    so a size that drifted with the font would walk the whole stack. The
+    height holds the caption's five rendered lines from the top, the buttons at
     the bottom, and padding at both ends, plus air between the two; every pixel
     added here lands in that gap.
 
-    The caption keeps to its own column at one end, and rows hang off the other
-    end (lootToastAlign), so the two never share horizontal space.
+    The caption and both buttons keep to one column at one end, and rows hang
+    off the other end (lootToastAlign), so the newest row never runs under a
+    button.
 ]]
 local TOAST_HANDLE_HEIGHT = 128
 local TOAST_HANDLE_LABEL_WIDTH = 256
-local TOAST_HANDLE_BUTTON_WIDTH = 144
+local TOAST_HANDLE_BUTTON_GAP = 8
+local TOAST_HANDLE_BUTTON_WIDTH = (TOAST_HANDLE_LABEL_WIDTH - TOAST_HANDLE_BUTTON_GAP) / 2
 local TOAST_HANDLE_BUTTON_HEIGHT = 32
 local TOAST_HANDLE_PADDING = 8
 
@@ -78,6 +80,16 @@ local function GetAnchor()
 	anchor.disable:SetScript("OnClick", function()
 		ns.DismissLootToastIntro()
 		ns.SetLootToastsEnabled(false)
+		ns.RefreshSettings()
+	end)
+
+	-- Does what right-click does, as a button anyone can find, so finishing a drag never means switching toasts off.
+	anchor.lock = CreateFrame("Button", nil, anchor, "UIPanelButtonTemplate")
+	anchor.lock:SetSize(TOAST_HANDLE_BUTTON_WIDTH, TOAST_HANDLE_BUTTON_HEIGHT)
+	anchor.lock:SetText(L["LOOT_TOASTS_LOCK"])
+	anchor.lock:SetScript("OnClick", function()
+		ns.DismissLootToastIntro()
+		ns.SetLootToastsUnlocked(false)
 	end)
 
 	anchor:SetScript("OnDragStart", function(self)
@@ -108,21 +120,25 @@ end
 
 --[[
     The caption pins to the end the rows don't use, justified into that end, and
-    the button sits in the corner below it at the same inset. Re-run on every
+    Disable sits in the corner below it at the same inset, with Lock Position
+    beside it toward the middle, both inside the caption's column. Re-run on every
     appearance change, since the alignment setting can flip which end that is.
 ]]
 local function ApplyHandleLayout()
 	local frame = GetAnchor()
 	frame.label:ClearAllPoints()
 	frame.disable:ClearAllPoints()
+	frame.lock:ClearAllPoints()
 	if ns.LootToastsAlignRight() then
 		frame.label:SetPoint("TOPLEFT", frame, "TOPLEFT", TOAST_HANDLE_PADDING, -TOAST_HANDLE_PADDING)
 		frame.label:SetJustifyH("LEFT")
 		frame.disable:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", TOAST_HANDLE_PADDING, TOAST_HANDLE_PADDING)
+		frame.lock:SetPoint("LEFT", frame.disable, "RIGHT", TOAST_HANDLE_BUTTON_GAP, 0)
 	else
 		frame.label:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -TOAST_HANDLE_PADDING, -TOAST_HANDLE_PADDING)
 		frame.label:SetJustifyH("RIGHT")
 		frame.disable:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -TOAST_HANDLE_PADDING, TOAST_HANDLE_PADDING)
+		frame.lock:SetPoint("RIGHT", frame.disable, "LEFT", -TOAST_HANDLE_BUTTON_GAP, 0)
 	end
 end
 
@@ -164,7 +180,7 @@ end
 ]]
 ---@param isUnlocked boolean
 ---@return nil
-function ns.SetLootToastsUnlocked(isUnlocked)
+local function ApplyUnlocked(isUnlocked)
 	local frame = GetAnchor()
 	if isUnlocked then
 		local function BodyLine(key)
@@ -189,6 +205,13 @@ function ns.SetLootToastsUnlocked(isUnlocked)
 	end
 	unlocked = isUnlocked and true or false
 	ns.RefreshLootToastSamples()
+end
+
+-- The same, then every panel and the menu repaint, for a caller that doesn't refresh on its own.
+---@param isUnlocked boolean
+---@return nil
+function ns.SetLootToastsUnlocked(isUnlocked)
+	ApplyUnlocked(isUnlocked)
 	ns.RefreshSettings()
 end
 
@@ -208,8 +231,9 @@ end
     draw, how to move it and put it away, and offers a button to decline.
 
     Dismissing is remembered per profile, which is what makes a new or reset
-    profile show it again. Any of the three ways out counts: the right-click the
-    handle advertises, its Disable button, and the panel's own Lock button.
+    profile show it again. Any of the four ways out counts: the right-click the
+    handle advertises, its Lock Position and Disable buttons, and the panel's
+    own Lock button.
 ]]
 ---@return nil
 function ns.DismissLootToastIntro()
@@ -223,7 +247,7 @@ function ns.ShowLootToastIntro()
 	if not ns.db or ns.db.profile.lootToastsIntroSeen or not ns.db.profile.lootToasts then
 		return
 	end
-	ns.SetLootToastsUnlocked(true)
+	ApplyUnlocked(true)
 end
 
 --[[
@@ -235,25 +259,24 @@ end
 ]]
 ---@return nil
 function ns.ApplyLootToastSettings()
-	ns.SetLootToastsUnlocked(false)
+	ApplyUnlocked(false)
 	ns.ShowLootToastIntro()
 end
 
 --[[
     Switching toasts on raises the handle and its samples, because the player
     has just turned on something that draws on their screen and has no other way
-    to see where or how big. Switching off puts the handle away. Every panel
-    and the menu repaint either way (ns.RefreshSettings), since the handle's
-    own Disable button reaches this from outside them all.
+    to see where or how big. Switching off puts the handle away. The caller
+    refreshes: the panel switch and the menu click already do, and the
+    handle's own Disable button does it itself.
 ]]
 ---@param enabled boolean
 ---@return nil
 function ns.SetLootToastsEnabled(enabled)
 	ns.db.profile.lootToasts = enabled and true or false
-	ns.SetLootToastsUnlocked(ns.db.profile.lootToasts)
+	ApplyUnlocked(ns.db.profile.lootToasts)
 	ns.SyncStandardLootMessages()
 	ns.SyncBlizzardRollWonWindow()
-	ns.RefreshSettings()
 end
 
 --------------------------------------------------------------------------------

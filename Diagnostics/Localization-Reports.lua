@@ -297,6 +297,14 @@ function ns:BuildMessageLengthReport()
 		"MESSAGE_DESTINATION_LEFT_ALL",
 		ns:BuildAnnounceMessage("MESSAGE_DESTINATION_LEFT_ALL", name, name)
 	)
+	-- Raid Roll Winner's Group Chat line (Features/Raid-Roll-Winner.lua), at the largest raid's roll.
+	local raidSize = tonumber(_G.MAX_RAID_MEMBERS) or 40
+	AppendMessage(
+		lines,
+		"MESSAGE_RAID_ROLL",
+		ns:BuildAnnounceMessage("MESSAGE_RAID_ROLL", name, raidSize, raidSize, name),
+		string.format("a %d-player raid roll", raidSize)
+	)
 
 	lines[#lines + 1] = ""
 	local tradeItems = {}

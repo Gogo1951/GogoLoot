@@ -4,10 +4,10 @@
 
 --[[
     The panel after Automated Master Looting: Enable Roll Macro, then what the
-    macro does with each mouse button, then Raid Rolls: what a raid roll is and
-    Enable Raid Roll Winner (Raid-Roll-Winner.lua) with where it says the
-    winner. Raid Rolls shows whether or not the macro is on, since it reads
-    anyone's raid roll.
+    macro does with each mouse button, which leaves while the macro is off, then
+    Raid Rolls: what a raid roll is and Enable Raid Roll Winner
+    (Raid-Roll-Winner.lua) with where it says the winner. Raid Rolls shows
+    whether or not the macro is on, since it reads anyone's raid roll.
 
     Schema (ns.DATABASE_DEFAULTS in Default-Settings.lua):
       global.rollMacro
@@ -25,7 +25,7 @@ local GetColor = ns.GetColor
 -- Click Rows
 --------------------------------------------------------------------------------
 
--- Each mouse button's name, in the mini-map menu's blue, beside what it rolls.
+-- Each mouse button's name as a white caption, beside what it rolls.
 local CLICK_ROWS = {
 	{ click = "MENU_CLICK_LEFT", action = "ROLL_MACRO_LEFT_CLICK" },
 	{ click = "MENU_CLICK_RIGHT", action = "ROLL_MACRO_RIGHT_CLICK" },
@@ -33,7 +33,11 @@ local CLICK_ROWS = {
 }
 
 -- Room after the longest button name, so the rolls never sit against it.
-local CLICK_COLUMN_PADDING_PIXELS = 24
+local CLICK_COLUMN_PADDING_PIXELS = 32
+
+local function RollMacroOff()
+	return not ns.db.global.rollMacro
+end
 
 --[[
     One row per button, every name in a column as wide as the longest one
@@ -51,8 +55,8 @@ local function AddClickRows(firstOrder, args)
 	local clickWidth = (widestPixels + CLICK_COLUMN_PADDING_PIXELS) / Kit.UNIT_POINTS
 
 	for index, row in ipairs(CLICK_ROWS) do
-		args["clickRow" .. index] = Kit.Row(firstOrder + index - 1, nil, {
-			Kit.Label(GetColor("INFO") .. L[row.click] .. "|r", 0, clickWidth),
+		args["clickRow" .. index] = Kit.Row(firstOrder + index - 1, RollMacroOff, {
+			Kit.Label(GetColor("TEXT") .. L[row.click] .. "|r", 0, clickWidth),
 			Kit.Label(GetColor("TEXT") .. L[row.action] .. "|r", 0, Kit.ROW_WIDTH - clickWidth),
 		})
 	end
@@ -108,7 +112,7 @@ end
 ---@return nil
 local function AddRaidRolls(firstOrder, args)
 	local order = Kit.Section(args, "raidRoll", firstOrder, L["RAID_ROLL_HEADER"])
-	args.raidRollNote = Kit.Desc(GetColor("HELP") .. L["ROLL_MACRO_RAID_ROLL_NOTE"] .. "|r", order)
+	args.raidRollNote = Kit.Desc(L["ROLL_MACRO_RAID_ROLL_NOTE"], order)
 	args.spacerAfterRaidRollNote = Kit.Spacer(order + 1)
 	args.raidRollWinnerRow = Kit.ToggleRow(order + 2, {
 		type = "toggle",
@@ -140,7 +144,7 @@ function ns.BuildRollMacroOptions()
 		description = Kit.Desc(L["ROLL_MACRO_DESCRIPTION"]:format(ns.ROLL_MACRO_NAME), 1),
 		spacerAfterDesc = Kit.Spacer(2),
 		rollMacro = ns.FeatureSwitch("rollMacro", 3),
-		spacerAfterSwitch = Kit.Spacer(4),
+		spacerAfterSwitch = Kit.Spacer(4, RollMacroOff),
 	}
 	AddClickRows(5, args)
 	AddRaidRolls(8, args)

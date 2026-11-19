@@ -191,11 +191,11 @@ ns.SANITY_CHECK_RAID_BOSSES = {
 How We Got the Data
 
 Last Validated
-	Not yet checked in game (Play It Forward's tables: 2026-10-29, MoP Classic 5.5.4.70631)
+	2026-11-18, MoP Classic 5.5.4.70960
 
 Notes
 	- SANITY_CHECK_TRASH, SANITY_CHECK_DUNGEON_BOSSES and SANITY_CHECK_RAID_BOSSES: the Loot Roll Sanity Check's drops, picked from Wowhead's mop-classic item data (zone drop tables for the dungeons and raids of this expansion's last level band, and its most popular items of each quality for gear outside them), then each item checked one by one against Wowhead's tooltip for this client for its quality, its binding and fixed stats (no random enchantment), on 2026-11-16. Not literally from that kind of kill: a section mixes Bind on Pickup and Bind on Equip, and every section holds at least four greens and five blues, and Trash and Raid Bosses at least six Bind on Equip epics, so a draw can always show two of each (Options/Options-Sanity-Check.lua). OTHER rows are picked by hand to show a gate: a mount or legendary (Never Automated), a quest item or token, or a default Item Overrides row. Diagnostics' Validate Data lists each row with its kind, to compare against the item's quality in game.
-	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client. Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
+	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client (its tables as of 2026-10-29, MoP Classic 5.5.4.70631). Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
 	- Weapons: every type the class can train (WEAPON_SPECS above 0), assuming the character has trained everything (maintainer, 2026-11-07).
 	- Stats: each spec's main stats, plus the role stats its useful list names (attack power, spell power, healing, mana per 5, Spirit), mapped to Character Rules' stat keys: RANGED_AP and FERAL_AP are ATTACK_POWER, SPELL_DAMAGE and the school damages are SPELL_POWER, HEALING is HEALING_POWER. A useful primary stat (a warrior's Agility, a hunter's Intellect) is left out, so gear built on it isn't held for the class. Stamina starts unticked for every class, and crit and hit ticked for every class (everyClass in ns.CHARACTER_RULE_STATS), so neither is listed here.
@@ -205,6 +205,7 @@ Notes
 	- No relic rows: Librams, Idols and Totems left the game in Mists of Pandaria, and Thrown went with the ranged slot.
 	- Hunters start with bows, guns and crossbows only, as Play It Forward lists them: from Mists of Pandaria on the ranged weapon is a hunter's main hand.
 	- Play It Forward's Mists specs name healing and spell damage, which merged into spell power on this client, so both start as SPELL_POWER; its healer and hybrid-caster specs gear for Spirit, which starts ticked for them.
+	- Rechecked against this client's tables at build 5.5.4.70960: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -215,6 +216,9 @@ Wowhead
 wago.tools
 	https://wago.tools/db2/ItemSparse
 	https://wago.tools/db2/ItemSubClass
+	https://wago.tools/db2/ItemSubClass?build=5.5.4.70960
+	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
+	https://wago.tools/db2/Item?build=5.5.4.70960
 
 QuestieDB
 	None.

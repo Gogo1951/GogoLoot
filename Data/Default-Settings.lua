@@ -120,6 +120,8 @@ ns.DATABASE_DEFAULTS = {
 		autoOpenWhere = "ALWAYS",
 		-- "ALWAYS" | "SOLO_ONLY"
 		autoOpenGroup = "ALWAYS",
+		-- Off holds opening back while a fishing pole is in the main hand, so a clam can't break the fishing rhythm.
+		autoOpenWithFishingPole = false,
 		-- Tells the player when Automated Opening, while it is on, leaves an item set to Ignore sealed.
 		openingIgnoreNotifications = true,
 		lockboxTooltips = true,
@@ -267,7 +269,7 @@ ns.DATABASE_DEFAULTS = {
 	]]
 	global = {
 		showWelcome = true,
-		-- Set once chat has said Automated Rolls is on by default (Features/Character-Rules.lua).
+		-- Set once chat has said Automated Rolls is on by default (Features/Automated-Rolls.lua).
 		automatedRollsOnNoticeShown = false,
 		-- It changes how the client's loot window behaves rather than loot policy, so a profile switch or Reset Profile leaves it.
 		speedyLoot = true,

@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The panel after Roll Macro: ten drops for each of Trash, Dungeon Bosses
+    A panel under Automated Rolls: ten drops for each of Trash, Dungeon Bosses
     and Raid Bosses, drawn at random from that section's list
     (ns.SANITY_CHECK_TRASH, _DUNGEON_BOSSES, _RAID_BOSSES in the flavor's
     Character-Rule-Gear-Types file), and what Automated Rolls would do with
@@ -146,15 +146,15 @@ end
 -- Outcomes
 --------------------------------------------------------------------------------
 
--- The binding's short name, by C_Item's bindType; nil for an item that doesn't bind.
+-- The binding's name, by C_Item's bindType; nil for an item that doesn't bind.
 local BIND_LABELS = {
-	[ns.BIND_ON_PICKUP] = "SANITY_CHECK_BOP",
-	[ns.BIND_ON_EQUIP] = "SANITY_CHECK_BOE",
+	[ns.BIND_ON_PICKUP] = "SANITY_CHECK_BIND_ON_PICKUP",
+	[ns.BIND_ON_EQUIP] = "SANITY_CHECK_BIND_ON_EQUIP",
 }
 
 --[[
     A drop's tag line: its binding, then the stats Character Overrides reads
-    on it, by the game's own names ("BoE, Strength, Stamina"). Blank while the
+    on it, by the game's own names ("Bind on Equip, Strength, Stamina"). Blank while the
     item loads.
 ]]
 ---@param itemIdentifier number
@@ -179,12 +179,15 @@ local function TagLine(itemIdentifier)
 	return ns.GetColor("HELP") .. table.concat(parts, ", ") .. "|r"
 end
 
--- Why a drop goes the way it does, by ns.DecideRoll's reason: a SANITY_CHECK_ string or the page that decided it.
+--[[
+    Why a drop goes the way it does, by ns.DecideRoll's reason: the locale key
+    of a SANITY_CHECK_ string or of the page that decided it. QUEST has none:
+    it shows the client's own tooltip label, ITEM_BIND_QUEST (ReasonText).
+]]
 local REASONS = {
 	OFF = "SANITY_CHECK_ROLLS_OFF",
 	NEVER = "SANITY_CHECK_NEVER",
 	OVERRIDE = "TAB_ITEM_OVERRIDES",
-	QUEST = "SANITY_CHECK_QUEST",
 	LOW_LEVEL = "SANITY_CHECK_LOW_LEVEL",
 	WANTED = "TAB_CHARACTER_RULES",
 	EVERYTHING_ELSE = "TAB_CHARACTER_RULES",
@@ -224,7 +227,7 @@ end
 
 --[[
     A row's outcome: Automatic and the roll, with the roll window's own button
-    art, or Manual Roll in blue when the roll window is left to the player.
+    art, or Manual Roll in white when the roll window is left to the player.
 ]]
 ---@param itemIdentifier number
 ---@param inRaid boolean
@@ -235,7 +238,7 @@ local function OutcomeText(itemIdentifier, inRaid)
 		return ""
 	end
 	if not rollAction then
-		return ns.GetColor("INFO") .. L["SANITY_CHECK_MANUAL_ROLL"] .. "|r"
+		return ns.GetColor("TEXT") .. L["SANITY_CHECK_MANUAL_ROLL"] .. "|r"
 	end
 	local icon = ns.ROLL_ICONS[rollAction]
 	return (icon and ("|T" .. icon .. ":0|t ") or "")
@@ -248,11 +251,16 @@ end
 ---@return string
 local function ReasonText(itemIdentifier, inRaid)
 	local _, reason = Decide(itemIdentifier, inRaid)
-	local why = reason and REASONS[reason]
+	local why
+	if reason == "QUEST" then
+		why = ITEM_BIND_QUEST
+	else
+		why = reason and REASONS[reason] and L[REASONS[reason]]
+	end
 	if not why then
 		return ""
 	end
-	return ns.GetColor("HELP") .. L[why] .. "|r"
+	return ns.GetColor("HELP") .. why .. "|r"
 end
 
 --------------------------------------------------------------------------------
@@ -285,7 +293,7 @@ local function AddSection(args, order, section)
 		args[section.key .. "Drop" .. index] = Kit.Row(order + 0.25, NotOnClient, {
 			{
 				type = "input",
-				dialogControl = ns.ITEM_LINK_WIDGET_TYPE,
+				dialogControl = Kit.ITEM_LINK_WIDGET,
 				name = "",
 				width = Kit.LABEL_WIDTH,
 				get = function()
@@ -320,7 +328,9 @@ function ns.BuildSanityCheckOptions()
 		spacerAfterDesc = Kit.Spacer(2),
 	}
 	local order = ns.AddFeatureOffLine(args, 3, "autoGreed")
+	-- Pick New Drops sits in the control column, with nothing in the label column beside it.
 	args.refresh = Kit.Row(order, nil, {
+		Kit.Label("", 0, Kit.LABEL_WIDTH),
 		{
 			type = "execute",
 			name = L["SANITY_CHECK_REFRESH"],

@@ -146,7 +146,7 @@ ns.DiagnosticsStrings = {
 		.. TITLE
 		.. " reads it as locked, whether it would open, and the Lockpicking it needs. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
 	ROLLS_TITLE = "Automated Rolls Context",
-	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Global Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Overrides with the stats this client offers, whether the Roll Safety Warning would fire here, and any roll open now.",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Global Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Overrides with the stats this client offers, whether the Roll Safety Warning would fire here, and any roll open now with what it would roll.",
 	VERDICTS_TITLE = "Roll Verdicts",
 	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
@@ -154,24 +154,24 @@ ns.DiagnosticsStrings = {
 	TOASTS_TITLE = "Loot Toasts Context",
 	TOASTS_DESCRIPTION = "Shows the Loot Toasts switch and look, every Filters row for Mine and Group, whether the game's own won-roll window is listening, and whether the General chat tab still shows the game's own loot and money lines.",
 	LINES_TITLE = "Loot Line Reading",
-	LINES_DESCRIPTION = "Builds the game's own loot, money and roll lines with an item from your bags and shows whether "
+	LINES_DESCRIPTION = "Builds the game's own loot, money, currency and roll lines with an item from your bags and shows whether "
 		.. TITLE
 		.. " reads each one back, which every toast, loot sound, opening, winning roll and hidden roll message depends on. Nothing is sent.",
 	ANNOUNCE_TITLE = "Loot Announcements Context",
 	ANNOUNCE_DESCRIPTION = "Shows the Enable Loot Announcements switch, the trade and master loot announcement settings, and the chat channel "
 		.. TITLE
-		.. " would send to right now, and the welcome message switch.",
+		.. " would send to right now, whether the trade window's checkbox is up, and the welcome message switch.",
 	MACRO_TITLE = "Roll Macro & Raid Roll Context",
 	MACRO_DESCRIPTION = "Shows the Enable Roll Macro switch, whether the macro is in your General Macros as "
 		.. TITLE
-		.. " writes it, how full that tab is, combat, and what each mouse button would roll right now. Then whether Raid Roll Winner would count a roll in this group, where it would say the winner, and whether it reads the game's roll line back.",
+		.. " writes it, how full that tab is, combat, and what each mouse button would roll right now. Then whether Raid Roll Winner would count a roll in this group, who it reads at each roster place, where it would say the winner, and whether it reads the game's roll line back.",
 	PLAYER_TITLE = "Player & Spells",
 	PLAYER_DESCRIPTION = "Shows your class, race, level and the Rogue spells " .. TITLE .. " watches.",
 	VALIDATE_TITLE = "Validate Data: %s",
 	VALIDATE_DESCRIPTION = "Checks every id in this data file against this client and exports the results as tab-separated text.",
 	VALIDATE_PROGRESS = "%s / %s IDs",
 	DISPLAY_TITLE = "Display Context",
-	DISPLAY_DESCRIPTION = "Shows your screen size, UI scale, the mini-map button's saved position, whether its menu can open, and the loot toast anchor.",
+	DISPLAY_DESCRIPTION = "Shows your screen size, UI scale, the mini-map button's saved position, whether its menu can open, and the loot toast anchor, and whether another add-on claims the slash command.",
 	ADDONS_TITLE = "Other Add-ons",
 	ADDONS_DESCRIPTION = "Lists every installed add-on with its version, and whether it is loadable or disabled.",
 	SAVED_TITLE = "Saved Variables",

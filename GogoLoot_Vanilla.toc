@@ -75,16 +75,19 @@ Data/Default-Settings.lua
 # GogoLoot
 Features/Core.lua
 Features/Utilities.lua
+Features/Utilities-Timers.lua
 Features/Utilities-Bags.lua
 Features/Utilities-Scan-Tooltip.lua
 Features/Utilities-Chat-Lines.lua
 Features/Announcements.lua
 Features/Announcements-Trade.lua
+Features/Announcements-Trade-Checkbox.lua
 Features/Auto-Loot.lua
 Features/Openable-Items.lua
 Features/Loot-Sounds.lua
 Features/Speedy-Loot.lua
 Features/Automated-Opening.lua
+Features/Opening-Notices.lua
 Features/Lockbox-Tooltips.lua
 Features/Loot-Toasts-Winning-Rolls.lua
 Features/Loot-Toasts-Filters.lua
@@ -92,9 +95,11 @@ Features/Loot-Toasts.lua
 Features/Loot-Toasts-Handle.lua
 Features/Loot-Toasts-Money.lua
 Features/Standard-Loot-Messages.lua
+Features/Blizzard-Roll-Won-Window.lua
 Features/Master-Looter.lua
 Features/Master-Looter-Distribution.lua
 Features/Character-Rules.lua
+Features/Character-Rule-Stats.lua
 Features/Roll-Messages.lua
 Features/Automated-Rolls.lua
 Features/Roll-Macro.lua
@@ -117,6 +122,7 @@ Diagnostics/Report-Runner.lua
 # Options
 Options/Options-Kit.lua
 Options/Options-Utilities.lua
+Options/Options-Utilities-Dropdown-Watch.lua
 Options/Options-Utilities-Item-Cache.lua
 Options/Options-Utilities-Item-List-Filter.lua
 Options/Options-Utilities-Item-Lists.lua

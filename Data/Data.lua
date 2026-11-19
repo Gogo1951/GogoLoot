@@ -50,6 +50,10 @@ ns.ITEM_CLASS_QUIVER = (Enum and Enum.ItemClass and Enum.ItemClass.Quiver) or LE
 ns.ITEM_CLASS_KEY = (Enum and Enum.ItemClass and Enum.ItemClass.Key) or LE_ITEM_CLASS_KEY or 13
 ns.ITEM_CLASS_CONSUMABLE = (Enum and Enum.ItemClass and Enum.ItemClass.Consumable) or LE_ITEM_CLASS_CONSUMABLE or 0
 ns.ITEM_CLASS_WEAPON = (Enum and Enum.ItemClass and Enum.ItemClass.Weapon) or LE_ITEM_CLASS_WEAPON or 2
+ns.ITEM_SUBCLASS_FISHING_POLE = (Enum and Enum.ItemWeaponSubclass and Enum.ItemWeaponSubclass.Fishingpole)
+	or LE_ITEM_WEAPON_FISHINGPOLE
+	or 20
+ns.INVENTORY_SLOT_MAIN_HAND = INVSLOT_MAINHAND or 16
 ns.ITEM_CLASS_GEM = (Enum and Enum.ItemClass and Enum.ItemClass.Gem) or LE_ITEM_CLASS_GEM or 3
 ns.ITEM_CLASS_ARMOR = (Enum and Enum.ItemClass and Enum.ItemClass.Armor) or LE_ITEM_CLASS_ARMOR or 4
 ns.ITEM_CLASS_REAGENT = (Enum and Enum.ItemClass and Enum.ItemClass.Reagent) or LE_ITEM_CLASS_REAGENT or 5
@@ -323,8 +327,8 @@ ns.CHARACTER_RULE_GEAR_GROUPS = {
 	--[[
         Last, a catch-all: any armor or weapon no row above names (a fishing
         pole, a Miscellaneous weapon, gear from a subclass the data never
-        listed), so the player still has a say over it. No class starts with
-        it ticked. Captioned with the game's own OTHER.
+        listed), so the player still has a say over it. Every class starts
+        with it ticked. Captioned with the game's own OTHER.
     ]]
 	{
 		key = "OTHER",
@@ -587,7 +591,9 @@ ns.OPENING_REMOVED = "REMOVED"
     five: OPENING_OPEN; OPENING_UNLOCKED, a lockbox, opened once it is picked;
     OPENING_IGNORE_RAID, a raid boss drop; OPENING_IGNORE_UNIQUE, which may hold
     a unique item; or OPENING_IGNORE, which may hold Bind on Pickup loot. The
-    three Ignores go only to a container that can itself be traded. The
+    three Ignores go only to a container that can itself be traded, but for
+    Gnarlpine Necklace (8049), a quest item set to Ignore by hand in every
+    folder (README-Notes.md → Decisions). The
     last four carry a reason, which the Openables List shows as a tag on the
     row, whatever the player sets it to, and a looted container's notice gives.
 ]]
@@ -719,7 +725,7 @@ ns.ROLL_MACRO_BODY =
 ]]
 ns.RAID_ROLL_OUTPUT_SELF = "SELF"
 ns.RAID_ROLL_OUTPUT_GROUP = "GROUP"
-ns.RAID_ROLL_CLAIM_STEP = 0.2 -- seconds
+ns.RAID_ROLL_CLAIM_WAIT = 1 -- seconds
 
 ns.COPPER_PER_SILVER = 100
 ns.COPPER_PER_GOLD = 10000
@@ -888,7 +894,6 @@ ns.OPTIONS_REGISTRY = {
 	Diagnostics = ADDON_NAME .. "_Diagnostics",
 }
 
-ns.ITEM_LINK_WIDGET_TYPE = ADDON_NAME .. "_ItemLink"
 ns.ITEM_LIST_FILTER_WIDGET_TYPE = ADDON_NAME .. "_ItemListFilter"
 ns.ITEM_LIST_ADD_WIDGET_TYPE = ADDON_NAME .. "_ItemListAdd"
 

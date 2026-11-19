@@ -4,15 +4,16 @@
 
 --[[
     The shared item list builder every list panel is built on (Item Overrides,
-    the Master Looter Ignore List and the Openables List): item-input parsing,
-    item-name sorting, Add from Bags, the rows and the builder itself. The item
+    the Master Looter Ignore List and the Openables List): Add from Bags, the
+    rows and the builder itself; item-input parsing and item-name sorting are
+    the Options-Kit's. The item
     cache lives in Options-Utilities-Item-Cache.lua, the kind sections and the
     filters in Options-Utilities-Item-List-Filter.lua, and the
-    GogoLoot_ItemLink, GogoLoot_ItemListFilter and GogoLoot_ItemListAdd AceGUI
-    widgets in Options-Utilities-Item-List-Widgets.lua, which reaches what it
-    shares through ns.IsItemOnClient, ns.SetItemListFilter,
-    ns.ITEM_LIST_REMOVE_ICON, ns.MeasureCaptionPixels (Features/Utilities.lua)
-    and ns:GetItemDisplayName.
+    GogoLoot_ItemListFilter and GogoLoot_ItemListAdd AceGUI widgets in
+    Options-Utilities-Item-List-Widgets.lua, which reaches what it shares
+    through ns.SetItemListFilter, ns.ITEM_LIST_REMOVE_ICON and
+    ns.MeasureCaptionPixels (Features/Utilities.lua). A row's item is the
+    Options-Kit's Kit.ITEM_LINK_WIDGET.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -102,6 +103,27 @@ end
 --------------------------------------------------------------------------------
 
 --[[
+    Whether two item lists hold the same items with the same values: the saved
+    list against a freshly built default one, for a spec's isDefault.
+]]
+---@param saved table
+---@param defaults table
+---@return boolean
+function ns.ItemListsMatch(saved, defaults)
+	for itemIdentifier, value in pairs(saved) do
+		if defaults[itemIdentifier] ~= value then
+			return false
+		end
+	end
+	for itemIdentifier in pairs(defaults) do
+		if saved[itemIdentifier] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+--[[
     Used by every item list panel. Handles the lines holding the add box, Add
     from Bags, the filter and the kind filter, sort, the item kind headers, per-item
     rows with optional action dropdown, and Restore Defaults at the foot. Pass
@@ -109,6 +131,9 @@ end
 
       getSourceTable: function returning the table whose keys are the item IDs
       onRestore: function that puts the list back to its defaults
+      isDefault: optional function returning whether the list already matches
+        its defaults; Restore Defaults is gray while it does (ns.ItemListsMatch
+        compares a saved list against a freshly built default one)
       onAdd: optional function(itemId) that adds an item to the source; without
         it the panel has no add line (the add box and Add from Bags)
       canAdd: optional function(itemId) returning whether the list would take
@@ -131,8 +156,6 @@ end
         carries a setting of its own.
         sorting is the AceConfig display order for values (optional)
         width defaults to ns.ROLL_ACTION_DROPDOWN_WIDTH
-      noteFor: optional function(itemId) returning a line on why the row is
-        there, or nil; the item-link widget draws it under the item tooltip
       tagFor: optional function(itemId) returning a short reason, or nil; every
         row then gets a silver tag column before its dropdown, empty where the
         item has none, and the filter finds rows by their tag too
@@ -173,15 +196,15 @@ local REMOVE_ICON_SIZE = 16
 ---@param itemIdentifier number
 ---@param order number
 ---@param widths table # { label, tag, action }
+---@param tag string|nil # spec.tagFor's answer, read once by the caller
 ---@return nil
-local function AddItemRow(args, spec, itemIdentifier, order, widths)
+local function AddItemRow(args, spec, itemIdentifier, order, widths, tag)
 	local labels = spec.labels
 	local rowArgs = {
 		label = {
 			type = "input",
-			dialogControl = ns.ITEM_LINK_WIDGET_TYPE,
+			dialogControl = Kit.ITEM_LINK_WIDGET,
 			name = "",
-			desc = spec.noteFor and spec.noteFor(itemIdentifier) or nil,
 			width = widths.label,
 			order = 1,
 			get = function()
@@ -193,7 +216,6 @@ local function AddItemRow(args, spec, itemIdentifier, order, widths)
 
 	-- Blank where the item has no reason, so every row's dropdown stays in one column.
 	if spec.tagFor then
-		local tag = spec.tagFor(itemIdentifier)
 		rowArgs.tag = {
 			type = "description",
 			name = tag and (GetColor("HELP") .. tag .. "|r") or " ",
@@ -450,7 +472,7 @@ local function AddSectionRows(args, order, spec, sections, itemNames, chosenKind
 
 	local shownRows = 0
 	for sectionIndex, section in ipairs(sections) do
-		local matches = {}
+		local matches, tags = {}, {}
 		if section.isNew or chosenKind == ns.ITEM_LIST_ALL_KINDS or section.heading == chosenKind then
 			for _, itemIdentifier in ipairs(section.identifiers) do
 				local settingLabel = settingLabels and settingLabels[spec.actionColumn.get(itemIdentifier)]
@@ -460,6 +482,7 @@ local function AddSectionRows(args, order, spec, sections, itemNames, chosenKind
 					or ns.ItemListRowMatchesFilter(needle, itemIdentifier, itemNames[itemIdentifier], settingLabel, tag)
 				then
 					matches[#matches + 1] = itemIdentifier
+					tags[itemIdentifier] = tag
 				end
 			end
 		end
@@ -474,7 +497,7 @@ local function AddSectionRows(args, order, spec, sections, itemNames, chosenKind
 			order = order + 1
 		end
 		for _, itemIdentifier in ipairs(matches) do
-			AddItemRow(args, spec, itemIdentifier, order, widths)
+			AddItemRow(args, spec, itemIdentifier, order, widths, tags[itemIdentifier])
 			order = order + 1
 		end
 		shownRows = shownRows + #matches
@@ -499,7 +522,18 @@ function ns:BuildItemListOptions(spec)
 		end
 	end
 	local itemNames = ReadItemNames(sortedIdentifiers)
-	Kit.SortItems(sortedIdentifiers)
+	-- Kit.SortItems' order (A to Z, unnamed last, ties by ID), read from the names already in hand.
+	table.sort(sortedIdentifiers, function(a, b)
+		local nameA, nameB = itemNames[a], itemNames[b]
+		if nameA == nameB then
+			return a < b
+		elseif nameA == "" then
+			return false
+		elseif nameB == "" then
+			return true
+		end
+		return nameA < nameB
+	end)
 	local sections = ns.GroupItemListByKind(sortedIdentifiers)
 
 	--[[
@@ -583,6 +617,8 @@ function ns:BuildItemListOptions(spec)
 			width = ns.OPTIONS_RESTORE_BUTTON_WIDTH,
 			confirm = true,
 			confirmText = labels.restoreConfirm,
+			-- Gray while the list already matches its defaults, like every Reset with nothing to reset.
+			disabled = spec.isDefault,
 			func = function()
 				spec.onRestore()
 				ns.RefreshSettings()

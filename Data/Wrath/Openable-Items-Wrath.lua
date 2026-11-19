@@ -387,3 +387,20 @@ ns.OPENABLE_ITEMS = {
 	[17965] = ns.OPENING_IGNORE_RAID, -- Yellow Sack of Gems (raid bosses: Azuregos, Nefarian, Lord Kazzak, Highlord Kruul, ...)
 	[22137] = ns.OPENING_OPEN, -- Ysida's Satchel
 }
+
+-- { [itemId] = requiredLevel }: the rows above whose item has a level requirement, from ItemSparse.RequiredLevel.
+ns.OPENABLE_ITEM_LEVELS = {
+	[6646] = 5, -- Bloated Albacore
+	[6647] = 15, -- Bloated Catfish
+	[21163] = 15, -- Bloated Firefin
+	[6645] = 5, -- Bloated Mud Snapper
+	[21162] = 5, -- Bloated Oily Blackmouth
+	[21164] = 25, -- Bloated Rockscale Cod
+	[8366] = 25, -- Bloated Trout
+	[28135] = 60, -- Bomb Crate
+	[30320] = 70, -- Bundle of Nether Spikes
+	[19296] = 45, -- Greater Darkmoon Prize
+	[19297] = 30, -- Lesser Darkmoon Prize
+	[19298] = 15, -- Minor Darkmoon Prize
+	[42953] = 70, -- Strange Envelope
+}

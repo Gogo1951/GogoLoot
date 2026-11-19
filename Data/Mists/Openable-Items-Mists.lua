@@ -720,6 +720,53 @@ ns.OPENABLE_ITEMS = {
 	[71631] = ns.OPENING_OPEN, -- Zen'Vorka's Cache
 }
 
+-- { [itemId] = requiredLevel }: the rows above whose item has a level requirement, from ItemSparse.RequiredLevel.
+ns.OPENABLE_ITEM_LEVELS = {
+	[6646] = 5, -- Bloated Albacore
+	[6647] = 15, -- Bloated Catfish
+	[21163] = 15, -- Bloated Firefin
+	[6645] = 5, -- Bloated Mud Snapper
+	[21162] = 5, -- Bloated Oily Blackmouth
+	[21164] = 25, -- Bloated Rockscale Cod
+	[8366] = 25, -- Bloated Trout
+	[28135] = 60, -- Bomb Crate
+	[30320] = 70, -- Bundle of Nether Spikes
+	[104112] = 90, -- Curious Ticking Parcel
+	[104114] = 90, -- Curious Ticking Parcel
+	[19296] = 45, -- Greater Darkmoon Prize
+	[19297] = 30, -- Lesser Darkmoon Prize
+	[19298] = 15, -- Minor Darkmoon Prize
+	[87730] = 85, -- Sack of Crocolisk Belly
+	[87723] = 85, -- Sack of Emperor Salmon
+	[87722] = 85, -- Sack of Giant Mantis Shrimp
+	[87729] = 85, -- Sack of Golden Carp
+	[87706] = 85, -- Sack of Green Cabbages
+	[87721] = 85, -- Sack of Jade Lungfish
+	[87713] = 85, -- Sack of Jade Squash
+	[87726] = 85, -- Sack of Jewel Danio
+	[87707] = 85, -- Sack of Juicycrunch Carrots
+	[87728] = 85, -- Sack of Krasarang Paddlefish
+	[87708] = 85, -- Sack of Mogu Pumpkins
+	[87702] = 85, -- Sack of Mushan Ribs
+	[87715] = 85, -- Sack of Pink Turnips
+	[87704] = 85, -- Sack of Raw Crab Meat
+	[87701] = 85, -- Sack of Raw Tiger Steaks
+	[87703] = 85, -- Sack of Raw Turtle Meat
+	[87710] = 85, -- Sack of Red Blossom Leeks
+	[87724] = 85, -- Sack of Redbelly Mandarin
+	[87727] = 85, -- Sack of Reef Octopus
+	[87709] = 85, -- Sack of Scallions
+	[87714] = 85, -- Sack of Striped Melons
+	[87725] = 85, -- Sack of Tiger Gourami
+	[87716] = 85, -- Sack of White Turnips
+	[87705] = 85, -- Sack of Wildfowl Breasts
+	[87712] = 85, -- Sack of Witchberries
+	[42953] = 70, -- Strange Envelope
+	[93199] = 85, -- Tome of the Crane
+	[93200] = 85, -- Tome of the Serpent
+	[93198] = 85, -- Tome of the Tiger
+}
+
 --[[
 How We Got the Data
 
@@ -728,13 +775,14 @@ Last Validated
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
-	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". README-Technical, Openable Items Data, gives the exact test. They come from this client's own tables, never from a private-server database or Wowhead listings.
+	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". They come from this client's own tables, never from a private-server database or Wowhead listings.
 	- Pulled from this client's own tables at build 5.5.4.69934.
 	- Clams are left out: from Wrath on they open through a spell the player casts, not the loot flag, and no add-on can cast it.
-	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
-	- No client table records what a container holds or drops from, so those come from the CMaNGOS Wrath world DB (WoTLKDB_1_9_14092), the newest open one, for the items Wrath has, with the maintainer's earlier call where it can't tell; a later item's default rests on its lock alone. A note after a row's name gives the evidence for an Ignore. README-Technical describes the method.
+	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Because the lock rule comes first, a lockbox stays on ns.OPENING_UNLOCKED even where its random loot can include Unique or Bind on Pickup items. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
+	- No client table records what a container holds or drops from, so those come from the CMaNGOS Wrath world DB (WoTLKDB_1_9_14092), the newest open one, for the items Wrath has, with the maintainer's earlier call where it can't tell; a later item's default rests on its lock alone. A note after a row's name gives the evidence for an Ignore.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
 	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): WoW Forever's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
+	- Rechecked against this client's tables at build 5.5.4.70960: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). No flagged item is missing.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -745,6 +793,9 @@ Wowhead
 wago.tools
 	https://wago.tools/db2/ItemSparse?build=5.5.4.69934
 	https://wago.tools/db2/ItemSparse?build=5.5.4.70631
+	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
+	https://wago.tools/db2/Item?build=5.5.4.70960
+	https://wago.tools/db2/Lock?build=5.5.4.70960
 
 QuestieDB
 	None.

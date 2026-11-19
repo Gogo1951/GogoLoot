@@ -22,14 +22,19 @@ local GetQualityColor = ns.GetQualityColor
     owns that setting.
 ]]
 
+-- Personal Loot is listed only where the client names it, so the dropdown reads it back rather than going blank.
 local function BuildLootTypeValues()
-	return {
+	local values = {
 		["freeforall"] = LOOT_FREE_FOR_ALL,
 		["roundrobin"] = LOOT_ROUND_ROBIN,
 		["master"] = LOOT_MASTER_LOOTER,
 		["group"] = LOOT_GROUP_LOOT,
 		["needbeforegreed"] = LOOT_NEED_BEFORE_GREED,
 	}
+	if Enum.LootMethod.Personal and LOOT_PERSONAL_LOOT then
+		values["personal"] = LOOT_PERSONAL_LOOT
+	end
+	return values
 end
 
 --[[
@@ -101,15 +106,16 @@ local function HideWhenAutomationOff(entry)
 end
 
 --[[
-    Two methods have no threshold to apply: Free for All opens every drop to the
-    whole group, and Round Robin hands whole drops out in turn. Neither consults
-    quality, so the row is hidden outright instead of left showing a value that
+    Three methods have no threshold to apply: Free for All opens every drop to
+    the whole group, Round Robin hands whole drops out in turn, and Personal
+    Loot (MoP Classic) gives each player their own. None consults quality, so the row is hidden outright instead of left showing a value that
     changes nothing. Callers hide the spacer that pairs with the row so its
     absence does not leave a double gap.
 ]]
 local THRESHOLDLESS_LOOT_METHODS = {
 	freeforall = true,
 	roundrobin = true,
+	personal = true,
 }
 
 local function IsLootThresholdIrrelevant()
@@ -136,7 +142,7 @@ function ns.AddLeaderNoteRow(args, order)
 			if not leaderName then
 				return GetColor("HELP") .. L["MASTER_LOOTER_SOLO_NOTE"] .. "|r"
 			end
-			return GetColor("INFO") .. string.format(L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"], leaderName) .. "|r"
+			return GetColor("HELP") .. string.format(L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"], leaderName) .. "|r"
 		end,
 		fontSize = "medium",
 		order = order,
@@ -344,8 +350,6 @@ local function AddDestinationRows(args, order)
 			end,
 		})
 		order = order + 1
-		args["spacer_destination_" .. qualityKey] = Kit.Spacer(order, HiddenQualityRow)
-		order = order + 1
 	end
 	return order
 end
@@ -417,7 +421,8 @@ end
     destinations the automation hands nothing out, so they sit beside the
     switch rather than a page away. Both leave while the switch is off.
 
-    Group Loot Settings closes the panel and stays whatever the switch says.
+    Group Loot Settings follows, whatever the switch says, and Tradable Gear
+    Tint comes after it.
     The loot method and threshold are the group's, which GogoLoot reads rather
     than owns, and the pop-up opens whenever the player becomes Master Looter,
     automation or not, so its switch sits with the settings it shows.
@@ -475,8 +480,7 @@ function ns.BuildMasterLooterOptions()
 	args.spacerAfterNoDestinationNote = Kit.Spacer(order, NoDestinationNoteHidden)
 	order = order + 1
 	order = ns.AddSendAllDestinationRow(args, order, IsAutomationOff)
-	args.spacerAfterSendAll = HideWhenAutomationOff(Kit.Spacer(order))
-	order = order + 1
+	-- The quality rows are Send All Loot To's sub-rows, so they sit tight under it.
 	order = AddDestinationRows(args, order)
 
 	-- Group Loot Settings

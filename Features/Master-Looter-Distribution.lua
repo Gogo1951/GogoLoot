@@ -268,7 +268,10 @@ end
     six identical lines, and the distribution ticker's retries would repeat them.
 
     Items collect for ERROR_BATCH_DELAY and go out as one list, split across as
-    many messages as the chat limit needs (ns:AnnounceParts); every item already
+    many messages as the chat limit needs (ns:AnnounceParts). When it isn't
+    sent to the group (Loot Announcements off, or no group) the list prints to
+    the Master Looter instead, so a
+    failed hand-out is never silent, as the Manual Hand-out tooltip promises. Every item already
     reported for that player and reason is remembered for the rest of the loot
     session so a later pass stays quiet about it.
 ]]
@@ -288,10 +291,13 @@ local function FlushLootError(batchKey)
 	end
 	batch.itemLinks = {}
 
-	if IsInGroup() then
+	if IsInGroup() and ns.db.profile.lootNotifications then
 		ns:AnnounceParts(ns:GetGroupChatChannel(), nil, batch.localeKey, itemLinks, function(itemList)
 			return batch.displayName, itemList
 		end)
+	else
+		-- Not sent to the group (Loot Announcements off, or no group); the Master Looter still has to hear it.
+		ns:PrintMessage(ns.L[batch.localeKey]:format(batch.displayName, table.concat(itemLinks, ", ")) .. ".")
 	end
 end
 
@@ -519,7 +525,6 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 		return false, true
 	end
 
-	-- Hard skip: legendaries, recipes, mounts, pets — and quest items unless opted in
 	if ShouldSkipItemForMasterLoot(itemInformation) then
 		return false
 	end
@@ -535,6 +540,11 @@ local function TryDistributeSlot(slotIndex, candidateMap)
 
 	local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[itemInformation.quality]
 	if not qualityKey then
+		return false
+	end
+
+	-- Below the loot threshold the master looter never hands it out, so a hidden tier's saved player is not waited on.
+	if not ns:IsQualityReachable(itemInformation.quality) then
 		return false
 	end
 

@@ -200,6 +200,7 @@ Notes
 	- Forever's weapon changes, checked against this build's SkillRaceClassInfo and SkillLineAbility (wago.tools, 1.60.1.70938) beside Classic Era's (1.15.8.66129), 2026-11-18. Rogues train One-Handed Axes here (the trainer spell's class mask gained Rogue), so they start with it ticked. Druids start with Polearms ticked: the client's tables carry a druid Polearms row on Era too, so they can't settle it alone, but Forever's class guides list it, and the maintainer asked for it (2026-11-18). Play It Forward's WEAPON_SPECS still counts both at 0. Every other class matches Era.
 	- Stats the maintainer added beyond the spec mapping (2026-11-18): Strength for rogues, and Agility for shamans, so melee gear built on either is held for them. Shamans already start with Strength and Intellect.
 	- Hunters start with Thrown ticked: Play It Forward counts it 0 because no hunter spec builds on it, but a hunter trains it, and the user asked for every trainable weapon (2026-11-07).
+	- Rechecked against this client's tables at build 1.60.1.70959: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment. ItemSparse lacks 32 of the drops, which Forever streams from the server; all 32 are in its Item table.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -212,6 +213,9 @@ wago.tools
 	https://wago.tools/db2/ItemSubClass?build=1.60.1.70862
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70938
 	https://wago.tools/db2/Item?build=1.60.1.70938
+	https://wago.tools/db2/ItemSubClass?build=1.60.1.70959
+	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
+	https://wago.tools/db2/Item?build=1.60.1.70959
 
 QuestieDB
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Classic/classicItemDB.lua

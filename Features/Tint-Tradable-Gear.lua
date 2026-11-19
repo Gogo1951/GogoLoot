@@ -26,8 +26,8 @@ local min = math.min
     (TINT_ADAPTERS below) that hooks the moment it draws one and hands the
     button, the bag and slot it shows, and the item it shows to PaintButton.
     Only the carried bags are tinted: an item has to be in them to be traded.
-    Ported from Magic Eraser's Junk Item Tint, which keeps the long notes on
-    each bag add-on's hooks.
+    Magic Eraser's Junk Item Tint keeps the long notes on each bag add-on's
+    hooks.
 ]]
 local paintedButtons = setmetatable({}, { __mode = "k" })
 
@@ -105,17 +105,28 @@ local function PaintButton(button, bag, slot, shownItemId)
 		paintedButtons[button] = record
 	end
 
-	local itemId, link
+	-- Switched off, nothing is read: the switch turning on repaints (ns:RefreshTradableTints).
+	if not IsTintOn() then
+		record.bag, record.slot, record.itemId = bag, slot, shownItemId
+		if record.tint then
+			record.tint:Hide()
+		end
+		return
+	end
+
+	local itemId, link, canQualify
 	if bag and slot and IsCarriedBag(bag) then
 		local info = GetContainerItemInfo(bag, slot)
 		itemId, link = info and info.itemID, info and info.hyperlink
 		if shownItemId and shownItemId ~= itemId then
 			itemId = nil
 		end
+		-- The slot already rules out an unbound item or one below the quality floor, so the item cache isn't asked.
+		canQualify = info and info.isBound ~= false and not (info.quality and info.quality < ns.TRADABLE_MIN_QUALITY)
 	end
 	record.bag, record.slot, record.itemId = bag, slot, itemId
 
-	if itemId and link and IsTintOn() and IsTradableGear(bag, slot, link) then
+	if itemId and link and canQualify and IsTradableGear(bag, slot, link) then
 		if not record.tint then
 			record.tint = CreateTint(button)
 		end
@@ -427,15 +438,6 @@ function ns:GetTradableTintAdapterNames()
 	return names
 end
 
--- Repaints every button painted so far, for a change that moves no item: a new color, the switch, a clock running out.
-function ns:RefreshTradableTints()
-	for button, record in pairs(paintedButtons) do
-		if record.itemId then
-			PaintButton(button, record.bag, record.slot, record.itemId)
-		end
-	end
-end
-
 -- Asks the windows whose buttons can show a new slot without drawing it again to redraw. Never with the tint off.
 local function RedrawTintWindows()
 	if not IsTintOn() then
@@ -446,6 +448,20 @@ local function RedrawTintWindows()
 			adapter[4]()
 		end
 	end
+end
+
+--[[
+    Repaints every button painted so far, then has the bag windows redraw, for
+    a change that moves no item: a new color, the switch, a profile change, a
+    clock running out.
+]]
+function ns:RefreshTradableTints()
+	for button, record in pairs(paintedButtons) do
+		if record.itemId then
+			PaintButton(button, record.bag, record.slot, record.itemId)
+		end
+	end
+	RedrawTintWindows()
 end
 
 -- True once a kept clock has run out, so the slow check repaints only when a tint has something to drop.
@@ -459,16 +475,23 @@ local function AnyClockRanOut()
 	return false
 end
 
+-- A clock that ran out is settled as not tradable once its tint is gone, so the check repaints for it only once.
 local function OnClockCheck()
-	if IsTintOn() and AnyClockRanOut() then
-		ns:RefreshTradableTints()
+	if not (IsTintOn() and AnyClockRanOut()) then
+		return
+	end
+	ns:RefreshTradableTints()
+	local now = Now()
+	for key, expiresAt in pairs(verdicts) do
+		if expiresAt and expiresAt <= now then
+			verdicts[key] = false
+		end
 	end
 end
 
 local function OnBagsChanged()
 	verdicts = {}
 	ns:RefreshTradableTints()
-	RedrawTintWindows()
 end
 
 local function OnAddonLoaded()

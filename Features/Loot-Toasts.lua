@@ -436,7 +436,7 @@ local function AcquireToast()
 		return toast
 	end
 	toast = CreateFrame("Frame", nil, UIParent)
-	-- All four are positioned by Measure, which owns the row's layout per alignment.
+	-- Measure positions the backdrop, border, icon, text and hover area per alignment; the flash follows the backdrop.
 	-- White bases, so the gradient and the quality tint are the only color either carries.
 	toast.backdrop = toast:CreateTexture(nil, "BACKGROUND")
 	toast.backdrop:SetColorTexture(1, 1, 1, 1)
@@ -873,8 +873,8 @@ end
     is already a group member's; the Group boxes decide whether it shows.
 ]]
 local function OnChatMessageLoot(message)
-	-- Roll lines are read whatever the toasts' switch says: the winner summary needs them too.
-	if ns.RecordRollLine(message) or not ns.db.profile.lootToasts then
+	-- A roll line is never a loot line; Loot-Toasts-Winning-Rolls.lua records it on its own handler.
+	if not ns.db.profile.lootToasts or ns.ParseRollResultMessage(message) or ns.ParseRollWonMessage(message) then
 		return
 	end
 	local itemLink, quantity = ns.ParseOwnLootMessage(message)

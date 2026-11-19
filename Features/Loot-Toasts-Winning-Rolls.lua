@@ -3,9 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The roll each item was won with, read off the game's roll lines and handed
-    to the winner's loot toast (Features/Loot-Toasts.lua), which owns the
-    CHAT_MSG_LOOT handler that feeds ns.RecordRollLine and asks
+    The roll each item was won with, read off the game's roll lines on this
+    file's own CHAT_MSG_LOOT handler, whatever the toasts' switch says, and
+    handed to the winner's loot toast (Features/Loot-Toasts.lua), which asks
     ns.ClaimWinningRoll.
 ]]
 local _, ns = ...
@@ -116,3 +116,14 @@ function ns.ClaimWinningRoll(playerName, itemLink)
 	winningRolls[key] = nil
 	return entry and entry.text
 end
+
+--------------------------------------------------------------------------------
+-- Events
+--------------------------------------------------------------------------------
+
+-- Roll lines are read whatever the toasts' switch says: Automated Rolls' winner summary needs them too.
+local function OnChatMsgLoot(message)
+	ns.RecordRollLine(message)
+end
+
+ns:RegisterModuleEvent("CHAT_MSG_LOOT", OnChatMsgLoot)

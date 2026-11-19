@@ -12,9 +12,11 @@ local Kit = ns.MenuKit
     (Automated Rolls, Automated Opening, Loot Announcements), each a gold title
     with On or Off on the right, a line saying what it does and a blue Toggle
     row naming the button click that does the same. Automated Rolls' Party and
-    Raid rows each open a flyout setting that context. More Features holds the
-    set-and-forget switches in a flyout, and two blue links close it: the
-    Loot Roll Sanity Check page, then Options.
+    Raid rows each open a flyout setting that context, with links to the
+    pages that also shape the rolls (Global Item Overrides, Character
+    Overrides, the Loot Roll Sanity Check); a pick there closes the menu.
+    More Features holds the set-and-forget switches in a flyout, and the
+    Options row closes the menu.
 
     Hovering the button opens it, and it closes a moment after the cursor
     leaves the button, the menu and the flyout. Every row is a plain click, so
@@ -84,6 +86,69 @@ local function OnOff(enabled)
 end
 
 --------------------------------------------------------------------------------
+-- Toggles
+--------------------------------------------------------------------------------
+
+--[[
+    Flips a feature the way its options switch does: its ns.FEATURES apply,
+    with every side effect (Auto Loot, the opening scan, the trade window's
+    checkbox, the not-master-looter chat line), or a plain write. The caller
+    refreshes after (AfterChange, above).
+]]
+---@param setting string # an ns.FEATURES setting
+---@return nil
+function ns.FlipFeature(setting)
+	local feature = ns.GetFeature(setting)
+	local store = ns.db[feature.store]
+	local value = not store[feature.setting]
+	if feature.apply then
+		feature.apply(value)
+	else
+		store[feature.setting] = value
+	end
+end
+
+-- The three clicks that switch a feature (Button Clicks, below).
+function ns.ToggleAutomatedRolls()
+	ns.FlipFeature("autoGreed")
+end
+
+function ns.ToggleAutomatedOpening()
+	ns.FlipFeature("autoOpen")
+end
+
+function ns.ToggleAnnouncements()
+	ns.FlipFeature("lootNotifications")
+end
+
+--------------------------------------------------------------------------------
+-- Loot Windows
+--------------------------------------------------------------------------------
+
+--[[
+    Middle-Click opens the loot windows: the Loot Master for a player with loot
+    to hand out (tradable loot on the Roll List, or Master Looter), the Loot
+    Tracker for everyone else. The windows are parked out of the TOCs for now;
+    with their files unloaded, the click does nothing.
+]]
+---@return boolean
+function ns.LootWindowsLoaded()
+	return ns.db.profile.lootMaster and ns.GetRollListEntries ~= nil or false
+end
+
+local function HasLootToHandOut()
+	return #ns:GetRollListEntries() > 0 or ns:AreWeMasterLooter()
+end
+
+function ns.OpenLootWindow()
+	if HasLootToHandOut() then
+		ns:ToggleLootMaster()
+	else
+		ns:ToggleLootTracker()
+	end
+end
+
+--------------------------------------------------------------------------------
 -- Button Clicks
 --------------------------------------------------------------------------------
 
@@ -91,7 +156,7 @@ end
     One table, both ways: the button's OnClick looks the click up here, and the
     row that does the same job names the click on its right, so a row never
     names a click that does something else. Each toggle keeps its side effects
-    (Features/Minimap-Button.lua) and the click then refreshes.
+    (Toggles, above) and the click then refreshes.
 
     Shift + Right-Click has no entry: it is held for the Master Looting Window,
     and does nothing until that window is built. Left-Click has a job, so hover
@@ -212,6 +277,42 @@ local function LockedItemRow(box)
 	}
 end
 
+--[[
+    Inside the Automated Opening block, while it's on: the containers in the
+    bags the Openables List keeps sealed, drawn like Locked Items, each with
+    its reason (Sell Sealed, May Hold Unique) on the right in gray. Locked Items
+    shows what waits on a Rogue; this shows what waits on the player to trade,
+    sell or open by hand. Eight rows at most, then a note counting the rest.
+]]
+---@return table[]|nil
+local function SealedContainerRows()
+	if not ns.db.profile.autoOpen then
+		return nil
+	end
+	local containers = ns.GetSealedContainers()
+	local rows = {}
+	for index = 1, math.min(#containers, LIST_MAX) do
+		local container = containers[index]
+		local row = LockedItemRow(container)
+		row.right = container.tag
+		row.rightColor = container.tag and "MUTED" or nil
+		-- The item's own tooltip, then why it's kept sealed.
+		if container.link and container.note then
+			row.tooltip = function(tooltip)
+				tooltip:SetHyperlink(container.link)
+				tooltip:AddLine(" ")
+				tooltip:AddLine(ns.GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")
+				tooltip:AddLine(ns.GetColor("HELP") .. container.note .. "|r", nil, nil, nil, true)
+			end
+		end
+		rows[#rows + 1] = row
+	end
+	if #containers > LIST_MAX then
+		rows[#rows + 1] = { kind = "note", left = L["MENU_MORE"]:format(#containers - LIST_MAX) }
+	end
+	return rows
+end
+
 local function AddLockedItems(entries)
 	local boxes = ns.GetLockedBoxes()
 	if #boxes == 0 then
@@ -247,8 +348,8 @@ end
     opens a flyout that sets that context the way its options rows do:
     Automation (the roll), Threshold (Up to Quality) and Include Bind on Pickup,
     then a note that Item Overrides and Character Overrides still apply, with a
-    link to each page. Item Overrides is named in the note only while its
-    switch is on, and its link says Off while it isn't.
+    link to each page and one to the Sanity Check. Item Overrides is named in
+    the note only while its switch is on, and its link says Off while it isn't.
 ]]
 local ROLL_CONTEXTS = {
 	{
@@ -363,6 +464,8 @@ local function ChoiceRow(label, selected, key, value)
 		selected = selected,
 		onClick = function()
 			ns.db.profile[key] = value
+			-- A pick from a list closes the menu, before the refresh so it isn't redrawn on its way out; a switch keeps it open.
+			ns.HideMenu()
 			AfterChange()
 		end,
 	}
@@ -404,7 +507,7 @@ local function RollContextFlyout(context)
 		)
 	end
 
-	rows[#rows + 1] = { kind = "section", left = L["MENU_ROLLS_THRESHOLD"] }
+	rows[#rows + 1] = { kind = "section", left = L["ROLLS_UP_TO_QUALITY"] }
 	for _, quality in ipairs(THRESHOLD_ORDER) do
 		local selected = profile[context.thresholdKey] == quality
 		rows[#rows + 1] = ChoiceRow(QualityLabel(quality, not selected), selected, context.thresholdKey, quality)
@@ -426,24 +529,41 @@ local function RollContextFlyout(context)
 	rows[#rows + 1] =
 		PageLink(L["TAB_ITEM_OVERRIDES"], "ItemOverrides", not profile.customRollList and L["MENU_OFF"] or nil)
 	rows[#rows + 1] = PageLink(L["TAB_CHARACTER_RULES"], "CharacterRules")
+	rows[#rows + 1] = PageLink(L["TAB_SANITY_CHECK"], "SanityCheck")
 	return rows
 end
 
 --[[
-    Automated Opening's title: On, Paused while it waits for bag space, or Off.
-    Bag space is the only thing that pauses it (Features/Automated-Opening.lua:
-    too few free slots, or the game's bag-full error on an open), so while
-    paused a note under the description says how many free slots it waits for.
+    Automated Opening's title: On, Paused while something holds it back, or
+    Off. ns:GetAutomatedOpeningHold (Features/Automated-Opening.lua) names the
+    hold: waiting for free bag slots, a fishing pole, an instance or a group,
+    and while paused a note under the description says which.
 ]]
-local function OpeningPaused()
-	return ns.db.profile.autoOpen and ns:IsAutomatedOpeningPaused()
+local OPENING_HOLD_NOTES = {
+	FISHING = "MENU_OPENING_FISHING_POLE",
+	INSTANCE = "MENU_OPENING_INSTANCE",
+	GROUP = "MENU_OPENING_GROUP",
+}
+
+---@return string|nil
+local function OpeningHold()
+	return ns.db.profile.autoOpen and ns:GetAutomatedOpeningHold() or nil
+end
+
+---@return string|nil
+local function OpeningNote()
+	local hold = OpeningHold()
+	if hold == "BAGS" then
+		return L["MENU_OPENING_WAITING"]:format(ns.MIN_FREE_SLOTS)
+	end
+	return hold and L[OPENING_HOLD_NOTES[hold]] or nil
 end
 
 local function OpeningState()
 	if not ns.db.profile.autoOpen then
 		return OnOff(false)
 	end
-	if ns:IsAutomatedOpeningPaused() then
+	if OpeningHold() then
 		return L["MENU_PAUSED"], "MUTED"
 	end
 	return OnOff(true)
@@ -581,7 +701,8 @@ function ns.BuildMenuEntries()
 		right = right,
 		rightColor = rightColor,
 		description = L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"],
-		note = OpeningPaused() and L["MENU_OPENING_WAITING"]:format(ns.MIN_FREE_SLOTS) or nil,
+		note = OpeningNote(),
+		rows = SealedContainerRows(),
 		click = "opening",
 		setting = "autoOpen",
 	})
@@ -600,7 +721,6 @@ function ns.BuildMenuEntries()
 
 	entries[#entries + 1] = { kind = "spacer" }
 	entries[#entries + 1] = { kind = "separator" }
-	entries[#entries + 1] = PageLink(L["TAB_SANITY_CHECK"], "SanityCheck")
 	entries[#entries + 1] = ClickRow(L["MENU_OPTIONS"], "options")
 	return entries
 end

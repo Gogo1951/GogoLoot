@@ -194,9 +194,10 @@ function ns.BuildLootToastOptions()
 	})
 
 	--[[
-        The position controls come next, just under the switch, since where
-        the toasts sit is the first thing a player sets: Lock or Unlock in the
-        control column, then Reset Position on a Reset row of its own, gray
+        The position controls come next, after the switch's tooltips and the
+        Blizzard Roll Won toggle, since where the toasts sit is the first thing
+        a player sets: Lock or Unlock in the
+        control column beside its Toast Position caption, then Reset Position on a Reset row of its own, gray
         while the toasts already sit where they start. They hide with the rest
         rather than graying out: dead buttons under a switched-off toggle read
         as the feature being unfinished.
@@ -205,7 +206,7 @@ function ns.BuildLootToastOptions()
 	Add(
 		"positionRow",
 		Kit.Row(0, nil, {
-			Kit.Label(" ", nil, Kit.LABEL_WIDTH),
+			Kit.Label(L["LOOT_TOASTS_POSITION"], nil, Kit.LABEL_WIDTH),
 			{
 				type = "execute",
 				name = function()

@@ -568,6 +568,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "GREED (string)", GlobalIsType("GREED", "string") },
 	-- Hide Roll Messages — Roll-Messages.lua
 	{ "ChatFrameUtil.AddMessageEventFilter", MemberIsFunction("ChatFrameUtil", "AddMessageEventFilter") },
+	{ "ChatFrame_AddMessageEventFilter (legacy)", GlobalIsType("ChatFrame_AddMessageEventFilter", "function") },
 	-- Standard Loot Messages flips the General tab's loot lines through its message groups.
 	{ "ChatFrame1.ContainsMessageGroup", MemberIsFunction("ChatFrame1", "ContainsMessageGroup") },
 	{ "ChatFrame1.AddMessageGroup", MemberIsFunction("ChatFrame1", "AddMessageGroup") },
@@ -580,14 +581,35 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	    reads off an item's tooltip, with the units it counts in, and the
 	    default bags' redraw it hooks. Clients with the modern bag frames
 	    redraw through each frame's own UpdateItems instead, so a FAIL on
-	    ContainerFrame_Update is expected there; Loot Method lists the bag
-	    windows it hooked.
+	    ContainerFrame_Update is expected there, and a FAIL on the modern
+	    frames is expected on the others; Loot Method lists the bag windows it
+	    hooked. The clock counts down against the server time, else the
+	    computer's own.
 	]]
 	{ "BIND_TRADE_TIME_REMAINING (string)", GlobalIsType("BIND_TRADE_TIME_REMAINING", "string") },
 	{ "INT_SPELL_DURATION_HOURS (string)", GlobalIsType("INT_SPELL_DURATION_HOURS", "string") },
 	{ "INT_SPELL_DURATION_MIN (string)", GlobalIsType("INT_SPELL_DURATION_MIN", "string") },
 	{ "INT_SPELL_DURATION_SEC (string)", GlobalIsType("INT_SPELL_DURATION_SEC", "string") },
 	{ "ContainerFrame_Update", GlobalIsType("ContainerFrame_Update", "function") },
+	{ "ContainerFrameCombinedBags.UpdateItems", MemberIsFunction("ContainerFrameCombinedBags", "UpdateItems") },
+	{ "NUM_CONTAINER_FRAMES (number)", GlobalIsType("NUM_CONTAINER_FRAMES", "number") },
+	{ "GetServerTime", GlobalIsType("GetServerTime", "function") },
+
+	--[[
+	    Automated Opening's Fishing Pole hold-off reads the main hand's item
+	    class and subclass: Data.lua takes the enum, else the legacy global,
+	    else a fixed number, and the slot from INVSLOT_MAINHAND, else 16.
+	]]
+	{
+		"Enum.ItemWeaponSubclass.Fishingpole",
+		function()
+			return type(Enum) == "table"
+				and type(Enum.ItemWeaponSubclass) == "table"
+				and Enum.ItemWeaponSubclass.Fishingpole ~= nil
+		end,
+	},
+	{ "LE_ITEM_WEAPON_FISHINGPOLE (number)", GlobalIsType("LE_ITEM_WEAPON_FISHINGPOLE", "number") },
+	{ "INVSLOT_MAINHAND (number)", GlobalIsType("INVSLOT_MAINHAND", "number") },
 
 	-- The Loot Toasts Quest row's quest-starter read — Utilities-Scan-Tooltip.lua
 	{ "ITEM_STARTS_QUEST (string)", GlobalIsType("ITEM_STARTS_QUEST", "string") },
@@ -636,6 +658,14 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "LOOT_MASTER_LOOTER (string)", GlobalIsType("LOOT_MASTER_LOOTER", "string") },
 	{ "LOOT_GROUP_LOOT (string)", GlobalIsType("LOOT_GROUP_LOOT", "string") },
 	{ "LOOT_NEED_BEFORE_GREED (string)", GlobalIsType("LOOT_NEED_BEFORE_GREED", "string") },
+	-- Personal Loot joins the Loot Method dropdown only where the client has both.
+	{
+		"Enum.LootMethod.Personal",
+		function()
+			return type(Enum) == "table" and type(Enum.LootMethod) == "table" and Enum.LootMethod.Personal ~= nil
+		end,
+	},
+	{ "LOOT_PERSONAL_LOOT (string)", GlobalIsType("LOOT_PERSONAL_LOOT", "string") },
 	{ "ERR_INV_FULL (string)", GlobalIsType("ERR_INV_FULL", "string") },
 	{ "WHISPER (string)", GlobalIsType("WHISPER", "string") },
 	{ "MONEY (string)", GlobalIsType("MONEY", "string") },
@@ -851,25 +881,43 @@ local function AppendTradableTintLines(lines, profile)
 		tostring(color.a),
 		#hooked > 0 and table.concat(hooked, ", ") or "none"
 	)
+	--[[
+	    The slot's own bound flag and quality come first, as PaintButton reads
+	    them; an item that passes those but hasn't loaded yet gets no tint until
+	    it does.
+	]]
 	local read = {}
 	for bagIndex = 0, NUM_BAG_SLOTS do
 		for slotIndex = 1, C_Container.GetContainerNumSlots(bagIndex) or 0 do
-			local link = C_Container.GetContainerItemLink(bagIndex, slotIndex)
-			local info = link and ns:SafeGetItemInfo(link)
-			if info and (info.quality or 0) >= ns.TRADABLE_MIN_QUALITY and info.bindType == ns.BIND_ON_PICKUP then
+			local slot = C_Container.GetContainerItemInfo(bagIndex, slotIndex)
+			local link = slot and slot.hyperlink
+			local canQualify = link
+				and slot.isBound ~= false
+				and not (slot.quality and slot.quality < ns.TRADABLE_MIN_QUALITY)
+			local info = canQualify and ns:SafeGetItemInfo(link)
+			local verdict
+			if canQualify and not info then
+				verdict = "not loaded yet, no tint"
+			elseif info and (info.quality or 0) >= ns.TRADABLE_MIN_QUALITY and info.bindType == ns.BIND_ON_PICKUP then
 				local seconds = ns.GetBagSlotTradeSeconds(bagIndex, slotIndex)
+				verdict = seconds and string.format("trade clock %ds, gets the tint", seconds)
+					or "no trade clock, no tint"
+			end
+			if verdict then
 				read[#read + 1] = string.format(
-					"  bag %d slot %d %s: %s",
+					"  bag %d slot %d %s (isBound %s, quality %s): %s",
 					bagIndex,
 					slotIndex,
 					LinkCell(link),
-					seconds and string.format("trade clock %ds, gets the tint", seconds) or "no trade clock, no tint"
+					tostring(slot.isBound),
+					tostring(slot.quality),
+					verdict
 				)
 			end
 		end
 	end
 	lines[#lines + 1] = string.format(
-		"  Bind on Pickup items it reads in the bags (quality %d and up): %d",
+		"  Bind on Pickup or not-yet-loaded items it reads in the bags (quality %d and up): %d",
 		ns.TRADABLE_MIN_QUALITY,
 		#read
 	)
@@ -936,8 +984,9 @@ end
     without a realm. The pass also drops a normalized name two candidates
     share, which this leaves in.
 ]]
+-- As BuildCandidateMap keys them: the full name, plus the realm-stripped name only where one candidate carries it.
 local function SlotCandidates(slotIndex)
-	local candidates, names = {}, {}
+	local candidates, names, normalizedCounts = {}, {}, {}
 	for groupIndex = 1, GetNumGroupMembers() do
 		local candidateName = GetMasterLootCandidate(slotIndex, groupIndex)
 		if candidateName then
@@ -945,8 +994,13 @@ local function SlotCandidates(slotIndex)
 			candidates[strlower(candidateName)] = true
 			local normalizedName = ns:NormalizePlayerName(candidateName)
 			if normalizedName then
-				candidates[normalizedName] = true
+				normalizedCounts[normalizedName] = (normalizedCounts[normalizedName] or 0) + 1
 			end
+		end
+	end
+	for normalizedName, nameCount in pairs(normalizedCounts) do
+		if nameCount == 1 then
+			candidates[normalizedName] = true
 		end
 	end
 	return candidates, names
@@ -977,6 +1031,9 @@ local function MasterLootSlotVerdict(profile, itemInformation, itemIdentifier, c
 	local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[itemInformation.quality]
 	if not qualityKey then
 		return "QUALITY HAS NO DESTINATION"
+	end
+	if not ns:IsQualityReachable(itemInformation.quality) then
+		return "BELOW LOOT THRESHOLD"
 	end
 	local destination = profile.destinations[qualityKey]
 	if destination == nil or destination == "" then
@@ -1055,7 +1112,7 @@ function ns:BuildLootMethodReport()
 	lines[#lines + 1] = ""
 	if type(Enum) == "table" and type(Enum.LootMethod) == "table" then
 		lines[#lines + 1] = "Enum.LootMethod:"
-		for _, key in ipairs({ "Freeforall", "Roundrobin", "Masterlooter", "Group", "Needbeforegreed" }) do
+		for _, key in ipairs({ "Freeforall", "Roundrobin", "Masterlooter", "Group", "Needbeforegreed", "Personal" }) do
 			lines[#lines + 1] = string.format("  %s = %s", key, tostring(Enum.LootMethod[key]))
 		end
 	else
@@ -1242,8 +1299,10 @@ local function AppendSpeedyLootSlots(lines)
 		if itemLink then
 			stackSize = select(8, C_Item.GetItemInfo(itemLink))
 			bindType = select(14, C_Item.GetItemInfo(itemLink))
-			local getFamily = C_Item.GetItemFamily or GetItemFamily
-			family = getFamily and getFamily(itemLink)
+			-- As TakeSpaceFor reads it: a bag or quiver, or a client without GetItemFamily, takes a general slot.
+			local classIdentifier = select(6, C_Item.GetItemInfoInstant(itemLink))
+			local isBag = classIdentifier == ns.ITEM_CLASS_BAG or classIdentifier == ns.ITEM_CLASS_QUIVER
+			family = not isBag and GetItemFamily and GetItemFamily(itemLink) or 0
 			carried = itemIdentifier and C_Item.GetItemCount(itemIdentifier)
 		end
 		lines[#lines + 1] = table.concat({
@@ -1485,6 +1544,11 @@ function ns:BuildOpeningContextReport()
 		tostring(profile.autoOpenGroup),
 		YesNo(IsInGroup())
 	)
+	lines[#lines + 1] = string.format(
+		"With Fishing Pole Equipped: %s, fishing pole equipped %s",
+		OnOff(profile.autoOpenWithFishingPole),
+		YesNo(ns.IsFishingPoleEquipped())
+	)
 	lines[#lines + 1] = string.format("In combat (UnitAffectingCombat): %s", YesNo(UnitAffectingCombat("player")))
 	AppendStealthAndCastLines(lines)
 	lines[#lines + 1] = "Open windows: " .. OpenInteractionFrames()
@@ -1576,7 +1640,9 @@ function ns:BuildLockedBoxesReport()
 			if default or action or requiredSkill then
 				found = found + 1
 				local locked, lineCount = ns.IsItemLocked(bagIndex, slotIndex)
-				local requiredLevel = select(5, C_Item.GetItemInfo(itemIdentifier))
+				-- The flavor folder's level first, as Automated Opening reads it, so an uncached item still shows its wait.
+				local requiredLevel = ns.OPENABLE_ITEM_LEVELS[itemIdentifier]
+					or select(5, C_Item.GetItemInfo(itemIdentifier))
 				lines[#lines + 1] = table.concat({
 					bagIndex,
 					slotIndex,
@@ -1669,6 +1735,9 @@ end
 ]]
 local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
 
+-- Roll Verdicts' reading of one item (below), which each open roll gives too.
+local RollVerdict
+
 local function AppendOpenRolls(lines)
 	local frameCount = type(_G.NUM_GROUP_LOOT_FRAMES) == "number" and _G.NUM_GROUP_LOOT_FRAMES or 4
 	local open = 0
@@ -1678,16 +1747,24 @@ local function AppendOpenRolls(lines)
 		if type(rollIdentifier) == "number" then
 			open = open + 1
 			local _, _, _, quality, bindOnPickup, canNeed, canGreed = GetLootRollItemInfo(rollIdentifier)
+			local rollLink = GetLootRollItemLink(rollIdentifier)
+			local parsed = rollLink and ns:ParseItemLink(rollLink)
+			local verdict = "NOT RESOLVED YET (the retry waits for it)"
+			if parsed and parsed.itemIdentifier then
+				verdict = RollVerdict(rollLink, parsed.itemIdentifier, quality)
+			elseif rollLink then
+				verdict = "NOT AN ITEM LINK (left to the player)"
+			end
 			lines[#lines + 1] = string.format(
-				"  Roll %s: quality %s, Bind on Pickup %s, Need open %s, Greed open %s, retry polling %s, link %s",
+				"  Roll %s: quality %s, Bind on Pickup %s, Need open %s, Greed open %s, retry polling %s, verdict %s, link %s",
 				tostring(rollIdentifier),
 				tostring(quality),
 				YesNo(bindOnPickup),
 				YesNo(canNeed),
 				YesNo(canGreed),
 				YesNo(ns:IsTimerPending(ROLL_RETRY_TIMER_PREFIX .. rollIdentifier)),
-				LinkCell(GetLootRollItemLink(rollIdentifier)) ~= "" and LinkCell(GetLootRollItemLink(rollIdentifier))
-					or "not resolved yet"
+				verdict,
+				rollLink and LinkCell(rollLink) or "not resolved yet"
 			)
 		end
 	end
@@ -1704,9 +1781,10 @@ end
 ]]
 local function EquipSpellsLoaded()
 	local loaded, total = 0, 0
+	local canRead = type(C_Spell) == "table" and type(C_Spell.GetSpellDescription) == "function"
 	for spellIdentifier in pairs(ns.CHARACTER_RULE_EQUIP_SPELLS or {}) do
 		total = total + 1
-		local description = C_Spell.GetSpellDescription(spellIdentifier)
+		local description = canRead and C_Spell.GetSpellDescription(spellIdentifier)
 		if type(description) == "string" and description:find("%S") then
 			loaded = loaded + 1
 		end
@@ -1844,7 +1922,8 @@ local ROLL_REASON_LABELS = {
 -- The Character Overrides box an item fell under, for the reasons that come from one.
 local RULE_REASONS = { LOW_LEVEL = true, WANTED = true, EVERYTHING_ELSE = true }
 
-local function RollVerdict(itemLink, itemIdentifier)
+-- A live roll passes the quality the roll window gives, as the live roll does; a bag item takes its own.
+function RollVerdict(itemLink, itemIdentifier, quality)
 	local itemInformation = ns:SafeGetItemInfo(itemIdentifier)
 	if not itemInformation then
 		return "NOT CACHED (a live roll waits for it)"
@@ -1855,7 +1934,7 @@ local function RollVerdict(itemLink, itemIdentifier)
 		itemIdentifier,
 		itemInformation,
 		itemLink,
-		itemInformation.quality,
+		quality or itemInformation.quality,
 		rules,
 		classFile,
 		UnitLevel("player")
@@ -2272,6 +2351,40 @@ local function AppendMoneyLine(lines)
 	)
 end
 
+--[[
+    The player's own currency lines, which every currency toast reads back
+    through ns.ParseCurrencyMessage (Features/Loot-Toasts-Money.lua). Built
+    with a made-up currency link, since the bags hold none; SKIP where the
+    client has no such format.
+]]
+local EXAMPLE_CURRENCY_LINK = "|cffffffff|Hcurrency:1|h[Example Currency]|h|r"
+
+local CURRENCY_LINE_FORMATS = {
+	{ "CURRENCY_GAINED", 1 },
+	{ "CURRENCY_GAINED_MULTIPLE", EXAMPLE_COUNT },
+	{ "CURRENCY_GAINED_MULTIPLE_BONUS", EXAMPLE_COUNT },
+}
+
+local function AppendCurrencyLines(lines)
+	for _, entry in ipairs(CURRENCY_LINE_FORMATS) do
+		local constant, count = entry[1], entry[2]
+		local line, problem = BuildLine(_G[constant], EXAMPLE_CURRENCY_LINK, count)
+		if not line then
+			local status = type(_G[constant]) ~= "string" and "SKIP" or "ERROR"
+			lines[#lines + 1] = string.format("[%s] %s: %s", status, constant, tostring(problem))
+		else
+			local readLink, readCount = ns.ParseCurrencyMessage(line)
+			lines[#lines + 1] = string.format(
+				"[%s] %s: read count %s, expected %d",
+				readLink == EXAMPLE_CURRENCY_LINK and readCount == count and "OK" or "FAIL",
+				constant,
+				tostring(readCount),
+				count
+			)
+		end
+	end
+end
+
 local EXAMPLE_ROLL = 77
 
 --[[
@@ -2437,6 +2550,7 @@ function ns:BuildLootLineReport()
 	AppendOwnLines(lines, link)
 	AppendGroupLines(lines, link)
 	AppendMoneyLine(lines)
+	AppendCurrencyLines(lines)
 	lines[#lines + 1] = ""
 	AppendRollLines(lines, link)
 
@@ -2510,6 +2624,13 @@ function ns:BuildAnnouncementsContextReport()
 		YesNo(UnitInRaid("player")),
 		YesNo(TradeFrame ~= nil)
 	)
+	-- The trade window's own announce box, made at the first trade where the window exists, shown while Enable is on.
+	local checkbox = _G.GogoLootTradeAnnounceCheckbox
+	lines[#lines + 1] = string.format(
+		"Trade window checkbox: created %s, shown %s",
+		YesNo(checkbox ~= nil),
+		YesNo(checkbox ~= nil and checkbox:IsShown())
+	)
 	lines[#lines + 1] = string.format(
 		"Master loot: hand-outs %s from quality %s, manual hand-outs %s, destination changes %s",
 		OnOff(profile.announceMasterLootAuto),
@@ -2540,10 +2661,11 @@ end
 --[[
     Raid Roll Winner (Features/Raid-Roll-Winner.lua) names the winner only for
     a /roll from exactly 1 to the group's size, two players or more, read from
-    the game's own roll line. Group Chat posts it, after a wait of the
-    player's roster place minus one steps, unless another GogoLoot user claims
-    the roll first over the add-on channel; with Enable Loot Announcements off
-    it prints instead. The prefix registration is read through _G, since
+    the game's own roll line, and only for a roller and a winner it finds by
+    roster place (ns.GetRaidRollPlayer, which reads the raid roster alone, so
+    a party finds no one). Group Chat claims the roll over the add-on channel,
+    waits, and posts unless a GogoLoot user at an earlier roster place claimed
+    it too; with Enable Loot Announcements off it prints instead. The prefix registration is read through _G, since
     GogoLoot itself never asks for it.
 ]]
 local function AppendRaidRollLines(lines, groupSize)
@@ -2571,12 +2693,27 @@ local function AppendRaidRollLines(lines, groupSize)
 			groupSize
 		)
 	end
+	local places, ownName = {}, ns:NormalizePlayerName(ns:GetCleanUnitName("player"))
+	local ownPlace
+	for place = 1, groupSize do
+		local name = ns.GetRaidRollPlayer(place)
+		places[#places + 1] = string.format("%d %s", place, name and Ambiguate(name, "short") or "nil")
+		if name and ns:NormalizePlayerName(name) == ownName then
+			ownPlace = place
+		end
+	end
+	lines[#lines + 1] = string.format(
+		"  Roster places as it reads them (a nil roller or winner stops it): %s",
+		#places > 0 and table.concat(places, ", ") or "none"
+	)
+	lines[#lines + 1] =
+		string.format("  Your own place: %s", ownPlace and tostring(ownPlace) or "not found (claims place 1)")
 	local isRegistered = C_ChatInfo.IsAddonMessagePrefixRegistered
 	lines[#lines + 1] = string.format(
-		"  Add-on channel prefix %q registered: %s, claim step %ss",
+		"  Add-on channel prefix %q registered: %s, claim wait %ss",
 		ns.ADDON_MESSAGE_PREFIX,
 		type(isRegistered) == "function" and YesNo(isRegistered(ns.ADDON_MESSAGE_PREFIX)) or "unreadable",
-		tostring(ns.RAID_ROLL_CLAIM_STEP)
+		tostring(ns.RAID_ROLL_CLAIM_WAIT)
 	)
 	local high = groupSize >= 2 and groupSize or 5
 	local line, problem = BuildLine(RANDOM_ROLL_RESULT, EXAMPLE_LOOTER, 3, 1, high)
@@ -2758,6 +2895,7 @@ local UI_LABELS = {
 	"LOOT_MASTER_LOOTER",
 	"LOOT_GROUP_LOOT",
 	"LOOT_NEED_BEFORE_GREED",
+	"RANDOM_ROLL_RESULT",
 	"GOLD_AMOUNT",
 	"SILVER_AMOUNT",
 	"COPPER_AMOUNT",
@@ -3035,6 +3173,13 @@ ns.DIAGNOSTIC_DATA_SOURCES = {
 				kind = "item",
 				rowId = KeyIsId,
 				dataColumns = { { "DATA_DEFAULT_ACTION", RowValue } },
+			},
+			-- The level each row above needs before Automated Opening uses it, held against the client's own.
+			{
+				table = "OPENABLE_ITEM_LEVELS",
+				kind = "item",
+				rowId = KeyIsId,
+				dataColumns = { { "DATA_REQUIRED_LEVEL", RowValue } },
 			},
 		},
 	},

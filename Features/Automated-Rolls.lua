@@ -22,8 +22,7 @@ local rollsInitiatedByAddon = {}
     Rolls whose item info wasn't cached when START_LOOT_ROLL fired are polled by
     a named timer until the info resolves or the roll ends — CANCEL_LOOT_ROLL
     canceling the timer is the real teardown. The timer identifier carries the
-    roll id, so ns:IsTimerPending is the duplicate-ticker guard — no hand-rolled
-    flag doubling as a self-cancel token.
+    roll id, so ns:IsTimerPending is the duplicate-ticker guard.
 
     The attempt cap only backstops a cancel that never arrives, so it is sized
     past the 60-second roll window and must never become the give-up point: a
@@ -140,7 +139,6 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		return nil, "OFF"
 	end
 
-	-- Hard safety: legendaries, recipes/books, mounts, pets are never automated
 	if ns:IsNeverAutomatedItem(itemInformation) then
 		return nil, "NEVER"
 	end
@@ -434,11 +432,31 @@ local function CheckRollSafety()
 	end
 end
 
-local function OnSafetyWarningEnteringWorld(_, isReloadingUi)
+local function OnPlayerEnteringWorld(_, isReloadingUi)
 	if isReloadingUi then
 		return
 	end
 	ns:After(SAFETY_WARNING_TIMER, SAFETY_WARNING_DELAY, CheckRollSafety)
 end
 
-ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnSafetyWarningEnteringWorld)
+ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnPlayerEnteringWorld)
+
+--------------------------------------------------------------------------------
+-- Automated Rolls On by Default
+--------------------------------------------------------------------------------
+
+--[[
+    Automated Rolls ships on (maintainer, 2026-11-07), which reaches every
+    player who never changed the switch, since AceDB saves only changes. So
+    once per account, at a login where it's on, chat says so and where to turn
+    it off.
+]]
+local function OnPlayerLogin()
+	if not ns.db or not ns.db.profile.autoGreed or ns.db.global.automatedRollsOnNoticeShown then
+		return
+	end
+	ns.db.global.automatedRollsOnNoticeShown = true
+	ns:PrintMessage(L["MESSAGE_AUTOMATED_ROLLS_ON"])
+end
+
+ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)

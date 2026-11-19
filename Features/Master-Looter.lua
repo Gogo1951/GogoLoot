@@ -41,13 +41,17 @@ local LOOT_METHOD_BY_ENUM = {
 	[Enum.LootMethod.Group] = "group",
 	[Enum.LootMethod.Needbeforegreed] = "needbeforegreed",
 }
+-- MoP Classic only: Personal Loot, which would otherwise read as Group Loot.
+if Enum.LootMethod.Personal then
+	LOOT_METHOD_BY_ENUM[Enum.LootMethod.Personal] = "personal"
+end
 
 local LOOT_METHOD_TO_ENUM = {}
 for enumValue, methodName in pairs(LOOT_METHOD_BY_ENUM) do
 	LOOT_METHOD_TO_ENUM[methodName] = enumValue
 end
 
----@return string # one of freeforall / roundrobin / master / group / needbeforegreed
+---@return string # one of freeforall / roundrobin / master / group / needbeforegreed / personal (MoP Classic)
 function ns:SafeGetLootMethod()
 	local method = ns:SafeCallLootMethod()
 	if type(method) == "string" then
@@ -138,7 +142,7 @@ function ns:SafeSetLootMethod(method)
 	end
 
 	if method == "master" then
-		ns.SetLootMethod(methodValue, UnitName("player"))
+		ns.SetLootMethod(methodValue, ns:GetCleanUnitName("player"))
 	else
 		ns.SetLootMethod(methodValue)
 	end
@@ -433,17 +437,26 @@ local function ResetAllDestinations()
 	end
 end
 
+--[[
+    Nil when any member who is there can't be named: a name that reads secret
+    (WoW Forever, in combat) or hasn't loaded would otherwise look like a
+    player who left.
+]]
+---@return table<string, boolean>|nil
 local function GetCurrentGroupMemberLookup()
 	local groupMembers = {}
 	local myName = ns:GetLowercaseUnitName("player")
-	if myName then
-		groupMembers[myName] = true
+	if not myName then
+		return nil
 	end
+	groupMembers[myName] = true
 	for memberIndex = 1, GetNumGroupMembers() do
 		local unitIdentifier = IsInRaid() and ("raid" .. memberIndex) or ("party" .. memberIndex)
 		local memberName = ns:GetLowercaseUnitName(unitIdentifier)
 		if memberName then
 			groupMembers[memberName] = true
+		elseif UnitExists(unitIdentifier) then
+			return nil
 		end
 	end
 	return groupMembers
@@ -466,14 +479,18 @@ local function CheckDestinationsForLeavers()
 	end
 
 	local groupMembers = GetCurrentGroupMemberLookup()
+	if not groupMembers then
+		return
+	end
 	local myName = ns:GetCleanUnitName("player")
 	local masterLooterDisplayName = ns:FormatPlayerName(myName)
 	local chatChannel = ns:GetGroupChatChannel()
 
 	--[[
         One line per leaver, naming every quality they held, rather than one per
-        quality. A quality the threshold doesn't reach falls back to the master
-        looter unannounced: the panel doesn't show it, so the line won't name it.
+        quality. A quality the threshold doesn't reach is cleared unannounced,
+        never set to Self: the panel doesn't show it, so the line won't name it,
+        and lowering the threshold later must not reveal a Self nobody chose.
     ]]
 	local leavers, leaverOrder = {}, {}
 	local tierCount = 0
@@ -486,11 +503,11 @@ local function CheckDestinationsForLeavers()
 		if qualityKey then
 			local targetPlayerName = ns.db.profile.destinations[qualityKey]
 			if IsNonSelfDestination(targetPlayerName) and not reachable then
-				if not groupMembers[strlower(targetPlayerName)] then
-					ns.db.profile.destinations[qualityKey] = "self"
+				if not groupMembers[ns:NormalizePlayerName(targetPlayerName)] then
+					ns.db.profile.destinations[qualityKey] = nil
 				end
 			elseif IsNonSelfDestination(targetPlayerName) then
-				local targetLower = strlower(targetPlayerName)
+				local targetLower = ns:NormalizePlayerName(targetPlayerName)
 				if not groupMembers[targetLower] then
 					local leaver = leavers[targetLower]
 					if not leaver then
@@ -625,9 +642,18 @@ end
     method and threshold. GROUP_ROSTER_UPDATE fires for far more than that
     (members going offline, changing subgroups), and every repaint closes a
     dropdown the master looter has open, so a roster update repaints only
-    when this changes.
+    when this changes. Nobody reads it while no panel or pop-up is on screen,
+    so then it is only marked stale, and the next panel drawn reads the roster
+    fresh.
 ]]
 local lastPanelSignature = nil
+
+---@return boolean
+local function IsRosterOnScreen()
+	return (ns.IsOptionsPanelOpen and ns.IsOptionsPanelOpen())
+		or (ns.IsMasterLooterPopupShown and ns.IsMasterLooterPopupShown())
+		or false
+end
 
 ---@return string
 local function PanelSignature()
@@ -664,10 +690,14 @@ local function OnGroupRosterUpdate()
 
 	ClearDestinationsOnLootMethodChange()
 	CheckDestinationsForLeavers()
-	local signature = PanelSignature()
-	if signature ~= lastPanelSignature then
-		lastPanelSignature = signature
-		ns.RefreshSettings()
+	if not IsRosterOnScreen() then
+		lastPanelSignature = nil
+	else
+		local signature = PanelSignature()
+		if signature ~= lastPanelSignature then
+			lastPanelSignature = signature
+			ns.RefreshSettings()
+		end
 	end
 	CheckMasterLooterPopup()
 end

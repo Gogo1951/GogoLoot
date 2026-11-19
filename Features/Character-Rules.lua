@@ -3,246 +3,26 @@
 --------------------------------------------------------------------------------
 
 --[[
-    What each character wants: the reader that finds an item's stats, the
-    class starter lists, and the verdict Automated Rolls asks for before it
-    rolls on gear.
+    What each character wants: the class starter lists, and the verdict
+    Automated Rolls asks for before it rolls on gear. The stat reader it judges
+    by is Features/Character-Rule-Stats.lua.
 ]]
 local _, ns = ...
-local L = ns.L
-
---[[
-    Only the stats this client's flavor folder offers
-    (ns.CHARACTER_RULE_STAT_KEYS, Data/{Folder}/Character-Rule-Stats-{Folder}.lua),
-    and only the sections left holding one, so the panel, the stat reader and
-    the roll check all see the same list. A rule saved for a stat the client
-    doesn't offer is simply never read.
-]]
-local function KeepOfferedStats()
-	local offered, groupsInUse = {}, {}
-	for _, statKey in ipairs(ns.CHARACTER_RULE_STAT_KEYS) do
-		offered[statKey] = true
-	end
-	for index = #ns.CHARACTER_RULE_STATS, 1, -1 do
-		local stat = ns.CHARACTER_RULE_STATS[index]
-		if offered[stat.key] then
-			groupsInUse[stat.group] = true
-		else
-			table.remove(ns.CHARACTER_RULE_STATS, index)
-		end
-	end
-	for index = #ns.CHARACTER_RULE_GROUPS, 1, -1 do
-		if not groupsInUse[ns.CHARACTER_RULE_GROUPS[index].key] then
-			table.remove(ns.CHARACTER_RULE_GROUPS, index)
-		end
-	end
-end
-KeepOfferedStats()
 
 --[[
     Only the armor and weapon sections this client's flavor folder lists rows
-    for (Data/{Folder}/Character-Rule-Gear-Types-{Folder}.lua). A folder with
-    no such file, such as the parked ones, offers neither.
+    for (Data/{Folder}/Character-Rule-Gear-Types-{Folder}.lua). A folder whose
+    tables are empty offers neither.
 ]]
 local function KeepOfferedGearGroups()
 	for index = #ns.CHARACTER_RULE_GEAR_GROUPS, 1, -1 do
 		local rows = ns[ns.CHARACTER_RULE_GEAR_GROUPS[index].types]
-		if type(rows) ~= "table" or #rows == 0 then
+		if #rows == 0 then
 			table.remove(ns.CHARACTER_RULE_GEAR_GROUPS, index)
 		end
 	end
 end
 KeepOfferedGearGroups()
-
----@param found table
----@param statKey string
----@param source string
----@return nil
-local function AddStatSource(found, statKey, source)
-	local sources = found[statKey]
-	if not sources then
-		sources = {}
-		found[statKey] = sources
-	end
-	sources[#sources + 1] = source
-end
-
--- The random suffix id an item link carries, nil for none, for Diagnostics' Gear Stats report.
----@param itemLink string
----@return number|nil
-function ns.GetLinkRandomSuffix(itemLink)
-	-- item:id:enchant:gem1:gem2:gem3:gem4:suffix
-	local suffix = itemLink:match("item:%-?%d+:%-?%d*:%-?%d*:%-?%d*:%-?%d*:%-?%d*:(%-?%d+)")
-	suffix = tonumber(suffix)
-	if suffix == 0 then
-		return nil
-	end
-	return suffix
-end
-
---[[
-    One whole-line pattern per stat line the tooltip can print, to the rule
-    keys it counts for. Built on first use from the FULL ITEM_MOD_* formats
-    ("%c%s Stamina"), which are what the tooltip prints, never from the
-    ITEM_MOD_*_SHORT labels the dropdowns are captioned with: several locales
-    word the line apart from the label ("+15 p. de intelecto", "지능 +15").
-]]
-local statLinePatterns
-
----@param format string
----@return string
-local function BuildStatLinePattern(format)
-	local pattern = format:gsub("([%^%$%(%)%.%[%]%*%+%-%?])", "%%%1")
-	-- deDE on Classic Era and TBC numbers its arguments ("%1$c%2$d Stärke").
-	pattern = pattern:gsub("%%%d+%%%$([csd])", "%%%1")
-	-- Only a gain counts: gear that lowers a stat doesn't carry it, as GetItemStats' positive values agree.
-	pattern = pattern:gsub("%%c", "%%+")
-	pattern = pattern:gsub("%%[sd]", "%%d+")
-	return "^%s*" .. pattern .. "%s*$"
-end
-
----@return table[] # { { pattern = string, statKeys = { statKey, ... } }, ... }
-local function StatLinePatterns()
-	if statLinePatterns then
-		return statLinePatterns
-	end
-	statLinePatterns = {}
-	local entriesByFormat = {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		for _, itemMod in ipairs(stat.itemMods) do
-			local format = _G[(itemMod:gsub("_SHORT$", ""))]
-			if type(format) == "string" and format ~= "" then
-				local entry = entriesByFormat[format]
-				if not entry then
-					entry = { pattern = BuildStatLinePattern(format), statKeys = {} }
-					entriesByFormat[format] = entry
-					statLinePatterns[#statLinePatterns + 1] = entry
-				end
-				entry.statKeys[#entry.statKeys + 1] = stat.key
-			end
-		end
-	end
-	return statLinePatterns
-end
-
---[[
-    "Equip:" lines (Classic Era, Season of Discovery and TBC). There spell
-    power, healing, attack power, crit, hit and mana per 5 are item spells,
-    which GetItemStats doesn't report. Each flavor folder lists one spell for
-    every way the game words such a line (ns.CHARACTER_RULE_EQUIP_SPELLS), and
-    each line's pattern is built from that spell's own description, as the
-    client words it in the player's language, numbers made wildcards, behind
-    the game's ITEM_SPELL_TRIGGER_ONEQUIP. So no locale needs patterns of its
-    own. A description that hasn't loaded yet is asked for and built on a
-    later read; PLAYER_LOGIN asks for them all.
-]]
-local equipLinePatterns, equipLineEntries, equipSpellsRead = {}, {}, {}
-
-local function EscapePattern(text)
-	return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
-end
-
----@param description string
----@return string
-local function BuildEquipLinePattern(description)
-	local trigger = type(ITEM_SPELL_TRIGGER_ONEQUIP) == "string" and ITEM_SPELL_TRIGGER_ONEQUIP or ""
-	local body = description:match("^%s*(.-)%s*$"):gsub("%d+[%.,]?%d*", "\1")
-	body = EscapePattern(body):gsub("\1", "[%%d%%.,]+")
-	return "^%s*" .. EscapePattern(trigger) .. "%s*" .. body .. "%s*$"
-end
-
-local function EquipLinePatterns()
-	local spells = ns.CHARACTER_RULE_EQUIP_SPELLS
-	if type(spells) ~= "table" or type(C_Spell) ~= "table" or type(C_Spell.GetSpellDescription) ~= "function" then
-		return equipLinePatterns
-	end
-	for spellIdentifier, statKeys in pairs(spells) do
-		if not equipSpellsRead[spellIdentifier] then
-			local description = C_Spell.GetSpellDescription(spellIdentifier)
-			if type(description) == "string" and description:find("%S") then
-				equipSpellsRead[spellIdentifier] = true
-				local pattern = BuildEquipLinePattern(description)
-				local entry = equipLineEntries[pattern]
-				if not entry then
-					entry = { pattern = pattern, statKeys = {} }
-					equipLineEntries[pattern] = entry
-					equipLinePatterns[#equipLinePatterns + 1] = entry
-				end
-				for _, statKey in ipairs(statKeys) do
-					local listed = false
-					for _, known in ipairs(entry.statKeys) do
-						listed = listed or known == statKey
-					end
-					if not listed then
-						entry.statKeys[#entry.statKeys + 1] = statKey
-					end
-				end
-			elseif type(C_Spell.RequestLoadSpellData) == "function" then
-				pcall(C_Spell.RequestLoadSpellData, spellIdentifier)
-			end
-		end
-	end
-	return equipLinePatterns
-end
-
-local function AddMatchingStats(text, patterns, found, source)
-	for _, entry in ipairs(patterns) do
-		if text:find(entry.pattern) then
-			for _, statKey in ipairs(entry.statKeys) do
-				AddStatSource(found, statKey, source)
-			end
-		end
-	end
-end
-
----@param itemLink string
----@param found table # { [statKey] = { source, ... } }, added to
----@return nil
-local function AddTooltipStats(itemLink, found)
-	local statPatterns, equipPatterns = StatLinePatterns(), EquipLinePatterns()
-	for _, line in ipairs(ns.GetItemLinkTooltipLines(itemLink)) do
-		local text = line:gsub("[\r\n]", " ")
-		AddMatchingStats(text, statPatterns, found, "TOOLTIP")
-		AddMatchingStats(text, equipPatterns, found, "EQUIP")
-	end
-end
-
---[[
-    Which of ns.CHARACTER_RULE_STATS an item carries, as { [statKey] =
-    { source, ... } }, naming every source that saw the stat for Diagnostics'
-    Gear Stats report. Three sources, because none sees every stat:
-      * GetItemStats, for the item's own stats. On WoW Forever and later
-        clients that includes spell power, attack power and crit. On WoW
-        Forever it reads the random suffix in the link too: Lupine Cord of
-        the Tiger reports the Strength and Agility its suffix rolled.
-      * The tooltip's "+15 Intellect" lines, matched against the game's own
-        stat-line formats, so in any language: a second look at the primary
-        attributes, random suffix included, for a client whose GetItemStats
-        sees only the base item. Play It Forward reads its stats the same way.
-      * The tooltip's "Equip:" lines (EquipLinePatterns, above), for the
-        secondary stats Classic Era, Season of Discovery and TBC carry as item
-        spells.
-]]
----@param itemLink string
----@return table
-function ns.ReadCharacterRuleStats(itemLink)
-	local itemStats = ns.GetItemStats and ns.GetItemStats(itemLink)
-	if type(itemStats) ~= "table" then
-		itemStats = {}
-	end
-
-	local found = {}
-	for _, stat in ipairs(ns.CHARACTER_RULE_STATS) do
-		for _, itemMod in ipairs(stat.itemMods) do
-			local value = itemStats[itemMod]
-			if type(value) == "number" and value > 0 then
-				AddStatSource(found, stat.key, "ITEM")
-				break
-			end
-		end
-	end
-	AddTooltipStats(itemLink, found)
-	return found
-end
 
 --------------------------------------------------------------------------------
 -- What a Character Wants
@@ -375,8 +155,9 @@ end
 --[[
     Whether an item is low-level gear for a character under Automatically
     Greed on Low-Level Gear: its required level is at least that many levels
-    below the character's. Off (0), or a level or required level nobody can
-    read, is never low-level.
+    below the character's. Gear with no level requirement (0) counts as
+    low-level. Off (0), or a level or required level nobody can read, is never
+    low-level.
 ]]
 ---@param rules table|nil
 ---@param requiredLevel number|nil
@@ -500,22 +281,6 @@ function ns.DropOldCharacterRules()
 					rules[key] = nil
 				end
 			end
-			--[[
-                Include Bind on Pickup moved to the Automated Rolls panel, for
-                every character at once, and the max-level box became
-                Automatically Greed on Low-Level Gear. Everything Else's own
-                Up to Quality went too: it fought the In Party and In Raid
-                quality, which now caps Character Rules as well (maintainer,
-                2026-11-15).
-            ]]
-			if type(rules.unwanted) == "table" then
-				rules.unwanted.bindOnPickup = nil
-				rules.unwanted.greedBindOnEquipAtMaxLevel = nil
-				rules.unwanted.threshold = nil
-				if next(rules.unwanted) == nil then
-					rules.unwanted = nil
-				end
-			end
 			if next(rules) == nil then
 				data.characterRules = nil
 			end
@@ -523,23 +288,27 @@ function ns.DropOldCharacterRules()
 	end
 end
 
---------------------------------------------------------------------------------
--- Automated Rolls On by Default
---------------------------------------------------------------------------------
-
 --[[
-    Automated Rolls ships on (maintainer, 2026-11-07), which reaches every
-    player who never changed the switch, since AceDB saves only changes. So
-    once per account, at a login where it's on, chat says so and where to turn
-    it off.
+    MIGRATION (remove after 2026-12-16): Include Bind on Pickup moved to the
+    Automated Rolls panel, for every character at once, and the max-level box
+    became Automatically Greed on Low-Level Gear. Everything Else's own Up to
+    Quality went too: it fought the In Party and In Raid quality, which now
+    caps Character Rules as well (maintainer, 2026-11-15). Every character's
+    retired keys go.
 ]]
-local function OnPlayerLogin()
-	EquipLinePatterns() -- asks the client for every Equip spell's description, ahead of the first roll
-	if not ns.db or not ns.db.profile.autoGreed or ns.db.global.automatedRollsOnNoticeShown then
-		return
+function ns.DropRetiredCharacterRuleKeys()
+	for _, data in pairs((ns.db and ns.db.sv and ns.db.sv.char) or {}) do
+		local rules = type(data) == "table" and data.characterRules
+		if type(rules) == "table" and type(rules.unwanted) == "table" then
+			rules.unwanted.bindOnPickup = nil
+			rules.unwanted.greedBindOnEquipAtMaxLevel = nil
+			rules.unwanted.threshold = nil
+			if next(rules.unwanted) == nil then
+				rules.unwanted = nil
+			end
+			if next(rules) == nil then
+				data.characterRules = nil
+			end
+		end
 	end
-	ns.db.global.automatedRollsOnNoticeShown = true
-	ns:PrintMessage(L["MESSAGE_AUTOMATED_ROLLS_ON"])
 end
-
-ns:RegisterModuleEvent("PLAYER_LOGIN", OnPlayerLogin)
