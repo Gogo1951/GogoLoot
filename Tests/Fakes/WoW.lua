@@ -157,6 +157,10 @@ function Fake.newEnvironment()
 				for key, value in pairs(state.savedGlobal or {}) do
 					db.global[key] = value
 				end
+				-- MIGRATION (remove after 2026-12-16): what an earlier release left on the active profile (state.savedActiveProfile).
+				for key, value in pairs(state.savedActiveProfile or {}) do
+					db.profile[key] = value
+				end
 				copyDefaults(db.profile, defaults.profile or {})
 				copyDefaults(db.global, defaults.global or {})
 				copyDefaults(db.char, defaults.char or {})

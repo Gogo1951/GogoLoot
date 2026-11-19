@@ -441,14 +441,15 @@ end
 local function SplitBindOnPickupByContext()
 	local sv = ns.db.sv
 	for _, profile in pairs(sv and sv.profiles or {}) do
+		--[[
+		    The old key survives only on a profile never split, so the new keys
+		    hold nothing the player chose: on the active profile they are
+		    AceDB's defaults, already written into the table by the time this
+		    runs. Copy unconditionally.
+		]]
 		if type(profile) == "table" and profile.rollBindOnPickup ~= nil then
-			-- rawget: the current profile reads AceDB's defaults through its metatable, which would hide a missing key.
-			if rawget(profile, "rollBindOnPickupParty") == nil then
-				profile.rollBindOnPickupParty = profile.rollBindOnPickup
-			end
-			if rawget(profile, "rollBindOnPickupRaid") == nil then
-				profile.rollBindOnPickupRaid = profile.rollBindOnPickup
-			end
+			profile.rollBindOnPickupParty = profile.rollBindOnPickup
+			profile.rollBindOnPickupRaid = profile.rollBindOnPickup
 			profile.rollBindOnPickup = nil
 		end
 	end

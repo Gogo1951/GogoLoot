@@ -704,6 +704,9 @@ ns.MONEY_ICON_GOLD = "Interface\\Icons\\INV_Misc_Coin_02"
 ns.MONEY_ICON_SILVER = "Interface\\Icons\\INV_Misc_Coin_04"
 ns.MONEY_ICON_COPPER = "Interface\\Icons\\INV_Misc_Coin_06"
 
+-- Stands in for any icon the client can't supply: a currency it can't describe, an item it hasn't loaded.
+ns.QUESTION_MARK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
+
 --[[
     The Roll Macro (Features/Roll-Macro.lua), a General macro so every character
     on the account shares it. Left-click rolls 1-100, right-click 1-99 for an

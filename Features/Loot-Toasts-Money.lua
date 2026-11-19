@@ -183,9 +183,9 @@ end
 local function CurrencyLook(currencyIdentifier)
 	local info = currencyIdentifier and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(currencyIdentifier)
 	if type(info) ~= "table" then
-		return ns.LOOT_WINDOW_QUESTION_ICON, nil
+		return ns.QUESTION_MARK_ICON, nil
 	end
-	return info.iconFileID or ns.LOOT_WINDOW_QUESTION_ICON, info.quality
+	return info.iconFileID or ns.QUESTION_MARK_ICON, info.quality
 end
 
 --[[

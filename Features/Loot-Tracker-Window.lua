@@ -225,7 +225,7 @@ local function RefreshRolls()
 
 	local session = ns.currentRoll
 	if not session then
-		panel.icon:SetTexture(ns.LOOT_WINDOW_QUESTION_ICON)
+		panel.icon:SetTexture(ns.QUESTION_MARK_ICON)
 		panel.item:SetText(Colored("MUTED", L["LOOT_TRACKER_NO_ROLL"]))
 		panel.itemButton.itemLink = nil
 		panel.caller:SetText("")

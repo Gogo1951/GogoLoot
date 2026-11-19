@@ -21,7 +21,6 @@ local GetColor = ns.GetColor
 ns.LOOT_WINDOW_REMOVE_ICON = "Interface/Buttons/UI-GroupLoot-Pass-Up"
 ns.LOOT_WINDOW_ARROW_UP = "Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up"
 ns.LOOT_WINDOW_ARROW_DOWN = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up"
-ns.LOOT_WINDOW_QUESTION_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 -- The inset the template draws, which content keeps inside.
 local CONTENT_TOP, CONTENT_SIDE, CONTENT_BOTTOM = 28, 10, 10
@@ -313,7 +312,7 @@ end
 ---@return number|string
 function ns.GetLootWindowIcon(itemLink)
 	local itemId = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
-	return ns.GetItemIconByID(itemId) or ns.LOOT_WINDOW_QUESTION_ICON
+	return ns.GetItemIconByID(itemId) or ns.QUESTION_MARK_ICON
 end
 
 -- Minutes and seconds, with hours when there are any: 1:42:10, 24:05, 0:42.

@@ -8378,17 +8378,19 @@ test("Include Bind on Pickup is set per group context", function()
 	checkEqual(true, ns.RollsBindOnPickup(true), "and the raid its own")
 end)
 
+-- MIGRATION (remove after 2026-12-16)
 test("a saved Include Bind on Pickup carries into both group contexts", function()
-	local _, env = loadAddon(nil, function(loadingEnv)
-		loadingEnv.__state.savedProfiles =
-			{ Old = { rollBindOnPickup = true }, Kept = { rollBindOnPickup = true, rollBindOnPickupRaid = false } }
+	local ns, env = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.savedActiveProfile = { rollBindOnPickup = true }
+		loadingEnv.__state.savedProfiles = { Old = { rollBindOnPickup = true } }
 	end)
 	local profiles = env.__state.savedProfiles
 	checkEqual(true, profiles.Old.rollBindOnPickupParty, "the party gets the old value")
 	checkEqual(true, profiles.Old.rollBindOnPickupRaid, "and the raid")
 	checkEqual(nil, profiles.Old.rollBindOnPickup, "and the old key is gone")
-	checkEqual(false, profiles.Kept.rollBindOnPickupRaid, "a value already split is kept")
-	checkEqual(true, profiles.Kept.rollBindOnPickupParty, "while the missing one is filled")
+	checkEqual(true, ns.db.profile.rollBindOnPickupParty, "the active profile's party gets it over the default")
+	checkEqual(true, ns.db.profile.rollBindOnPickupRaid, "and its raid")
+	checkEqual(nil, rawget(ns.db.profile, "rollBindOnPickup"), "and its old key is gone")
 end)
 
 test("Automated Opening reads On, Paused or Off in the menu", function()
@@ -8455,6 +8457,7 @@ end)
     the profile (Simple save model). A position saved account-wide before
     moves once to every profile, so no button jumps.
 ]]
+-- MIGRATION (remove after 2026-12-16)
 test("the mini-map button's position moves from the account to every profile, once", function()
 	local ns, env = loadAddon(nil, function(env)
 		env.__state.savedGlobal = { minimap = { minimapPos = 123, hide = true } }
