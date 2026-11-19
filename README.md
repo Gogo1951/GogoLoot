@@ -13,7 +13,7 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 ### Automated Rolls
 
-<img width="800" src="https://github.com/user-attachments/assets/bd1ca322-a1b4-4e1e-b325-91d2cfbb4eb0" />
+<img width="800" alt="README-Infographic-Automated-Rolls" src="https://github.com/user-attachments/assets/93d4eb5b-b54f-42dc-856f-1ab3827b1328" />
 
 * **Gear You Want Waits for You** // Tick the stats, armor, and weapons each character uses, and matching gear is left for you to roll.
 * **The Rest Rolls Itself** // Everything else gets Need, Greed, or Pass up to the quality you pick, set apart for parties and raids.
@@ -23,7 +23,7 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 ### Automated Opening
 
-<img width="800" src="https://github.com/user-attachments/assets/8a232a0d-ad85-4108-b4dd-a04f4afd49b0" />
+<img width="800" alt="README-Infographic-Automated-Opening" src="https://github.com/user-attachments/assets/2059f515-4703-40c6-bb4d-2194ef3e8d50" />
 
 * **Bags Open Themselves** // Clams, crates, coin purses, and unlocked lockboxes open while you keep playing.
 * **Lockboxes Sorted** // Lockbox tooltips show the Lockpicking skill each one needs, and the mini-map menu lists any still waiting on a Rogue.
@@ -31,6 +31,8 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 * **Your List** // Set any container to Open or Ignore, or switch it off entirely.
 
 ### Automated Master Looting
+
+<img width="800" alt="README-Infographic-Automated-Master-Looting" src="https://github.com/user-attachments/assets/e7cce303-5050-4708-80dc-fd9fab4f219c" />
 
 * **Drops Go Where You Say** // Pick who gets each quality, and every drop is handed out the moment you open the loot window.
 * **The Raid Stays in the Loop** // Your group hears who holds each quality and who got what, even items you hand out yourself.
@@ -43,6 +45,8 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 > **Pick Who Holds Loot, Raid:** Aero will be holding Uncommon items for the group // GogoLoot
 
 ### Loot Toasts
+
+<img width="800" src="https://github.com/user-attachments/assets/2463f74c-084a-46de-8ae9-c6aea3ffe9c0" />
 
 * **See Every Drop** // Each item and coin you loot pops up on screen, so nothing slips past while Speedy Loot skips the window.
 * **Your Group's Loot Too** // See what your party or raid picks up, who looted it, and the roll that won it.
