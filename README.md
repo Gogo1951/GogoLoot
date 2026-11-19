@@ -127,17 +127,3 @@ Speedy Loot and Automated Opening need the game's Auto Loot setting, so GogoLoot
 * jaliborc's [Bagnon](https://www.curseforge.com/wow/addons/bagnon)
 * Gogo1951's [Magic Eraser](https://www.curseforge.com/wow/addons/magic-eraser)
 * Gogo1951's [Play It Forward](https://www.curseforge.com/wow/addons/play-it-forward)
-
-### 🟡 Overlaps
-
-* Eliote's [AutoLooter](https://www.curseforge.com/wow/addons/autolooter)
-* Xarano's [Faster Loot](https://www.curseforge.com/wow/addons/faster-loot)
-* Leatrix's [Leatrix Plus](https://www.curseforge.com/wow/addons/leatrix-plus)
-* Yuyuli's [Speedy AutoLoot](https://www.curseforge.com/wow/addons/speedyautoloot)
-* Xuerian's [XLoot](https://www.curseforge.com/wow/addons/xloot)
-
-### 🔴 Alternatives
-
-* Zhorax2730's [Gargul](https://www.curseforge.com/wow/addons/gargul)
-* Anonomit's [LootReserve](https://www.curseforge.com/wow/addons/lootreserve)
-* evil\_morfar's [RCLootCouncil Classic](https://www.curseforge.com/wow/addons/rclootcouncil-classic)
