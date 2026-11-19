@@ -8,7 +8,6 @@
     list for the session and never saved.
 ]]
 local _, ns = ...
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --------------------------------------------------------------------------------
 -- Item Kind Sections
@@ -138,11 +137,11 @@ local function SetListFilter(registryName, text, immediately)
 	local timerName = FILTER_TIMER_PREFIX .. registryName
 	if immediately then
 		ns:CancelTimer(timerName)
-		AceConfigRegistry:NotifyChange(registryName)
+		ns.RefreshSettings()
 		return
 	end
 	ns:After(timerName, FILTER_REFRESH_DELAY, function()
-		AceConfigRegistry:NotifyChange(registryName)
+		ns.RefreshSettings()
 	end)
 end
 ns.SetItemListFilter = SetListFilter

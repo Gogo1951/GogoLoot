@@ -243,6 +243,14 @@ ns.OPENABLE_ITEMS = {
 	[22137] = ns.OPENING_OPEN, -- Ysida's Satchel
 }
 
+-- { [itemId] = requiredLevel }: the rows above whose item has a level requirement, from ItemSparse.RequiredLevel.
+ns.OPENABLE_ITEM_LEVELS = {
+	[6646] = 5, -- Bloated Albacore
+	[19296] = 45, -- Greater Darkmoon Prize
+	[19297] = 30, -- Lesser Darkmoon Prize
+	[19298] = 15, -- Minor Darkmoon Prize
+}
+
 --[[
 How We Got the Data
 
@@ -251,15 +259,16 @@ Last Validated
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
-	- The rows are every item this client marks "<Right Click to Open>", less bags and equippable items, and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". README-Technical, Openable Items Data, gives the exact test.
+	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated".
 	- Every row is one of Forever's own, from its tables at build 1.60.1.70009. Forever's ItemSparse ships without most of its rows, which the server streams in, and filling those gaps from Classic Era build 1.15.9.69722 (the two agree on every item both carry) brought in items this server doesn't know, so no row may rest on Classic Era's alone.
 	- Season of Discovery's items, the Classic Era IDs first seen after build 1.14.4.51829, are left out.
 	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): this client's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
 	- Rechecked against Forever's tables at build 1.60.1.70862, which flag every row here but 285366 (Whirleygig's Supply Stash, which its ItemSparse still lacks). Every other openable item in them is a test or placeholder item, a Season of Discovery item or a "Level N" box, except Scorched Rocket Boots (7190), added then: Goblin Rocket Boots can turn into it through their Rocket Boots Malfunction spell (8893). It has no lock and isn't Bind on Pickup, and no source here says what it holds, so it sits on ns.OPENING_OPEN.
 	- Rechecked against Forever's tables at build 1.60.1.70938, which flag the same openable items as build 1.60.1.70862, with the same names.
-	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
-	- No client table records what a container holds or drops from, so those come from the CMaNGOS Classic world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside. README-Technical describes the method.
+	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Because the lock rule comes first, a lockbox stays on ns.OPENING_UNLOCKED even where its random loot can include Unique or Bind on Pickup items. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
+	- No client table records what a container holds or drops from, so those come from the CMaNGOS Classic world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
+	- Rechecked against this client's tables at build 1.60.1.70959: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). ItemSparse still lacks 285366. Every flagged item not listed is a Season of Discovery item (90) or a "Level N" box (39), all left out above. QuestieDB's Forever corrections name no drop, vendor or quest source for 21 of the 32 rows only Forever has (243299, 249900, 273318-273321, 276785, 277651, 280943, 281680, 284271, 284583, 284585, 284586, 285168-285173, 286210); they stay, since the client still has them, and are likely granted by events or the game itself.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -278,7 +287,11 @@ wago.tools
 	https://wago.tools/db2/SpellName?build=1.60.1.70862
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70938
 	https://wago.tools/db2/Item?build=1.60.1.70938
+	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
+	https://wago.tools/db2/Item?build=1.60.1.70959
+	https://wago.tools/db2/Lock?build=1.60.1.70959
 
 QuestieDB
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Forever/foreverItemDB.lua
+	https://raw.githubusercontent.com/Questie/QuestieDB/master/src/corrections/Forever/generated/foreverBaseItem.lua
 ]]

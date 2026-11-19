@@ -819,7 +819,7 @@ local function RefreshFloorLoot()
 		for _, item in ipairs(groups[kind]) do
 			local row = panel.rows:Acquire()
 			row.itemId, row.itemLink = item.itemId, item.link
-			row.icon:SetTexture(ns.GetItemIconByID(item.itemId) or ns.LOOT_WINDOW_QUESTION_ICON)
+			row.icon:SetTexture(ns.GetItemIconByID(item.itemId) or ns.QUESTION_MARK_ICON)
 			row.name:SetText(item.link or item.name)
 			row.count:SetText(L["LOOT_MASTER_FLOOR_IN_BAGS"]:format(C_Item.GetItemCount(item.itemId)))
 			local entry = ns:GetFloorLootEntry(item.itemId)
@@ -877,7 +877,7 @@ local function RefreshMenu()
 		end
 		local item = menu.items:Acquire()
 		item.itemLink = choice.link
-		item.icon:SetTexture(ns.GetItemIconByID(choice.itemId) or ns.LOOT_WINDOW_QUESTION_ICON)
+		item.icon:SetTexture(ns.GetItemIconByID(choice.itemId) or ns.QUESTION_MARK_ICON)
 		item.text:SetText(choice.count > 1 and L["ITEM_QUANTITY_LINK"]:format(choice.link, choice.count) or choice.link)
 		item:SetScript("OnClick", function()
 			ns:AddFloorLoot(choice.itemId)

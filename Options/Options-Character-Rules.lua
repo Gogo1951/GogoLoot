@@ -313,10 +313,16 @@ local function BuildCharacterArgs(characterKey)
 
 	AddHeader("UNWANTED", L["CHARACTER_RULES_EVERYTHING_ELSE"])
 	args.unwantedAction = Kit.Row(order, nil, {
-		Kit.Label(L["CHARACTER_RULES_UNWANTED_ACTION"], 0, Kit.TREE_LABEL_WIDTH),
+		Kit.Label(
+			L["CHARACTER_RULES_UNWANTED_ACTION"],
+			0,
+			Kit.TREE_LABEL_WIDTH,
+			L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"]
+		),
 		{
 			type = "select",
 			name = "",
+			desc = L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"],
 			style = "dropdown",
 			width = Kit.CONTROL_WIDTH,
 			values = ns.CHARACTER_RULE_UNWANTED_LABELS,

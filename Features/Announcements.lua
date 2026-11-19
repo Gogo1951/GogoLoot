@@ -36,12 +36,6 @@ local GetColor = ns.GetColor
         Announce sends nothing, whoever calls it, hand-outs and failure reports
         included.
 
-    Announce signature:
-      channel - "WHISPER", "PARTY", "RAID" or "INSTANCE_CHAT"
-      target - whisper target name (or nil for non-whisper channels)
-      formatKey - L[] key for the format string (e.g. "MESSAGE_GAVE")
-      ... - format arguments substituted via string.format
-
     BuildAnnounceMessage builds the same decorated message without sending,
     so callers can measure against ns.CHAT_MESSAGE_MAX_LENGTH and split long
     content at safe boundaries before announcing (see ns:AnnounceParts).

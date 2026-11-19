@@ -29,14 +29,15 @@ L["ADDON_SHORT_NAME"] = "GogoLoot"
 L["CHAT_LOADED"] =
 	"버전 %s. 설정(이 메시지를 끄는 옵션 포함)은 설정 > 애드온 > GogoLoot에서 찾을 수 있습니다. 애드온이 마음에 드시나요? 친구에게 알리거나, CurseForge에서 즐겨찾기하거나, GitHub에서 Star를 눌러 주세요. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "안전을 위해 전투 중에는 설정 창을 열 수 없습니다."
--- Argument: the game's own name for its Auto Loot setting.
-L["MESSAGE_AUTO_LOOT_SETTING_ON"] = "빠른 획득과 자동 열기에 필요한 게임의 %s 설정을 켰습니다."
 -- Argument: the game's own word for Master Looter.
 L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = "현재 %s 역할을 맡고 있지 않습니다."
 
 -- Automated Opening. Argument: the number of free bag slots opening waits for.
 L["MESSAGE_OPENING_PAUSED"] = "가방 빈 칸이 %d칸 이상 될 때까지 자동 열기를 일시 중지합니다."
 L["MESSAGE_OPENING_RESUMED"] = "자동 열기를 다시 시작합니다."
+-- Printed once a session, the first time a fishing pole holds Automated Opening back.
+L["MESSAGE_OPENING_FISHING_POLE"] =
+	"낚싯대를 장착한 동안 자동 열기를 일시 중지합니다. 낚시 중에도 열려면 설정 > 애드온 > GogoLoot > 자동 열기에서 낚싯대 장착 시를 켜세요."
 
 -- Argument: the item's link.
 L["MESSAGE_ITEM_WILL_AUTO_OPEN"] = "%s: 잠금이 풀리면 자동으로 열립니다."
@@ -47,14 +48,6 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: 고유 아이템이 들어 있을 수 있어, 직접 열 수 있도록 자동 열기가 열지 않고 남겨 둡니다."
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s 일부 전리품이 시체에 남았습니다."
---[[
-    Standard Loot Messages taking the General tab's loot lines off, or putting
-    them back. Arguments: the game's own names for its Item Loot and Money Loot
-    chat settings, then for the General chat tab.
-]]
-L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
-	"획득 알림이 켜져 있는 동안 %s 및 %s 설정을 %s 대화 탭에서 껐습니다."
-L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "%s 및 %s 설정을 %s 대화 탭에서 다시 켰습니다."
 
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
@@ -167,18 +160,21 @@ L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"선택한 품질까지 대상 아이템에 대신 주사위를 굴립니다."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"가방에 있는 조개, 상자, 동전 주머니, 잠금 해제된 잠긴 상자를 엽니다."
--- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+-- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
 L["MENU_OPENING_WAITING"] = "가방 빈 칸 %d개를 기다리는 중입니다."
-L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "거래 요약과 전리품 분배 내역을 대화창에 게시합니다."
+L["MENU_OPENING_FISHING_POLE"] = "낚싯대를 장착한 동안 대기 중입니다."
+L["MENU_OPENING_INSTANCE"] = "인스턴스 안에서는 대기 중입니다."
+L["MENU_OPENING_GROUP"] = "파티에 있는 동안 대기 중입니다."
+L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
+	"거래 요약, 전리품 받을 사람, 분배 내역, 공격대 주사위를 대화창에 게시합니다."
 --[[
     The menu's read-back of each group context's roll, on the right of its
     Party or Raid row. Arguments: the roll, then the highest quality it rolls
     on. Manual shows the roll alone.
 ]]
 L["MENU_ROLLS_SETTING"] = "%s, %s"
--- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
-L["MENU_ROLLS_AUTOMATION"] = "자동화"
-L["MENU_ROLLS_THRESHOLD"] = "기준"
+-- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
+L["MENU_ROLLS_AUTOMATION"] = "주사위"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -456,8 +452,8 @@ L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 -- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
 L["QUICK_SETTINGS_TITLE"] = "빠른 설정"
 -- Argument: the game's own word for Master Looter.
-L["MASTER_LOOTER_POPUP_TOOLTIP"] = "%s 역할을 맡게 될 때마다 이 설정을 창으로 엽니다."
-L["MASTER_LOOTER_POPUP_ENABLE"] = "전리품 전담 팝업 사용"
+L["MASTER_LOOTER_POPUP_TOOLTIP"] = "%s 역할을 맡게 될 때마다 빠른 설정을 엽니다."
+L["MASTER_LOOTER_POPUP_ENABLE"] = "빠른 설정 팝업 사용"
 
 -- Tradable Gear Tint, on the Automated Master Looting panel
 L["TRADABLE_TINT_HEADER"] = "거래 가능 장비 색칠"
@@ -543,16 +539,13 @@ L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
     their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"특정 아이템의 주사위를 품질 설정보다 우선하여 정합니다. GogoLoot가 퀘스트 아이템에, 또는 획득 시 귀속 포함이 꺼져 있을 때 획득 시 귀속 아이템에 주사위를 굴리는 유일한 방법입니다."
+	"특정 아이템의 주사위를 파티 및 공격대 주사위 설정보다 우선하여 정합니다. GogoLoot가 퀘스트 아이템에, 또는 획득 시 귀속 포함이 꺼져 있을 때 획득 시 귀속 아이템에 주사위를 굴리는 유일한 방법입니다."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
 L["OPTIONS_FEATURE_OFF_STATUS"] =
 	"%s 기능이 꺼져 있어 이 설정은 사용되지 않습니다. 스위치는 %s 페이지에 있습니다."
 L["ITEM_OVERRIDES_ENABLE"] = "전역 아이템별 설정 사용"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
-	"아래에 정한 주사위를 사용합니다. 끄면 이 아이템들도 다른 아이템처럼 품질 설정을 따릅니다."
--- Shown under Enable Global Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] =
-	"전역 아이템별 설정이 꺼져 있는 동안에는 이 주사위 설정이 사용되지 않습니다."
+	"아래에 정한 주사위를 사용합니다. 끄면 이 아이템들도 다른 아이템처럼 파티 및 공격대 주사위 설정을 따릅니다."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"전역 아이템별 설정을 현재 확장팩의 기본 아이템으로 바꿉니다."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
@@ -589,6 +582,8 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 -- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "그 밖의 장비"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "조건에 맞지 않는 장비"
+L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"] =
+	"위 상자 중 어느 것에도 맞지 않는 방어구와 무기를 GogoLoot가 처리하는 방법입니다. 차비, 직접 선택(수동), 포기 중에서 고릅니다."
 L["CHARACTER_RULES_RESET"] = "직업 기본값으로 초기화"
 L["CHARACTER_RULES_RESET_DESCRIPTION"] =
 	"이 캐릭터의 체크 상자와 그 밖의 장비 설정을 직업 기본값으로 되돌립니다."
@@ -629,13 +624,12 @@ L["SANITY_CHECK_CONTEXT"] = "'%s' 설정으로 주사위를 굴립니다."
 ]]
 L["SANITY_CHECK_MANUAL_ROLL"] = "수동 주사위"
 L["SANITY_CHECK_AUTOMATIC"] = "자동 %s"
-L["SANITY_CHECK_BOP"] = "획득 시 귀속"
-L["SANITY_CHECK_BOE"] = "착용 시 귀속"
 L["SANITY_CHECK_LOW_LEVEL"] = "저레벨 장비"
 L["SANITY_CHECK_ROLLS_OFF"] = "자동 주사위 꺼짐"
-L["SANITY_CHECK_QUALITY"] = "품질 설정"
+L["SANITY_CHECK_QUALITY"] = "파티 및 공격대 주사위"
 L["SANITY_CHECK_NEVER"] = "자동 처리 안 함"
 L["SANITY_CHECK_QUEST"] = "퀘스트 아이템"
+L["SANITY_CHECK_BIND_ON_EQUIP"] = "착용 시 귀속"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "획득 시 귀속"
 
 --------------------------------------------------------------------------------
@@ -823,6 +817,8 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME"] = "단색"
 L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "단색 외곽선"
 
 -- Position
+-- The caption beside Unlock Position / Lock Position.
+L["LOOT_TOASTS_POSITION"] = "알림 위치"
 L["LOOT_TOASTS_UNLOCK"] = "위치 잠금 해제"
 L["LOOT_TOASTS_LOCK"] = "위치 잠금"
 L["LOOT_TOASTS_RESET"] = "위치 초기화"
@@ -872,6 +868,9 @@ L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"] =
 L["AUTOMATED_OPENING_ONLY_SOLO"] = "혼자일 때만"
 L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"] =
 	"파티나 공격대에 있는 동안에는 아무것도 열지 않습니다."
+L["AUTOMATED_OPENING_WITH_FISHING_POLE"] = "낚싯대 장착 시"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"] =
+	"낚싯대를 장착한 동안에도 계속 엽니다. 꺼 두면 낚시하는 동안에는 열지 않습니다."
 
 -- Lockboxes
 -- Arguments: the game's own name for the Rogue class, then for the Lockpicking skill.
@@ -879,7 +878,8 @@ L["LOCKBOXES_SECTION_DESCRIPTION"] =
 	"잠긴 상자는 %s에게 따 달라고 해야 열 수 있습니다. 이 설정은 각 상자에 필요한 %s 숙련도를 보여 주고, 따야 할 상자가 생기면 알려 줍니다."
 L["LOCKBOXES_TOOLTIPS_ENABLE"] = "잠긴 상자 툴팁 사용"
 -- Argument: the game's own name for the Lockpicking skill.
-L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] = "각 잠긴 상자에 필요한 %s 숙련도를 툴팁에 추가합니다."
+L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] =
+	"각 잠긴 상자에 필요한 %s 숙련도를 툴팁에 추가합니다. 가방, 전리품 창, 거래 창, 대화창 링크 등 어디서 보든 표시됩니다."
 L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"잠긴 상자 툴팁을 도적에게만 표시할지 모든 캐릭터에게 표시할지 정합니다."
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "잠긴 상자 알림 사용"

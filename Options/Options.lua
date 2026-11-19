@@ -21,11 +21,11 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 --[[
     The feature panels in Settings-tree order: the features every player uses
-    first (looting, rolls, opening), then the three that report loot, what the
-    player sees, what they hear, then what the group is told, then the master
-    looter's own, the Roll Macro, and the Loot Roll Sanity Check, which shows
-    what Automated Rolls would do with sample drops. LootMaster, after it, is
-    the parked Loot Master panel: its builder exists only while its file loads,
+    first (looting, rolls with Item Overrides, Character Rules and the Loot
+    Roll Sanity Check under it, opening), then the three that report loot,
+    what the player sees, what they hear, then what the group is told, then
+    the master looter's own, and the Roll Macro. LootMaster, last, is the
+    parked Loot Master panel: its builder exists only while its file loads,
     so the loop in ns.RegisterOptionsPanels skips it today. (The GogoLoot
     page's Features section follows the menu's order instead, ns.FEATURES.) A
     row with a `parent` nests beneath it, and a parent is listed before its
@@ -46,6 +46,12 @@ local FEATURE_PANELS = {
 		key = "CharacterRules",
 		builder = "BuildCharacterRulesOptions",
 		title = "TAB_CHARACTER_RULES",
+		parent = "AutomatedRolls",
+	},
+	{
+		key = "SanityCheck",
+		builder = "BuildSanityCheckOptions",
+		title = "TAB_SANITY_CHECK",
 		parent = "AutomatedRolls",
 	},
 	{ key = "AutomatedOpening", builder = "BuildAutomatedOpeningOptions", title = "TAB_AUTOMATED_OPENING" },
@@ -78,7 +84,6 @@ local FEATURE_PANELS = {
 		parent = "MasterLooter",
 	},
 	{ key = "RollMacro", builder = "BuildRollMacroOptions", title = "TAB_ROLL_MACRO" },
-	{ key = "SanityCheck", builder = "BuildSanityCheckOptions", title = "TAB_SANITY_CHECK" },
 	{ key = "LootMaster", builder = "BuildLootMasterOptions", title = "TAB_LOOT_MASTER" },
 }
 
@@ -163,12 +168,14 @@ function ns.RegisterOptionsPanels()
 
 	--[[
         Closing the Options window ends an item list's New section (see
-        Options-Utilities-Item-List-Filter.lua). SettingsPanel is the window on every
-        client GogoLoot ships for; hooked rather than replaced, so Blizzard's own OnHide
-        still runs.
+        Options-Utilities-Item-List-Filter.lua) and stops waiting on the items of
+        the list panels it showed (Options-Utilities-Item-Cache.lua). SettingsPanel
+        is the window on every client GogoLoot ships for; hooked rather than
+        replaced, so Blizzard's own OnHide still runs.
     ]]
 	if SettingsPanel then
 		SettingsPanel:HookScript("OnHide", ns.ForgetNewListItems)
+		SettingsPanel:HookScript("OnHide", ns.ForgetPanelItemLists)
 	end
 
 	ns.WatchScrolledDropdowns()

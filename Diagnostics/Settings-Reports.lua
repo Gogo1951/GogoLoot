@@ -157,6 +157,31 @@ function ns:BuildDisplayContextReport()
 		lines[#lines + 1] = "Live toast anchor: not created this session"
 	end
 
+	--[[
+	    The slash command that opens the options (Options/Options.lua): another
+	    add-on claiming the same word runs its own command instead.
+	]]
+	lines[#lines + 1] = ""
+	local command = type(SLASH_GOGOLOOT1) == "string" and SLASH_GOGOLOOT1 or nil
+	local others = {}
+	if command and type(SlashCmdList) == "table" then
+		for key in pairs(SlashCmdList) do
+			for index = 1, 9 do
+				local word = _G["SLASH_" .. tostring(key) .. index]
+				if key ~= "GOGOLOOT" and type(word) == "string" and strlower(word) == strlower(command) then
+					others[#others + 1] = tostring(key)
+				end
+			end
+		end
+	end
+	table.sort(others)
+	lines[#lines + 1] = string.format(
+		"Slash command: %s, handler %s, also claimed by: %s",
+		tostring(command),
+		type(SlashCmdList) == "table" and type(SlashCmdList.GOGOLOOT) == "function" and "present" or "MISSING",
+		#others > 0 and table.concat(others, ", ") or "nobody"
+	)
+
 	return table.concat(lines, "\n")
 end
 

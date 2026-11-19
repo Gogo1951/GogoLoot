@@ -25,6 +25,9 @@ function ns.BuildMasterLooterIgnoreListOptions()
 		onRestore = function()
 			ns.db.profile.ignoredItemsMaster = ns:BuildDefaultIgnoreListMaster()
 		end,
+		isDefault = function()
+			return ns.ItemListsMatch(ns.db.profile.ignoredItemsMaster, ns:BuildDefaultIgnoreListMaster())
+		end,
 		onAdd = function(itemIdentifier)
 			ns.db.profile.ignoredItemsMaster[itemIdentifier] = true
 		end,

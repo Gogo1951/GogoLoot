@@ -9,7 +9,6 @@
 ]]
 local _, ns = ...
 local L = ns.L
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
 local GetColor = ns.GetColor
 
@@ -64,11 +63,13 @@ ns.IsItemOutstanding = IsItemOutstanding
     each, with a function returning the list's source table. The two saved
     lists, Item Overrides and the Master Looter Ignore List, join at login
     (ns:WarmItemCache) with the Example lines' items, so they warm before
-    anyone opens a panel. Any other list joins the first time its panel is built, which
-    keeps the Openables List, hundreds of rows, from being requested from
-    the server until the player actually looks at it.
+    anyone opens a panel. Every list panel also joins panelItemLists while it
+    is built, and leaves when the Options window closes, which keeps the
+    Openables List, hundreds of rows, from being requested from the server
+    unless the player is looking at it.
 ]]
 local watchedItemLists = {}
+local panelItemLists = {}
 
 --[[
     Queries every watched entry (re-requesting uncached ones) and reports
@@ -76,10 +77,12 @@ local watchedItemLists = {}
 ]]
 local function QueryListItemsAndFindMissing()
 	local hasMissing = false
-	for _, getSource in pairs(watchedItemLists) do
-		for itemIdentifier in pairs(getSource() or {}) do
-			if IsItemOutstanding(itemIdentifier) then
-				hasMissing = true
+	for _, lists in ipairs({ watchedItemLists, panelItemLists }) do
+		for _, getSource in pairs(lists) do
+			for itemIdentifier in pairs(getSource() or {}) do
+				if IsItemOutstanding(itemIdentifier) then
+					hasMissing = true
+				end
 			end
 		end
 	end
@@ -91,9 +94,7 @@ local function RefreshOptionsAfterDelay()
 		return
 	end
 	ns:After(ITEM_CACHE_REFRESH_TIMER, 0.3, function()
-		for registryName in pairs(watchedItemLists) do
-			AceConfigRegistry:NotifyChange(registryName)
-		end
+		ns.RefreshSettings()
 		if itemRefreshWatcherRegistered and not QueryListItemsAndFindMissing() then
 			itemRefreshWatcherRegistered = false
 			ns:UnregisterModuleEvent("GET_ITEM_INFO_RECEIVED", OnGetItemInfoReceived)
@@ -101,6 +102,10 @@ local function RefreshOptionsAfterDelay()
 	end)
 end
 
+--[[
+    The server's success == false answer marks an item it will never send, which
+    is why GogoLoot keeps its own watcher rather than Kit.WarmItems.
+]]
 OnGetItemInfoReceived = function(itemIdentifier, success)
 	if itemIdentifier and success == false then
 		unavailableItems[itemIdentifier] = true
@@ -122,7 +127,13 @@ end
 ---@param getSource function # returns the list's source table
 ---@return nil
 function ns.WatchItemList(registryName, getSource)
-	watchedItemLists[registryName] = getSource
+	panelItemLists[registryName] = getSource
+end
+
+-- The Options window closed: no list panel is on screen, so none of their items is waited on any more.
+---@return nil
+function ns.ForgetPanelItemLists()
+	wipe(panelItemLists)
 end
 
 --[[
@@ -154,7 +165,6 @@ function ns:WarmItemCache()
 	end
 	watchedItemLists[ns.OPTIONS_REGISTRY.Announcements] = GetExampleItems
 	watchedItemLists[ns.OPTIONS_REGISTRY.AutomatedRolls] = GetExampleItems
-	-- Replaced by the list itself the first time the Openables List is built; the example container is on it.
 	watchedItemLists[ns.OPTIONS_REGISTRY.OpenableItems] = GetExampleItems
 	watchedItemLists[ns.OPTIONS_REGISTRY.Lockboxes] = GetExampleItems
 	if not QueryListItemsAndFindMissing() then
@@ -170,11 +180,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Used by the GogoLoot_ItemLink AceGUI widget
-    (Options-Utilities-Item-List-Widgets.lua) to render the row label. The builder
-    (Options-Utilities-Item-Lists.lua) never makes a row for an item
-    this client doesn't have; one refused while its row is on screen reads blank
-    until the repaint drops it, and is never asked for again.
+    An item's icon and link as one caption, for Add from Bags' choices
+    (Options-Utilities-Item-Lists.lua). An item this client doesn't have reads
+    blank.
 ]]
 
 ---@param itemIdentifier number

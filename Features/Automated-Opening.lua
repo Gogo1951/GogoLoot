@@ -5,7 +5,9 @@
 --[[
     Opens clams, containers and unlocked lockboxes in the bags, one every
     ns.OPEN_TICK_INTERVAL, whenever it is safe to. Which items it opens, and
-    whether one waits for its lock, is Features/Openable-Items.lua's answer.
+    whether one waits for its lock, is Features/Openable-Items.lua's answer;
+    what the player is told about a container they loot is
+    Features/Opening-Notices.lua's.
 
     The pipeline is scan, queue, open. A burst of bag events becomes one scan
     (ScheduleOpeningScan); the scan checks free space, pauses or resumes, and
@@ -32,6 +34,8 @@ local openTimerLive = false
 local worldReady = false
 local scanPending = false
 local scanDueAt = 0
+-- True once the player has been told, this session, that a fishing pole is holding opening back.
+local toldFishingPoleHold = false
 
 --[[
     Opens the game refused. An open the game takes answers with a loot session
@@ -98,6 +102,26 @@ local function IsInteractionActive()
 end
 
 --[[
+    A fishing pole in the main hand. GetItemInfoInstant answers from the
+    client's own database, so a pole equipped before its item data loads still
+    reads as one.
+]]
+---@return boolean
+function ns.IsFishingPoleEquipped()
+	local itemLink = GetInventoryItemLink("player", ns.INVENTORY_SLOT_MAIN_HAND)
+	if not itemLink then
+		return false
+	end
+	local _, _, _, _, _, classIdentifier, subclassIdentifier = C_Item.GetItemInfoInstant(itemLink)
+	return classIdentifier == ns.ITEM_CLASS_WEAPON and subclassIdentifier == ns.ITEM_SUBCLASS_FISHING_POLE
+end
+
+-- The Fishing Pole hold-off: on unless the player chose to keep opening while they fish.
+local function IsHeldByFishingPole()
+	return not ns.db.profile.autoOpenWithFishingPole and ns.IsFishingPoleEquipped()
+end
+
+--[[
     The player is busy with something no event reports the end of: an item
     under the cursor or held on it, a spell waiting for its target, or an open
     confirmation pop-up. The tick waits these out itself rather than stopping,
@@ -121,22 +145,35 @@ local function IsWaitingOnPlayer()
 	return false
 end
 
-local function IsSafeToOpen()
-	if not IsAutomatedOpeningOn() or isPaused then
-		return false
+--[[
+    What is holding Automated Opening back, if anything: "BAGS" while it waits
+    for free bag slots, then the player's own hold-offs. Where and Group keep bag
+    space free for drops while in an instance or a group, and the containers open
+    once the player is back on their own time; GROUP_ROSTER_UPDATE and a zone
+    change both rescan, so leaving either state resumes opening without waiting
+    on a bag event. Opening a clam mid-cast would break the fishing rhythm, and
+    swapping the pole off rescans. The mini-map menu reads this to say Paused and
+    why (Features/Minimap-Menu.lua).
+]]
+---@return string|nil # "BAGS", "FISHING", "INSTANCE", "GROUP", or nil
+function ns:GetAutomatedOpeningHold()
+	if isPaused then
+		return "BAGS"
 	end
-
-	--[[
-        Where and Group are the player's own hold-offs: bag space stays free for
-        drops while in an instance or a group, and the containers open once the
-        player is back on their own time. GROUP_ROSTER_UPDATE and a zone change
-        both rescan, so leaving either state resumes opening without waiting on a
-        bag event.
-    ]]
+	if IsHeldByFishingPole() then
+		return "FISHING"
+	end
 	if ns.db.profile.autoOpenWhere == "OUTSIDE_INSTANCES" and IsInInstance() then
-		return false
+		return "INSTANCE"
 	end
 	if ns.db.profile.autoOpenGroup == "SOLO_ONLY" and IsInGroup() then
+		return "GROUP"
+	end
+	return nil
+end
+
+local function IsSafeToOpen()
+	if not IsAutomatedOpeningOn() or ns:GetAutomatedOpeningHold() then
 		return false
 	end
 
@@ -213,7 +250,10 @@ end
     checked for a lock, lockbox or not: the game can't open a locked box, so it
     waits for its lock rather than being tried again every tick into "Item is
     locked" errors. An item above the player's level waits for the level the
-    same way; one not yet cached reads no level, and a refusal then sets it aside.
+    same way. The level comes from the flavor folder (ns.OPENABLE_ITEM_LEVELS),
+    so a cold cache doesn't hide it; an item the folder doesn't list asks the
+    item cache, and one not yet cached there reads no level, and a refusal
+    then sets it aside.
 ]]
 ---@param bagIndex number
 ---@param slotIndex number
@@ -223,7 +263,7 @@ local function ShouldOpen(bagIndex, slotIndex, itemIdentifier)
 	if ns:GetOpeningAction(itemIdentifier) ~= ns.OPENING_OPEN or refusedItems[itemIdentifier] then
 		return false
 	end
-	local requiredLevel = select(5, C_Item.GetItemInfo(itemIdentifier))
+	local requiredLevel = ns.OPENABLE_ITEM_LEVELS[itemIdentifier] or select(5, C_Item.GetItemInfo(itemIdentifier))
 	if requiredLevel and requiredLevel > UnitLevel("player") then
 		return false
 	end
@@ -274,58 +314,6 @@ local function BuildQueue()
 			end
 		end
 	end
-end
-
---[[
-    The boxes in the bags still waiting on a lock: anything Automated Opening
-    would open that still reads Locked. One row per distinct item with a stack
-    count, sorted by name, for the mini-map menu's Locked Items list and
-    Diagnostics.
-
-    Worked out on demand and deliberately not cached: it runs once per menu
-    render, and a cache would need clearing on every bag, trade and pick-lock
-    event. The name comes from the container's own item link, already localized
-    and quality-colored, with no C_Item.GetItemInfo round trip.
-]]
----@return table[]
-function ns.GetLockedBoxes()
-	local rowsByIdentifier, rows = {}, {}
-	for bagIndex = 0, NUM_BAG_SLOTS do
-		for slotIndex = 1, C_Container.GetContainerNumSlots(bagIndex) or 0 do
-			local itemIdentifier = ns.GetBagItemIdentifier(bagIndex, slotIndex)
-			if
-				itemIdentifier
-				and ns:GetOpeningAction(itemIdentifier) == ns.OPENING_OPEN
-				and ns.IsItemLocked(bagIndex, slotIndex)
-			then
-				local row = rowsByIdentifier[itemIdentifier]
-				if row then
-					row.count = row.count + 1
-				else
-					local itemLink = C_Container.GetContainerItemLink(bagIndex, slotIndex)
-					row = {
-						itemIdentifier = itemIdentifier,
-						count = 1,
-						icon = ns.GetItemIconByID(itemIdentifier),
-						name = itemLink and string.match(itemLink, "|h%[(.-)%]|h"),
-						link = itemLink,
-					}
-					rowsByIdentifier[itemIdentifier] = row
-					rows[#rows + 1] = row
-				end
-			end
-		end
-	end
-	table.sort(rows, function(a, b)
-		if (a.name ~= nil) ~= (b.name ~= nil) then
-			return a.name ~= nil
-		end
-		if a.name and b.name and a.name ~= b.name then
-			return a.name < b.name
-		end
-		return a.itemIdentifier < b.itemIdentifier
-	end)
-	return rows
 end
 
 --------------------------------------------------------------------------------
@@ -408,6 +396,20 @@ end
 --------------------------------------------------------------------------------
 
 --[[
+    The Fishing Pole hold-off is on by default, so every player with With
+    Fishing Pole Equipped off is told once a session, the first time it actually
+    holds something back, where to turn it off. A line the quiet window drops is retried on a later scan.
+]]
+local function AnnounceFishingPoleHold()
+	if toldFishingPoleHold or queueHead > queueTail or not IsHeldByFishingPole() then
+		return
+	end
+	if ns:StatusPrint(L["MESSAGE_OPENING_FISHING_POLE"]) then
+		toldFishingPoleHold = true
+	end
+end
+
+--[[
     RunScan and the debounce callback are file locals rather than closures built
     inside ScheduleOpeningScan: every bag or loot event would otherwise allocate
     two throwaway functions before deciding whether a scan is even needed.
@@ -425,10 +427,21 @@ local function RunScan()
 	if not IsAutomatedOpeningOn() or UnitAffectingCombat("player") then
 		return
 	end
+	--[[
+        Nor under a hold that rescans when it lifts: the free-slot recount at the
+        top of every scan, the zone change's rescan, and the roster change's.
+        The fishing-pole hold still builds the queue, since its notice is only
+        owed when something is waiting.
+    ]]
+	local hold = ns:GetAutomatedOpeningHold()
+	if hold == "BAGS" or hold == "INSTANCE" or hold == "GROUP" then
+		return
+	end
 	BuildQueue()
 	if IsSafeToOpen() and not openTimerLive and queueHead <= queueTail then
 		StartOpenTick()
 	end
+	AnnounceFishingPoleHold()
 end
 
 local function OnScanDebounceElapsed()
@@ -484,7 +497,7 @@ local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
 	if isInitialLogin or isReloadingUi then
 		C_Timer.After(ns.WORLD_LOAD_DELAY, OnWorldLoaded)
 	else
-		ns:SetQuiet(2)
+		-- No quiet window of its own: Announcements.lua keeps one around every loading screen.
 		ns.ScheduleOpeningScan()
 	end
 end
@@ -548,44 +561,9 @@ local function OnUiErrorMessage(errorIdentifier)
 	end
 end
 
-local function LockboxNotificationsEnabled()
-	return ns.db.profile.lockboxNotifications and ns.LockboxScopeAllows(ns.db.profile.lockboxNotificationsScope)
-end
-
---[[
-    The notice for an ignored container, by the reason its default gives: a raid
-    boss drop and one that may hold a unique item say so, and anything else,
-    whether ignored by default or by the player, gets the plain notice.
-]]
-local IGNORED_NOTICES = {
-	[ns.OPENING_IGNORE_RAID] = "MESSAGE_ITEM_IGNORED_RAID",
-	[ns.OPENING_IGNORE_UNIQUE] = "MESSAGE_ITEM_IGNORED_UNIQUE",
-}
-
---[[
-    What the player is told about a container they just looted: a lockbox set to
-    Open that will open itself once its lock is picked, or an item set to Ignore
-    that Automated Opening will leave alone. Both speak for Automated Opening,
-    so both need it on, as well as their own toggles: the Lockboxes panel's,
-    and the Ignore notice's on the Automated Opening panel.
-]]
-local function AnnounceLootedContainer(itemIdentifier, itemLink)
-	local action = ns:GetOpeningAction(itemIdentifier)
-	local default = ns:GetOpeningDefault(itemIdentifier)
-	if action == ns.OPENING_OPEN then
-		if default == ns.OPENING_UNLOCKED and IsAutomatedOpeningOn() and LockboxNotificationsEnabled() then
-			ns:PrintMessage(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(itemLink))
-		end
-	elseif action == ns.OPENING_IGNORE and IsAutomatedOpeningOn() and ns.db.profile.openingIgnoreNotifications then
-		ns:AnnounceItemOnce(IGNORED_NOTICES[default] or "MESSAGE_ITEM_IGNORED", itemIdentifier, itemLink)
-	end
-end
-
 local function OnChatMessageLoot(message)
-	local itemLink = ns.ParseOwnLootMessage(message)
 	-- Only the player's own loot reaches their bags; a raid's loot lines would otherwise rescan on every pickup.
-	if itemLink then
-		AnnounceLootedContainer(tonumber(string.match(itemLink, "item:(%d+)")), itemLink)
+	if ns.ParseOwnLootMessage(message) then
 		ns.ScheduleOpeningScan()
 	end
 end
@@ -648,6 +626,13 @@ local function OnLootClosed()
 	C_Timer.After(ns.STATUS_FLUSH_DELAY, AnnounceStatus)
 end
 
+-- Taking the pole off lifts the Fishing Pole hold-off, and equipping one brings it.
+local function OnPlayerEquipmentChanged(slot)
+	if slot == ns.INVENTORY_SLOT_MAIN_HAND and IsAutomatedOpeningOn() then
+		ns.ScheduleOpeningScan()
+	end
+end
+
 -- A level-up can lift a level requirement, so every item set aside gets another try.
 local function OnPlayerLevelUp()
 	wipe(refusedItems)
@@ -678,3 +663,4 @@ ns:RegisterModuleEvent("TRADE_CLOSED", OnTradeClosed)
 ns:RegisterModuleEvent("LOOT_READY", OnLootAnswer)
 ns:RegisterModuleEvent("LOOT_OPENED", OnLootAnswer)
 ns:RegisterModuleEvent("PLAYER_LEVEL_UP", OnPlayerLevelUp)
+ns:RegisterModuleEvent("PLAYER_EQUIPMENT_CHANGED", OnPlayerEquipmentChanged)

@@ -13,8 +13,6 @@ local _, ns = ...
 --------------------------------------------------------------------------------
 
 --[[
-    C_Container.GetContainerNumFreeSlots returns freeSlots, bagFamily.
-
     Only general-purpose bags (bagFamily 0 or nil) count: specialty bags (soul
     bags, quivers, ammo pouches, profession bags) can't hold what a container
     opens into, so their free slots are useless to Automated Opening, which

@@ -94,16 +94,19 @@ local FILES = {
 	"Data/Default-Settings.lua",
 	"Features/Core.lua",
 	"Features/Utilities.lua",
+	"Features/Utilities-Timers.lua",
 	"Features/Utilities-Bags.lua",
 	"Features/Utilities-Scan-Tooltip.lua",
 	"Features/Utilities-Chat-Lines.lua",
 	"Features/Announcements.lua",
 	"Features/Announcements-Trade.lua",
+	"Features/Announcements-Trade-Checkbox.lua",
 	"Features/Auto-Loot.lua",
 	"Features/Openable-Items.lua",
 	"Features/Loot-Sounds.lua",
 	"Features/Speedy-Loot.lua",
 	"Features/Automated-Opening.lua",
+	"Features/Opening-Notices.lua",
 	"Features/Lockbox-Tooltips.lua",
 	"Features/Loot-Toasts-Winning-Rolls.lua",
 	"Features/Loot-Toasts-Filters.lua",
@@ -111,9 +114,11 @@ local FILES = {
 	"Features/Loot-Toasts-Handle.lua",
 	"Features/Loot-Toasts-Money.lua",
 	"Features/Standard-Loot-Messages.lua",
+	"Features/Blizzard-Roll-Won-Window.lua",
 	"Features/Master-Looter.lua",
 	"Features/Master-Looter-Distribution.lua",
 	"Features/Character-Rules.lua",
+	"Features/Character-Rule-Stats.lua",
 	"Features/Roll-Messages.lua",
 	"Features/Automated-Rolls.lua",
 	"Features/Roll-Macro.lua",
@@ -138,6 +143,7 @@ local FILES = {
 	"Diagnostics/Report-Runner.lua",
 	"Options/Options-Kit.lua",
 	"Options/Options-Utilities.lua",
+	"Options/Options-Utilities-Dropdown-Watch.lua",
 	"Options/Options-Utilities-Item-Cache.lua",
 	"Options/Options-Utilities-Item-List-Filter.lua",
 	"Options/Options-Utilities-Item-Lists.lua",
@@ -373,6 +379,7 @@ test("the settings tree nests each child panel under its parent", function()
 		{ registry.AutomatedRolls, root },
 		{ registry.ItemOverrides, "category:" .. registry.AutomatedRolls },
 		{ registry.CharacterRules, "category:" .. registry.AutomatedRolls },
+		{ registry.SanityCheck, "category:" .. registry.AutomatedRolls },
 		{ registry.AutomatedOpening, root },
 		{ registry.OpenableItems, "category:" .. registry.AutomatedOpening },
 		{ registry.Lockboxes, "category:" .. registry.AutomatedOpening },
@@ -383,7 +390,6 @@ test("the settings tree nests each child panel under its parent", function()
 		{ registry.MasterLooter, root },
 		{ registry.MasterLooterIgnoreList, "category:" .. registry.MasterLooter },
 		{ registry.RollMacro, root },
-		{ registry.SanityCheck, root },
 		{ registry.LootMaster, root },
 		{ registry.Profiles, root },
 		{ registry.FeedbackSupport, root },
@@ -518,7 +524,13 @@ test("the Roll Macro switch adds and deletes one General macro", function()
 		local row = panelArgs["clickRow" .. index]
 		local name = row and row.args.cell1
 		check(name and name.name:find(ns.L[click], 1, true) ~= nil, click .. " heads its row")
-		check(name and name.name:find(ns.COLORS.INFO, 1, true) ~= nil, click .. " in the tooltip's blue")
+		check(name and name.name:find(ns.COLORS.TEXT, 1, true) ~= nil, click .. " as a white caption")
+		local wasOn = ns.db.global.rollMacro
+		ns.db.global.rollMacro = false
+		check(evaluate(row.hidden), click .. " leaves while the macro is off")
+		ns.db.global.rollMacro = true
+		check(not evaluate(row.hidden), click .. " and comes back with it")
+		ns.db.global.rollMacro = wasOn
 		clickWidth = clickWidth or (name and name.width)
 		checkEqual(clickWidth, name and name.width, click .. " shares the column's width")
 		checkNear(
@@ -705,6 +717,29 @@ test("a mapped error is attributed to the oldest hand-out, not the newest", func
 	end
 end)
 
+test("a failed hand-out prints to the Master Looter while Loot Announcements is off", function()
+	local ns, env = loadAddon()
+	openMasterLootSession(ns, env, 1)
+	local bagsFullId = registerGameMessage(env, "ERR_LOOT_MASTER_INV_FULL")
+	ns.db.profile.lootNotifications = false
+	env.__state.chat = {}
+
+	fire(ns, "UI_ERROR_MESSAGE", bagsFullId)
+	Fake.advance(env, 1)
+
+	checkEqual(0, chatCount(env), "nothing goes to the group")
+	local printed
+	for _, line in ipairs(env.__state.prints) do
+		if line:find("bags are full", 1, true) then
+			printed = line
+		end
+	end
+	check(printed ~= nil, "the Master Looter is told")
+	if printed then
+		check(printed:find("Test Item 1", 1, true) ~= nil, "naming the item")
+	end
+end)
+
 test("repeat failures for one player collapse into a single message", function()
 	local ns, env = loadAddon()
 	openMasterLootSession(ns, env, 3)
@@ -831,6 +866,26 @@ test("the retry ticker keeps waiting on an item whose info arrives late", functi
 	state.itemNames[1002] = { name = "Cold Item", quality = 4, classId = 4, bindType = 2 }
 	Fake.advance(env, 0.1)
 	checkEqual(1, #state.givenLoot, "the item went out on the fifth tick, past the quiet-tick count")
+end)
+
+test("a slot below the loot threshold is never handed out", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+	state.inGroup = true
+	state.groupMembers = 2
+	state.lootMethod = 2
+	state.masterLooterPartyIndex = 0
+	state.masterLootCandidates = { "Bob" }
+	state.itemNames = { [1003] = { name = "Plain Item", quality = 1, classId = 4, bindType = 2 } }
+	state.lootSlots = { { link = "|Hitem:1003|h[Plain Item]|h" } }
+	ns.db.profile.destinations = { poor = "bob", common = "bob", uncommon = "bob", rare = "bob", epic = "bob" }
+	ns.db.profile.autoMasterLoot = true
+
+	fire(ns, "LOOT_OPENED")
+	for _ = 1, 5 do
+		Fake.advance(env, 0.1)
+	end
+	checkEqual(0, #state.givenLoot, "a Common item under an Uncommon threshold stays in the loot window")
 end)
 
 test("a silent failure is reported when the slot still holds the item", function()
@@ -1031,6 +1086,108 @@ test("the pop-up carries the automation switch, and Send All Loot To leaves with
 	check(evaluate(args.sendAll.hidden), "and leaves while it is off")
 end)
 
+--[[
+    One Classic-style bag window with one button, painted through the
+    ContainerFrame_Update hook, holding a tradable epic. The tint is a texture
+    that keeps its last color and whether it shows.
+]]
+local function tintedBagButton(ns, env)
+	local state = env.__state
+	env.GetServerTime = function()
+		return state.now or 0
+	end
+	env.ContainerFrame_Update = function() end
+	state.itemNames[4200] = { name = "Raid Sword", quality = 4, classId = 2, bindType = 1 }
+	state.bags[0] = { [1] = { itemId = 4200, link = "|Hitem:4200|h[Raid Sword]|h" } }
+	ns.GetBagSlotTradeSeconds = function()
+		return 60
+	end
+	local tint = {}
+	function tint:SetAllPoints() end
+	function tint:SetColorTexture(r, g, b, a)
+		self.color = { r, g, b, a }
+	end
+	function tint:Show()
+		self.shown = true
+	end
+	function tint:Hide()
+		self.shown = false
+	end
+	local button = { tint = tint, paints = 0 }
+	function button:GetName()
+		return "TestBagItem1"
+	end
+	function button:GetID()
+		return 1
+	end
+	function button:CreateTexture()
+		return tint
+	end
+	env.TestBagItem1 = button
+	local frame = { size = 1 }
+	function frame:GetID()
+		return 0
+	end
+	function frame:GetName()
+		return "TestBag"
+	end
+	fire(ns, "PLAYER_LOGIN")
+	state.hooks.ContainerFrame_Update(frame)
+	return button
+end
+
+test("a profile change repaints the bag tints at once", function()
+	local ns, env = loadAddon()
+	local button = tintedBagButton(ns, env)
+	check(button.tint.shown, "the tradable epic is tinted")
+
+	ns.db.profile.tradableTintColor = { r = 0, g = 1, b = 0, a = 1 }
+	ns:ApplyProfile()
+	checkEqual(1, button.tint.color[2], "the new profile's color is on without a bag change")
+
+	ns.db.profile.tradableTintEnabled = false
+	ns:ApplyProfile()
+	check(not button.tint.shown, "and a profile with the tint off clears it")
+end)
+
+test("a trade clock that runs out repaints once, not on every check", function()
+	local ns, env = loadAddon()
+	local button = tintedBagButton(ns, env)
+	local paints = 0
+	local setColor = button.tint.SetColorTexture
+	local hide = button.tint.Hide
+	button.tint.SetColorTexture = function(self, ...)
+		paints = paints + 1
+		setColor(self, ...)
+	end
+	button.tint.Hide = function(self)
+		paints = paints + 1
+		hide(self)
+	end
+
+	Fake.advance(env, 61)
+	check(not button.tint.shown, "the tint leaves when the clock runs out")
+	local afterExpiry = paints
+	for _ = 1, 4 do
+		Fake.advance(env, ns.TRADABLE_TINT_CHECK_SECONDS)
+	end
+	checkEqual(afterExpiry, paints, "later checks leave the button alone")
+end)
+
+test("on WoW Forever, Master Loot names the leader by the whole name", function()
+	local ns, env = loadAddon()
+	ns.FLAVOR = "Camelot"
+	env.__state.inGroup = true
+	env.__state.unitRealms = { player = "Bramblefoot" }
+
+	ns:SafeSetLootMethod("master")
+	checkEqual(
+		"Tester Bramblefoot",
+		env.__state.setLootMethodCalls[1].masterLooter,
+		"First Last, as the loot system knows it"
+	)
+end)
+
 test("changing the loot method reaches the modern API", function()
 	local ns, env = loadAddon()
 	env.__state.inGroup = true
@@ -1043,6 +1200,34 @@ test("changing the loot method reaches the modern API", function()
 	ns:SafeSetLootMethod("group")
 	checkEqual(3, env.__state.setLootMethodCalls[2].method, "group loot mapped to its numeric enum")
 	checkEqual("group", ns:SafeGetLootMethod(), "the numeric value reads back as a method name")
+end)
+
+test("on MoP Classic, Personal Loot reads back as itself, not as Group Loot", function()
+	local ns, env = loadAddon(nil, function(env)
+		env.Enum.LootMethod.Personal = 5
+		env.LOOT_PERSONAL_LOOT = "Personal Loot"
+	end)
+	env.__state.lootMethod = 5
+	checkEqual("personal", ns:SafeGetLootMethod(), "the client's Personal value keeps its own name")
+	checkEqual(true, ns.IsLootThresholdIrrelevant(), "and, like Free for All, it has no threshold to show")
+	local args = {}
+	ns.AddLootMethodRow(args, 1)
+	local function FindSelect(node)
+		if type(node) ~= "table" then
+			return nil
+		end
+		if node.type == "select" then
+			return node
+		end
+		for _, child in pairs(node.args or {}) do
+			local found = FindSelect(child)
+			if found then
+				return found
+			end
+		end
+	end
+	local values = FindSelect(args.lootMethod).values()
+	checkEqual("Personal Loot", values and values.personal, "the dropdown lists it, so it never reads blank")
 end)
 
 test("changing the group's loot type clears the destinations", function()
@@ -1477,11 +1662,7 @@ test("the quality rows follow the loot threshold, each in its own color", functi
 		local row = args["destinationRow_" .. entry[1]]
 		local shown = not evaluate(row.hidden)
 		checkEqual(entry[3], shown, entry[1] .. " row shown only at or above the loot threshold")
-		checkEqual(
-			shown,
-			not evaluate(args["spacer_destination_" .. entry[1]].hidden),
-			entry[1] .. " takes its spacer along"
-		)
+		checkEqual(nil, args["spacer_destination_" .. entry[1]], entry[1] .. " sits tight, with no spacer of its own")
 		check(
 			row.args.cell1.name:find(ns.GetQualityColor(entry[2]), 1, true) ~= nil,
 			entry[1] .. " is captioned in its own quality's color"
@@ -1759,6 +1940,35 @@ test("the Item Overrides list is separated from the toggle above it", function()
 	check(args.spacerBeforeItemOverrides.order < args.itemOverrides.order, "and before the list")
 end)
 
+test("Restore Defaults is gray while a list matches its defaults", function()
+	local ns = loadAddon()
+	local function Restore(args)
+		return args.restoreRow.args.cell2
+	end
+	local overrides = Restore(ns.BuildItemOverridesOptions().args.itemOverrides.args)
+	check(overrides.disabled(), "Global Item Overrides at its defaults: gray")
+	ns.db.profile.ignoredItemsSolo[999001] = ns.MANUAL
+	check(not overrides.disabled(), "an added item makes it live")
+
+	local ignore = Restore(ns.BuildMasterLooterIgnoreListOptions().args.ignoreList.args)
+	check(ignore.disabled(), "the Ignore List at its defaults: gray")
+
+	local openables = Restore(ns.BuildOpenableItemsOptions().args.itemList.args)
+	check(openables.disabled(), "the Openables List at its defaults: gray")
+	ns.db.global.openingActions[999002] = ns.OPENING_OPEN
+	check(not openables.disabled(), "an added container makes it live")
+end)
+
+test("the Global Item Overrides list leaves while its switch is off", function()
+	local ns = loadAddon()
+	local args = ns.BuildItemOverridesOptions().args
+	ns.db.profile.customRollList = true
+	check(not args.itemOverrides.hidden(), "shown while on")
+	ns.db.profile.customRollList = false
+	check(args.itemOverrides.hidden(), "hidden while off")
+	check(args.spacerBeforeItemOverrides.hidden(), "with its spacer")
+end)
+
 --[[
     The rows that carry a toggle's one setting on the toggle's own line, each
     with the saved key its toggle reads.
@@ -1943,6 +2153,14 @@ test("the sub-toggles keep the saved strings their features read", function()
 			on = "SOLO_ONLY",
 			off = "ALWAYS",
 		},
+		{
+			row = ns.BuildAutomatedOpeningOptions().args.fishingPoleRow,
+			caption = "AUTOMATED_OPENING_WITH_FISHING_POLE",
+			parent = "autoOpen",
+			setting = "autoOpenWithFishingPole",
+			on = true,
+			off = false,
+		},
 	}
 
 	for _, case in ipairs(cases) do
@@ -2072,8 +2290,15 @@ test("Lockboxes is a child panel of Automated Opening", function()
 
 	ns.db.profile.autoOpen = false
 	for key, entry in pairs(args) do
-		check(not evaluate(entry.hidden), key .. " stays on show with opening off")
+		if key ~= "notificationsExampleRow" then
+			check(not evaluate(entry.hidden), key .. " stays on show with opening off")
+		end
 	end
+	check(evaluate(args.notificationsExampleRow.hidden), "the notice's Example leaves, since nothing would print")
+	ns.db.profile.autoOpen = true
+	ns.db.profile.lockboxNotifications = true
+	ns.db.profile.lockboxNotificationsScope = "ALL"
+	check(not evaluate(args.notificationsExampleRow.hidden), "and comes back once it would")
 end)
 
 --[[
@@ -2106,9 +2331,8 @@ test("Lockboxes says in silver when Automated Opening is off", function()
 end)
 
 --[[
-    The Ignore notice sits on the Openables List, above the list, and never
-    hides: Speedy Loot gives its notice with opening off too (maintainer,
-    2026-11-03). Automated Opening no longer carries it.
+    The Ignore notice sits on the Openables List, above the list, and its
+    switch never hides. Automated Opening no longer carries it.
 ]]
 test("the Ignore notice lives on the Openables List and never hides", function()
 	local ns = loadAddon()
@@ -2164,7 +2388,9 @@ test("the Ignore notice's example is its real printed line", function()
 
 	check(args.ignoreNotifications.order < row.order, "it sits under its toggle")
 	ns.db.profile.autoOpen = false
-	check(not evaluate(row.hidden), "it stays on show with opening off")
+	check(evaluate(row.hidden), "it leaves with opening off, when the notice can't print")
+	ns.db.profile.autoOpen = true
+	check(not evaluate(row.hidden), "and comes back with opening on")
 	ns.db.profile.openingIgnoreNotifications = false
 	check(evaluate(row.hidden), "and leaves with its own toggle (Options-Kit.md → Examples)")
 	ns.db.profile.openingIgnoreNotifications = true
@@ -2933,6 +3159,32 @@ test("a player holding every quality who leaves is announced once", function()
 	end
 end)
 
+test("a member who can't be named is never taken for a leaver", function()
+	local ns, env = loadAddon()
+	local state = masterLootSetupWithDestinations(ns, env)
+	env.__state.chat = {}
+
+	-- Bob is still there, but his name reads secret (WoW Forever, in combat).
+	state.unitNames.party1 = nil
+	state.unitExists.party1 = true
+	fire(ns, "GROUP_ROSTER_UPDATE")
+
+	checkEqual("bob", ns.db.profile.destinations.epic, "no tier moved while a member can't be named")
+	checkEqual(0, chatCount(env), "and nobody announced as having left")
+end)
+
+test("a destination saved with a realm suffix still matches its member", function()
+	local ns, env = loadAddon()
+	masterLootSetupWithDestinations(ns, env)
+	ns.db.profile.destinations.epic = "bob-otherrealm"
+	env.__state.chat = {}
+
+	fire(ns, "GROUP_ROSTER_UPDATE")
+
+	checkEqual("bob-otherrealm", ns.db.profile.destinations.epic, "Bob is still in the group")
+	checkEqual(0, chatCount(env), "and isn't announced as having left")
+end)
+
 test("a player holding some qualities who leaves is announced once, with each quality named", function()
 	local ns, env = loadAddon()
 	local state = masterLootSetupWithDestinations(ns, env)
@@ -2963,7 +3215,7 @@ test("a leaver who held only a quality below the threshold goes unannounced", fu
 	fire(ns, "GROUP_ROSTER_UPDATE")
 
 	checkEqual(0, chatCount(env), "the panel never showed Poor, so nobody is told about it")
-	checkEqual("self", ns.db.profile.destinations.poor, "though it still falls back to the master looter")
+	checkEqual(nil, ns.db.profile.destinations.poor, "and the hidden tier is cleared, never set to Self")
 end)
 
 --[[
@@ -4042,8 +4294,8 @@ local function openQuestItemLootSession(ns, env)
 	state.lootSlots = {}
 	state.itemNames = {}
 
-	state.itemNames[2001] = { name = "Quest Class Item", quality = 1, classId = 12, subclassId = 0, bindType = 2 }
-	state.itemNames[2002] = { name = "Quest Bound Item", quality = 1, classId = 4, subclassId = 0, bindType = 4 }
+	state.itemNames[2001] = { name = "Quest Class Item", quality = 2, classId = 12, subclassId = 0, bindType = 2 }
+	state.itemNames[2002] = { name = "Quest Bound Item", quality = 2, classId = 4, subclassId = 0, bindType = 4 }
 	state.lootSlots[1] = { link = "|Hitem:2001|h[Quest Class Item]|h" }
 	state.lootSlots[2] = { link = "|Hitem:2002|h[Quest Bound Item]|h" }
 
@@ -4930,7 +5182,11 @@ test("the Loot Roll Sanity Check shows how each drawn drop would roll", function
 
 	local panel = ns.BuildSanityCheckOptions()
 	checkEqual(ns.L["TAB_SANITY_CHECK"], panel.name, "the page is the Loot Roll Sanity Check")
-	checkEqual("execute", panel.args.refresh.args.cell1.type, "with a button that picks new drops")
+	checkEqual(
+		"execute",
+		panel.args.refresh.args.cell2.type,
+		"with a button that picks new drops, in the control column"
+	)
 	check(panel.args.TRASHHeader.name:find("Trash", 1, true) ~= nil, "a Trash section")
 	check(panel.args.DUNGEON_BOSSESHeader.name:find("Dungeon Bosses", 1, true) ~= nil, "a Dungeon Bosses section")
 	check(panel.args.RAID_BOSSESHeader.name:find("Raid Bosses", 1, true) ~= nil, "and a Raid Bosses section")
@@ -4938,23 +5194,31 @@ test("the Loot Roll Sanity Check shows how each drawn drop would roll", function
 	check(panel.args.RAID_BOSSESContext.name:find("In Raid", 1, true) ~= nil, "Raid Bosses reads In Raid")
 
 	local helm = drops("TRASH")[12427]
-	checkEqual(ns.ITEM_LINK_WIDGET_TYPE, helm.item.cell1.dialogControl, "each drop leads with its item as a link")
+	checkEqual(ns.OptionsKit.ITEM_LINK_WIDGET, helm.item.cell1.dialogControl, "each drop leads with its item as a link")
 	checkEqual(
-		ns.GetColor("INFO") .. "Manual Roll|r",
+		ns.GetColor("TEXT") .. "Manual Roll|r",
 		outcome("TRASH", 12427),
 		"Strength plate is a Manual Roll on a warrior"
 	)
-	checkEqual(HELP .. "BoE, Strength, Stamina|r", helm.tags.cell1.name(), "its tag line: binding, then stats")
+	checkEqual(
+		HELP .. "Bind on Equip, Strength, Stamina|r",
+		helm.tags.cell1.name(),
+		"its tag line: binding, then stats"
+	)
 	checkEqual(HELP .. "Character Overrides|r", reason("TRASH", 12427), "and why, under the outcome")
 
 	local robe = outcome("TRASH", 13857)
 	check(robe:find("UI-GroupLoot-Coin-Up", 1, true) ~= nil, "an Intellect robe shows the Greed button's art")
 	check(robe:find("Automatic " .. ns.ROLL_OVERRIDE_LABELS[ns.GREED], 1, true) ~= nil, "and Automatic Greed")
-	checkEqual(HELP .. "BoP, Intellect, Spirit|r", drops("TRASH")[13857].tags.cell1.name(), "a BoP robe says so")
+	checkEqual(
+		HELP .. "Bind on Pickup, Intellect, Spirit|r",
+		drops("TRASH")[13857].tags.cell1.name(),
+		"a BoP robe says so"
+	)
 
 	ns.db.profile.autoRollActionRaid = ns.MANUAL
-	checkEqual(ns.GetColor("INFO") .. "Manual Roll|r", outcome("RAID_BOSSES", 13857), "Raid Bosses reads In Raid")
-	checkEqual(HELP .. "Quality Settings|r", reason("RAID_BOSSES", 13857), "and says the quality settings decided")
+	checkEqual(ns.GetColor("TEXT") .. "Manual Roll|r", outcome("RAID_BOSSES", 13857), "Raid Bosses reads In Raid")
+	checkEqual(HELP .. "Party and Raid Rolls|r", reason("RAID_BOSSES", 13857), "and says Party and Raid Rolls decided")
 	check(outcome("TRASH", 13857):find("Automatic", 1, true) ~= nil, "while Trash still greeds")
 
 	state.playerLevel = 60
@@ -4967,7 +5231,7 @@ test("the Loot Roll Sanity Check shows how each drawn drop would roll", function
 
 	state.itemsNotOnClient[13857] = true
 	check(drops("TRASH")[13857].hidden(), "a drawn item this client stops knowing hides its lines")
-	ns.BuildSanityCheckOptions().args.refresh.args.cell1.func()
+	ns.BuildSanityCheckOptions().args.refresh.args.cell2.func()
 	checkEqual(nil, drops("TRASH")[13857], "and is never drawn again")
 	checkEqual(nil, ns.BuildSanityCheckOptions().args.RAID_BOSSESDrop1, "a section with nothing to draw has no rows")
 end)
@@ -5039,6 +5303,7 @@ test("every folder's Sanity Check lists hold tagged item ids, each once, with ro
 	end
 end)
 
+-- MIGRATION (remove after 2026-12-07)
 test("a load drops what the dropdown version of Character Rules saved", function()
 	local ns = loadAddon(nil, function(loadingEnv)
 		loadingEnv.__state.savedCharacters = {
@@ -5048,7 +5313,6 @@ test("a load drops what the dropdown version of Character Rules saved", function
 					STRENGTH = "manual",
 					ARMOR_4 = "greed",
 					wanted = { ARMOR_4 = true },
-					unwanted = { bindOnPickup = false, threshold = 3 },
 				},
 			},
 			["Togo - Realm"] = { classFile = "SHAMAN", characterRules = { INTELLECT = "manual" } },
@@ -5058,10 +5322,29 @@ test("a load drops what the dropdown version of Character Rules saved", function
 	checkEqual(nil, rules.STRENGTH, "a stat's Manual goes")
 	checkEqual(nil, rules.ARMOR_4, "and a type's choice")
 	checkEqual(true, rules.wanted.ARMOR_4, "a box stays")
+	checkEqual(nil, ns.db.sv.char["Togo - Realm"].characterRules, "and a table left empty goes")
+end)
+
+-- MIGRATION (remove after 2026-12-16)
+test("a load drops Everything Else's retired Character Rules rows", function()
+	local ns = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.savedCharacters = {
+			["Hippo - Realm"] = {
+				classFile = "ROGUE",
+				characterRules = {
+					wanted = { ARMOR_4 = true },
+					unwanted = { bindOnPickup = false, greedBindOnEquipAtMaxLevel = true, threshold = 3 },
+				},
+			},
+			["Togo - Realm"] = { classFile = "SHAMAN", characterRules = { unwanted = { threshold = 2 } } },
+		}
+	end)
+	local rules = ns.db.sv.char["Hippo - Realm"].characterRules
+	checkEqual(true, rules.wanted.ARMOR_4, "a box stays")
 	checkEqual(
 		nil,
 		rules.unwanted,
-		"Everything Else's old Bind on Pickup and Up to Quality rows go, and their emptied table"
+		"Everything Else's old Bind on Pickup, max-level and Up to Quality rows go, and their emptied table"
 	)
 	checkEqual(nil, ns.db.sv.char["Togo - Realm"].characterRules, "and a table left empty goes")
 end)
@@ -5325,6 +5608,14 @@ local function finishWorldLoad(ns, env)
 	Fake.advance(env, ns.WORLD_LOAD_DELAY)
 end
 
+-- A Fishing Pole (weapon subclass 20) in the main hand.
+local FISHING_POLE = 6256
+local SWORD_FOR_POLE_TEST = 2131
+local function equipFishingPole(state)
+	state.itemNames[FISHING_POLE] = { name = "Fishing Pole", itemType = "Weapon", classId = 2, subclassId = 20 }
+	state.equipped[16] = itemLink(FISHING_POLE, "Fishing Pole")
+end
+
 local function scanAndTick(ns, env)
 	finishWorldLoad(ns, env)
 	ns.ScheduleOpeningScan(true)
@@ -5509,7 +5800,6 @@ test("the openable items panel adds, removes and sets items, each with its own d
 	check(row.args.tag.name:find(ns.GetColor("HELP"), 1, true) ~= nil, "in silver")
 	check(row.args.label.order < row.args.tag.order, "after the item")
 	check(row.args.tag.order < row.args.action.order, "before the dropdown")
-	checkEqual(ns:GetOpeningNote(IRON_LOCKBOX), row.args.label.desc, "and the reason rides the item's tooltip")
 	checkEqual(" ", listArgs["item_" .. ORNATE_BRONZE_LOCKBOX] and " " or nil, "every listed row gets a tag cell")
 	check(row.args.remove ~= nil, "each row has a remove icon")
 	check(row.args.remove.confirm, "which confirms, since the row carries a setting")
@@ -5519,7 +5809,6 @@ test("the openable items panel adds, removes and sets items, each with its own d
 		"and the row spends the full width"
 	)
 	checkEqual(nil, listArgs["item_" .. CLAM], "an item this client doesn't have gets no row")
-	check(listArgs["item_" .. BLUE_SACK_OF_GEMS].args.label.desc ~= nil, "a raid drop's note rides its tooltip")
 
 	row.args.action.set(nil, ns.OPENING_IGNORE)
 	checkEqual(ns.OPENING_IGNORE, ns:GetOpeningAction(IRON_LOCKBOX), "the dropdown sets the item's action")
@@ -5729,6 +6018,21 @@ test("a pause line the loading screen held back still goes out", function()
 	check(printedContaining(env, pausedLine) ~= nil, "the next scan after it says opening is paused")
 end)
 
+test("each hold-off names itself for the menu", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+	finishWorldLoad(ns, env)
+	checkEqual(nil, ns:GetAutomatedOpeningHold(), "nothing holds it on its own")
+	ns.db.profile.autoOpenGroup = "SOLO_ONLY"
+	state.inGroup = true
+	checkEqual("GROUP", ns:GetAutomatedOpeningHold(), "a group with Solo Only")
+	ns.db.profile.autoOpenWhere = "OUTSIDE_INSTANCES"
+	state.inInstance = true
+	checkEqual("INSTANCE", ns:GetAutomatedOpeningHold(), "an instance with Outside Instances")
+	equipFishingPole(state)
+	checkEqual("FISHING", ns:GetAutomatedOpeningHold(), "a fishing pole")
+end)
+
 test("each hold-off keeps containers shut", function()
 	local cases = {
 		{
@@ -5743,6 +6047,12 @@ test("each hold-off keeps containers shut", function()
 			function(ns, state)
 				ns.db.profile.autoOpenGroup = "SOLO_ONLY"
 				state.inGroup = true
+			end,
+		},
+		{
+			"with a fishing pole equipped and With Fishing Pole Equipped off",
+			function(_, state)
+				equipFishingPole(state)
 			end,
 		},
 		{
@@ -5803,6 +6113,121 @@ test("each hold-off keeps containers shut", function()
 	end
 end)
 
+test("a hold that rescans when it lifts skips the bag walk, and lifting it opens", function()
+	local cases = {
+		{
+			"Outside Instances inside an instance",
+			function(ns, state)
+				ns.db.profile.autoOpenWhere = "OUTSIDE_INSTANCES"
+				state.inInstance = true
+			end,
+			function(ns, env)
+				env.__state.inInstance = false
+				fire(ns, "PLAYER_ENTERING_WORLD", false, false)
+			end,
+		},
+		{
+			"Solo Only in a group",
+			function(ns, state)
+				ns.db.profile.autoOpenGroup = "SOLO_ONLY"
+				state.inGroup = true
+			end,
+			function(ns, env)
+				env.__state.inGroup = false
+				fire(ns, "GROUP_ROSTER_UPDATE")
+			end,
+		},
+		{
+			"too few free bag slots",
+			function(_, state)
+				state.freeSlotsPerBag = 0
+			end,
+			function(ns, env)
+				env.__state.freeSlotsPerBag = 4
+				fire(ns, "BAG_UPDATE_DELAYED")
+			end,
+		},
+	}
+	for _, case in ipairs(cases) do
+		local ns, env = loadAddon()
+		local state = env.__state
+		putInBag(env, 0, 1, CLAM, "Big-mouth Clam")
+		finishWorldLoad(ns, env)
+		case[2](ns, state)
+		fire(ns, "GROUP_ROSTER_UPDATE")
+		local bagReads = 0
+		local readSlots = env.C_Container.GetContainerNumSlots
+		env.C_Container.GetContainerNumSlots = function(...)
+			bagReads = bagReads + 1
+			return readSlots(...)
+		end
+		ns.ScheduleOpeningScan(true)
+		checkEqual(0, bagReads, "no bag is read with " .. case[1])
+		case[3](ns, env)
+		Fake.advance(env, 5)
+		Fake.advance(env, ns.OPEN_TICK_INTERVAL)
+		checkEqual(1, #state.usedContainerItems, "and lifting it opens the clam, after " .. case[1])
+	end
+end)
+
+test("a container above the player's level is set aside untried, even with the item cache cold", function()
+	local ns, env = loadAddon()
+	local ROCKSCALE_COD = 21164
+	checkEqual(25, ns.OPENABLE_ITEM_LEVELS[ROCKSCALE_COD], "the flavor folder knows its level")
+	env.__state.itemNames[ROCKSCALE_COD] = nil
+	env.__state.playerLevel = 10
+	putInBag(env, 0, 1, ROCKSCALE_COD, "Bloated Rockscale Cod")
+	scanAndTick(ns, env)
+	checkEqual(0, #env.__state.usedContainerItems, "nothing is tried below its level")
+	env.__state.playerLevel = 25
+	fire(ns, "PLAYER_LEVEL_UP", 25)
+	Fake.advance(env, 5)
+	Fake.advance(env, ns.OPEN_TICK_INTERVAL)
+	checkEqual(1, #env.__state.usedContainerItems, "and it opens at its level")
+end)
+
+test("With Fishing Pole Equipped starts off, and turned on lets opening run with a pole in hand", function()
+	local ns, env = loadAddon()
+	checkEqual(false, ns.db.profile.autoOpenWithFishingPole, "the setting starts off")
+	putInBag(env, 0, 1, CLAM, "Big-mouth Clam")
+	equipFishingPole(env.__state)
+	ns.db.profile.autoOpenWithFishingPole = true
+	scanAndTick(ns, env)
+	checkEqual(1, #env.__state.usedContainerItems, "the clam opens while fishing once the player opts in")
+end)
+
+test("a fishing pole holds opening once told, and taking it off resumes without a bag event", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+	putInBag(env, 0, 1, CLAM, "Big-mouth Clam")
+	putInBag(env, 0, 2, CLAM, "Big-mouth Clam")
+	equipFishingPole(state)
+	scanAndTick(ns, env)
+	checkEqual(0, #state.usedContainerItems, "nothing opens with the pole in hand")
+	local notice = ns.L["MESSAGE_OPENING_FISHING_POLE"]
+	checkEqual(1, printCount(env, notice), "the player is told where to change it")
+	Fake.advance(env, 60)
+	scanAndTick(ns, env)
+	checkEqual(1, printCount(env, notice), "and told only once a session")
+
+	state.equipped[ns.INVENTORY_SLOT_MAIN_HAND] = nil
+	fire(ns, "PLAYER_EQUIPMENT_CHANGED", ns.INVENTORY_SLOT_MAIN_HAND, true)
+	Fake.advance(env, ns.SCAN_DEBOUNCE)
+	Fake.advance(env, ns.OPEN_TICK_INTERVAL)
+	checkEqual(1, #state.usedContainerItems, "taking the pole off resumes opening")
+end)
+
+test("an ordinary main-hand weapon doesn't hold opening", function()
+	local ns, env = loadAddon()
+	local state = env.__state
+	state.itemNames[SWORD_FOR_POLE_TEST] = { name = "Shortsword", itemType = "Weapon", classId = 2, subclassId = 7 }
+	state.equipped[ns.INVENTORY_SLOT_MAIN_HAND] = itemLink(SWORD_FOR_POLE_TEST, "Shortsword")
+	putInBag(env, 0, 1, CLAM, "Big-mouth Clam")
+	scanAndTick(ns, env)
+	checkEqual(1, #state.usedContainerItems, "the clam opens")
+	checkEqual(0, printCount(env, ns.L["MESSAGE_OPENING_FISHING_POLE"]), "and no fishing notice prints")
+end)
+
 test("opening waits for an open loot window and resumes once it closes", function()
 	local ns, env = loadAddon()
 	local state = env.__state
@@ -5856,6 +6281,33 @@ test("locked items lists the waiting boxes by name, one row per box", function()
 	checkEqual("Battered Junkbox", rows[1].name, "sorted by name")
 	checkEqual(2, rows[1].count, "with a count per kind")
 	checkEqual("Iron Lockbox", rows[2].name, "then the next name")
+end)
+
+test("the menu lists the containers kept sealed inside Automated Opening, with their reason", function()
+	local ns, env = loadAddon()
+	local L = ns.L
+	putInBag(env, 0, 1, BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
+	putInBag(env, 0, 2, BLUE_SACK_OF_GEMS, "Blue Sack of Gems")
+	putInBag(env, 0, 3, IRON_LOCKBOX, "Iron Lockbox")
+
+	local rows = ns.GetSealedContainers()
+	checkEqual(1, #rows, "only the Ignore container, not the one it opens")
+	checkEqual(2, rows[1].count, "with its count")
+	checkEqual(L["OPENING_TAG_SEALED"], rows[1].tag, "and its reason tag")
+
+	local function SealedRow()
+		for _, entry in ipairs(ns.BuildMenuEntries()) do
+			if entry.kind == "item" and entry.right == L["OPENING_TAG_SEALED"] then
+				return entry
+			end
+		end
+	end
+	ns.db.profile.autoOpen = true
+	local row = SealedRow()
+	check(row ~= nil and row.left:find("Blue Sack of Gems", 1, true) ~= nil, "drawn in the block")
+	checkEqual("MUTED", row and row.rightColor, "its reason in gray")
+	ns.db.profile.autoOpen = false
+	checkEqual(nil, SealedRow(), "and gone while opening is off")
 end)
 
 test("looting a lockbox says it will open once unlocked, for a rogue by default", function()
@@ -6029,6 +6481,30 @@ test("speedy loot stacks onto what the player carries, even with no free slot", 
 	checkEqual(2, env.__state.lootedSlots[2], "then the cloth that fits the stack's 5 of room")
 	env.LootFrame:Show()
 	check(env.LootFrame:IsShown(), "the second cloth, with only 2 of room left, keeps the window up")
+end)
+
+test("speedy loot asks C_ActionBar about the keyring before IsKeyRingEnabled", function()
+	-- Loots a key with only the keyring free, the two keyring questions answered as given.
+	local function KeysLooted(actionBar)
+		local ns, env = loadAddon()
+		env.KEYRING_CONTAINER = -2
+		env.__state.freeSlotsByBag = { [0] = 0, [1] = 0, [2] = 0, [3] = 0, [4] = 0, [-2] = 4 }
+		env.__state.itemNames[5396] = { name = "Key to Searing Gorge", quality = 1, stackCount = 1, family = 256 }
+		env.C_ActionBar = actionBar
+		env.IsKeyRingEnabled = function()
+			return true
+		end
+		openLootWindow(env, { { link = itemLink(5396, "Key to Searing Gorge"), quantity = 1 } })
+		fire(ns, "LOOT_READY")
+		return #env.__state.lootedSlots
+	end
+	local noKeyring = {
+		ShouldShowKeyring = function()
+			return false
+		end,
+	}
+	checkEqual(0, KeysLooted(noKeyring), "no keyring when C_ActionBar says so, whatever the old global says")
+	checkEqual(1, KeysLooted({}), "and the old global answers where C_ActionBar is missing")
 end)
 
 test("speedy loot puts arrows in a quiver, but never a bag in a profession bag", function()
@@ -6817,6 +7293,36 @@ end)
     line that follow a roll, or, with the game's roll spam turned down, from the
     won line alone. Show Winning Roll turns it off per side.
 ]]
+test("a loot or roll line parsed twice gives the same answer both times", function()
+	local ns, env = loadAddon()
+	local hammer = itemLink(15259, "Hefty Battlehammer", "1eff00")
+	local own = env.LOOT_ITEM_SELF:format(hammer)
+	local firstLink, firstCount = ns.ParseOwnLootMessage(own)
+	local againLink, againCount = ns.ParseOwnLootMessage(own)
+	check(firstLink == hammer and againLink == firstLink and againCount == firstCount, "the player's own line")
+	local group = env.LOOT_ITEM:format("Aero", hammer)
+	local looter, link = ns.ParseGroupLootMessage(group)
+	local againLooter, againGroupLink = ns.ParseGroupLootMessage(group)
+	check(looter == "Aero" and againLooter == looter and againGroupLink == link, "a group member's line")
+	local won = env.LOOT_ROLL_WON:format(9, "Aero", hammer)
+	local _, winner = ns.ParseRollWonMessage(won)
+	local _, againWinner = ns.ParseRollWonMessage(won)
+	check(winner == "Aero" and againWinner == winner, "a won line")
+	checkEqual(nil, ns.ParseOwnLootMessage(group), "and a new line gets its own answer")
+end)
+
+test("with the toasts off, a won line still reaches the winner summary", function()
+	local ns, env = loadAddon()
+	ns.db.profile.lootToasts = false
+	local heard
+	ns.OnRollWon = function(winnerName, wonLink)
+		heard = { winnerName, wonLink }
+	end
+	local hammer = itemLink(15259, "Hefty Battlehammer", "1eff00")
+	fire(ns, "CHAT_MSG_LOOT", env.LOOT_ROLL_WON:format(11, "Aero", hammer))
+	check(heard and heard[1] == "Aero" and heard[2] == hammer, "who won and what")
+end)
+
 test("a won item's toast carries the winning roll", function()
 	local ns, env = loadAddon()
 	local profile = ns.db.profile
@@ -6962,20 +7468,18 @@ test("Loot Toasts takes the standard loot lines out of General, and gives them b
 	checkEqual(1, chatGroupCount(state, "LOOT"), "an ordinary login leaves a hand-ticked Item Loot alone")
 end)
 
-test("taking the loot lines off General, or giving them back, says so once", function()
+test("taking the loot lines off General, or giving them back, prints nothing", function()
 	local ns, env = loadAddon()
 	local state = env.__state
 	local switch = ns.FeatureSwitch("lootToasts")
 	state.prints = {}
 
 	switch.set(nil, true)
-	checkEqual(1, printCount(env, "Turned off"), "taking them off is printed once")
-	check(printedContaining(env, env.ITEM_LOOT) ~= nil, "naming the game's own setting")
-	ns.SyncStandardLootMessages()
-	checkEqual(1, printCount(env, "Turned off"), "and a sync that changes nothing prints nothing")
-
+	checkEqual(0, chatGroupCount(state, "LOOT"), "the lines come off")
+	checkEqual(0, #state.prints, "without a word in chat")
 	switch.set(nil, false)
-	checkEqual(1, printCount(env, "back on"), "giving them back is printed once too")
+	checkEqual(1, chatGroupCount(state, "LOOT"), "the lines come back")
+	checkEqual(0, #state.prints, "without a word either")
 end)
 
 test("the dropdown sits beside Enable Loot Toasts and leaves with it", function()
@@ -7242,6 +7746,18 @@ test("own loot reads on a client whose formats drop the full stop", function()
 	check(toastShowing(env, "Tough Jerky"), "and it toasts")
 end)
 
+test("the handle's Lock Position button locks it and keeps the toasts on", function()
+	local ns = loadAddon()
+	ns.db.profile.lootToasts = true
+	ns.SetLootToastsUnlocked(true)
+	local handle = ns.GetLootToastAnchor()
+	checkEqual(ns.L["LOOT_TOASTS_LOCK"], handle.lock:GetText(), "it reads Lock Position")
+	handle.lock:GetScript("OnClick")(handle.lock)
+	check(not ns.AreLootToastsUnlocked(), "a click locks the handle")
+	check(ns.db.profile.lootToasts, "and leaves Loot Toasts on")
+	check(ns.db.profile.lootToastsIntroSeen, "and counts as meeting the handle")
+end)
+
 test("toasts introduce themselves once per profile", function()
 	local ns = loadAddon()
 	ns.db.profile.lootToasts = true
@@ -7296,6 +7812,62 @@ test("a lockbox tooltip names the skill it needs, for a rogue by default", funct
 	putInBag(env, 0, 2, CLAM, "Big-mouth Clam")
 	env.GameTooltip:SetBagItem(0, 2)
 	check(not tooltipHasLine(env.GameTooltip, ns.L["ADDON_TITLE"]), "and a clam gets no block at all")
+end)
+
+test("a lockbox in the loot window gets the same block as in the bags", function()
+	local ns, env = loadAddon(nil, function(env)
+		env.GameTooltip.SetLootItem = function(self, slotIndex)
+			self:SetLines({ "Iron Lockbox", env.LOCKED })
+			self.shown = true
+			local postHooks = rawget(self, "__postHooks")
+			if postHooks and postHooks.SetLootItem then
+				postHooks.SetLootItem(self, slotIndex)
+			end
+		end
+	end)
+	fire(ns, "PLAYER_LOGIN")
+	env.__state.playerClassFile = "ROGUE"
+	env.__state.lootSlots =
+		{ { link = itemLink(IRON_LOCKBOX, "Iron Lockbox") }, { link = itemLink(CLAM, "Big-mouth Clam") } }
+
+	env.GameTooltip:SetLootItem(1)
+	check(
+		tooltipHasLine(env.GameTooltip, env.ITEM_REQ_SKILL:format("Lockpicking")),
+		"the loot window's lockbox names its skill"
+	)
+	env.GameTooltip:SetLootItem(2)
+	check(not tooltipHasLine(env.GameTooltip, ns.L["ADDON_TITLE"]), "and a clam there gets no block")
+end)
+
+test("a lockbox in a main bank slot gets the same block as in the bags", function()
+	local ns, env = loadAddon(nil, function(env)
+		env.GameTooltip.SetInventoryItem = function(self, unitIdentifier, slotIndex)
+			self:SetLines({ "Iron Lockbox", env.LOCKED })
+			self.shown = true
+			local postHooks = rawget(self, "__postHooks")
+			if postHooks and postHooks.SetInventoryItem then
+				postHooks.SetInventoryItem(self, unitIdentifier, slotIndex)
+			end
+		end
+	end)
+	fire(ns, "PLAYER_LOGIN")
+	env.__state.playerClassFile = "ROGUE"
+	env.__state.equipped[40] = itemLink(IRON_LOCKBOX, "Iron Lockbox")
+
+	env.GameTooltip:SetInventoryItem("player", 40)
+	check(
+		tooltipHasLine(env.GameTooltip, env.ITEM_REQ_SKILL:format("Lockpicking")),
+		"the bank slot's lockbox names its skill"
+	)
+end)
+
+test("without Lockbox Tooltips loaded, the Lockboxes panel drops its rows", function()
+	local ns = loadAddon()
+	check(ns.BuildLockboxOptions().args.tooltipsRow ~= nil, "the tooltip row shows where the feature loads")
+	ns.GetLockpickingSkillName = nil
+	local args = ns.BuildLockboxOptions().args
+	checkEqual(nil, args.tooltipsRow, "and leaves where it doesn't, as on MoP Classic")
+	check(args.notificationsRow ~= nil, "while the notices stay")
 end)
 
 test("WoW Forever never reads a skill rank, even with skill-line globals put back", function()
@@ -7570,11 +8142,9 @@ test("the mini-map menu lists its blocks in click order, then More Features and 
 	local more = entries[previous + 1]
 	checkEqual("submenu", more and more.kind, "More Features follows the blocks")
 	checkEqual(L["MENU_MORE_FEATURES"], more and more.left, "under its own name")
-	checkEqual("spacer", entries[#entries - 3].kind, "then a spacer")
-	checkEqual("separator", entries[#entries - 2].kind, "a separator")
-	checkEqual(ns.L["TAB_SANITY_CHECK"], entries[#entries - 1].left, "the Loot Roll Sanity Check link")
-	checkEqual("hint", entries[#entries - 1].kind, "in blue")
-	checkEqual(L["MENU_OPTIONS"], entries[#entries].left, "and the Options row closes it")
+	checkEqual("spacer", entries[#entries - 2].kind, "then a spacer")
+	checkEqual("separator", entries[#entries - 1].kind, "a separator")
+	checkEqual(L["MENU_OPTIONS"], entries[#entries].left, "and the Options row closes it, straight after")
 	checkEqual(L["MENU_CLICK_SHIFT_MIDDLE"], entries[#entries].right, "naming Shift + Middle-Click")
 	for _, entry in ipairs(entries) do
 		check(
@@ -7678,6 +8248,30 @@ test("the mini-map menu reads back what Automated Rolls rolls in each context", 
 	checkEqual("rollsRaid", raid and raid.submenu, "and opens the raid flyout")
 end)
 
+test("a pick in the roll flyout closes the menu, and the flyout links the Sanity Check", function()
+	local ns = loadAddon()
+	local L = ns.L
+	local hidden = 0
+	ns.HideMenu = function()
+		hidden = hidden + 1
+	end
+	local rows = ns.BuildMenuFlyout("rollsParty")
+	local pick, link
+	for _, row in ipairs(rows) do
+		if row.kind == "choice" and not pick then
+			pick = row
+		end
+		if row.left == L["TAB_SANITY_CHECK"] then
+			link = row
+		end
+	end
+	check(pick ~= nil, "the flyout has picks")
+	pick.onClick()
+	checkEqual(1, hidden, "a pick closes the menu")
+	check(link ~= nil and link.kind == "hint", "the Loot Roll Sanity Check link is in the flyout")
+	checkEqual(L["TAB_SANITY_CHECK"], rows[#rows].left, "last, after the other pages")
+end)
+
 test("a roll context's flyout sets its roll, quality and Bind on Pickup, and links both override pages", function()
 	local ns = loadAddon()
 	local L = ns.L
@@ -7699,7 +8293,7 @@ test("a roll context's flyout sets its roll, quality and Bind on Pickup, and lin
 	end
 	local rows = ns.BuildMenuFlyout("rollsRaid")
 	local automation, automationAt = find(rows, L["MENU_ROLLS_AUTOMATION"])
-	local threshold, thresholdAt = find(rows, L["MENU_ROLLS_THRESHOLD"])
+	local threshold, thresholdAt = find(rows, L["ROLLS_UP_TO_QUALITY"])
 	check(automation and automation.kind == "section" and automationAt == 1, "Automation heads it")
 	check(threshold and threshold.kind == "section", "then Threshold")
 	for offset, action in ipairs(ns.ROLL_OVERRIDE_ORDER) do
@@ -7784,17 +8378,19 @@ test("Include Bind on Pickup is set per group context", function()
 	checkEqual(true, ns.RollsBindOnPickup(true), "and the raid its own")
 end)
 
+-- MIGRATION (remove after 2026-12-16)
 test("a saved Include Bind on Pickup carries into both group contexts", function()
-	local _, env = loadAddon(nil, function(loadingEnv)
-		loadingEnv.__state.savedProfiles =
-			{ Old = { rollBindOnPickup = true }, Kept = { rollBindOnPickup = true, rollBindOnPickupRaid = false } }
+	local ns, env = loadAddon(nil, function(loadingEnv)
+		loadingEnv.__state.savedActiveProfile = { rollBindOnPickup = true }
+		loadingEnv.__state.savedProfiles = { Old = { rollBindOnPickup = true } }
 	end)
 	local profiles = env.__state.savedProfiles
 	checkEqual(true, profiles.Old.rollBindOnPickupParty, "the party gets the old value")
 	checkEqual(true, profiles.Old.rollBindOnPickupRaid, "and the raid")
 	checkEqual(nil, profiles.Old.rollBindOnPickup, "and the old key is gone")
-	checkEqual(false, profiles.Kept.rollBindOnPickupRaid, "a value already split is kept")
-	checkEqual(true, profiles.Kept.rollBindOnPickupParty, "while the missing one is filled")
+	checkEqual(true, ns.db.profile.rollBindOnPickupParty, "the active profile's party gets it over the default")
+	checkEqual(true, ns.db.profile.rollBindOnPickupRaid, "and its raid")
+	checkEqual(nil, rawget(ns.db.profile, "rollBindOnPickup"), "and its old key is gone")
 end)
 
 test("Automated Opening reads On, Paused or Off in the menu", function()
@@ -7808,16 +8404,17 @@ test("Automated Opening reads On, Paused or Off in the menu", function()
 		end
 	end
 	ns.db.profile.autoOpen = true
-	ns.IsAutomatedOpeningPaused = function()
-		return false
+	local hold = nil
+	ns.GetAutomatedOpeningHold = function()
+		return hold
 	end
 	checkEqual(L["MENU_ON"], OpeningTitle().right, "On")
 	checkEqual("ON", OpeningTitle().rightColor, "in green")
-	ns.IsAutomatedOpeningPaused = function()
-		return true
+	for _, reason in ipairs({ "BAGS", "FISHING", "INSTANCE", "GROUP" }) do
+		hold = reason
+		checkEqual(L["MENU_PAUSED"], OpeningTitle().right, "Paused while held: " .. reason)
+		checkEqual("MUTED", OpeningTitle().rightColor, "in gray: " .. reason)
 	end
-	checkEqual(L["MENU_PAUSED"], OpeningTitle().right, "Paused while it waits")
-	checkEqual("MUTED", OpeningTitle().rightColor, "in gray")
 	ns.db.profile.autoOpen = false
 	checkEqual(L["MENU_OFF"], OpeningTitle().right, "Off")
 	checkEqual("MUTED", OpeningTitle().rightColor, "in gray, never red")
@@ -7837,14 +8434,20 @@ test("the menu's Automated Opening says how many free slots it waits for, only w
 			end
 		end
 	end
-	local paused = false
-	ns.IsAutomatedOpeningPaused = function()
-		return paused
+	local hold = nil
+	ns.GetAutomatedOpeningHold = function()
+		return hold
 	end
 	ns.db.profile.autoOpen = true
 	checkEqual(nil, WaitingNote(), "no note while opening runs")
-	paused = true
+	hold = "BAGS"
 	checkEqual(waiting, WaitingNote(), "the note while paused, naming the free slots")
+	hold = "FISHING"
+	checkEqual(L["MENU_OPENING_FISHING_POLE"], WaitingNote(), "the fishing pole's note")
+	hold = "INSTANCE"
+	checkEqual(L["MENU_OPENING_INSTANCE"], WaitingNote(), "the instance note")
+	hold = "GROUP"
+	checkEqual(L["MENU_OPENING_GROUP"], WaitingNote(), "the group note")
 	ns.db.profile.autoOpen = false
 	checkEqual(nil, WaitingNote(), "and none with opening off")
 end)
@@ -7854,6 +8457,7 @@ end)
     the profile (Simple save model). A position saved account-wide before
     moves once to every profile, so no button jumps.
 ]]
+-- MIGRATION (remove after 2026-12-16)
 test("the mini-map button's position moves from the account to every profile, once", function()
 	local ns, env = loadAddon(nil, function(env)
 		env.__state.savedGlobal = { minimap = { minimapPos = 123, hide = true } }
@@ -8009,7 +8613,14 @@ local function LoadDataFolder(folder, constants)
 	for key, value in pairs(constants) do
 		ns[key] = value
 	end
-	for _, tableName in ipairs({ "Default-Item-Lists", "Lockbox-Skill-Levels", "Openable-Items", "Spells" }) do
+	for _, tableName in ipairs({
+		"Default-Item-Lists",
+		"Lockbox-Skill-Levels",
+		"Openable-Items",
+		"Spells",
+		"Character-Rule-Stats",
+		"Character-Rule-Gear-Types",
+	}) do
 		local chunk = assert(loadfile(ROOT .. ("Data/%s/%s-%s.lua"):format(folder, tableName, folder)))
 		chunk("GogoLoot", ns)
 	end
@@ -8044,8 +8655,19 @@ test("every data folder declares every table, and the container data holds toget
 			"DEFAULT_IGNORE_LIST_SOLO",
 			"DEFAULT_IGNORE_LIST_MASTER",
 			"OPENABLE_ITEMS",
+			"OPENABLE_ITEM_LEVELS",
 			"LOCKBOX_SKILL_LEVELS",
 			"SPELLS",
+			"CHARACTER_RULE_STAT_KEYS",
+			"CHARACTER_RULE_EQUIP_SPELLS",
+			"CHARACTER_RULE_ARMOR_TYPES",
+			"CHARACTER_RULE_WEAPON_TYPES",
+			"CLASS_ARMOR_STARTER",
+			"CLASS_WEAPON_STARTER",
+			"CLASS_STAT_STARTER",
+			"SANITY_CHECK_TRASH",
+			"SANITY_CHECK_DUNGEON_BOSSES",
+			"SANITY_CHECK_RAID_BOSSES",
 		}) do
 			check(type(ns[key]) == "table", ("%s declares %s"):format(folder, key))
 		end
@@ -8054,6 +8676,12 @@ test("every data folder declares every table, and the container data holds toget
 			check(
 				dataDefaults[default],
 				("%s: row %d defaults to a value the code reads"):format(folder, itemIdentifier)
+			)
+		end
+		for itemIdentifier, level in pairs(ns.OPENABLE_ITEM_LEVELS or {}) do
+			check(
+				ns.OPENABLE_ITEMS[itemIdentifier] ~= nil and type(level) == "number" and level > 1,
+				("%s: level row %d is an Openables row with a level above 1"):format(folder, itemIdentifier)
 			)
 		end
 		for itemIdentifier, skill in pairs(ns.LOCKBOX_SKILL_LEVELS or {}) do
@@ -8112,9 +8740,9 @@ end)
 
 --[[
     One TOC per flavor, matching the Vanilla TOC line for line but for its
-    Interface and X-Flavor fields and its data folder: its own folder's files in
+    Interface and X-Flavor fields, its data folder (its own folder's files in
     place of Data/Vanilla's, and no Data/Discovery, which only the Classic Era
-    client can need.
+    client can need) and any feature the flavor can't run.
 ]]
 test("every flavor TOC loads the Vanilla TOC's files, with its own data folder", function()
 	local function ReadToc(flavor)
@@ -8131,6 +8759,8 @@ test("every flavor TOC loads the Vanilla TOC's files, with its own data folder",
 		return fields, files
 	end
 
+	-- A feature with no path on a flavor stays out of that flavor's TOC (Style Guide → COMPATIBILITY).
+	local leftOut = { Mists = { ["Features/Lockbox-Tooltips.lua"] = true } }
 	local vanillaFields, vanillaFiles = ReadToc("Vanilla")
 	checkEqual("Vanilla", vanillaFields["X-Flavor"], "the Vanilla TOC names its flavor")
 	for _, flavor in ipairs({ "TBC", "Camelot", "Mists" }) do
@@ -8143,7 +8773,7 @@ test("every flavor TOC loads the Vanilla TOC's files, with its own data folder",
 		end
 		local expected = {}
 		for _, file in ipairs(vanillaFiles) do
-			if not file:match("^Data/Discovery/") then
+			if not file:match("^Data/Discovery/") and not (leftOut[flavor] and leftOut[flavor][file]) then
 				local ownFile =
 					file:gsub("^Data/Vanilla/(.-)%-Vanilla%.lua$", ("Data/%s/%%1-%s.lua"):format(flavor, flavor))
 				expected[#expected + 1] = ownFile
@@ -9326,6 +9956,26 @@ end
 
 local TEN_RAIDERS = { "Aero", "Bob", "Cid", "Dot", "Eve", "Fay", "Gus", "Hal", "Ivy" }
 
+test("a roster change repaints the panels only while one is on screen", function()
+	local ns, env = loadAddon()
+	joinParty(env, { "Aero" })
+	fire(ns, "GROUP_ROSTER_UPDATE")
+	local refreshes = 0
+	local refresh = ns.RefreshSettings
+	ns.RefreshSettings = function(...)
+		refreshes = refreshes + 1
+		return refresh(...)
+	end
+	env.__state.unitNames.party2, env.__state.groupMembers = "Bram", 3
+	fire(ns, "GROUP_ROSTER_UPDATE")
+	checkEqual(0, refreshes, "nothing repaints with Options closed")
+	env.__state.blizOptions[1].frame.visible = true
+	fire(ns, "GROUP_ROSTER_UPDATE")
+	checkEqual(1, refreshes, "an open panel repaints with the new roster")
+	fire(ns, "GROUP_ROSTER_UPDATE")
+	checkEqual(1, refreshes, "and not again while the roster stays the same")
+end)
+
 test("a raid roll names the raider at the roll's place in the roster", function()
 	local ns, env = loadAddon()
 	joinRaid(env, TEN_RAIDERS)
@@ -9372,34 +10022,43 @@ test("a roll that isn't a raid roll, or one while solo, names nobody", function(
 	checkEqual(0, printCount(env, "raid rolled"), "and nothing with the feature off")
 end)
 
-test("Group Chat posts the winner once, after a claim, unless another GogoLoot claimed it first", function()
+test("Group Chat claims at once and posts once, unless an earlier roster place claimed it", function()
 	local ns, env = loadAddon()
 	local state = env.__state
 	joinRaid(env, TEN_RAIDERS)
 	ns.db.profile.raidRollOutput = ns.RAID_ROLL_OUTPUT_GROUP
 	roll(ns, env, "Aero", 7, 1, 10)
-	Fake.advance(env, 0)
-	checkEqual(1, #state.chat, "raid1 posts straight away")
+	local claim = state.addonMessages and state.addonMessages[1]
+	check(claim and claim.prefix == ns.ADDON_MESSAGE_PREFIX, "the claim goes out the moment the roll is read")
+	checkEqual("RAIDROLL:1:aero:7:10", claim and claim.message, "carrying this player's roster place")
+	checkEqual(0, #state.chat, "nothing is posted during the wait")
+	Fake.advance(env, ns.RAID_ROLL_CLAIM_WAIT)
+	checkEqual(1, #state.chat, "raid1 posts after the wait")
 	checkEqual("RAID", state.chat[1].channel, "to the raid")
 	check(
 		state.chat[1].message:find("Aero raid rolled 7 of 10, which lands on Fay", 1, true) ~= nil,
 		"naming the winner"
 	)
-	local claim = state.addonMessages and state.addonMessages[1]
-	check(claim and claim.prefix == ns.ADDON_MESSAGE_PREFIX and claim.message:find("^RAIDROLL:"), "with its claim sent")
 	checkEqual(0, printCount(env, "raid rolled"), "and prints nothing")
 
 	-- Now the player sits third: raid1's claim arrives inside the wait, so nothing is posted.
 	state.unitNames.raid1, state.unitNames.raid3 = "Bob", "Tester"
 	state.chat = {}
 	roll(ns, env, "Aero", 5, 1, 10)
-	fire(ns, "CHAT_MSG_ADDON", ns.ADDON_MESSAGE_PREFIX, "RAIDROLL:aero:5:10", "RAID", "Bob")
-	Fake.advance(env, 1)
-	checkEqual(0, #state.chat, "a claim from another GogoLoot holds this one back")
+	fire(ns, "CHAT_MSG_ADDON", ns.ADDON_MESSAGE_PREFIX, "RAIDROLL:1:aero:5:10", "RAID", "Bob")
+	Fake.advance(env, ns.RAID_ROLL_CLAIM_WAIT)
+	checkEqual(0, #state.chat, "a claim from an earlier place holds this one back")
 
 	roll(ns, env, "Aero", 6, 1, 10)
-	Fake.advance(env, 1)
-	checkEqual(1, #state.chat, "an unclaimed roll is posted after the wait")
+	fire(ns, "CHAT_MSG_ADDON", ns.ADDON_MESSAGE_PREFIX, "RAIDROLL:5:aero:6:10", "RAID", "Eve")
+	Fake.advance(env, ns.RAID_ROLL_CLAIM_WAIT)
+	checkEqual(1, #state.chat, "a claim from a later place doesn't")
+
+	state.chat = {}
+	roll(ns, env, "Aero", 4, 1, 10)
+	fire(ns, "CHAT_MSG_ADDON", ns.ADDON_MESSAGE_PREFIX, "RAIDROLL:aero:4:10", "RAID", "Bob")
+	Fake.advance(env, ns.RAID_ROLL_CLAIM_WAIT)
+	checkEqual(0, #state.chat, "an older GogoLoot's claim, with no place, holds it back too")
 end)
 
 test("Group Chat with Loot Announcements off prints instead", function()

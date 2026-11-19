@@ -29,14 +29,15 @@ L["ADDON_SHORT_NAME"] = "GogoLoot"
 L["CHAT_LOADED"] =
 	"Version %s. Settings (including the option to disable this message) are under Options > AddOns > GogoLoot. Enjoying this add-on? Tell a friend, Favorite it on CurseForge, or Star it on GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "As a safety precaution, the Options Interface cannot be opened during combat."
--- Argument: the game's own name for its Auto Loot setting.
-L["MESSAGE_AUTO_LOOT_SETTING_ON"] = "Turned on the game's %s setting, which Speedy Loot and Automated Opening need."
 -- Argument: the game's own word for Master Looter.
 L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = "You are not currently the %s."
 
 -- Automated Opening. Argument: the number of free bag slots opening waits for.
 L["MESSAGE_OPENING_PAUSED"] = "Automated Opening is paused until you have at least %d free bag slots."
 L["MESSAGE_OPENING_RESUMED"] = "Automated Opening has resumed."
+-- Printed once a session, the first time a fishing pole holds Automated Opening back.
+L["MESSAGE_OPENING_FISHING_POLE"] =
+	"Automated Opening is paused while you have a fishing pole equipped. To open while fishing, turn on With Fishing Pole Equipped under Options > AddOns > GogoLoot > Automated Opening."
 
 -- Argument: the item's link.
 L["MESSAGE_ITEM_WILL_AUTO_OPEN"] = "%s will open automatically once it is unlocked."
@@ -46,13 +47,6 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s may hold a unique item, so Automated Opening will leave it for you to open."
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Some loot was left behind on the corpse."
---[[
-    Standard Loot Messages taking the General tab's loot lines off, or putting
-    them back. Arguments: the game's own names for its Item Loot and Money Loot
-    chat settings, then for the General chat tab.
-]]
-L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] = "Turned off %s and %s in your %s chat tab while Loot Toasts is on."
-L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "Turned %s and %s back on in your %s chat tab."
 
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] = "%s would be equipped rather than opened, so it can't join the Openables List."
@@ -159,18 +153,20 @@ L["MENU_PAUSED"] = "Paused"
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Rolls for you on eligible items up to the quality you pick."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Opens clams, crates, coin purses, and unlocked lockboxes in your bags."
--- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+-- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
 L["MENU_OPENING_WAITING"] = "Waiting for %d free bag slots."
-L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "Posts trade summaries and master loot hand-outs to chat."
+L["MENU_OPENING_FISHING_POLE"] = "Holding off while a fishing pole is equipped."
+L["MENU_OPENING_INSTANCE"] = "Holding off inside instances."
+L["MENU_OPENING_GROUP"] = "Holding off while you're in a group."
+L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "Posts trade summaries, loot destinations, hand-outs, and raid rolls to chat."
 --[[
     The menu's read-back of each group context's roll, on the right of its
     Party or Raid row. Arguments: the roll, then the highest quality it rolls
     on. Manual shows the roll alone.
 ]]
 L["MENU_ROLLS_SETTING"] = "%s, %s"
--- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
-L["MENU_ROLLS_AUTOMATION"] = "Automation"
-L["MENU_ROLLS_THRESHOLD"] = "Threshold"
+-- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
+L["MENU_ROLLS_AUTOMATION"] = "Roll"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -441,8 +437,8 @@ L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 -- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
 L["QUICK_SETTINGS_TITLE"] = "Quick Settings"
 -- Argument: the game's own word for Master Looter.
-L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Opens these settings in a window whenever you become %s."
-L["MASTER_LOOTER_POPUP_ENABLE"] = "Enable Master Looter Pop-up"
+L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Opens Quick Settings whenever you become %s."
+L["MASTER_LOOTER_POPUP_ENABLE"] = "Enable Quick Settings Pop-up"
 
 -- Tradable Gear Tint, on the Automated Master Looting panel
 L["TRADABLE_TINT_HEADER"] = "Tradable Gear Tint"
@@ -450,7 +446,7 @@ L["TRADABLE_TINT_DESCRIPTION"] =
 	"Tints Bind on Pickup gear in your bags that can still be traded, so you can see at a glance what's yours to hand out before it binds."
 L["TRADABLE_TINT_ENABLE"] = "Enable Tradable Gear Tint"
 L["TRADABLE_TINT_ENABLE_DESCRIPTION"] =
-	"Turns the tint on or off. Works with the default bags, Baganator, Bagnon, AdiBags, ArkInventory, BetterBags and ElvUI."
+	"Turns the tint on or off. Works with the default bags, Baganator, Bagnon, AdiBags, ArkInventory, BetterBags, and ElvUI."
 L["TRADABLE_TINT_COLOR"] = "Tint Color"
 L["TRADABLE_TINT_COLOR_DESCRIPTION"] =
 	"The tint's color and opacity. A lower opacity keeps the item's icon easier to see."
@@ -523,14 +519,12 @@ L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "Plays an alert alongside the warn
     their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	"Sets the roll for specific items, ahead of the quality settings. It's the only way GogoLoot will roll on a quest item, or on a Bind on Pickup item while Include Bind on Pickup is off."
+	"Sets the roll for specific items, ahead of your Party and Raid Rolls. It's the only way GogoLoot will roll on a quest item, or on a Bind on Pickup item while Include Bind on Pickup is off."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
 L["OPTIONS_FEATURE_OFF_STATUS"] = "%s is off, so these settings aren't being used. Its switch is on the %s page."
 L["ITEM_OVERRIDES_ENABLE"] = "Enable Global Item Overrides"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
-	"Uses the rolls set below. With it off, these items follow the quality settings like any other."
--- Shown under Enable Global Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] = "These rolls aren't being used while Global Item Overrides is off."
+	"Uses the rolls set below. With it off, these items follow your Party and Raid Rolls like any other."
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"Replaces your Global Item Overrides with the default items for your expansion."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "Replace your Global Item Overrides with the default items for your expansion?"
@@ -564,6 +558,8 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 -- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Everything Else"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "Gear That Doesn't Match"
+L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"] =
+	"What GogoLoot does with armor and weapons none of the boxes above match: Greed them, leave them to you (Manual), or Pass."
 L["CHARACTER_RULES_RESET"] = "Reset to Class Defaults"
 L["CHARACTER_RULES_RESET_DESCRIPTION"] = "Puts this character's boxes and Everything Else back to its class's defaults."
 -- Argument: the game's own name for the character's class.
@@ -603,13 +599,11 @@ L["SANITY_CHECK_CONTEXT"] = "Rolled with your %s settings."
 ]]
 L["SANITY_CHECK_MANUAL_ROLL"] = "Manual Roll"
 L["SANITY_CHECK_AUTOMATIC"] = "Automatic %s"
-L["SANITY_CHECK_BOP"] = "BoP"
-L["SANITY_CHECK_BOE"] = "BoE"
 L["SANITY_CHECK_LOW_LEVEL"] = "Low-Level Gear"
 L["SANITY_CHECK_ROLLS_OFF"] = "Automated Rolls Off"
-L["SANITY_CHECK_QUALITY"] = "Quality Settings"
+L["SANITY_CHECK_QUALITY"] = "Party and Raid Rolls"
 L["SANITY_CHECK_NEVER"] = "Never Automated"
-L["SANITY_CHECK_QUEST"] = "Quest Item"
+L["SANITY_CHECK_BIND_ON_EQUIP"] = "Bind on Equip"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Bind on Pickup"
 
 --------------------------------------------------------------------------------
@@ -788,6 +782,8 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME"] = "Monochrome"
 L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "Monochrome Outline"
 
 -- Position
+-- The caption beside Unlock Position / Lock Position.
+L["LOOT_TOASTS_POSITION"] = "Toast Position"
 L["LOOT_TOASTS_UNLOCK"] = "Unlock Position"
 L["LOOT_TOASTS_LOCK"] = "Lock Position"
 L["LOOT_TOASTS_RESET"] = "Reset Position"
@@ -834,6 +830,9 @@ L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"] =
 	"Holds off opening anything while you're in a dungeon, raid, or battleground."
 L["AUTOMATED_OPENING_ONLY_SOLO"] = "Only While Solo"
 L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"] = "Holds off opening anything while you're in a party or raid."
+L["AUTOMATED_OPENING_WITH_FISHING_POLE"] = "With Fishing Pole Equipped"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"] =
+	"Keeps opening while you have a fishing pole equipped. Leave it off to hold off opening while you fish."
 
 -- Lockboxes
 -- Arguments: the game's own name for the Rogue class, then for the Lockpicking skill.
@@ -841,7 +840,8 @@ L["LOCKBOXES_SECTION_DESCRIPTION"] =
 	"A lockbox won't open until a %s picks it. These show the %s skill each one needs, and tell you when one is waiting."
 L["LOCKBOXES_TOOLTIPS_ENABLE"] = "Enable Lockbox Tooltips"
 -- Argument: the game's own name for the Lockpicking skill.
-L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] = "Adds the %s skill each lockbox needs to its tooltip."
+L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] =
+	"Adds the %s skill each lockbox needs to its tooltip, wherever you see it: your bags, the loot window, the trade window, and links in chat."
 L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"Sets whether lockbox tooltips appear only for Rogues or for every character."
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "Enable Lockbox Notifications"
@@ -1021,7 +1021,7 @@ L["LOOT_MASTER_EXTEND"] = "+%d Seconds"
 L["LOOT_MASTER_CLOSE_NOW"] = "Close Now"
 L["LOOT_MASTER_VOID"] = "Void All Rolls"
 L["LOOT_MASTER_CANCEL_ROLL"] = "Cancel Roll"
-L["LOOT_MASTER_TAKE_OFF"] = "Take Off the List"
+L["LOOT_MASTER_TAKE_OFF"] = "Take off the List"
 -- Argument: the winner.
 L["LOOT_MASTER_GIVE"] = "Give to %s"
 L["LOOT_MASTER_TRADE"] = "Trade %s"
@@ -1227,7 +1227,7 @@ L["LOOT_MASTER_CALLING_HEADER"] = "Calling Rolls"
 L["LOOT_MASTER_ROLL_LENGTH"] = "Roll Length"
 L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "How long a roll stays open."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Announce In"
-L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Where calls for rolls, ties and pauses go."
+L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Where calls for rolls, ties, and pauses go."
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
 	"Raid Warning falls back to group chat when you aren't leader or assistant. Winners always go to group chat."
 -- Argument: the seconds.
@@ -1248,7 +1248,7 @@ L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] = "How long Roll All waits after a r
 L["LOOT_MASTER_COUNTING_HEADER"] = "Rolls That Count"
 -- Argument: the seconds of grace.
 L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
-	"A plain /roll (1-100), each player's first one, from your group, while the roll is open (%d second of grace for lag). Rolls that don't count stay in the list with the reason."
+	"A plain /roll (1-100), each player's first one, from your group, while the roll is open (%d-second grace for lag). Rolls that don't count stay in the list with the reason."
 L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "Announce Rolls That Don't Count"
 L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
 	"Lists the rolls that didn't count, and why, in one line when the roll closes. A roll you disqualify is always announced."
@@ -1270,7 +1270,7 @@ L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
 	"Floor Loot starts empty and holds only what you add. Add from Bags lists what you picked up in this instance first."
 L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "Take Items Off Once They Leave My Bags"
 L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
-	"Drops an item from Floor Loot once you have none of it left: traded, sold or used."
+	"Drops an item from Floor Loot once you have none of it left: traded, sold, or used."
 L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "Empty Floor Loot When I Leave the Raid"
 L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE_DESCRIPTION"] = "Starts every raid with an empty Floor Loot list."
 

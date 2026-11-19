@@ -4,9 +4,11 @@
 
 --[[
     The switch, then its two hold-offs as on/off choices indented under it
-    (see Toggle Rows in Options-Utilities.lua). Each keeps the saved string
+    (Options-Kit's Kit.SubToggleRow). Each keeps the saved string
     Features/Automated-Opening.lua reads: autoOpenWhere is "ALWAYS" or
-    "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY".
+    "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY". Under them,
+    With Fishing Pole Equipped (autoOpenWithFishingPole), off by default, so
+    opening holds off while a fishing pole is in the main hand.
 
     Everything below the switch leaves the panel while it is off. Enable Ignore
     Notifications lives on the Openables List (Options-Openable-Items.lua),
@@ -56,6 +58,19 @@ function ns.BuildAutomatedOpeningOptions()
 				end,
 				set = function(_, value)
 					ns.db.profile.autoOpenGroup = value and "SOLO_ONLY" or "ALWAYS"
+					ns.ScheduleOpeningScan(true)
+					ns.RefreshSettings()
+				end,
+			}),
+			fishingPoleRow = Kit.SubToggleRow(6, AutomatedOpeningOff, {
+				type = "toggle",
+				name = L["AUTOMATED_OPENING_WITH_FISHING_POLE"],
+				desc = L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"],
+				get = function()
+					return ns.db.profile.autoOpenWithFishingPole
+				end,
+				set = function(_, value)
+					ns.db.profile.autoOpenWithFishingPole = value and true or false
 					ns.ScheduleOpeningScan(true)
 					ns.RefreshSettings()
 				end,

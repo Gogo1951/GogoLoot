@@ -15,6 +15,9 @@ ns.CHARACTER_RULE_STAT_KEYS = {
 	"MP5",
 }
 
+-- { [spellId] = { statKey, ... } }: none on this client.
+ns.CHARACTER_RULE_EQUIP_SPELLS = {}
+
 --[[
 How We Got the Data
 

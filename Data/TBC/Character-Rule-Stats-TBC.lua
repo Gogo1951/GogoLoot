@@ -65,6 +65,7 @@ Notes
 	- Every stat. The primary attributes come from GetItemStats and the tooltip's stat lines; the secondary stats (spell power, healing, attack power, crit, hit and mana per 5) are "Equip:" item spells, read off the tooltip through CHARACTER_RULE_EQUIP_SPELLS.
 	- CHARACTER_RULE_EQUIP_SPELLS: every item spell with an On Equip trigger (ItemEffect.TriggerType 1) whose effects apply a stat aura (SpellEffect.EffectAura 13 spell damage, except the physical-only school mask 1; 135 healing; 99 and 124 attack power; 85 mana regeneration; 52 and 57 crit; 54 and 55 hit; on TBC, 189 ratings for crit and hit), grouped by Spell.Description_lang, keeping one spell per wording. Wordings no item carries more than once were kept when they read as plain stats and dropped when they don't (a set bonus, a one-off proc). Defense, dodge, parry, block and weapon skill have no box, so they are left out.
 	- Each wording's pattern is built in game from the spell's own description in the player's language (Features/Character-Rules.lua), so nothing here is localized, and no pattern was taken from another add-on.
+	- Rechecked against this client's tables at build 2.5.6.70577: every Equip spell is in SpellName.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -76,6 +77,7 @@ wago.tools
 	https://wago.tools/db2/ItemEffect?build=2.5.6.70577
 	https://wago.tools/db2/SpellEffect?build=2.5.6.70577
 	https://wago.tools/db2/Spell?build=2.5.6.70577
+	https://wago.tools/db2/SpellName?build=2.5.6.70577
 
 QuestieDB
 	None.

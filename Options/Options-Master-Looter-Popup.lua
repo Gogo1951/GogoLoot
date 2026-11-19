@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- GogoLoot Options — Master Looter Pop-up
+-- GogoLoot Options — Quick Settings Pop-up
 --------------------------------------------------------------------------------
 
 --[[
@@ -23,8 +23,9 @@ local Kit = ns.OptionsKit
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 --[[
-    Sized to the window's tallest state: the three toggles, the leader note and
-    its spacer, and all three label-plus-dropdown rows. The note always shows,
+    Sized to the window's tallest state: the three toggles with a spacer
+    between each, the leader note and its spacer, and all three
+    label-plus-dropdown rows. The note always shows,
     naming the group leader in a group and saying why the dropdowns are grayed
     out while solo, so only the rows below it change the height.
 
@@ -37,7 +38,7 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
     up to the next multiple of 16.
 ]]
 local POPUP_WIDTH = 640
-local POPUP_HEIGHT = 352
+local POPUP_HEIGHT = 384
 
 --------------------------------------------------------------------------------
 -- Options Table Builder
@@ -57,7 +58,14 @@ function ns.BuildMasterLooterPopupOptions()
 	    is exactly what it decides whether to announce.
 	]]
 	order = ns.AddPopupToggleRow(args, order)
+	args.spacerAfterPopupToggle = Kit.Spacer(order)
+	order = order + 1
 	args.autoMasterLoot = ns.FeatureSwitch("autoMasterLoot", order)
+	order = order + 1
+	-- Leaves with the destination-message toggle it sets off, which hides while Loot Announcements is off.
+	args.spacerAfterAutoMasterLoot = Kit.Spacer(order, function()
+		return not ns.db.profile.lootNotifications
+	end)
 	order = order + 1
 	order = ns.AddDestinationMessagesRow(args, order)
 	args.spacerAfterToggles = Kit.Spacer(order)
@@ -90,6 +98,11 @@ end
 --------------------------------------------------------------------------------
 -- Window
 --------------------------------------------------------------------------------
+
+---@return boolean
+function ns.IsMasterLooterPopupShown()
+	return AceConfigDialog.OpenFrames[ns.OPTIONS_REGISTRY.MasterLooterPopup] ~= nil
+end
 
 ---@return nil
 function ns:ShowMasterLooterPopup()

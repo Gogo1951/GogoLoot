@@ -285,6 +285,22 @@ ns.OPENABLE_ITEMS = {
 	[22137] = ns.OPENING_OPEN, -- Ysida's Satchel
 }
 
+-- { [itemId] = requiredLevel }: the rows above whose item has a level requirement, from ItemSparse.RequiredLevel.
+ns.OPENABLE_ITEM_LEVELS = {
+	[6646] = 5, -- Bloated Albacore
+	[6647] = 15, -- Bloated Catfish
+	[21163] = 15, -- Bloated Firefin
+	[6645] = 5, -- Bloated Mud Snapper
+	[21162] = 5, -- Bloated Oily Blackmouth
+	[21164] = 25, -- Bloated Rockscale Cod
+	[8366] = 25, -- Bloated Trout
+	[28135] = 60, -- Bomb Crate
+	[30320] = 70, -- Bundle of Nether Spikes
+	[19296] = 45, -- Greater Darkmoon Prize
+	[19297] = 30, -- Lesser Darkmoon Prize
+	[19298] = 15, -- Minor Darkmoon Prize
+}
+
 --[[
 How We Got the Data
 
@@ -293,12 +309,13 @@ Last Validated
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
-	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". README-Technical, Openable Items Data, gives the exact test. They come from this client's own tables, never from a private-server database or Wowhead listings.
+	- The rows are every item this client flags Openable (Flags_0 & 0x4, the flag behind "<Right Click to Open>"), less bags and equippable items (InventoryType set), and less test and placeholder items named "Test", "QATest", "[DNT]", "[PH]", "[NYI]", "(TEMP)" or "Deprecated". They come from this client's own tables, never from a private-server database or Wowhead listings.
 	- Pulled from this client's own tables at build 2.5.6.69795.
-	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
-	- No client table records what a container holds or drops from, so those come from the CMaNGOS TBC world DB (TBCDB_1.11.0), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside. README-Technical describes the method.
+	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Because the lock rule comes first, a lockbox stays on ns.OPENING_UNLOCKED even where its random loot can include Unique or Bind on Pickup items. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
+	- No client table records what a container holds or drops from, so those come from the CMaNGOS TBC world DB (TBCDB_1.11.0), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
 	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): WoW Forever's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
+	- Rechecked against this client's tables at build 2.5.6.70577: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). No flagged item is missing.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -309,6 +326,8 @@ Wowhead
 wago.tools
 	https://wago.tools/db2/ItemSparse?build=2.5.6.69795
 	https://wago.tools/db2/ItemSparse?build=2.5.6.70577
+	https://wago.tools/db2/Item?build=2.5.6.70577
+	https://wago.tools/db2/Lock?build=2.5.6.70577
 
 QuestieDB
 	None.

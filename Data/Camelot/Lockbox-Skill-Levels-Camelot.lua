@@ -36,6 +36,7 @@ Notes
 	- Pulled from Forever's own tables at build 1.60.1.70009, falling back on Classic Era build 1.15.9.69722 where Forever's ItemSparse lacked the item. Every row here has its own Forever row, so none came from the fallback. Rechecked against build 1.60.1.70862's tables, and again against build 1.60.1.70938's, which give every row the same number and no other ns.OPENING_UNLOCKED row a Pick Lock entry.
 	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
 	- Every row here must also be an ns.OPENING_UNLOCKED row in Openable-Items-Camelot.lua; a test holds every folder to it.
+	- Rechecked against this client's tables at build 1.60.1.70959: every number matches its lock's Pick Lock entry, and every pickable locked row has one.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -49,6 +50,8 @@ wago.tools
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70862
 	https://wago.tools/db2/Lock?build=1.60.1.70938
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70938
+	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
+	https://wago.tools/db2/Lock?build=1.60.1.70959
 
 QuestieDB
 	None.

@@ -83,7 +83,7 @@ end
 local function NotCountedExample()
 	return ns:BuildAnnounceMessage(
 		"ROLL_CALL_NOT_COUNTED",
-		ns.OptionsExampleItem(EXAMPLE_ITEM_QUALITY),
+		ns.OptionsExampleLink(ns.SAMPLE_ITEM_IDS[EXAMPLE_ITEM_QUALITY]),
 		L["ROLL_CALL_NOT_COUNTED_REPEAT"]:format(EXAMPLE_PLAYER, EXAMPLE_REPEAT_ROLL)
 	) or ""
 end

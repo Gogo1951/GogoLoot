@@ -8,11 +8,10 @@
     Automated Opening opens would otherwise sit in an open loot window. So the
     autoLootDefault CVar is enforced while either feature is on, and the two
     feature toggles are the opt-out every enforced write has to carry. The
-    write only ever fires when the CVar is actually off, and always announces
-    itself.
+    write only ever fires when the CVar is actually off, and prints nothing:
+    both features' descriptions and README.md disclose it.
 ]]
 local _, ns = ...
-local L = ns.L
 
 ---@return boolean
 function ns:IsAutoLootNeeded()
@@ -27,7 +26,6 @@ end
 function ns.EnsureAutoLoot()
 	if not ns:IsAutoLootCVarEnabled() then
 		C_CVar.SetCVar("autoLootDefault", "1")
-		ns:PrintMessage(L["MESSAGE_AUTO_LOOT_SETTING_ON"]:format(AUTO_LOOT_DEFAULT_TEXT))
 	end
 end
 

@@ -2,7 +2,6 @@
 -- GogoLoot Standard Loot Messages
 --------------------------------------------------------------------------------
 local _, ns = ...
-local L = ns.L
 
 --[[
     The game's own Item Loot and Money Loot checkboxes for the General chat tab
@@ -19,9 +18,8 @@ local L = ns.L
     of General (a Loot tab, say) keeps it out. Chat settings are per character,
     so the marks live in ns.db.char. GogoLoot acts only when the wanted state
     changes, never on an ordinary login, so a box ticked back in Blizzard's
-    window sticks. A character's first sync counts as a change. A sync that
-    actually takes the lines off or puts them back says so in one line, since
-    the change outlasts the session.
+    window sticks. A character's first sync counts as a change. The change
+    prints nothing: the dropdown's tooltip and README.md disclose it.
 ]]
 local STANDARD_LOOT_MESSAGE_GROUPS = { "LOOT", "MONEY" }
 local STANDARD_LOOT_SYNC_TIMER = "GogoLoot.StandardLootSync"
@@ -53,24 +51,17 @@ function ns.SyncStandardLootMessages()
 	end
 	character.standardLootMessagesHidden = hidden
 	local taken = character.lootGroupsHiddenByGogoLoot
-	local changed = false
 	for _, group in ipairs(STANDARD_LOOT_MESSAGE_GROUPS) do
 		local shown = chatFrame:ContainsMessageGroup(group)
 		if hidden and shown then
 			chatFrame:RemoveMessageGroup(group)
 			taken[group] = true
-			changed = true
 		elseif not hidden and taken[group] then
 			if not shown then
 				chatFrame:AddMessageGroup(group)
-				changed = true
 			end
 			taken[group] = nil
 		end
-	end
-	if changed then
-		local messageKey = hidden and "MESSAGE_STANDARD_LOOT_MESSAGES_OFF" or "MESSAGE_STANDARD_LOOT_MESSAGES_ON"
-		ns:PrintMessage(L[messageKey]:format(ITEM_LOOT, MONEY_LOOT, GENERAL))
 	end
 end
 
@@ -78,58 +69,8 @@ local function ScheduleStandardLootSync()
 	ns:After(STANDARD_LOOT_SYNC_TIMER, STANDARD_LOOT_SYNC_DELAY, ns.SyncStandardLootMessages)
 end
 
---------------------------------------------------------------------------------
--- Blizzard's Roll Won Window
---------------------------------------------------------------------------------
-
---[[
-    WoW Forever's AlertFrame listens for LOOT_ITEM_ROLL_WON and answers with
-    its "You Won" window (LootAlertSystem, the roll type and winning roll on
-    it), a second, unmatched copy of what the toasts already say. The Classic
-    clients' AlertFrame never registers the event (Gethe/wow-ui-source,
-    Blizzard_FrameXML/Classic/AlertFrames.lua on the Era, Anniversary and
-    Mists branches), so there is no window there and no option either.
-
-    With Enable Loot Toasts on and Enable Blizzard Default Roll Winner Window
-    off, GogoLoot unregisters that one event from AlertFrame, and registers it
-    back with either changed. Only that event: SHOW_LOOT_TOAST also feeds the
-    money, currency and other loot alerts, which stay, and other add-ons' own
-    registrations (Memento's screenshots) are untouched. AlertFrame isn't
-    protected, so flipping its events taints nothing, in combat or out.
-    Whether it listened is read once, before GogoLoot first touches it, so a
-    client whose AlertFrame never did is never made to.
-]]
-local ROLL_WON_EVENT = "LOOT_ITEM_ROLL_WON"
-local blizzardRollWonListens
-
----@return boolean # whether this client's AlertFrame puts up a window for a roll won
-function ns.HasBlizzardRollWonWindow()
-	if blizzardRollWonListens == nil then
-		local alertFrame = AlertFrame
-		if not alertFrame or not alertFrame.IsEventRegistered then
-			return false
-		end
-		blizzardRollWonListens = alertFrame:IsEventRegistered(ROLL_WON_EVENT) and true or false
-	end
-	return blizzardRollWonListens
-end
-
----@return nil
-function ns.SyncBlizzardRollWonWindow()
-	if not ns.db or not ns.HasBlizzardRollWonWindow() then
-		return
-	end
-	local profile = ns.db.profile
-	if profile.lootToasts and not profile.lootToastBlizzardRollWon then
-		AlertFrame:UnregisterEvent(ROLL_WON_EVENT)
-	else
-		AlertFrame:RegisterEvent(ROLL_WON_EVENT)
-	end
-end
-
 local function OnPlayerEnteringWorld()
 	ScheduleStandardLootSync()
-	ns.SyncBlizzardRollWonWindow()
 end
 
 local function OnUpdateChatWindows()

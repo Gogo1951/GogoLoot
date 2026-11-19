@@ -30,9 +30,6 @@ L["CHAT_LOADED"] =
 	"Версия %s. Настройки (в том числе отключение этого сообщения) находятся в меню Настройки > Модификации > GogoLoot. Нравится аддон? Расскажите о нем друзьям, добавьте его в избранное на CurseForge или поставьте звезду на GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] =
 	"В целях безопасности окно настроек нельзя открыть в бою."
--- Argument: the game's own name for its Auto Loot setting.
-L["MESSAGE_AUTO_LOOT_SETTING_ON"] =
-	'Включена игровая настройка "%s", нужная для Быстрого сбора и Автооткрытия.'
 -- Argument: the game's own word for Master Looter.
 L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = 'Сейчас у вас нет роли "%s".'
 
@@ -40,6 +37,9 @@ L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = 'Сейчас у вас нет роли
 L["MESSAGE_OPENING_PAUSED"] =
 	"Автооткрытие приостановлено: свободных ячеек в сумках должно быть не меньше %d."
 L["MESSAGE_OPENING_RESUMED"] = "Автооткрытие возобновлено."
+-- Printed once a session, the first time a fishing pole holds Automated Opening back.
+L["MESSAGE_OPENING_FISHING_POLE"] =
+	'Автооткрытие приостановлено, пока у вас экипирована удочка. Чтобы открывать во время рыбалки, включите "С экипированной удочкой" в меню Настройки > Модификации > GogoLoot > Автооткрытие.'
 
 -- Argument: the item's link.
 L["MESSAGE_ITEM_WILL_AUTO_OPEN"] =
@@ -52,14 +52,6 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s: может содержать уникальный предмет, поэтому Автооткрытие оставит его, чтобы вы открыли сами."
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Часть добычи осталась на трупе."
---[[
-    Standard Loot Messages taking the General tab's loot lines off, or putting
-    them back. Arguments: the game's own names for its Item Loot and Money Loot
-    chat settings, then for the General chat tab.
-]]
-L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
-	'Отключены "%s" и "%s" во вкладке чата "%s", пока уведомления о добыче включены.'
-L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = 'Снова включены "%s" и "%s" во вкладке чата "%s".'
 
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] =
@@ -172,19 +164,21 @@ L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Бросает кубики за вас на подходящие предметы вплоть до выбранного качества."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Открывает в сумках моллюсков, ящики, кошельки, а также запертые ящики, как только их отопрут."
--- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+-- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
 L["MENU_OPENING_WAITING"] = "Ожидание свободных ячеек в сумках: %d."
+L["MENU_OPENING_FISHING_POLE"] = "Приостановлено, пока экипирована удочка."
+L["MENU_OPENING_INSTANCE"] = "Приостановлено в подземельях."
+L["MENU_OPENING_GROUP"] = "Приостановлено, пока вы в группе."
 L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
-	"Публикует в чате итоги обменов и раздачу добычи."
+	"Публикует в чате итоги обменов, получателей добычи, раздачу и рейдовые броски."
 --[[
     The menu's read-back of each group context's roll, on the right of its
     Party or Raid row. Arguments: the roll, then the highest quality it rolls
     on. Manual shows the roll alone.
 ]]
 L["MENU_ROLLS_SETTING"] = "%s, %s"
--- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
-L["MENU_ROLLS_AUTOMATION"] = "Автоматизация"
-L["MENU_ROLLS_THRESHOLD"] = "Порог"
+-- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
+L["MENU_ROLLS_AUTOMATION"] = "Бросок"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -468,8 +462,8 @@ L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 L["QUICK_SETTINGS_TITLE"] = "Быстрые настройки"
 -- Argument: the game's own word for Master Looter.
 L["MASTER_LOOTER_POPUP_TOOLTIP"] =
-	'Открывает эти настройки в отдельном окне, когда вы получаете роль "%s".'
-L["MASTER_LOOTER_POPUP_ENABLE"] = "Включить окно ответственного"
+	'Открывает быстрые настройки, когда вы получаете роль "%s".'
+L["MASTER_LOOTER_POPUP_ENABLE"] = "Включить окно быстрых настроек"
 
 -- Tradable Gear Tint, on the Automated Master Looting panel
 L["TRADABLE_TINT_HEADER"] = "Подсветка передаваемой экипировки"
@@ -561,16 +555,13 @@ L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
     their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	'Задает бросок для отдельных предметов в обход настроек качества. Только так GogoLoot будет бросать на предметы для заданий, а также на предметы, персональные при поднятии, пока выключено "Включая персональные при поднятии".'
+	'Задает бросок для отдельных предметов в обход ваших настроек "Броски в группе и рейде". Только так GogoLoot будет бросать на предметы для заданий, а также на предметы, персональные при поднятии, пока выключено "Включая персональные при поднятии".'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
 L["OPTIONS_FEATURE_OFF_STATUS"] =
 	'%s отключено, поэтому эти настройки не используются. Его переключатель находится на странице "%s".'
 L["ITEM_OVERRIDES_ENABLE"] = "Включить Глобальные особые предметы"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
-	"Использует броски, заданные ниже. Если выключено, эти предметы следуют настройкам качества, как и все остальные."
--- Shown under Enable Global Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] =
-	"Пока Глобальные особые предметы выключены, эти броски не используются."
+	'Использует броски, заданные ниже. Если выключено, эти предметы, как и все остальные, следуют вашим настройкам "Броски в группе и рейде".'
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"Заменяет ваши Глобальные особые предметы стандартными предметами для вашего дополнения."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
@@ -609,6 +600,8 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 -- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Все остальное"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "Неподходящее снаряжение"
+L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"] =
+	'Что GogoLoot делает с броней и оружием, которым не подошел ни один флажок выше: "Не откажусь", оставить вам ("Вручную") или "Отказаться".'
 L["CHARACTER_RULES_RESET"] = "Сбросить к настройкам класса"
 L["CHARACTER_RULES_RESET_DESCRIPTION"] =
 	'Возвращает флажки и "Все остальное" этого персонажа к настройкам его класса.'
@@ -651,13 +644,12 @@ L["SANITY_CHECK_CONTEXT"] = 'Броски по настройкам "%s".'
 ]]
 L["SANITY_CHECK_MANUAL_ROLL"] = "Ручной бросок"
 L["SANITY_CHECK_AUTOMATIC"] = "Автоматически: %s"
-L["SANITY_CHECK_BOP"] = "Перс. при поднятии"
-L["SANITY_CHECK_BOE"] = "Перс. при надевании"
 L["SANITY_CHECK_LOW_LEVEL"] = "Низкоуровневое снаряжение"
 L["SANITY_CHECK_ROLLS_OFF"] = "Автоброски выключены"
-L["SANITY_CHECK_QUALITY"] = "Настройки качества"
+L["SANITY_CHECK_QUALITY"] = "Броски в группе и рейде"
 L["SANITY_CHECK_NEVER"] = "Никогда автоматически"
 L["SANITY_CHECK_QUEST"] = "Предмет для задания"
+L["SANITY_CHECK_BIND_ON_EQUIP"] = "Персональный при надевании"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Персональный при поднятии"
 
 --------------------------------------------------------------------------------
@@ -855,6 +847,8 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME"] = "Монохромный"
 L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "Монохромный контур"
 
 -- Position
+-- The caption beside Unlock Position / Lock Position.
+L["LOOT_TOASTS_POSITION"] = "Позиция уведомлений"
 L["LOOT_TOASTS_UNLOCK"] = "Разблокировать позицию"
 L["LOOT_TOASTS_LOCK"] = "Заблокировать позицию"
 L["LOOT_TOASTS_RESET"] = "Сбросить позицию"
@@ -907,6 +901,9 @@ L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"] =
 L["AUTOMATED_OPENING_ONLY_SOLO"] = "Только в одиночку"
 L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"] =
 	"Ничего не открывает, пока вы в группе или рейде."
+L["AUTOMATED_OPENING_WITH_FISHING_POLE"] = "С экипированной удочкой"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"] =
+	"Продолжает открывать, пока у вас экипирована удочка. Оставьте выключенным, чтобы ничего не открывалось во время рыбалки."
 
 -- Lockboxes
 -- Arguments: the game's own name for the Rogue class, then for the Lockpicking skill.
@@ -915,7 +912,7 @@ L["LOCKBOXES_SECTION_DESCRIPTION"] =
 L["LOCKBOXES_TOOLTIPS_ENABLE"] = "Включить подсказки запертых ящиков"
 -- Argument: the game's own name for the Lockpicking skill.
 L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] =
-	'Добавляет в подсказку каждого запертого ящика нужный уровень навыка "%s".'
+	'Добавляет в подсказку каждого запертого ящика нужный уровень навыка "%s", где бы вы его ни увидели: в сумках, в окне добычи, в окне обмена и в ссылках в чате.'
 L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"Показывать подсказки запертых ящиков только разбойникам или всем персонажам."
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "Включить оповещения о запертых ящиках"

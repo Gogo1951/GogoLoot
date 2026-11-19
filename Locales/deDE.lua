@@ -29,15 +29,15 @@ L["ADDON_SHORT_NAME"] = "GogoLoot"
 L["CHAT_LOADED"] =
 	"Version %s. Die Einstellungen (inklusive der Option, diese Nachricht abzuschalten) findest du unter Optionen > AddOns > GogoLoot. Gefällt dir dieses Add-on? Erzähl einem Freund davon, favorisiere es auf CurseForge oder gib ihm einen Star auf GitHub. (="
 L["CHAT_OPTIONS_IN_COMBAT"] = "Zur Sicherheit lässt sich das Optionsfenster im Kampf nicht öffnen."
--- Argument: the game's own name for its Auto Loot setting.
-L["MESSAGE_AUTO_LOOT_SETTING_ON"] =
-	"Die Spieleinstellung %s wurde eingeschaltet, da Blitz-Plündern und Automatisches Öffnen sie benötigen."
 -- Argument: the game's own word for Master Looter.
 L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = "Du bist derzeit nicht der %s."
 
 -- Automated Opening. Argument: the number of free bag slots opening waits for.
 L["MESSAGE_OPENING_PAUSED"] = "Automatisches Öffnen pausiert, bis du mindestens %d freie Taschenplätze hast."
 L["MESSAGE_OPENING_RESUMED"] = "Automatisches Öffnen läuft wieder."
+-- Printed once a session, the first time a fishing pole holds Automated Opening back.
+L["MESSAGE_OPENING_FISHING_POLE"] =
+	'Automatisches Öffnen pausiert, solange du eine Angelrute ausgerüstet hast. Um auch beim Angeln zu öffnen, schalte "Mit ausgerüsteter Angelrute" unter Optionen > AddOns > GogoLoot > Automatisches Öffnen ein.'
 
 -- Argument: the item's link.
 L["MESSAGE_ITEM_WILL_AUTO_OPEN"] = "%s wird automatisch geöffnet, sobald es aufgeschlossen ist."
@@ -48,14 +48,6 @@ L["MESSAGE_ITEM_IGNORED_UNIQUE"] =
 	"%s kann einen einzigartigen Gegenstand enthalten, daher überlässt Automatisches Öffnen dir das Öffnen."
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s Ein Teil der Beute ist an der Leiche liegen geblieben."
---[[
-    Standard Loot Messages taking the General tab's loot lines off, or putting
-    them back. Arguments: the game's own names for its Item Loot and Money Loot
-    chat settings, then for the General chat tab.
-]]
-L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
-	"%s und %s wurden in deinem Chat-Reiter %s abgeschaltet, solange Beutehinweise aktiv sind."
-L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "%s und %s wurden in deinem Chat-Reiter %s wieder eingeschaltet."
 
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] = "%s würde angelegt statt geöffnet, daher kann es nicht in die Behälterliste."
@@ -164,18 +156,21 @@ L["MENU_PAUSED"] = "Pausiert"
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Würfelt für dich auf geeignete Gegenstände bis zur gewählten Qualität."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Öffnet Muscheln, Kisten, Geldbeutel und aufgeschlossene Schließkassetten in deinen Taschen."
--- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+-- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
 L["MENU_OPENING_WAITING"] = "Wartet auf %d freie Taschenplätze."
-L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "Postet Handelszusammenfassungen und Plündermeister-Vergaben im Chat."
+L["MENU_OPENING_FISHING_POLE"] = "Pausiert, solange eine Angelrute ausgerüstet ist."
+L["MENU_OPENING_INSTANCE"] = "Pausiert in Instanzen."
+L["MENU_OPENING_GROUP"] = "Pausiert, solange du in einer Gruppe bist."
+L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
+	"Postet Handelszusammenfassungen, Beuteempfänger, Vergaben und Schlachtzugswürfe im Chat."
 --[[
     The menu's read-back of each group context's roll, on the right of its
     Party or Raid row. Arguments: the roll, then the highest quality it rolls
     on. Manual shows the roll alone.
 ]]
 L["MENU_ROLLS_SETTING"] = "%s, %s"
--- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
-L["MENU_ROLLS_AUTOMATION"] = "Automatik"
-L["MENU_ROLLS_THRESHOLD"] = "Schwelle"
+-- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
+L["MENU_ROLLS_AUTOMATION"] = "Wurf"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -452,8 +447,8 @@ L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 -- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
 L["QUICK_SETTINGS_TITLE"] = "Schnelleinstellungen"
 -- Argument: the game's own word for Master Looter.
-L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Öffnet diese Einstellungen in einem Fenster, sobald du %s wirst."
-L["MASTER_LOOTER_POPUP_ENABLE"] = "Plündermeister-Fenster aktivieren"
+L["MASTER_LOOTER_POPUP_TOOLTIP"] = "Öffnet die Schnelleinstellungen, sobald du %s wirst."
+L["MASTER_LOOTER_POPUP_ENABLE"] = "Schnelleinstellungsfenster aktivieren"
 
 -- Tradable Gear Tint, on the Automated Master Looting panel
 L["TRADABLE_TINT_HEADER"] = "Einfärbung handelbarer Ausrüstung"
@@ -538,16 +533,13 @@ L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
     their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	'Legt den Wurf für bestimmte Gegenstände fest, vorrangig vor den Qualitätseinstellungen. Nur so würfelt GogoLoot auf einen Questgegenstand oder, solange "Beim Aufheben gebunden einschließen" aus ist, auf einen beim Aufheben gebundenen Gegenstand.'
+	'Legt den Wurf für bestimmte Gegenstände fest, vorrangig vor deinen Einstellungen unter "Würfeln in Gruppe und Schlachtzug". Nur so würfelt GogoLoot auf einen Questgegenstand oder, solange "Beim Aufheben gebunden einschließen" aus ist, auf einen beim Aufheben gebundenen Gegenstand.'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
 L["OPTIONS_FEATURE_OFF_STATUS"] =
 	"%s ist aus, daher werden diese Einstellungen nicht verwendet. Der Schalter dafür ist auf der Seite %s."
 L["ITEM_OVERRIDES_ENABLE"] = "Globale Gegenstandsausnahmen aktivieren"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
-	"Verwendet die unten festgelegten Würfe. Ist das aus, folgen diese Gegenstände wie alle anderen den Qualitätseinstellungen."
--- Shown under Enable Global Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] =
-	"Diese Würfe werden nicht verwendet, solange die globalen Gegenstandsausnahmen aus sind."
+	'Verwendet die unten festgelegten Würfe. Ist das aus, folgen diese Gegenstände wie alle anderen deinen Einstellungen unter "Würfeln in Gruppe und Schlachtzug".'
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] =
 	"Ersetzt deine globalen Gegenstandsausnahmen durch die Standardgegenstände deiner Erweiterung."
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] =
@@ -583,6 +575,8 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] =
 -- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "Alles andere"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "Nicht passende Ausrüstung"
+L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"] =
+	"Was GogoLoot mit Rüstungen und Waffen macht, auf die keines der Kästchen oben passt: Gier wählen, sie dir überlassen (Manuell) oder Passen."
 L["CHARACTER_RULES_RESET"] = "Auf Klassenstandard zurücksetzen"
 L["CHARACTER_RULES_RESET_DESCRIPTION"] =
 	'Setzt die Kästchen und "Alles andere" dieses Charakters auf die Standardwerte seiner Klasse zurück.'
@@ -623,13 +617,12 @@ L["SANITY_CHECK_CONTEXT"] = 'Gewürfelt mit deinen Einstellungen "%s".'
 ]]
 L["SANITY_CHECK_MANUAL_ROLL"] = "Manueller Wurf"
 L["SANITY_CHECK_AUTOMATIC"] = "Automatisch: %s"
-L["SANITY_CHECK_BOP"] = "Beim Aufheben gebunden"
-L["SANITY_CHECK_BOE"] = "Beim Anlegen gebunden"
 L["SANITY_CHECK_LOW_LEVEL"] = "Niedrigstufige Ausrüstung"
 L["SANITY_CHECK_ROLLS_OFF"] = "Automatisches Würfeln aus"
-L["SANITY_CHECK_QUALITY"] = "Qualitätseinstellungen"
+L["SANITY_CHECK_QUALITY"] = "Würfeln in Gruppe und Schlachtzug"
 L["SANITY_CHECK_NEVER"] = "Nie automatisch"
 L["SANITY_CHECK_QUEST"] = "Questgegenstand"
+L["SANITY_CHECK_BIND_ON_EQUIP"] = "Beim Anlegen gebunden"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Beim Aufheben gebunden"
 
 --------------------------------------------------------------------------------
@@ -815,6 +808,8 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME"] = "Einfarbig"
 L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "Einfarbige Kontur"
 
 -- Position
+-- The caption beside Unlock Position / Lock Position.
+L["LOOT_TOASTS_POSITION"] = "Hinweisposition"
 L["LOOT_TOASTS_UNLOCK"] = "Position entsperren"
 L["LOOT_TOASTS_LOCK"] = "Position sperren"
 L["LOOT_TOASTS_RESET"] = "Position zurücksetzen"
@@ -861,6 +856,9 @@ L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"] =
 	"Öffnet nichts, solange du in einem Dungeon, Schlachtzug oder Schlachtfeld bist."
 L["AUTOMATED_OPENING_ONLY_SOLO"] = "Nur allein"
 L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"] = "Öffnet nichts, solange du in einer Gruppe oder einem Schlachtzug bist."
+L["AUTOMATED_OPENING_WITH_FISHING_POLE"] = "Mit ausgerüsteter Angelrute"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"] =
+	"Öffnet weiter, während du eine Angelrute ausgerüstet hast. Lass es aus, damit beim Angeln nichts geöffnet wird."
 
 -- Lockboxes
 -- Arguments: the game's own name for the Rogue class, then for the Lockpicking skill.
@@ -868,7 +866,8 @@ L["LOCKBOXES_SECTION_DESCRIPTION"] =
 	"Eine Schließkassette öffnet sich erst, wenn ein %s sie knackt. Diese Optionen zeigen dir die %s-Fertigkeit, die jede braucht, und melden dir, wenn eine wartet."
 L["LOCKBOXES_TOOLTIPS_ENABLE"] = "Schließkassetten-Tooltips aktivieren"
 -- Argument: the game's own name for the Lockpicking skill.
-L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] = "Fügt dem Tooltip jeder Schließkassette die nötige %s-Fertigkeit hinzu."
+L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] =
+	"Fügt dem Tooltip jeder Schließkassette die nötige %s-Fertigkeit hinzu, wo immer du sie siehst: in deinen Taschen, im Beutefenster, im Handelsfenster und in Chatlinks."
 L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"Legt fest, ob Schließkassetten-Tooltips nur für Schurken oder für jeden Charakter erscheinen."
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "Schließkassetten-Meldungen aktivieren"
@@ -1287,7 +1286,7 @@ L["LOOT_MASTER_ROLL_ALL_PAUSE_DESCRIPTION"] =
 L["LOOT_MASTER_COUNTING_HEADER"] = "Gültige Würfe"
 -- Argument: the seconds of grace.
 L["LOOT_MASTER_COUNTING_DESCRIPTION"] =
-	"Ein einfaches /roll (1-100), jeweils das erste pro Spieler, aus deiner Gruppe, solange das Würfeln offen ist (%d Sekunde Nachfrist für Verzögerungen). Ungültige Würfe bleiben mit Begründung in der Liste."
+	"Ein einfaches /roll (1-100), jeweils das erste pro Spieler, aus deiner Gruppe, solange das Würfeln offen ist (%d s Nachfrist für Verzögerungen). Ungültige Würfe bleiben mit Begründung in der Liste."
 L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED"] = "Ungültige Würfe ankündigen"
 L["LOOT_MASTER_ANNOUNCE_NOT_COUNTED_DESCRIPTION"] =
 	"Listet die ungültigen Würfe samt Grund in einer Zeile auf, wenn das Würfeln endet. Ein von dir disqualifizierter Wurf wird immer angekündigt."

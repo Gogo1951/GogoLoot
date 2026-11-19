@@ -29,14 +29,15 @@ L["ADDON_SHORT_NAME"] = "GogoLoot"
 L["CHAT_LOADED"] =
 	"版本%s。设置（包括关闭此消息的选项）位于 选项 > 插件 > GogoLoot。喜欢这个插件吗？告诉朋友，在CurseForge上收藏，或在GitHub上点个Star吧。(="
 L["CHAT_OPTIONS_IN_COMBAT"] = "出于安全考虑，战斗中无法打开选项界面。"
--- Argument: the game's own name for its Auto Loot setting.
-L["MESSAGE_AUTO_LOOT_SETTING_ON"] = "已开启游戏的%s设置，快速拾取和自动开启都需要用到它。"
 -- Argument: the game's own word for Master Looter.
 L["MESSAGE_NOT_CURRENT_MASTER_LOOTER"] = "你当前不是%s。"
 
 -- Automated Opening. Argument: the number of free bag slots opening waits for.
 L["MESSAGE_OPENING_PAUSED"] = "自动开启已暂停，直到你至少有%d个空闲背包格。"
 L["MESSAGE_OPENING_RESUMED"] = "自动开启已恢复。"
+-- Printed once a session, the first time a fishing pole holds Automated Opening back.
+L["MESSAGE_OPENING_FISHING_POLE"] =
+	'装备鱼竿时，自动开启已暂停。如果想在钓鱼时也开启，请在 选项 > 插件 > GogoLoot > 自动开启 中打开"装备鱼竿时"。'
 
 -- Argument: the item's link.
 L["MESSAGE_ITEM_WILL_AUTO_OPEN"] = "%s解锁后将自动开启。"
@@ -46,14 +47,6 @@ L["MESSAGE_ITEM_IGNORED_RAID"] =
 L["MESSAGE_ITEM_IGNORED_UNIQUE"] = "%s可能含有唯一物品，自动开启会留给你自己打开。"
 -- A pickup the server refused after Speedy Loot had already closed the loot. %s is the client's own reason, such as "Inventory is full.", and leads, since it brings its own closing punctuation.
 L["MESSAGE_LOOT_LEFT_ON_CORPSE"] = "%s部分战利品留在了尸体上。"
---[[
-    Standard Loot Messages taking the General tab's loot lines off, or putting
-    them back. Arguments: the game's own names for its Item Loot and Money Loot
-    chat settings, then for the General chat tab.
-]]
-L["MESSAGE_STANDARD_LOOT_MESSAGES_OFF"] =
-	"拾取提示开启期间，已关闭%s和%s，作用于你的%s聊天标签。"
-L["MESSAGE_STANDARD_LOOT_MESSAGES_ON"] = "已重新开启%s和%s，作用于你的%s聊天标签。"
 
 -- The Openables List's Add Item refusing gear or a bag. Argument: the item's link, or its ID while uncached.
 L["MESSAGE_ITEM_NOT_OPENABLE"] = "%s使用时会被装备而不是打开，因此无法加入可开启物品列表。"
@@ -160,18 +153,21 @@ L["MENU_PAUSED"] = "已暂停"
 ]]
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "替你对符合条件、不高于所选品质的物品自动掷骰。"
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "开启背包中的蚌壳、板条箱、钱袋和已解锁的锁箱。"
--- Under Automated Opening's description in the mini-map menu while it is paused. Argument: the free bag slots it waits for.
+-- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
 L["MENU_OPENING_WAITING"] = "正在等待 %d 个空闲背包格。"
-L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "将交易摘要和队长分配结果发到聊天频道。"
+L["MENU_OPENING_FISHING_POLE"] = "装备鱼竿时暂停。"
+L["MENU_OPENING_INSTANCE"] = "在副本中暂停。"
+L["MENU_OPENING_GROUP"] = "在队伍中时暂停。"
+L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
+	"将交易摘要、战利品去向、分配结果和团队掷骰发到聊天频道。"
 --[[
     The menu's read-back of each group context's roll, on the right of its
     Party or Raid row. Arguments: the roll, then the highest quality it rolls
     on. Manual shows the roll alone.
 ]]
 L["MENU_ROLLS_SETTING"] = "%s, %s"
--- The Party and Raid flyouts' two headings: the roll, then the highest quality it rolls on.
-L["MENU_ROLLS_AUTOMATION"] = "自动化"
-L["MENU_ROLLS_THRESHOLD"] = "阈值"
+-- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
+L["MENU_ROLLS_AUTOMATION"] = "掷骰"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -439,8 +435,8 @@ L["MASTER_LOOTER_QUEST_ITEMS_DESCRIPTION"] =
 -- The pop-up's own title, which code joins with the add-on name: "Quick Settings // GogoLoot".
 L["QUICK_SETTINGS_TITLE"] = "快捷设置"
 -- Argument: the game's own word for Master Looter.
-L["MASTER_LOOTER_POPUP_TOOLTIP"] = "每当你成为%s时，在窗口中打开这些设置。"
-L["MASTER_LOOTER_POPUP_ENABLE"] = "启用队长分配弹窗"
+L["MASTER_LOOTER_POPUP_TOOLTIP"] = "每当你成为%s时，打开快捷设置。"
+L["MASTER_LOOTER_POPUP_ENABLE"] = "启用快捷设置弹窗"
 
 -- Tradable Gear Tint, on the Automated Master Looting panel
 L["TRADABLE_TINT_HEADER"] = "可交易装备着色"
@@ -520,14 +516,12 @@ L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "在警告的同时播放提示音
     their own.
 ]]
 L["ITEM_OVERRIDES_DESCRIPTION"] =
-	'为特定物品指定掷骰方式，优先于品质设置。这是让GogoLoot对任务物品掷骰的唯一方法；在"包括拾取后绑定"关闭时，也是对拾取后绑定物品掷骰的唯一方法。'
+	'为特定物品指定掷骰方式，优先于你的"队伍与团队掷骰"。这是让GogoLoot对任务物品掷骰的唯一方法；在"包括拾取后绑定"关闭时，也是对拾取后绑定物品掷骰的唯一方法。'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
 L["OPTIONS_FEATURE_OFF_STATUS"] = "%s已关闭，因此这些设置不会生效。它的开关在%s页面。"
 L["ITEM_OVERRIDES_ENABLE"] = "启用全局物品特例"
 L["ITEM_OVERRIDES_ENABLE_DESCRIPTION"] =
-	"使用下方设置的掷骰方式。关闭后，这些物品和其他物品一样遵循品质设置。"
--- Shown under Enable Global Item Overrides while it is off.
-L["ITEM_OVERRIDES_OFF_NOTE"] = "全局物品特例已关闭，这些掷骰设置暂不生效。"
+	'使用下方设置的掷骰方式。关闭后，这些物品和其他物品一样遵循你的"队伍与团队掷骰"。'
 L["ITEM_OVERRIDES_RESTORE_DESCRIPTION"] = "用你所在资料片的默认物品替换全局物品特例。"
 L["ITEM_OVERRIDES_RESTORE_CONFIRM"] = "要用你所在资料片的默认物品替换你的全局物品特例吗？"
 L["ITEM_OVERRIDES_ACTION_DESCRIPTION"] = "设置此物品的自动掷骰方式。"
@@ -560,6 +554,8 @@ L["CHARACTER_RULES_OTHER_GEAR_NOTE"] = "鱼竿、杂项武器，以及上面各�
 -- The section under the lists: what happens to gear that doesn't match, and the button that clears a character's changes.
 L["CHARACTER_RULES_EVERYTHING_ELSE"] = "其他一切"
 L["CHARACTER_RULES_UNWANTED_ACTION"] = "不符合条件的装备"
+L["CHARACTER_RULES_UNWANTED_ACTION_DESCRIPTION"] =
+	"GogoLoot如何处理上方任何勾选框都不匹配的护甲和武器：贪婪、留给你自己（手动）或放弃。"
 L["CHARACTER_RULES_RESET"] = "恢复职业默认值"
 L["CHARACTER_RULES_RESET_DESCRIPTION"] = '将此角色的复选框和"其他一切"恢复为其职业的默认值。'
 -- Argument: the game's own name for the character's class.
@@ -599,13 +595,12 @@ L["SANITY_CHECK_CONTEXT"] = '按"%s"设置掷骰。'
 ]]
 L["SANITY_CHECK_MANUAL_ROLL"] = "手动掷骰"
 L["SANITY_CHECK_AUTOMATIC"] = "自动%s"
-L["SANITY_CHECK_BOP"] = "拾取绑定"
-L["SANITY_CHECK_BOE"] = "装备绑定"
 L["SANITY_CHECK_LOW_LEVEL"] = "低等级装备"
 L["SANITY_CHECK_ROLLS_OFF"] = "自动掷骰已关闭"
-L["SANITY_CHECK_QUALITY"] = "品质设置"
+L["SANITY_CHECK_QUALITY"] = "队伍与团队掷骰"
 L["SANITY_CHECK_NEVER"] = "从不自动"
 L["SANITY_CHECK_QUEST"] = "任务物品"
+L["SANITY_CHECK_BIND_ON_EQUIP"] = "装备后绑定"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "拾取后绑定"
 
 --------------------------------------------------------------------------------
@@ -786,6 +781,8 @@ L["LOOT_TOASTS_OUTLINE_MONOCHROME"] = "单色"
 L["LOOT_TOASTS_OUTLINE_MONOCHROME_OUTLINE"] = "单色描边"
 
 -- Position
+-- The caption beside Unlock Position / Lock Position.
+L["LOOT_TOASTS_POSITION"] = "提示位置"
 L["LOOT_TOASTS_UNLOCK"] = "解锁位置"
 L["LOOT_TOASTS_LOCK"] = "锁定位置"
 L["LOOT_TOASTS_RESET"] = "重置位置"
@@ -832,6 +829,9 @@ L["AUTOMATED_OPENING_ONLY_OUTSIDE_INSTANCES_DESCRIPTION"] =
 	"你在地下城、团队副本或战场中时，暂停开启任何物品。"
 L["AUTOMATED_OPENING_ONLY_SOLO"] = "仅在单人时"
 L["AUTOMATED_OPENING_ONLY_SOLO_DESCRIPTION"] = "你在队伍或团队中时，暂停开启任何物品。"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE"] = "装备鱼竿时"
+L["AUTOMATED_OPENING_WITH_FISHING_POLE_DESCRIPTION"] =
+	"装备鱼竿时也继续开启。保持关闭则在钓鱼时暂停开启。"
 
 -- Lockboxes
 -- Arguments: the game's own name for the Rogue class, then for the Lockpicking skill.
@@ -839,7 +839,8 @@ L["LOCKBOXES_SECTION_DESCRIPTION"] =
 	"锁箱需要%s撬开后才能打开。这些选项会显示每个锁箱所需的%s技能，并在有锁箱等待开启时提醒你。"
 L["LOCKBOXES_TOOLTIPS_ENABLE"] = "启用锁箱鼠标提示"
 -- Argument: the game's own name for the Lockpicking skill.
-L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] = "在每个锁箱的鼠标提示中加入其所需的%s技能。"
+L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"] =
+	"在每个锁箱的鼠标提示中加入其所需的%s技能，无论你在哪里看到它：背包、拾取窗口、交易窗口和聊天中的链接。"
 L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"] =
 	"设置锁箱鼠标提示仅对潜行者显示，还是对所有角色显示。"
 L["LOCKBOXES_NOTIFICATIONS_ENABLE"] = "启用锁箱通知"

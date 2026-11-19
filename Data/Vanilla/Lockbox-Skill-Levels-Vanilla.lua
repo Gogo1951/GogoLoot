@@ -40,6 +40,7 @@ Notes
 	- Pulled from this client's own tables at build 1.15.9.69722.
 	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
 	- Every row here must also be an ns.OPENING_UNLOCKED row in Openable-Items-Vanilla.lua; a test holds every folder to it.
+	- Rechecked against this client's tables at build 1.15.9.70576: every number matches its lock's Pick Lock entry, and every pickable locked row has one.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query

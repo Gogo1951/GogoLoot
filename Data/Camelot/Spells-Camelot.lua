@@ -20,6 +20,7 @@ Notes
 	- SHADOWMELD is the Night Elf racial. Automated Opening waits while its aura is up, as it does in stealth (Features/Automated-Opening.lua).
 	- The Lockpicking skill line Lockbox Tooltips reads is SKILL_LINE_IDS.LOCKPICKING in Game-IDs, not a spell.
 	- Began as a copy of Data/Vanilla/.
+	- Rechecked against this client's tables at build 1.60.1.70959: every spell is in SpellName under the name its key gives.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -28,7 +29,7 @@ Wowhead
 	None.
 
 wago.tools
-	None.
+	https://wago.tools/db2/SpellName?build=1.60.1.70959
 
 QuestieDB
 	None.

@@ -41,7 +41,7 @@ function ns.ExampleLockedContainer()
 	return exampleLockedContainer
 end
 
--- What Enable Lockbox Notifications prints, drawn as printed by Kit.Example while that toggle is on.
+-- What Enable Lockbox Notifications prints, drawn as printed by Kit.Example while it could print.
 local function LockboxNotificationExample()
 	local item = ns.OptionsExampleLink(ns.ExampleLockedContainer() or ns.SAMPLE_ITEM_IDS[2])
 	return ns.OptionsPrintedLine(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(item))
@@ -65,17 +65,20 @@ end
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
+--[[
+    Lockbox Tooltips is left out of the TOC where the client has no Lockpicking
+    skill line (MoP Classic), and its rows leave with it.
+]]
 ---@return table
 function ns.BuildLockboxOptions()
-	return {
+	local hasTooltips = ns.GetLockpickingSkillName ~= nil
+	local skillName = hasTooltips and ns.GetLockpickingSkillName() or ""
+	local options = {
 		type = "group",
 		name = L["TAB_LOCKBOXES"],
 		args = {
 			description = Kit.Desc(
-				L["LOCKBOXES_SECTION_DESCRIPTION"]:format(
-					LOCALIZED_CLASS_NAMES_MALE.ROGUE or "",
-					ns.GetLockpickingSkillName() or ""
-				),
+				L["LOCKBOXES_SECTION_DESCRIPTION"]:format(LOCALIZED_CLASS_NAMES_MALE.ROGUE or "", skillName),
 				1
 			),
 			spacerAfterDesc = Kit.Spacer(2),
@@ -92,15 +95,15 @@ function ns.BuildLockboxOptions()
 			tooltipsRow = Kit.ToggleRow(5, {
 				type = "toggle",
 				name = L["LOCKBOXES_TOOLTIPS_ENABLE"],
-				desc = L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"]:format(ns.GetLockpickingSkillName() or ""),
+				desc = L["LOCKBOXES_TOOLTIPS_SKILL_DESCRIPTION"]:format(skillName),
 				get = Kit.Get("profile", "lockboxTooltips"),
 				set = Kit.Set("profile", "lockboxTooltips"),
 			}, {
-				control = ScopeControl(L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"], function()
-					return ns.db.profile.lockboxTooltipsScope
-				end, function(_, value)
-					ns.db.profile.lockboxTooltipsScope = value
-				end),
+				control = ScopeControl(
+					L["LOCKBOXES_TOOLTIPS_SCOPE_DESCRIPTION"],
+					Kit.Get("profile", "lockboxTooltipsScope"),
+					Kit.Set("profile", "lockboxTooltipsScope")
+				),
 			}),
 			spacerBeforeNotifications = Kit.Spacer(6),
 			notificationsRow = Kit.ToggleRow(7, {
@@ -110,15 +113,26 @@ function ns.BuildLockboxOptions()
 				get = Kit.Get("profile", "lockboxNotifications"),
 				set = Kit.Set("profile", "lockboxNotifications"),
 			}, {
-				control = ScopeControl(L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"], function()
-					return ns.db.profile.lockboxNotificationsScope
-				end, function(_, value)
-					ns.db.profile.lockboxNotificationsScope = value
-				end),
+				control = ScopeControl(
+					L["LOCKBOXES_NOTIFICATIONS_SCOPE_DESCRIPTION"],
+					Kit.Get("profile", "lockboxNotificationsScope"),
+					Kit.Set("profile", "lockboxNotificationsScope")
+				),
 			}),
+			-- Leaves whenever the notice couldn't print: opening off, or a scope this character is outside.
 			notificationsExampleRow = Kit.Example(8, function()
-				return not ns.db.profile.lockboxNotifications
+				local profile = ns.db.profile
+				return not (
+					profile.autoOpen
+					and profile.lockboxNotifications
+					and ns.LockboxScopeAllows(profile.lockboxNotificationsScope)
+				)
 			end, LockboxNotificationExample),
 		},
 	}
+	if not hasTooltips then
+		options.args.tooltipsRow = nil
+		options.args.spacerBeforeNotifications = nil
+	end
+	return options
 end

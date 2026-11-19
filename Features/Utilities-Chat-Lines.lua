@@ -120,6 +120,29 @@ local function FindItemLink(text)
 end
 
 --[[
+    Every feature that reads a loot line handles the same CHAT_MSG_LOOT in one
+    dispatch, so each parser keeps its last line and answer and hands the answer
+    back when that line comes again. A secret line is turned away before the
+    memo, so it is never stored.
+]]
+local lastOwnMessage, lastOwnLink, lastOwnQuantity
+local lastGroupMessage, lastGroupLooter, lastGroupLink, lastGroupQuantity
+
+---@param message string
+---@return string|nil itemLink
+---@return number|nil quantity
+local function MatchOwnLootLine(message)
+	for _, entry in ipairs(ownLootPatterns) do
+		local arguments = MatchLootLine(entry, message)
+		local itemLink = arguments and arguments[1] and FindItemLink(arguments[1])
+		if itemLink then
+			return itemLink, entry.counted and tonumber(arguments[2]) or 1
+		end
+	end
+	return nil
+end
+
+--[[
     The item link out of one of the player's own loot messages, and how many
     came. Nil for anyone else's loot and for anything that is not a loot line.
 ]]
@@ -130,11 +153,23 @@ function ns.ParseOwnLootMessage(message)
 	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
-	for _, entry in ipairs(ownLootPatterns) do
+	if message ~= lastOwnMessage then
+		lastOwnMessage = message
+		lastOwnLink, lastOwnQuantity = MatchOwnLootLine(message)
+	end
+	return lastOwnLink, lastOwnQuantity
+end
+
+---@param message string
+---@return string|nil looterName
+---@return string|nil itemLink
+---@return number|nil quantity
+local function MatchGroupLootLine(message)
+	for _, entry in ipairs(groupLootPatterns) do
 		local arguments = MatchLootLine(entry, message)
-		local itemLink = arguments and arguments[1] and FindItemLink(arguments[1])
+		local itemLink = arguments and arguments[2] and FindItemLink(arguments[2])
 		if itemLink then
-			return itemLink, entry.counted and tonumber(arguments[2]) or 1
+			return arguments[1], itemLink, entry.counted and tonumber(arguments[3]) or 1
 		end
 	end
 	return nil
@@ -156,14 +191,11 @@ function ns.ParseGroupLootMessage(message)
 	if type(message) ~= "string" or ns.IsSecretValue(message) then
 		return nil
 	end
-	for _, entry in ipairs(groupLootPatterns) do
-		local arguments = MatchLootLine(entry, message)
-		local itemLink = arguments and arguments[2] and FindItemLink(arguments[2])
-		if itemLink then
-			return arguments[1], itemLink, entry.counted and tonumber(arguments[3]) or 1
-		end
+	if message ~= lastGroupMessage then
+		lastGroupMessage = message
+		lastGroupLooter, lastGroupLink, lastGroupQuantity = MatchGroupLootLine(message)
 	end
-	return nil
+	return lastGroupLooter, lastGroupLink, lastGroupQuantity
 end
 
 --------------------------------------------------------------------------------
@@ -261,13 +293,13 @@ for _, matcher in ipairs(rollResultMatchers) do
 	rollChatterMatchers[#rollChatterMatchers + 1] = matcher
 end
 
+-- Each matcher list's last line and answer, as for the loot lines above.
+local lastRollMessages, lastRollAnswers = {}, {}
+
 ---@param matchers table[]
----@param message any
----@return table|nil # { matcher, itemLink, roll?, playerName?, historyLink? }
-local function MatchRollLine(matchers, message)
-	if type(message) ~= "string" or ns.IsSecretValue(message) then
-		return nil
-	end
+---@param message string
+---@return table|nil
+local function FindRollLine(matchers, message)
 	local text = (string.gsub(message, LEADING_HISTORY_LINK, ""))
 	for _, matcher in ipairs(matchers) do
 		-- The find allocates nothing, so only a line that matches pays for the captures table.
@@ -291,6 +323,20 @@ local function MatchRollLine(matchers, message)
 		end
 	end
 	return nil
+end
+
+---@param matchers table[]
+---@param message any
+---@return table|nil # { matcher, itemLink, roll?, playerName?, historyLink? }, shared: read it, never change it
+local function MatchRollLine(matchers, message)
+	if type(message) ~= "string" or ns.IsSecretValue(message) then
+		return nil
+	end
+	if lastRollMessages[matchers] ~= message then
+		lastRollMessages[matchers] = message
+		lastRollAnswers[matchers] = FindRollLine(matchers, message)
+	end
+	return lastRollAnswers[matchers]
 end
 
 --[[
@@ -394,6 +440,87 @@ function ns.ParseRandomRollMessage(message)
 		return nil
 	end
 	return byArgument[1], roll, low, high
+end
+
+--------------------------------------------------------------------------------
+-- The Trade Clock
+--------------------------------------------------------------------------------
+
+--[[
+    A duration format's plural forms spelled out: "%d |4hour:hrs;" becomes
+    "%d hour" and "%d hrs". ruRU's three forms come out as three.
+]]
+---@param format string
+---@return string[]
+local function ExpandPluralForms(format)
+	local before, forms, after = string.match(format, "^(.-)|4([^;]*);(.*)$")
+	if not before then
+		return { format }
+	end
+	local expanded = {}
+	for form in string.gmatch(forms .. ":", "([^:]*):") do
+		for _, rest in ipairs(ExpandPluralForms(after)) do
+			expanded[#expanded + 1] = before .. form .. rest
+		end
+	end
+	return expanded
+end
+
+--[[
+    Each unit's patterns with its length in seconds, longest form first so
+    "hours" is tried before "hour", and the whole trade line's pattern.
+]]
+local DURATION_UNITS = {}
+for _, unit in ipairs({
+	{ format = INT_SPELL_DURATION_HOURS, seconds = 3600 },
+	{ format = INT_SPELL_DURATION_MIN, seconds = 60 },
+	{ format = INT_SPELL_DURATION_SEC, seconds = 1 },
+}) do
+	if type(unit.format) == "string" then
+		local patterns = {}
+		for _, form in ipairs(ExpandPluralForms(unit.format)) do
+			patterns[#patterns + 1] = (ns.BuildFormatPattern(form))
+		end
+		table.sort(patterns, function(a, b)
+			return #a > #b
+		end)
+		DURATION_UNITS[#DURATION_UNITS + 1] = { patterns = patterns, seconds = unit.seconds }
+	end
+end
+
+local tradeLinePattern = ns.BuildFormatPattern(BIND_TRADE_TIME_REMAINING)
+if tradeLinePattern then
+	tradeLinePattern = "^" .. tradeLinePattern .. "$"
+end
+
+--[[
+    The seconds a tooltip line says an item can still be traded for, or nil
+    for any other line (ns.GetBagSlotTradeSeconds in
+    Utilities-Scan-Tooltip.lua reads the lines). The tooltip counts in whole minutes, so this is right
+    to within a minute.
+]]
+---@param line any
+---@return number|nil
+function ns.ParseTradeTimeLine(line)
+	if not tradeLinePattern or type(line) ~= "string" then
+		return nil
+	end
+	local duration = string.match(line, tradeLinePattern)
+	if not duration then
+		return nil
+	end
+	local seconds, matched = 0, false
+	for _, unit in ipairs(DURATION_UNITS) do
+		for _, pattern in ipairs(unit.patterns) do
+			local amount = tonumber(string.match(duration, pattern))
+			if amount then
+				seconds = seconds + amount * unit.seconds
+				matched = true
+				break
+			end
+		end
+	end
+	return matched and seconds or nil
 end
 
 --------------------------------------------------------------------------------

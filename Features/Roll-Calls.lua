@@ -926,7 +926,7 @@ end
 -- Events: /roll and Passes
 --------------------------------------------------------------------------------
 
-local function OnSystemMessage(message)
+local function OnChatMsgSystem(message)
 	if not ns.db.profile.lootMaster then
 		return
 	end
@@ -1047,7 +1047,7 @@ for _, eventName in ipairs({
 		OnGroupChat(eventName, message, author)
 	end)
 end
-ns:RegisterModuleEvent("CHAT_MSG_SYSTEM", OnSystemMessage)
+ns:RegisterModuleEvent("CHAT_MSG_SYSTEM", OnChatMsgSystem)
 
 --------------------------------------------------------------------------------
 -- Events: the Loot Master's Add-on Messages
@@ -1194,7 +1194,7 @@ function RECEIVERS.CANCEL(_, id)
 	end
 end
 
-local function OnAddonMessage(prefix, message, _, sender)
+local function OnChatMsgAddon(prefix, message, _, sender)
 	if prefix ~= ns.ADDON_MESSAGE_PREFIX or type(message) ~= "string" or not ns.db.profile.lootMaster then
 		return
 	end
@@ -1215,7 +1215,7 @@ local function OnAddonMessage(prefix, message, _, sender)
 	end
 end
 
-ns:RegisterModuleEvent("CHAT_MSG_ADDON", OnAddonMessage)
+ns:RegisterModuleEvent("CHAT_MSG_ADDON", OnChatMsgAddon)
 
 --------------------------------------------------------------------------------
 -- Rows for the Windows
