@@ -3,21 +3,16 @@
 --------------------------------------------------------------------------------
 
 --[[
-    What the Loot Master and Loot Tracker windows share: the window itself (the
-    game's own BasicFrameTemplateWithInset, on all three clients), its tabs,
-    buttons, a scrolling list, and pooled widgets laid out top to bottom on
-    every repaint, so a list of any length costs no more frames than its
-    longest showing. Nothing here is protected, so the windows open and work
-    in combat.
-
-    Repaints are coalesced: everything that changes loot state calls
-    ns.RefreshLootWindows, which repaints on the next frame, once.
+    What the Loot Master and Loot Tracker windows share. Nothing here is
+    protected, so the windows work in combat. Widgets are pooled, so a list
+    costs no more frames than its longest showing; repaints are coalesced to
+    once on the next frame.
 ]]
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
 
--- The item lists' remove icon (Options-Utilities-Item-Lists.lua), so a remove button reads the same everywhere.
+-- The item lists' remove icon, so a remove button reads the same everywhere.
 ns.LOOT_WINDOW_REMOVE_ICON = "Interface/Buttons/UI-GroupLoot-Pass-Up"
 ns.LOOT_WINDOW_ARROW_UP = "Interface\\ChatFrame\\UI-ChatIcon-ScrollUp-Up"
 ns.LOOT_WINDOW_ARROW_DOWN = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up"
@@ -51,11 +46,7 @@ end
 -- The Window
 --------------------------------------------------------------------------------
 
---[[
-    A movable window, closed by Escape, that remembers where it was left
-    (ns.db.global.lootWindowPositions, by frame name, account-wide because it
-    is about the screen, like the toasts' position).
-]]
+-- Position is saved account-wide: it is about the screen, not the character.
 ---@param frameName string
 ---@param title string
 ---@param width number
@@ -126,7 +117,6 @@ function ns.LootWindowButton(parent, caption, width, onClick)
 	return button
 end
 
--- A button's caption changed after it was made: resize it to fit.
 ---@param button table
 ---@param caption string
 ---@return nil
@@ -135,7 +125,6 @@ function ns.SetLootWindowButtonText(button, caption)
 	button:SetWidth(ns.MeasureCaptionPixels(caption) + 24)
 end
 
--- A square button showing only an icon, with its meaning in a tooltip.
 ---@param parent table
 ---@param texture string
 ---@param size number
@@ -164,10 +153,6 @@ function ns.LootWindowIconButton(parent, texture, size, tooltip, onClick)
 	return button
 end
 
---[[
-    A row of tabs across the top of the content. Each is a plain button; the
-    open one is lit and gold, the rest white. onSelect(key) runs on a click.
-]]
 ---@param parent table
 ---@param tabs table[] # { key, caption }
 ---@param onSelect function
@@ -206,11 +191,7 @@ end
 -- Scrolling List
 --------------------------------------------------------------------------------
 
---[[
-    A scroll frame whose child grows to what was laid out on it. Lay out from
-    the top with list:Begin(), then list:Place(widget, height, indent) for each
-    widget in order, then list:Finish().
-]]
+-- Lay out with list:Begin(), list:Place(widget, height, indent) for each widget in order, then list:Finish().
 ---@param parent table
 ---@return table
 function ns.LootWindowList(parent)
@@ -249,11 +230,7 @@ function ns.LootWindowList(parent)
 	return scroll
 end
 
---[[
-    Widgets made once and handed out again on each repaint: Acquire returns
-    the next free one, made by `make(parent)` when the pool runs out, and
-    Release hides them all for the next layout.
-]]
+-- Release hides every widget before a layout; Acquire hands out the next, making one when the pool runs out.
 ---@param parent table
 ---@param make function
 ---@return table
@@ -281,10 +258,7 @@ end
 -- Items in Rows
 --------------------------------------------------------------------------------
 
---[[
-    An item shown in a row answers like one in the bags: hovering shows its
-    tooltip, Shift-Click puts its link in chat. `frame.itemLink` says which.
-]]
+-- Shows the tooltip of `frame.itemLink` on hover.
 ---@param frame table
 ---@return nil
 function ns.MakeItemHoverable(frame)
@@ -327,7 +301,6 @@ function ns.FormatClock(seconds)
 	return string.format("%d:%02d", minutes, rest)
 end
 
--- A name in its class color, the same in every window.
 ---@param name string|nil
 ---@return string
 function ns.LootWindowName(name)

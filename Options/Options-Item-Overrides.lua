@@ -10,16 +10,11 @@ local Kit = ns.OptionsKit
 --------------------------------------------------------------------------------
 
 --[[
-    Items with a roll action of their own, which Automated Rolls takes ahead of
-    its thresholds. The list answers to its own switch: Automated Rolls being
-    off hides nothing here, because a child panel hidden behind its parent's
-    switch would open onto a blank page. Nothing on it rolls while Automated
-    Rolls is off, though, so a line says so, rather than leaving a checked
-    Enable Item Overrides to suggest otherwise.
+    Never hidden behind Automated Rolls (a child panel would open blank); the
+    feature-off line says nothing rolls while it is off.
 ]]
 ---@return table
 function ns.BuildItemOverridesOptions()
-	-- The list leaves the page while its own switch is off, like every switched-off setting.
 	local function ListHidden()
 		return not ns.db.profile.customRollList
 	end

@@ -39,7 +39,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, MoP Classic 5.5.4.70631
+	2026-11-27, wago.tools, MoP Classic 5.5.4.71089
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
@@ -48,7 +48,7 @@ Notes
 	- SAMPLE_ITEM_IDS is one real item at each quality from Poor to Epic, so the options panels' Example lines show a real item link in the player's language (Options/Options-Automated-Rolls.lua, Options-Announcements.lua, Options-Automated-Opening.lua). Options-Utilities-Item-Cache.lua asks the client for all five when the options open, so the links are ready.
 	- SOUND_KIT_IDS.PICK_POCKET is the bag-pickup sound played for a pick-pocket loot window (Features/Loot-Sounds.lua) and previewed beside its option. BAG_FULL_BY_RACE is each race's "inventory is full" voice line, by sex as UnitSex returns it (2 male, 3 female), played when Automated Opening stops for a full bag (Features/Automated-Opening.lua); BAG_FULL_FALLBACK plays for a race with no row. This client adds the Blood Elf and Draenei rows.
 	- Validate Data looks up ITEM_IDS and SAMPLE_ITEM_IDS as items. SKILL_LINE_IDS and SOUND_KIT_IDS hold IDs no client API looks up, so it only counts their rows.
-	- Rechecked against this client's tables at build 5.5.4.70960: the bind probe and every sample item are in ItemSparse, each sample at the quality its key names, and every sound kit is in SoundKit.
+	- Rechecked against this client's tables at build 5.5.4.71089: the bind probe and every sample item are in ItemSparse, each sample at the quality its key names, every sound kit is in SoundKit, and SkillLine still has no row 633.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -61,6 +61,10 @@ wago.tools
 	https://wago.tools/db2/SkillLine?build=5.5.4.70631
 	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
 	https://wago.tools/db2/SoundKit?build=5.5.4.70960
+	https://wago.tools/db2/SkillLine?build=5.5.4.71089
+	https://wago.tools/db2/ItemSparse?build=5.5.4.71089
+	https://wago.tools/db2/Item?build=5.5.4.71089
+	https://wago.tools/db2/SoundKit?build=5.5.4.71089
 
 QuestieDB
 	None.

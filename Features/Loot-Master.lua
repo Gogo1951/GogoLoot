@@ -3,18 +3,10 @@
 --------------------------------------------------------------------------------
 
 --[[
-    What the Loot Master window shows and does, without the window: the Roll
-    List, the Floor Loot list, what was handed out, Roll All, and filling the
-    trade window for a winner.
-
-    The Roll List fills itself with every Bind on Pickup item in the bags that
-    can still be traded, each with its trade clock read off the item's tooltip
-    (ns.GetBagSlotTradeSeconds, Utilities-Scan-Tooltip.lua), and keyed by item GUID
-    so an entry survives the item moving between bags. Floor Loot entries and
-    a Master Looter's corpse items join it on the player's say-so.
-
-    Everything is kept per character in ns.db.char, so a /reload mid-raid
-    loses nothing but the rolls themselves.
+    The Loot Master's state without its window. The Roll List fills itself
+    with every still-tradable Bind on Pickup item in the bags, keyed by item
+    GUID so an entry survives moving between bags. Kept in ns.db.char, so a
+    /reload mid-raid loses only the rolls themselves.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -54,7 +46,6 @@ function ns:GetRollListEntry(key)
 	return nil
 end
 
--- The Roll List as the window shows it: in the player's order, without what was taken off.
 ---@return table[]
 function ns:GetRollListEntries()
 	local shown = {}
@@ -66,7 +57,6 @@ function ns:GetRollListEntries()
 	return shown
 end
 
--- Seconds left on an entry's trade clock, or nil for an entry without one.
 ---@param entry table
 ---@return number|nil
 function ns:GetEntrySecondsLeft(entry)
@@ -106,7 +96,7 @@ local function DropEntry(entry)
 	end
 end
 
--- Takes an entry off the Roll List. A bag item stays hidden until it's added back, so a rescan doesn't return it.
+-- A bag item stays hidden until it's added back, so a rescan doesn't return it.
 ---@param entry table
 ---@return nil
 function ns:RemoveRollListEntry(entry)
@@ -118,7 +108,7 @@ function ns:RemoveRollListEntry(entry)
 	Changed()
 end
 
--- Moves an entry one place up (-1) or down (1) among the shown ones.
+-- -1 up, 1 down, skipping hidden entries.
 ---@param entry table
 ---@param direction number
 ---@return nil
@@ -164,10 +154,6 @@ end
 -- Awarded
 --------------------------------------------------------------------------------
 
---[[
-    What was handed out, newest first: what it was, who got it, and the roll it
-    was won with. An entry leaves the Roll List as it lands here.
-]]
 ---@param entry table
 ---@return nil
 local function Award(entry)
@@ -204,10 +190,7 @@ end
 -- Bag Scan
 --------------------------------------------------------------------------------
 
---[[
-    The item's GUID, which follows it from bag to bag, or a key from where it
-    sits on a client without one.
-]]
+-- The GUID follows the item between bags; the slot key is for a client without one.
 ---@param bagIndex number
 ---@param slotIndex number
 ---@param itemLink string
@@ -223,12 +206,7 @@ local function BagItemKey(bagIndex, slotIndex, itemLink)
 	return "bag:" .. itemLink .. "@" .. bagIndex .. ":" .. slotIndex
 end
 
---[[
-    Every tradable Bind on Pickup item in the bags: key, link, bag, slot and
-    seconds left, plus the keys of the bound ones whose clock ran out. Skips
-    cheaply what can't be one (below ns.TRADABLE_MIN_QUALITY, or not Bind on
-    Pickup) before reading a tooltip.
-]]
+-- Quality and bind type rule an item out before the costlier tooltip read.
 ---@return table[] tradable
 ---@return table bound # [key] = true
 ---@return boolean complete # false when an item's info wasn't loaded yet, so the bags couldn't all be read
@@ -271,12 +249,7 @@ local function FindBagItem(key)
 	return nil
 end
 
---[[
-    Brings the Roll List in line with the bags: a new tradable item joins at
-    the end, a clock that drifted is set again, an item whose clock ran out
-    reads as Soulbound now, and one no longer carried leaves (a trade the Loot
-    Master saw has already moved it to Awarded).
-]]
+-- An item no longer carried just leaves: a trade the Loot Master saw has already moved it to Awarded.
 ---@return nil
 function ns:ScanTradableLoot()
 	if not ns.db or not ns.db.profile.lootMaster then
@@ -335,11 +308,7 @@ end
 -- The Clock
 --------------------------------------------------------------------------------
 
---[[
-    Once a second: the low-time warning, once per item, and an item whose
-    clock runs out turning Soulbound now, without waiting for a bag event.
-    The slow safety scan rides on it too.
-]]
+-- A clock running out fires no bag event, so the tick marks it; the slow safety scan rides on it too.
 local secondsSinceScan = 0
 
 local function OnClockTick()
@@ -370,10 +339,7 @@ local function OnClockTick()
 	end
 end
 
---[[
-    A roll doesn't survive a /reload, so an entry saved mid-roll goes back to
-    waiting rather than reading Rolling for good.
-]]
+-- A roll doesn't survive a /reload, so an entry saved mid-roll goes back to waiting.
 local function OnPlayerLogin()
 	for _, entry in ipairs(Entries()) do
 		if entry.status == ns.ENTRY_ROLLING and not ns:GetRollSession(entry.sessionId) then
@@ -414,12 +380,7 @@ function ns:RollEntry(entry)
 	return session
 end
 
---[[
-    Roll All works down the Roll List in the player's order, one item at a
-    time, waiting the panel's pause between items. Pause holds the roll in
-    progress and stops the next from starting; Stop lets the roll in progress
-    finish and starts nothing more.
-]]
+-- Roll All: Pause holds the roll in progress and the next; Stop lets it finish and starts nothing more.
 ns.rollAll = { running = false, paused = false }
 
 ---@return table|nil
@@ -475,11 +436,7 @@ end
 ---@return nil
 function ns:TogglePauseRollAll()
 	local rollAll, session = ns.rollAll, ns.currentRoll
-	--[[
-	    A roll of the player's in progress decides it: Pause holds that roll,
-	    Resume lets it go, and Roll All, while it runs, follows. With none,
-	    Pause only holds Roll All between items.
-	]]
+	-- With a roll of the player's open, Pause acts on it and Roll All follows; otherwise only between items.
 	if session and session.open and session.isMine then
 		if session.pausedLeft then
 			ns:ResumeRoll(session)
@@ -510,11 +467,7 @@ function ns:StopRollAll()
 	Changed()
 end
 
---[[
-    From the roll engine: a roll ended. Drops by boss takes any roll's winner;
-    a roll of the player's also settles its Roll List entry and moves Roll All
-    on.
-]]
+-- Drops by Boss takes any roll's winner; only the player's own rolls settle an entry.
 function ns.OnRollFinished(session)
 	if not ns.db then
 		return
@@ -579,12 +532,7 @@ end
 -- Floor Loot
 --------------------------------------------------------------------------------
 
---[[
-    Loot with no trade clock the player wants to roll off: mats, recipes, Bind
-    on Equip gear. It starts empty and holds only what the player adds, by
-    item ID; the count is what the bags hold now. Add from Bags lists what was
-    picked up in the current instance first.
-]]
+-- Floor Loot: items with no trade clock, by item ID, only what the player adds; the count is read live.
 ---@return number[]
 function ns:GetFloorLoot()
 	return ns.db.char.floorLoot
@@ -639,7 +587,6 @@ function ns:PruneFloorLoot()
 	end
 end
 
--- The Roll List entry a Floor Loot item has while it waits or is rolled for, if any.
 ---@param itemId number
 ---@return table|nil
 function ns:GetFloorLootEntry(itemId)
@@ -699,11 +646,6 @@ function ns:ListFloorLootInRaid()
 	end
 end
 
---[[
-    What Add from Bags offers: every tradable item in the bags not already on
-    the list, one row per item ID with what the bags hold, the ones picked up
-    in this instance first, each half by name.
-]]
 ---@return table[] # { itemId, link, count, pickedUp }
 function ns:GetFloorLootChoices()
 	local byItem, choices = {}, {}
@@ -741,10 +683,7 @@ function ns:GetFloorLootChoices()
 	return choices
 end
 
---[[
-    What the add box takes: an item ID, an item link, or part of a name, which
-    matches the first tradable item in the bags carrying it.
-]]
+-- An item ID, an item link, or part of a tradable bag item's name.
 ---@param text string
 ---@return number|nil
 function ns:ResolveFloorLootInput(text)
@@ -769,10 +708,7 @@ function ns:ResolveFloorLootInput(text)
 	return nil
 end
 
---[[
-    Picked up in this instance: the player's own loot lines while inside one,
-    forgotten when a different instance starts.
-]]
+-- Picked up in this instance: forgotten when a different instance starts.
 local function CurrentInstanceName()
 	local instanceName, instanceType = GetInstanceInfo()
 	if instanceType == "raid" or instanceType == "party" then
@@ -824,11 +760,8 @@ ns:RegisterModuleEvent("GROUP_ROSTER_UPDATE", OnRosterUpdate)
 --------------------------------------------------------------------------------
 
 --[[
-    While the Master Looter has a loot window open, the items at or above the
-    loot threshold that are still on the corpse join the Roll List tagged On
-    Corpse, a moment after the window opens so Automated Master Looting's
-    hand-outs have left first. The winner gets theirs straight from the corpse.
-    They leave when the window closes, apart from one already won or being
+    Added a moment after the loot window opens, so Automated Master Looting's
+    hand-outs have left first. On close they leave, except one won or being
     rolled for, which waits for the window to open again.
 ]]
 local function CorpseKey(itemLink, slotIndex)
@@ -904,7 +837,6 @@ ns:RegisterModuleEvent("LOOT_OPENED", OnLootOpened)
 ns:RegisterModuleEvent("LOOT_CLOSED", OnLootClosed)
 ns:RegisterModuleEvent("LOOT_SLOT_CLEARED", OnLootSlotCleared)
 
--- Gives a won corpse item to its winner, while the loot window holds it.
 ---@param entry table
 ---@return boolean
 function ns:GiveCorpseEntry(entry)
@@ -927,12 +859,7 @@ end
 -- Trading a Winner
 --------------------------------------------------------------------------------
 
---[[
-    A trade opened with a winner gets what they won put in for them: the item
-    itself for a bag entry, the stack's slots for Floor Loot, as far as the
-    six slots go. The game won't let an add-on accept the trade, so the player
-    still presses Trade.
-]]
+-- The game won't let an add-on accept a trade, so the player still presses Trade.
 ---@param partnerKey string
 ---@return table[]
 local function EntriesWonBy(partnerKey)
@@ -946,10 +873,7 @@ local function EntriesWonBy(partnerKey)
 end
 
 ---@return number|nil
---[[
-    The trade window shows an item a moment after it goes in, so the slots
-    this fill has already used are remembered rather than read back.
-]]
+-- The trade window shows an item a moment after it goes in, so used slots are remembered, not read back.
 local claimedTradeSlots = {}
 
 ---@return number|nil
@@ -1026,11 +950,7 @@ end
 
 ns:RegisterModuleEvent("TRADE_SHOW", OnTradeShow)
 
---[[
-    From the trade announcer, once a trade completes: what the player gave and
-    to whom. Every won entry of that winner whose item went over moves to
-    Awarded.
-]]
+-- Called by the trade announcer once a trade completes.
 ---@param partnerName string|nil
 ---@param givenItems table # [tradeSlot] = { link, count }
 ---@return nil
@@ -1057,12 +977,7 @@ end
 -- Alt-Click and the Bag Tooltip
 --------------------------------------------------------------------------------
 
---[[
-    Alt-Click on an item in the bags puts it on the Roll List: a tradable Bind
-    on Pickup item taken off earlier comes back, and anything else that can be
-    traded joins as one roll for everything of it the bags hold. Hooked after
-    the game's own handling, which uses Shift and Ctrl, never Alt alone.
-]]
+-- Alt-Click: hooked after the game's own handling, which uses Shift and Ctrl, never Alt alone.
 ---@param itemLink string
 ---@return nil
 function ns:AddItemToRollList(itemLink)
@@ -1114,10 +1029,6 @@ if HandleModifiedItemClick then
 	end)
 end
 
---[[
-    The bag tooltip of an item on the Roll List says where it came from and
-    where it stands, under the game's own trade line.
-]]
 ---@param tooltip table
 ---@param bagIndex number
 ---@param slotIndex number

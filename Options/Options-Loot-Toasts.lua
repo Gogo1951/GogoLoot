@@ -2,22 +2,6 @@
 -- GogoLoot Options — Loot Toasts
 --------------------------------------------------------------------------------
 
---[[
-    Everything GogoLoot shows for the loot the player and the group pick up,
-    which stands in for the loot window Speedy Loot hides. What it plays lives
-    on the Loot Sounds panel after it, and what it tells other players on the
-    Announcements panel.
-
-    Beside the toggle sits the dropdown that takes the game's own loot lines
-    out of the General chat tab while the toasts are on (Standard Loot
-    Messages in Features/Standard-Loot-Messages.lua). Below the toasts' toggle come Enable Tooltips on Loot Toast Items, Enable Blizzard Default
-    Roll Winner Window (only on a client that has the window), and the position buttons, then two sections
-    under headers of their own, Stack (how many, how long, which way) and Text
-    (face, size, outline), their rows at the panel's own level rather than
-    indented under the toggle. All of it, headers and spacers included, leaves
-    the panel while the toggle is off. Which loot gets a toast, and what it
-    says, is the Filters panel under this one.
-]]
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
@@ -28,10 +12,7 @@ for _, seconds in ipairs(ns.LOOT_TOAST_DURATIONS) do
 	DURATION_VALUES[seconds] = tostring(seconds)
 end
 
---[[
-    The same bare numbers, with Unlimited last: it belongs at the "more" end of
-    the scale, which is where a player reading down the list looks for it.
-]]
+-- Unlimited last, at the "more" end of the scale.
 local COUNT_VALUES = { [ns.LOOT_TOAST_UNLIMITED] = L["LOOT_TOASTS_UNLIMITED"] }
 local COUNT_SORTING = {}
 for _, count in ipairs(ns.LOOT_TOAST_COUNTS) do
@@ -40,7 +21,7 @@ for _, count in ipairs(ns.LOOT_TOAST_COUNTS) do
 end
 COUNT_SORTING[#COUNT_SORTING + 1] = ns.LOOT_TOAST_UNLIMITED
 
--- The client's own SetFont flag strings, captioned, in ns.LOOT_TOAST_FONT_FLAGS order.
+-- Keyed by the client's own SetFont flag strings.
 local FONT_FLAG_VALUES = {
 	NONE = L["LOOT_TOASTS_OUTLINE_NONE"],
 	OUTLINE = L["LOOT_TOASTS_OUTLINE_OUTLINE"],
@@ -53,7 +34,7 @@ local function LootToastsOff()
 	return not ns.db.profile.lootToasts
 end
 
--- A Stack or Text dropdown: every change re-draws the preview, so the player sees it land.
+-- Every change redraws the samples, so the player sees it land.
 local function SettingRow(captionKey, control, settingKey, afterSet)
 	control.get = function()
 		return ns.db.profile[settingKey]
@@ -67,7 +48,7 @@ local function SettingRow(captionKey, control, settingKey, afterSet)
 	return Kit.LabelRow(0, nil, L[captionKey], control)
 end
 
--- Font Size's steps, and a size saved between them, so it still reads back.
+-- Includes a saved size between the steps, so it still reads back.
 local function FontSizeSorting()
 	local sorting = {}
 	local saved = ns.db.profile.lootToastFontSize
@@ -120,11 +101,7 @@ function ns.BuildLootToastOptions()
 		}),
 	}
 
-	--[[
-        Everything the toasts own goes through Add, which gives it the next
-        order and hides it with the toggle, on top of any condition of its own,
-        so nothing added later can be left standing on a switched-off panel.
-    ]]
+	-- Add hides every entry with the switch, on top of its own condition, so nothing is left on a switched-off panel.
 	local order = 3
 	local function Add(key, entry)
 		order = order + 1
@@ -156,7 +133,6 @@ function ns.BuildLootToastOptions()
 		end
 	end
 
-	-- Tooltips: straight under the switch. Off by default, so the stack never blocks the world.
 	AddSpacer("spacerBeforeTooltips")
 	Add("tooltipsToggle", {
 		type = "toggle",
@@ -171,7 +147,6 @@ function ns.BuildLootToastOptions()
 		end,
 	})
 
-	-- Blizzard's own roll-won window: under Tooltips, and only on a client that has one, its spacer with it.
 	local blizzardRollWonSpacer = Kit.Spacer(0)
 	blizzardRollWonSpacer.hidden = function()
 		return not ns.HasBlizzardRollWonWindow()
@@ -193,15 +168,6 @@ function ns.BuildLootToastOptions()
 		end,
 	})
 
-	--[[
-        The position controls come next, after the switch's tooltips and the
-        Blizzard Roll Won toggle, since where the toasts sit is the first thing
-        a player sets: Lock or Unlock in the
-        control column beside its Toast Position caption, then Reset Position on a Reset row of its own, gray
-        while the toasts already sit where they start. They hide with the rest
-        rather than graying out: dead buttons under a switched-off toggle read
-        as the feature being unfinished.
-    ]]
 	AddSpacer("spacerBeforePosition")
 	Add(
 		"positionRow",
@@ -232,7 +198,6 @@ function ns.BuildLootToastOptions()
 		end, ns.ResetLootToastPosition, L["LOOT_TOASTS_RESET_CONFIRM"])
 	)
 
-	-- Stack: how many toasts, for how long, and which way they grow and line up.
 	AddHeader("stackHeader", "LOOT_TOASTS_STACK_HEADER")
 	AddSettingRows({
 		{
@@ -273,7 +238,6 @@ function ns.BuildLootToastOptions()
 		},
 	})
 
-	-- Text: the face, its size, then its outline.
 	AddHeader("textHeader", "LOOT_TOASTS_TEXT_HEADER")
 	AddSettingRows({
 		{
@@ -281,11 +245,7 @@ function ns.BuildLootToastOptions()
 			row = SettingRow("LOOT_TOASTS_FONT", {
 				type = "select",
 				desc = L["LOOT_TOASTS_FONT_DESCRIPTION"],
-				--[[
-                    Functions, not tables: the list depends on which faces
-                    LibSharedMedia has by the time the dropdown opens, which
-                    can grow as other add-ons register theirs.
-                ]]
+				-- Functions, not tables: LibSharedMedia's list grows as other add-ons register faces.
 				values = function()
 					return (ns.GetLootToastFontChoices())
 				end,

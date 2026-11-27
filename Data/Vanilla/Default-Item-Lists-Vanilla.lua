@@ -99,7 +99,7 @@ ns.DEFAULT_IGNORE_LIST_MASTER = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, Classic Era 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
 	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.
@@ -116,6 +116,7 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/ItemSparse?build=1.15.9.70576
+	https://wago.tools/db2/Item?build=1.15.9.70576
 
 QuestieDB
 	None.

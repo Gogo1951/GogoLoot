@@ -2,28 +2,14 @@
 -- GogoLoot Loot Toasts: Winning Rolls
 --------------------------------------------------------------------------------
 
---[[
-    The roll each item was won with, read off the game's roll lines on this
-    file's own CHAT_MSG_LOOT handler, whatever the toasts' switch says, and
-    handed to the winner's loot toast (Features/Loot-Toasts.lua), which asks
-    ns.ClaimWinningRoll.
-]]
 local _, ns = ...
 local L = ns.L
 
 --[[
-    Winning rolls, carried from the roll lines to the loot line that follows,
-    and handed as each won line lands to ns.OnRollWon when something defines it
-    (Automated Rolls' winner summary).
-    While a roll is open the client prints each player's roll, then who won,
-    then the winner's loot line; with its roll spam turned down, only a won line
-    that carries the winning roll, then the loot line. Rolls are kept per roll,
-    by the roll's own "[Loot]" link (two copies of one item rolled at once are
-    two rolls), or by item link on a line without one, and by player until the
-    won line names the winner, whose roll then waits
-    for that player's loot line. Anything a loot line never claims (a roll the
-    whole group passed, a win the loot window kept) ages out, so nothing
-    collects over a long session.
+    Rolls are kept by the roll's own "[Loot]" link (two copies rolled at once
+    are two rolls), else by item link, and by player until the won line; the
+    winner's roll then waits for their loot line. Anything never claimed (an
+    all-pass, a win the loot window kept) ages out.
 ]]
 local ROLL_RECORD_SECONDS = 300
 
@@ -65,7 +51,6 @@ local function RollText(rollKind, roll)
 	return L["LOOT_TOASTS_ROLL_RESULT"]:format(word, roll)
 end
 
--- True when the line was a roll line, which is never a loot line too.
 ---@param message any
 ---@return boolean
 function ns.RecordRollLine(message)
@@ -103,10 +88,6 @@ function ns.RecordRollLine(message)
 	return true
 end
 
---[[
-    The roll an item was won with, as a toast shows it, taken once by the winner's
-    loot line; nil when no roll was recorded for that player and item.
-]]
 ---@param playerName string|nil
 ---@param itemLink string
 ---@return string|nil

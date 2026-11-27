@@ -90,6 +90,7 @@ Features/Automated-Opening.lua
 Features/Opening-Notices.lua
 Features/Lockbox-Tooltips.lua
 Features/Loot-Toasts-Winning-Rolls.lua
+Features/Roll-Audit.lua
 Features/Loot-Toasts-Filters.lua
 Features/Loot-Toasts.lua
 Features/Loot-Toasts-Handle.lua
@@ -102,6 +103,7 @@ Features/Character-Rules.lua
 Features/Character-Rule-Stats.lua
 Features/Roll-Messages.lua
 Features/Automated-Rolls.lua
+Features/Roll-Preview-Tooltip.lua
 Features/Roll-Macro.lua
 Features/Raid-Roll-Winner.lua
 Features/Tint-Tradable-Gear.lua

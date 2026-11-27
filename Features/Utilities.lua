@@ -2,15 +2,6 @@
 -- GogoLoot Utilities
 --------------------------------------------------------------------------------
 
---[[
-    Shared utilities used across feature modules and the options panels: the
-    API compatibility shims, named timers, derived color tables and accessors,
-    tooltip line helpers, player-name and item-link parsing, item lookups, and
-    small game-state predicates. Bag space and the inventory-full error live in
-    Utilities-Bags.lua, the scan tooltip in Utilities-Scan-Tooltip.lua, and the
-    client's own format strings, the chat lines read with them and link quality
-    in Utilities-Chat-Lines.lua.
-]]
 local _, ns = ...
 
 --------------------------------------------------------------------------------
@@ -18,36 +9,21 @@ local _, ns = ...
 --------------------------------------------------------------------------------
 
 --[[
-    Every API the engines genuinely differ on gets its one accessor here, so a
-    client change is a one-line edit in one file rather than a hunt through the
-    feature modules. Each picks by AVAILABILITY, never by truthy result: a
-    `(modern call) or (legacy call)` chain silently falls through to the legacy
-    read whenever the modern one legitimately returns false. Namespaced APIs
-    every target client ships (C_Item, C_Container, C_AddOns) are called
-    directly instead, with no legacy fallback.
+    Each accessor picks by AVAILABILITY, never by truthy result: a
+    `(modern call) or (legacy call)` chain falls through to the legacy read
+    whenever the modern one legitimately returns false.
 ]]
 
 --[[
-    GetGameMessageInfo maps a numeric message id to its constant name. The same
-    error carries a different id on every flavor, and several ERR_* globals are
-    unbound as strings on 1.15.9, so anything correlating a UI_ERROR_MESSAGE or
-    UI_INFO_MESSAGE resolves the constants it cares about to this client's ids
-    and matches on the number rather than on translated text.
+    The same error carries a different id on every flavor, and several ERR_*
+    globals are unbound on 1.15.9, so message correlation matches on this
+    client's ids, never on translated text.
 ]]
 ns.GetGameMessageInfo = GetGameMessageInfo
 
 --[[
-    One walk of the message table, shared by the master-loot error correlation
-    (Master-Looter-Distribution.lua), the trade-result watcher
-    (Announcements-Trade.lua), and the Diagnostics Loot Method report, which
-    passes both of those constant tables at once so the report costs one scan
-    rather than one per table. `names` is any table keyed by constant name; the
-    result maps this client's numeric id back to the name that resolved, and a
-    constant this client doesn't carry simply never appears in it.
-
-    The second return is how many messages the walk saw, which is the only thing
-    that separates "this client resolved nothing" from "this client has no
-    message table to resolve against" — a distinction the report has to draw.
+    The count tells "this client resolved nothing" from "this client has no
+    message table", which the Diagnostics report has to draw.
 ]]
 ---@param names table
 ---@return table resolved
@@ -74,12 +50,9 @@ function ns:ResolveGameMessageIds(names)
 end
 
 --[[
-    Loot method and threshold: the engines differ per function, not per client.
-    1.15.9 dropped the legacy GetLootMethod / SetLootMethod pair but kept
-    GetLootThreshold / SetLootThreshold, so each resolves on its own, C_PartyInfo
-    first, once at load; a client with neither leaves that accessor nil. The
-    C_PartyInfo setter takes the numeric Enum.LootMethod value where the legacy
-    one takes a string, and ns.SET_LOOT_METHOD_TAKES_ENUM records which won.
+    Per function, not per client: 1.15.9 dropped the legacy GetLootMethod /
+    SetLootMethod but kept GetLootThreshold / SetLootThreshold. The C_PartyInfo
+    setter takes Enum.LootMethod where the legacy one takes a string.
 ]]
 ns.GetLootMethod = (C_PartyInfo and C_PartyInfo.GetLootMethod) or GetLootMethod
 ns.GetLootThreshold = (C_PartyInfo and C_PartyInfo.GetLootThreshold) or GetLootThreshold
@@ -97,39 +70,24 @@ function ns:SafeCallLootMethod()
 	return ns.GetLootMethod()
 end
 
---[[
-    GetLootSlotType's "regular item" value. WoW Forever runs the Retail engine,
-    which dropped the LOOT_SLOT_ITEM global for Enum.LootSlotType.Item. Picked by
-    which table exists, never by what it holds.
-]]
+-- WoW Forever runs the Retail engine, which dropped LOOT_SLOT_ITEM for Enum.LootSlotType.Item.
 if Enum.LootSlotType then
 	ns.LOOT_SLOT_TYPE_ITEM = Enum.LootSlotType.Item
 else
 	ns.LOOT_SLOT_TYPE_ITEM = LOOT_SLOT_ITEM
 end
 
---[[
-    An item's stat table from its link, for Character Rules and Validate Data. WoW Forever ships
-    C_Item.GetItemStats; Classic Era and TBC Anniversary have only the legacy
-    global GetItemStats, which returns the same table.
-]]
+-- Classic Era and TBC Anniversary have only the legacy global, which returns the same table.
 ns.GetItemStats = C_Item.GetItemStats or GetItemStats
 
---[[
-    Whether a value is secret: WoW Forever, like Retail, can hand an add-on a
-    unit's identity as a secret value in combat, and a secret can't be compared,
-    sorted or matched. issecretvalue exists only where secrets do.
-]]
+-- WoW Forever can hand over a unit's identity as a secret in combat: it can't be compared or matched.
 ns.IsSecretValue = issecretvalue or function()
 	return false
 end
 
 --[[
-    A skill line's current rank, found by its name in the player's language, or
-    nil when it can't be read. Resolved once, here. WoW Forever has no
-    skill-line API, and other add-ons put look-alike globals back there
-    (Questie restores GetSkillLineInfo), so on Forever it is always nil, and a
-    skill count that isn't a number reads as unknown on every client.
+    WoW Forever has no skill-line API, but other add-ons put look-alike globals
+    back (Questie restores GetSkillLineInfo), so there it is always nil.
 ]]
 local SkillLineRankByName = function()
 	return nil
@@ -162,16 +120,6 @@ end
 --------------------------------------------------------------------------------
 -- UI Colors
 --------------------------------------------------------------------------------
-
---[[
-    Built from the raw hex palettes in Data.lua and exposed in two forms:
-      * ns.COLORS[key] -> "|cffRRGGBB" (for inline chat/string use)
-      * ns.COLORS_RGB[key] -> {r, g, b} (for tooltip/texture APIs)
-    Consumers should prefer ns.GetColor(key) / ns.GetColorRGB(key)
-    over indexing the tables directly. These are dot functions (no self),
-    so every file aliases them once — local GetColor = ns.GetColor — and
-    calls GetColor("KEY"); see Style Guide → COLORS.
-]]
 
 local function HexToNormalizedRGB(hex)
 	local r = tonumber(string.sub(hex, 1, 2), 16) / 255
@@ -211,7 +159,6 @@ function ns.GetQualityColor(quality)
 	return "|cff" .. hex
 end
 
--- The same quality color as numbers, for texture APIs (the loot toasts' icon border).
 ---@param quality number
 ---@return number r
 ---@return number g
@@ -220,7 +167,6 @@ function ns.GetQualityColorRGB(quality)
 	return HexToNormalizedRGB(ns.QUALITY_COLORS[quality] or ns.QUALITY_COLORS[1])
 end
 
--- A class's color escape from its token ("WARRIOR"), or nil for a token ns.CLASS_COLORS doesn't hold.
 ---@param classFile string|nil
 ---@return string|nil
 function ns.GetClassColor(classFile)
@@ -228,7 +174,6 @@ function ns.GetClassColor(classFile)
 	return hex and "|cff" .. hex or nil
 end
 
--- A coin's color escape (ns.MONEY_PALETTE: GOLD, SILVER or COPPER).
 ---@param key string
 ---@return string
 function ns.GetMoneyColor(key)
@@ -250,12 +195,6 @@ end
 -- Tooltip Helpers
 --------------------------------------------------------------------------------
 
---[[
-    Thin wrappers around GameTooltip:AddLine / AddDoubleLine that accept color
-    keys from ns.COLORS_RGB, so tooltip code doesn't repeat RGB literals.
-    Pass nil for colorKey to use the default text color.
-]]
-
 ---@param tooltip table
 ---@param text string
 ---@param colorKey string|nil
@@ -272,13 +211,7 @@ end
 
 local captionMeasure
 
---[[
-    The width in pixels of a caption in GameFontHighlight, read off a hidden
-    font string without drawing anything. GameFontNormal, a button's caption
-    font, differs only in color, so it measures the same: how the item lists'
-    Add button and the loot windows' buttons size themselves. (A checkbox's
-    width in options units is the kit's Kit.ToggleWidth.)
-]]
+-- GameFontNormal, a button's caption font, differs only in color, so this measures button captions too.
 ---@param caption string
 ---@return number
 function ns.MeasureCaptionPixels(caption)
@@ -291,7 +224,6 @@ function ns.MeasureCaptionPixels(caption)
 	return captionMeasure:GetStringWidth()
 end
 
--- 1240 as "1,240", for Diagnostic Tools' progress and tallies.
 ---@param number number
 ---@return string
 function ns:FormatCommaNumber(number)
@@ -299,13 +231,9 @@ function ns:FormatCommaNumber(number)
 end
 
 --[[
-    Canonical key for player-name comparisons: realm suffix stripped, then
-    lowercased. Cross-realm members appear as "Name-Realm" in some APIs
-    (GetMasterLootCandidate) and as plain "Name" in others (UnitName), so
-    destinations, candidate-map lookups, and group-member lookups must all
-    pass through this one helper to compare equal. A WoW Forever name
-    ("Aero Bramblefoot") has no realm and no dash, so it passes through
-    whole.
+    Cross-realm members read "Name-Realm" in some APIs (GetMasterLootCandidate)
+    and "Name" in others (UnitName), so every name comparison goes through
+    ns:NormalizePlayerName. A WoW Forever name has no dash and passes whole.
 ]]
 local function StripRealmSuffix(fullName)
 	if not fullName then
@@ -327,13 +255,7 @@ function ns:NormalizePlayerName(playerName)
 	return strlower(StripRealmSuffix(playerName))
 end
 
---[[
-    A group member's class color as a color escape ("|cffc79c6e"), while the
-    roster still holds them; nil once it doesn't. The name is as a chat line
-    prints it, which meets the roster's through ns:NormalizePlayerName: a realm
-    suffix on a cross-realm name, the whole "First Last" on WoW Forever. Shared
-    by the loot toasts' looter names and the winner summary.
-]]
+-- nil once the roster no longer holds them.
 ---@param playerName string|nil
 ---@return string|nil
 function ns:GetGroupMemberClassColor(playerName)
@@ -353,15 +275,10 @@ function ns:GetGroupMemberClassColor(playerName)
 end
 
 --[[
-    A unit's name as GogoLoot knows the player: the bare character name, or on
-    WoW Forever the whole "First Last" name. Forever's UnitName returns the last
-    name where other flavors return the realm ("Aero", "Bramblefoot", the
-    player included), while the loot window's candidates and chat authors read
-    "Aero Bramblefoot". Rejoining the two is what lets a destination picked
-    from the group roster match the loot window.
-
-    A name that reads secret is unknown (nil), as every caller already treats a
-    unit with no name: the roster's names all pass through here.
+    WoW Forever's UnitName returns the last name where other flavors return the
+    realm, while loot candidates and chat authors read "First Last": rejoining
+    them lets a destination picked from the roster match the loot window. A
+    secret name reads as unknown (nil).
 ]]
 ---@param unitIdentifier string
 ---@return string|nil
@@ -392,19 +309,10 @@ function ns:CapitalizeFirstLetter(text)
 end
 
 --[[
-    How a player name is written in anything sent to chat: the bare character
-    name, realm stripped. Names are stored and compared realm-stripped and
-    lowercased, which is right for matching but loses the original casing, so
-    this restores the leading capital of each word (a WoW Forever name has two)
-    without touching the rest.
-
-    Names go out without the realm: "Name-Realm" is noise in a same-realm
-    group, which is nearly all of them. The cost is that two cross-realm
-    players sharing a first name read identically in chat; the candidate
-    matching still tells them apart, only the message does not.
-
-    Nothing here decorates the name. Chat escapes color codes into literal
-    text, so how it renders is the receiving client's business.
+    Stored names are lowercased, so each word's capital is restored (a WoW
+    Forever name has two). The realm is dropped as noise in nearly every group;
+    two cross-realm namesakes then read alike in chat, though matching still
+    tells them apart.
 ]]
 ---@param playerName string
 ---@return string
@@ -459,11 +367,9 @@ function ns:SafeGetItemInfo(itemIdentifierOrLink)
 end
 
 --[[
-    Verified against a live 1.15.9 client: C_PartyInfo.GetLootMethod returns
-    (method, masterLooterPartyIndex, masterLooterRaidIndex), the same shape as
-    the retired global, and the party index really is 0 when the player is the
-    master looter. The method is an Enum.LootMethod number there, and a string
-    only from the legacy global.
+    Verified on 1.15.9: C_PartyInfo.GetLootMethod returns the legacy global's
+    shape, the party index is 0 when the player is master looter, and the
+    method is an Enum.LootMethod number (a string only from the legacy global).
 ]]
 ---@return boolean
 function ns:AreWeMasterLooter()
@@ -475,11 +381,7 @@ function ns:AreWeMasterLooter()
 	return isMasterLoot and masterLooterPartyIndex == 0
 end
 
---[[
-    The absolute skips. Nothing automates a legendary, a recipe, a mount or a
-    pet, and no Item Overrides entry can opt back in — listing one
-    of these by item id still leaves it to the player.
-]]
+-- Absolute: no Item Overrides entry can opt one of these back in.
 ---@param itemInformation table
 ---@return boolean
 function ns:IsNeverAutomatedItem(itemInformation)
@@ -487,15 +389,12 @@ function ns:IsNeverAutomatedItem(itemInformation)
 		return true
 	end
 
-	-- Legendaries
 	if itemInformation.quality == 5 then
 		return true
 	end
-	-- Recipes, Books, Patterns, Plans, Schematics, Formulas (all classId 9)
 	if itemInformation.classId == ns.ITEM_CLASS_RECIPE then
 		return true
 	end
-	-- Mounts and Companion Pets
 	if
 		itemInformation.classId == ns.ITEM_CLASS_MISCELLANEOUS
 		and (
@@ -510,16 +409,9 @@ function ns:IsNeverAutomatedItem(itemInformation)
 end
 
 --[[
-    Quest-class items are skipped by every path that picks items on its own,
-    the roll threshold and master-loot distribution, but NOT by Item
-    Overrides, which is an explicit per-item instruction from the player.
-
-    That distinction is load-bearing rather than theoretical. The AQ and ZG
-    war-effort tokens all report classId 12 with an ordinary bind type: scarabs
-    (20858-20865), AQ20 idols (20866-20873), AQ40 idols (20874-20882), ZG coins
-    (19698-19706), ZG bijous (19707-19715) and Wartorn scraps (22373-22376).
-    Run this test ahead of the list and every one of those default entries
-    becomes unreachable: correct ids, correct saved action, and no roll.
+    Kept apart from ns:IsNeverAutomatedItem because Item Overrides must run
+    before it: the AQ and ZG war-effort tokens on the default list report the
+    quest class, and testing this first would make those entries unreachable.
 ]]
 ---@param itemInformation table
 ---@return boolean
@@ -535,14 +427,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    ElvUI and Tukui each replace the game's loot window with their own
-    (ns.LOOT_WINDOW_REPLACEMENTS), and unregister LootFrame's events so the
-    game's never opens. Each is created only while that UI's loot module is
-    on, so whichever exists IS the loot window: the one Speedy Loot hides and
-    shows, and the one Automated Opening waits on. Both are made after
-    GogoLoot loads (ElvUI and Tukui build their modules at login), so this is
-    asked at loot time, never cached at load. With Tukui's loot module off it
-    only reskins LootFrame, which then stays the window.
+    ElvUI and Tukui create their loot window only while their loot module is
+    on, so whichever exists IS the loot window. They build it at login, after
+    GogoLoot loads, so this is asked at loot time, never cached.
 ]]
 ---@return table|nil
 function ns.GetLootWindow()
@@ -571,12 +458,6 @@ function ns.IsPlayerRogue()
 	return classFile == "ROGUE"
 end
 
---[[
-    Both lockbox features, the tooltip line and the looted-lockbox notice, carry
-    a scope beside their toggle: "ROGUES" shows them only to a Rogue, "ALL" to
-    every character. A non-Rogue can't pick a lock, so Rogues only is the
-    default for both. The rule lives here so both apply the same one.
-]]
 ---@param scope string
 ---@return boolean
 function ns.LockboxScopeAllows(scope)

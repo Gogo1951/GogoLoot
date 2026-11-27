@@ -146,11 +146,7 @@ L["TAB_LOOT_MASTER"] = "Loot Master"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "Paused"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Rolls for you on eligible items up to the quality you pick."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Opens clams, crates, coin purses, and unlocked lockboxes in your bags."
 -- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
@@ -167,6 +163,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] = "Posts trade summaries, loot destinatio
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Roll"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Roll Audit"
+L["MENU_RECENT_ROLLS"] = "Recent Rolls"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "You"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "No Roll"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Everyone Passed"
+L["MENU_ROLL_AUDIT_EMPTY"] = "No rolls yet in this instance."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -182,8 +192,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d Off"
 
 L["MENU_CLICK_LEFT"] = "Left-Click"
 L["MENU_CLICK_RIGHT"] = "Right-Click"
-L["MENU_CLICK_SHIFT_LEFT"] = "Shift + Left-Click"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Middle-Click"
 L["MENU_TOGGLE"] = "Toggle"
 
@@ -194,7 +202,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "A %s can pick these for you."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Pick these with %s to unlock them."
 L["MENU_OPTIONS"] = "GogoLoot Options"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + Middle-Click"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "%d more"
@@ -257,12 +264,7 @@ L["ITEM_LIST_RESTORE"] = "Restore Defaults"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Loading ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"It never rolls on recipes, books, mounts, pets, or legendaries, rolls on quest items only when they're on Global Item Overrides, and rolls on Bind on Pickup items only when they're on Global Item Overrides or Include Bind on Pickup is on."
 
@@ -296,20 +298,18 @@ L["WELCOME_MESSAGE"] = "Enable Welcome Message"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "Shows GogoLoot's version and where to find these settings each time you log in."
 L["MINIMAP_BUTTON_ENABLE"] = "Enable Mini-map Button"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Shows the GogoLoot button on the mini-map. Hover it for GogoLoot's menu. Left-Click toggles Automated Rolls, Right-Click Automated Opening, and Shift + Left-Click Loot Announcements."
+	"Shows the GogoLoot button on the mini-map. Hover it for GogoLoot's menu, or Left-Click to keep the menu open."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Commands"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Opens the Options Interface for this add-on."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Features"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Takes everything from a corpse the moment you open it, so you never wait on the loot window."
 L["SPEEDY_LOOT_ENABLE"] = "Enable Speedy Loot"
@@ -407,11 +407,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Sets the lowest item quality the loot method applies to. Only the group leader can change it."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "These settings are controlled by %s."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "Join a group to change these. Only the group leader can."
@@ -505,7 +501,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Print Winner Summary"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Don't Print Winner Summary"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Print Winner Summary puts one line in chat for each win, naming the winner, the item, and the winning roll, in place of the game's own line. Don't Print Winner Summary leaves the game's line saying who won."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Safety Warnings"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "Warn Me When I Enter a Dungeon or Raid Set to %s or %s"
@@ -514,10 +509,7 @@ L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
 L["ROLLS_SAFETY_WARNING_SOUND"] = "Play Sound"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "Plays an alert alongside the warning, for when chat is busy."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Sets the roll for specific items, ahead of your Party and Raid Rolls. It's the only way GogoLoot will roll on a quest item, or on a Bind on Pickup item while Include Bind on Pickup is off."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -1079,7 +1071,7 @@ L["LOOT_MASTER_STATE_ONE_AT_A_TIME"] = "One roll at a time."
 L["LOOT_MASTER_STATE_WAITING"] = "%d waiting for a roll."
 -- The foot of the Roll List. Arguments: how many items, then the time left on the soonest trade clock.
 L["LOOT_MASTER_FOOTER"] = "%d to hand out."
-L["LOOT_MASTER_FOOTER_CLOCK"] = "%d to hand out, next trade window closes in %s."
+L["LOOT_MASTER_FOOTER_CLOCK"] = "%d to hand out, next trade clock runs out in %s."
 L["LOOT_MASTER_ALT_CLICK_HINT"] = "Alt-Click a bag item to add it."
 
 -- The Disqualify window.
@@ -1128,7 +1120,7 @@ L["LOOT_MASTER_FLOOR_REMOVE"] = "Takes this item off Floor Loot."
 L["LOOT_MASTER_FLOOR_OTHER"] = "Other"
 L["LOOT_MASTER_FLOOR_ADD_ALL"] = "Add All to Roll List"
 -- Add from Bags' two headings.
-L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "Picked Up in This Instance"
+L["LOOT_MASTER_FLOOR_MENU_PICKED_UP"] = "Picked up in This Instance"
 L["LOOT_MASTER_FLOOR_MENU_BAGS"] = "Also in Your Bags"
 -- Argument: what was typed.
 L["LOOT_MASTER_FLOOR_NOT_FOUND"] = 'Nothing tradable in your bags matches "%s".'
@@ -1212,7 +1204,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Hand out what you can still trade by roll, with the trade clock on each item, and follow every roll in the Loot Tracker. Middle-Click the mini-map button, or type /gogo master or /gogo tracker."
+	"Hand out what you can still trade by roll, with the trade clock on each item, and follow every roll in the Loot Tracker. Type /gogo master or /gogo tracker."
 L["LOOT_MASTER_ENABLE"] = "Enable Loot Master"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Tracks the loot you can still trade and calls for rolls on it. Off, the Loot Master and Loot Tracker never open and no roll is read."
@@ -1229,7 +1221,7 @@ L["LOOT_MASTER_ROLL_LENGTH_DESCRIPTION"] = "How long a roll stays open."
 L["LOOT_MASTER_ANNOUNCE_IN"] = "Announce In"
 L["LOOT_MASTER_ANNOUNCE_IN_DESCRIPTION"] = "Where calls for rolls, ties, and pauses go."
 L["LOOT_MASTER_ANNOUNCE_IN_NOTE"] =
-	"Raid Warning falls back to group chat when you aren't leader or assistant. Winners always go to group chat."
+	"Raid Warning falls back to group chat when you aren't the leader or an assistant. Winners always go to group chat."
 -- Argument: the seconds.
 L["LOOT_MASTER_WARN_LAST_SECONDS"] = "Warn at %d Seconds Left"
 L["LOOT_MASTER_WARN_LAST_SECONDS_DESCRIPTION"] = "Tells the group when a roll is about to close."
@@ -1268,7 +1260,7 @@ L["LOOT_MASTER_TRADE_AUTO_FILL_DESCRIPTION"] =
 L["LOOT_MASTER_FLOOR_HEADER"] = "Floor Loot"
 L["LOOT_MASTER_FLOOR_PANEL_DESCRIPTION"] =
 	"Floor Loot starts empty and holds only what you add. Add from Bags lists what you picked up in this instance first."
-L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "Take Items Off Once They Leave My Bags"
+L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE"] = "Take Items off Once They Leave My Bags"
 L["LOOT_MASTER_FLOOR_DROP_WHEN_GONE_DESCRIPTION"] =
 	"Drops an item from Floor Loot once you have none of it left: traded, sold, or used."
 L["LOOT_MASTER_FLOOR_CLEAR_ON_LEAVE"] = "Empty Floor Loot When I Leave the Raid"

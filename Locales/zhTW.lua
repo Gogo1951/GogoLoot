@@ -146,11 +146,7 @@ L["TAB_LOOT_MASTER"] = "戰利品總管"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "已暫停"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "替你對符合條件、不高於所選品質的物品擲骰。"
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "開啟背包中的蚌殼、箱子、錢袋與已開鎖的鎖箱。"
 -- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
@@ -168,6 +164,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "擲骰"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "擲骰紀錄"
+L["MENU_RECENT_ROLLS"] = "最近擲骰"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "你"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "未擲骰"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "全員放棄"
+L["MENU_ROLL_AUDIT_EMPTY"] = "此副本中尚無擲骰。"
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -183,8 +193,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d 項關閉"
 
 L["MENU_CLICK_LEFT"] = "左鍵點擊"
 L["MENU_CLICK_RIGHT"] = "右鍵點擊"
-L["MENU_CLICK_SHIFT_LEFT"] = "Shift + 左鍵點擊"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "中鍵點擊"
 L["MENU_TOGGLE"] = "切換"
 
@@ -195,7 +203,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s可以幫你開鎖。"
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "使用%s來開鎖。"
 L["MENU_OPTIONS"] = "GogoLoot 選項"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + 中鍵點擊"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "還有 %d 件"
@@ -259,12 +266,7 @@ L["ITEM_LIST_RESTORE"] = "恢復預設"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "載入中 ID：%d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	'絕不會對配方、書籍、坐騎、寵物或傳說物品擲骰；任務物品只有列在全域物品特例中才會擲骰；拾取後綁定物品只有列在全域物品特例中或開啟了"包含拾取後綁定"時才會擲骰。'
 
@@ -298,20 +300,18 @@ L["WELCOME_MESSAGE"] = "啟用歡迎訊息"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "每次登入時顯示 GogoLoot 的版本，以及這些設定的位置。"
 L["MINIMAP_BUTTON_ENABLE"] = "啟用小地圖按鈕"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"在小地圖上顯示 GogoLoot 按鈕。滑鼠懸停可開啟 GogoLoot 選單。左鍵點擊切換自動擲骰，右鍵點擊切換自動開啟，Shift + 左鍵點擊切換戰利品通報。"
+	"在小地圖上顯示 GogoLoot 按鈕。滑鼠懸停可開啟 GogoLoot 選單，左鍵點擊可讓選單保持開啟。"
 
 L["OPTIONS_COMMANDS_HEADER"] = "/指令"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "開啟此插件的選項視窗。"
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "功能"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] = "打開屍體的瞬間就拿走所有東西，讓你永遠不必等待拾取視窗。"
 L["SPEEDY_LOOT_ENABLE"] = "啟用快速拾取"
 --[[
@@ -407,11 +407,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] = "設定隊伍戰利品的分配方�
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"設定拾取方式適用的最低物品品質。只有隊長可以變更。"
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "這些設定由 %s 控制。"
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "加入隊伍後才能變更這些設定，且只有隊長可以變更。"
@@ -504,7 +500,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "顯示贏家摘要"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "不顯示贏家摘要"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"顯示贏家摘要會為每次獲勝在聊天中顯示一行，列出贏家、物品與獲勝擲骰，取代遊戲本身的那一行。不顯示贏家摘要則保留遊戲說明誰獲勝的那一行。"
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "安全警告"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "進入設為%s或%s的地城或團隊副本時警告我"
@@ -513,10 +508,7 @@ L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
 L["ROLLS_SAFETY_WARNING_SOUND"] = "播放聲音"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "在警告的同時播放提示音，適合聊天繁忙的時候。"
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	'為特定物品設定擲骰，優先於你的"隊伍與團隊擲骰"。這是 GogoLoot 對任務物品擲骰的唯一方式；在"包含拾取後綁定"關閉時，也是對拾取後綁定物品擲骰的唯一方式。'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -601,7 +593,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "低等級裝備"
 L["SANITY_CHECK_ROLLS_OFF"] = "自動擲骰已關閉"
 L["SANITY_CHECK_QUALITY"] = "隊伍與團隊擲骰"
 L["SANITY_CHECK_NEVER"] = "從不自動"
-L["SANITY_CHECK_QUEST"] = "任務物品"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "裝備後綁定"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "拾取後綁定"
 
@@ -1216,7 +1207,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"以擲骰分配你仍可交易的物品，每件物品都會顯示交易時限，並在戰利品追蹤中關注每一次擲骰。中鍵點擊小地圖按鈕，或輸入 /gogo master 或 /gogo tracker。"
+	"以擲骰分配你仍可交易的物品，每件物品都會顯示交易時限，並在戰利品追蹤中關注每一次擲骰。輸入 /gogo master 或 /gogo tracker。"
 L["LOOT_MASTER_ENABLE"] = "啟用戰利品總管"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"追蹤你仍可交易的戰利品並為它開骰。關閉時，戰利品總管與戰利品追蹤都不會開啟，也不會讀取任何擲骰。"

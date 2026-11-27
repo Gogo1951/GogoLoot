@@ -149,11 +149,7 @@ L["TAB_LOOT_MASTER"] = "Maître du butin"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "En pause"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Lance les dés à votre place sur les objets éligibles, jusqu'à la qualité choisie."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
@@ -173,6 +169,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Jet"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Journal des jets"
+L["MENU_RECENT_ROLLS"] = "Jets récents"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "Vous"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "Pas de jet"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Tout le monde a passé"
+L["MENU_ROLL_AUDIT_EMPTY"] = "Aucun jet dans cette instance pour l'instant."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -188,8 +198,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d désactivées"
 
 L["MENU_CLICK_LEFT"] = "Clic gauche"
 L["MENU_CLICK_RIGHT"] = "Clic droit"
-L["MENU_CLICK_SHIFT_LEFT"] = "Maj + Clic gauche"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Clic central"
 L["MENU_TOGGLE"] = "Activer/désactiver"
 
@@ -200,7 +208,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "Un %s peut les crocheter pour vous."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Utilisez %s pour les déverrouiller."
 L["MENU_OPTIONS"] = "Options de GogoLoot"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Maj + Clic central"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "%d de plus"
@@ -264,12 +271,7 @@ L["ITEM_LIST_RESTORE"] = "Valeurs par défaut"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Chargement ID : %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Aucun jet n'est jamais fait sur les recettes, livres, montures, mascottes ou objets légendaires, les objets de quête ne le sont que s'ils figurent dans Exceptions globales par objet, et les objets Lié quand ramassé que s'ils y figurent ou si Inclure Lié quand ramassé est activé."
 
@@ -305,20 +307,18 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"Affiche la version de GogoLoot et l'emplacement de ces paramètres à chaque connexion."
 L["MINIMAP_BUTTON_ENABLE"] = "Activer le bouton de la minicarte"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Affiche le bouton GogoLoot sur la minicarte. Survolez-le pour ouvrir le menu de GogoLoot. Clic gauche active ou désactive les jets automatiques, Clic droit l'ouverture automatique, et Maj + Clic gauche les annonces de butin."
+	"Affiche le bouton GogoLoot sur la minicarte. Survolez-le pour ouvrir le menu de GogoLoot, ou faites un Clic gauche pour le garder ouvert."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Commandes"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Ouvre l'interface des options de cet add-on."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Fonctionnalités"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Prend tout sur un cadavre dès que vous le fouillez, pour ne jamais attendre la fenêtre de butin."
 L["SPEEDY_LOOT_ENABLE"] = "Activer le butin rapide"
@@ -416,11 +416,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Définit la qualité d'objet minimale à laquelle s'applique le mode de butin. Seul le chef de groupe peut le modifier."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Ces réglages sont contrôlés par %s."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "Rejoignez un groupe pour les modifier. Seul le chef de groupe le peut."
@@ -517,7 +513,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Afficher le résumé des gagnants"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Ne pas afficher le résumé des gagnants"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Afficher le résumé des gagnants met une ligne dans la discussion pour chaque victoire, avec le gagnant, l'objet et le jet gagnant, à la place de la ligne du jeu. Ne pas afficher le résumé des gagnants garde la ligne du jeu qui annonce le gagnant."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Avertissements de sécurité"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "M'avertir en entrant dans un donjon ou un raid réglé sur %s ou %s"
@@ -527,10 +522,7 @@ L["ROLLS_SAFETY_WARNING_SOUND"] = "Jouer un son"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
 	"Joue une alerte avec l'avertissement, pour quand la discussion est chargée."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Définit le jet pour des objets précis, avant vos Jets en groupe et en raid. C'est la seule façon pour GogoLoot de lancer les dés sur un objet de quête, ou sur un objet Lié quand ramassé tant qu'Inclure Lié quand ramassé est désactivé."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -619,7 +611,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "Équipement de bas niveau"
 L["SANITY_CHECK_ROLLS_OFF"] = "Jets automatiques désactivés"
 L["SANITY_CHECK_QUALITY"] = "Jets en groupe et en raid"
 L["SANITY_CHECK_NEVER"] = "Jamais automatisé"
-L["SANITY_CHECK_QUEST"] = "Objet de quête"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "Lié quand équipé"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Lié quand ramassé"
 
@@ -1249,7 +1240,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Distribuez par jet ce que vous pouvez encore échanger, avec le délai d'échange de chaque objet, et suivez chaque jet dans le Suivi du butin. Clic central sur le bouton de la minicarte, ou tapez /gogo master ou /gogo tracker."
+	"Distribuez par jet ce que vous pouvez encore échanger, avec le délai d'échange de chaque objet, et suivez chaque jet dans le Suivi du butin. Tapez /gogo master ou /gogo tracker."
 L["LOOT_MASTER_ENABLE"] = "Activer le Maître du butin"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Suit le butin que vous pouvez encore échanger et lance les appels aux jets. Désactivé, le Maître du butin et le Suivi du butin ne s'ouvrent jamais et aucun jet n'est lu."

@@ -3,19 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The window that opens when the player becomes master looter, so a run can be
-    set up without going through Options. It carries the same rows the Master
-    Looter panel opens with, built from the shared row builders in
-    Options-Master-Looter.lua and Options-Announcements.lua so the two can never
-    drift: the pop-up's own on/off toggle, Enable Automated Master Looting, the
-    destination-message toggle, then loot method, loot threshold, and Send All
-    Loot To.
-
-    This is an AceConfigDialog standalone window rather than a hand-built frame:
-    it is registered with AceConfigRegistry like any other panel but never passed
-    to AddToBlizOptions, so it takes the add-on's existing widget styling and
-    stays out of the Blizzard settings tree. Nothing here is protected, so
-    opening it during combat is safe.
+    An AceConfigDialog standalone window, never passed to AddToBlizOptions.
+    Nothing here is protected, so opening it in combat is safe.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -23,19 +12,10 @@ local Kit = ns.OptionsKit
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 --[[
-    Sized to the window's tallest state: the three toggles with a spacer
-    between each, the leader note and its spacer, and all three
-    label-plus-dropdown rows. The note always shows,
-    naming the group leader in a group and saying why the dropdowns are grayed
-    out while solo, so only the rows below it change the height.
-
-    One height serves every open. Rows that do not apply to the current loot
-    method hide rather than shrink the window, because AceConfigDialog takes the
-    frame size from the status table this writes and never from how much content
-    is on show, so a height sized to anything less scrolls in the fullest case.
-
-    The width is one options row plus the frame's borders and padding, rounded
-    up to the next multiple of 16.
+    Sized to the tallest state. AceConfigDialog takes the frame size from its
+    status table, never from the content shown, so hidden rows don't shrink it
+    and anything shorter scrolls in the fullest case. Width: one options row
+    plus borders and padding, rounded up to a multiple of 16.
 ]]
 local POPUP_WIDTH = 640
 local POPUP_HEIGHT = 384
@@ -49,20 +29,12 @@ function ns.BuildMasterLooterPopupOptions()
 	local args = {}
 	local order = 1
 
-	--[[
-	    The pop-up's own switch first, because this window is where you are most
-	    likely to want it: it opened on its own, and the alternative to a switch
-	    here is going and finding one in Options. Then the automation switch, since
-	    a destination picked below hands nothing out while it is off. Then the
-	    destination-message toggle, because the destination you are about to set
-	    is exactly what it decides whether to announce.
-	]]
 	order = ns.AddPopupToggleRow(args, order)
 	args.spacerAfterPopupToggle = Kit.Spacer(order)
 	order = order + 1
 	args.autoMasterLoot = ns.FeatureSwitch("autoMasterLoot", order)
 	order = order + 1
-	-- Leaves with the destination-message toggle it sets off, which hides while Loot Announcements is off.
+	-- Hides with the destination-message toggle below it.
 	args.spacerAfterAutoMasterLoot = Kit.Spacer(order, function()
 		return not ns.db.profile.lootNotifications
 	end)
@@ -71,7 +43,6 @@ function ns.BuildMasterLooterPopupOptions()
 	args.spacerAfterToggles = Kit.Spacer(order)
 	order = order + 1
 
-	-- Says who controls the two dropdowns below: the group leader, you included, or the solo line.
 	order = ns.AddLeaderNoteRow(args, order)
 	order = ns.AddLootMethodRow(args, order)
 	args.spacerAfterLootType = Kit.Spacer(order, ns.IsLootThresholdIrrelevant)
@@ -79,11 +50,7 @@ function ns.BuildMasterLooterPopupOptions()
 	order = ns.AddLootThresholdRow(args, order)
 	args.spacerAfterLootThreshold = Kit.Spacer(order)
 	order = order + 1
-	--[[
-	    The destination only means anything under master loot with the
-	    automation on, so here it hides outright otherwise rather than sitting
-	    there inert. The panel hides it only while the automation is off.
-	]]
+	-- Stricter than the panel, which hides it only while automation is off.
 	ns.AddSendAllDestinationRow(args, order, function()
 		return ns:SafeGetLootMethod() ~= "master" or not ns.db.profile.autoMasterLoot
 	end)
@@ -109,13 +76,7 @@ function ns:ShowMasterLooterPopup()
 	AceConfigDialog:SetDefaultSize(ns.OPTIONS_REGISTRY.MasterLooterPopup, POPUP_WIDTH, POPUP_HEIGHT)
 	AceConfigDialog:Open(ns.OPTIONS_REGISTRY.MasterLooterPopup)
 
-	--[[
-        Fixed size: the window holds three toggles, a note and three rows, none of
-        which benefits from being dragged bigger. EnableResize is AceGUI's own
-        Frame method rather than a reach into library internals, but the widget
-        only exists once AceConfigDialog has opened it, so this runs after the
-        Open above.
-    ]]
+	-- The widget exists only once AceConfigDialog has opened it.
 	local openFrame = AceConfigDialog.OpenFrames[ns.OPTIONS_REGISTRY.MasterLooterPopup]
 	if openFrame and openFrame.EnableResize then
 		openFrame:EnableResize(false)

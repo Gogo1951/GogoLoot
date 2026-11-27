@@ -255,7 +255,7 @@ ns.OPENABLE_ITEM_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
@@ -268,7 +268,7 @@ Notes
 	- Each row's default follows the maintainer's rules, in this order: ns.OPENING_IGNORE_RAID for a tradeable container that drops only from raid or world bosses; ns.OPENING_UNLOCKED for one with a lock; ns.OPENING_IGNORE_UNIQUE for a tradeable one holding a Unique item that isn't gear; ns.OPENING_IGNORE for a tradeable one holding a Bind on Pickup item; ns.OPENING_OPEN for the rest. Because the lock rule comes first, a lockbox stays on ns.OPENING_UNLOCKED even where its random loot can include Unique or Bind on Pickup items. Tradeable means the container isn't itself Bind on Pickup or a quest item (ItemSparse's Bonding is not 1 or 4): a container that can't be sold gains nothing from staying sealed, so it opens (maintainer, 2026-11-03).
 	- No client table records what a container holds or drops from, so those come from the CMaNGOS Classic world DB (ClassicDB_1_12_1_z2815), and where it can't tell, the maintainer's earlier call stands. A note after a row's name gives the evidence for an Ignore: the Unique items it can hold, the raid bosses it drops from, or the Bind on Pickup items inside.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
-	- Rechecked against this client's tables at build 1.60.1.70959: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). ItemSparse still lacks 285366. Every flagged item not listed is a Season of Discovery item (90) or a "Level N" box (39), all left out above. QuestieDB's Forever corrections name no drop, vendor or quest source for 21 of the 32 rows only Forever has (243299, 249900, 273318-273321, 276785, 277651, 280943, 281680, 284271, 284583, 284585, 284586, 285168-285173, 286210); they stay, since the client still has them, and are likely granted by events or the game itself.
+	- Rechecked against this client's tables at build 1.60.1.71139: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). ItemSparse still lacks 285366. Every flagged item not listed is a Season of Discovery item (90) or a "Level N" box (39), all left out above, except Goblin Engineer's Renewal Gift (11422) and Gnome Engineer's Renewal Gift (11423), which this build's ItemSparse carries for the first time. Neither QuestieDB's Classic tables nor its Forever corrections name a drop, vendor or quest source for either, and no spell in this client's tables creates one, so both are likely unobtainable here and stay off the list, though every other flavor lists them. QuestieDB's Forever corrections name no drop, vendor or quest source for 21 of the 32 rows only Forever has (243299, 249900, 273318-273321, 276785, 277651, 280943, 281680, 284271, 284583, 284585, 284586, 285168-285173, 286210); they stay, since the client still has them, and are likely granted by events or the game itself.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -290,8 +290,15 @@ wago.tools
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
 	https://wago.tools/db2/Item?build=1.60.1.70959
 	https://wago.tools/db2/Lock?build=1.60.1.70959
+	https://wago.tools/db2/ItemSparse?build=1.60.1.71139
+	https://wago.tools/db2/Item?build=1.60.1.71139
+	https://wago.tools/db2/Lock?build=1.60.1.71139
+	https://wago.tools/db2/SpellEffect?build=1.60.1.71139
 
 QuestieDB
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Forever/foreverItemDB.lua
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/src/corrections/Forever/generated/foreverBaseItem.lua
+	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Classic/classicItemDB.lua
+	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Classic/classicQuestDB.lua
+	https://raw.githubusercontent.com/Questie/QuestieDB/master/src/corrections/Forever/generated/foreverBaseQuest.lua
 ]]

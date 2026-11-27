@@ -305,7 +305,7 @@ ns.OPENABLE_ITEM_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, TBC Anniversary 2.5.6.70577
+	2026-11-27, wago.tools, TBC Anniversary 2.5.6.70577
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).

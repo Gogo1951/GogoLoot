@@ -2,13 +2,6 @@
 -- GogoLoot Options — Loot Toasts: Filters
 --------------------------------------------------------------------------------
 
---[[
-    A child panel of Loot Toasts: what gets a toast, for the player's own loot
-    and the group's, and what a toast says. A row per item type with a Mine and
-    a Group box, then Bag Count and Winning Roll in the same columns. Not
-    hidden behind the Loot Toasts switch, which would leave a child panel
-    opening onto a blank page; a silver status line says so while the switch is off.
-]]
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
@@ -19,17 +12,7 @@ local TOAST_QUALITY_VALUES, TOAST_QUALITY_SORTING = ns.OptionsQualityChoices(0, 
 -- Filter Rows
 --------------------------------------------------------------------------------
 
---[[
-    One row per ns.LOOT_TOAST_FILTER_ROWS entry: its caption, then a Mine box
-    and a Group box in two columns of one width (see the Filters widths in
-    Data.lua). An item-type row is captioned with the client's own name for the
-    type, so it needs no translating; the last three are GogoLoot's own rows,
-    captioned in GogoLoot's words but for Money, which is the client's. A
-    rarity row puts a quality dropdown beside each box, shown while the box is
-    ticked, with a blank cell the same width standing in for it while the box
-    is clear, so the Group box never slides left. Those two cells are the one
-    place a row's members hide, and only ever one of each pair.
-]]
+-- An item-type row takes the client's own name for the type, so it needs no translating.
 ---@param row table
 ---@return string|nil # nil when this client has no such type
 local function FilterRowCaption(row)
@@ -59,9 +42,8 @@ local FILTER_DESCRIPTIONS = {
 }
 
 --[[
-    Tooltips that say what a row gathers rather than name a type: the last three
-    rows, and Container, which is the bag class, not the clams and crates the
-    rest of GogoLoot calls containers (those are under Openables).
+    Tooltips saying what a row gathers. Container is the bag class, not the
+    clams and crates the rest of GogoLoot calls containers (those are Openables).
 ]]
 local OWN_ROW_DESCRIPTIONS = {
 	CONTAINER = {
@@ -79,7 +61,10 @@ local OWN_ROW_DESCRIPTIONS = {
 	MONEY = { Mine = "LOOT_TOASTS_FILTER_MONEY_DESCRIPTION" },
 }
 
--- One column's cells, a box and, on a rarity row, its quality dropdown and the blank cell standing in for it.
+--[[
+    On a rarity row, a blank cell stands in for the quality dropdown while the
+    box is clear, so the Group box never slides left.
+]]
 ---@param side string # "Mine" or "Group"
 ---@param row table
 ---@param caption string
@@ -162,12 +147,7 @@ local function FilterRow(row, caption)
 	return Kit.Row(0, nil, cells)
 end
 
---[[
-    The rows in their three groups, a blank line between each: the rarity rows
-    in the order Data.lua lists them, then the other item types A to Z by the
-    name this client gives them, then GogoLoot's own three. A type this client
-    lacks, or an expansion it hasn't reached, gets no row.
-]]
+-- Rarity rows in data order, other types A to Z by client name, then GogoLoot's own rows.
 ---@return table[] # { { row = table, caption = string }, ... } per group
 local function FilterRowGroups()
 	local rarity, types, own = {}, {}, {}
@@ -190,12 +170,11 @@ local function FilterRowGroups()
 	return { rarity, types, own }
 end
 
--- The made-up wins the Winning Roll tooltips show, worded as a toast words them.
+-- The made-up wins the Winning Roll tooltips show.
 local EXAMPLE_PLAYER_CLASS = "DRUID"
 local EXAMPLE_MINE_ROLL = 54
 local EXAMPLE_GROUP_ROLL = 87
 
--- A Filters-grid row about what a toast says: its caption, then a box per side it applies to, each its own setting.
 ---@param captionKey string
 ---@param boxes table[] # { side = "Mine" | "Group", setting = string, desc = string, descText? = string }
 ---@return table
@@ -236,7 +215,6 @@ function ns.BuildLootToastFilterOptions()
 		args[key] = entry
 	end
 
-	-- The rows in their groups, a blank line between each.
 	for groupIndex, group in ipairs(FilterRowGroups()) do
 		if groupIndex > 1 then
 			Add("spacerBeforeFilterGroup" .. groupIndex, Kit.Spacer(0))
@@ -246,11 +224,7 @@ function ns.BuildLootToastFilterOptions()
 		end
 	end
 
-	--[[
-        Two rows about what a toast says rather than which loot gets one, in the
-        grid's own columns, so their boxes line up under every other Mine and
-        Group box. Bag Count reads the player's own bags, so it has no Group box.
-    ]]
+	-- Bag Count reads the player's own bags, so it has no Group box.
 	Add(
 		"filterRow_BAG_COUNT",
 		ToastTextRow("LOOT_TOASTS_FILTER_BAG_COUNT", {

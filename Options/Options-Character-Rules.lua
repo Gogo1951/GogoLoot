@@ -9,13 +9,7 @@ local Kit = ns.OptionsKit
 -- Characters
 --------------------------------------------------------------------------------
 
---[[
-    Every character on the account with saved per-character data, plus the one
-    being played, as AceDB's "Name - Realm" keys sorted as plain strings, for
-    Character Rules' list. Characters live in AceDB's char sections, not in
-    profiles: characters can share a profile, so profile names say nothing
-    about who is on the account.
-]]
+-- Read from AceDB's char sections, not profiles: characters share a profile, so profile names say nothing about who exists.
 ---@return string[]
 local function GetCharacterKeys()
 	local keys, seen = {}, {}
@@ -34,10 +28,6 @@ local function GetCharacterKeys()
 	return keys
 end
 
---[[
-    A character's saved section, made when first written: the one being played
-    reads ns.db.char, which is the same table AceDB keeps under its key.
-]]
 ---@param characterKey string
 ---@return table
 local function GetCharacterData(characterKey)
@@ -53,11 +43,7 @@ local function GetCharacterData(characterKey)
 	return characters[characterKey]
 end
 
---[[
-    A character key in its class color: the class the character saved at its
-    last login (Features/Core.lua), or the player's own. One that hasn't logged in since
-    that was recorded keeps the tree's default color.
-]]
+-- The class saved at the character's last login; nil for one not logged in since that was recorded.
 ---@param characterKey string
 ---@return string|nil
 local function GetCharacterClassFile(characterKey)
@@ -84,7 +70,6 @@ end
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
--- A section's caption: the game's own label where this client has one, GogoLoot's words where it doesn't.
 ---@param group table # a ns.CHARACTER_RULE_GROUPS or ns.CHARACTER_RULE_GEAR_GROUPS row
 ---@return string
 local function GroupCaption(group)
@@ -95,19 +80,9 @@ local function GroupCaption(group)
 	return L[group.caption]
 end
 
---[[
-    Two checkboxes to a line, each as wide as fits, so long type names
-    ("Two-Handed Swords", "Zweihandschwerter") show whole. A full half of the
-    row overflows the list's inset by a few pixels and drops to one column.
-]]
+-- Two to a line, as wide as fits for long type names; a full half overflows the list's inset and drops to one column.
 local CHECKBOX_WIDTH = Kit.TREE_ROW_WIDTH * 0.44
 
---[[
-    One character's rules: a checkbox list per section, then the Everything
-    Else rows and Reset to Class Defaults. Each closes over its character's
-    key, so the pane always edits the character the player picked, another
-    character's included.
-]]
 ---@param characterKey string
 ---@return table
 local function BuildCharacterArgs(characterKey)
@@ -133,10 +108,7 @@ local function BuildCharacterArgs(characterKey)
 		end
 	end
 
-	--[[
-        A box saves only when it differs from the class's starter list, so
-        ticking it back to the starter drops the saved choice.
-    ]]
+	-- Saved only where it differs from the class's starter list.
 	local function SaveTicked(key, ticked, starter)
 		if ticked == starter then
 			Save("wanted", key, nil)
@@ -145,10 +117,7 @@ local function BuildCharacterArgs(characterKey)
 		end
 	end
 
-	--[[
-        AceConfig sorts a list's boxes by key, so each box is keyed by its
-        place ("01", "02", ...) and the list maps the place back to its row.
-    ]]
+	-- AceConfig sorts a list's boxes by key, so each is keyed by its place ("01", "02", ...).
 	local function CheckboxList(order, entries, IsTicked, SetTicked)
 		local values, byPlace = {}, {}
 		for index, entry in ipairs(entries) do
@@ -175,7 +144,6 @@ local function BuildCharacterArgs(characterKey)
 	local args = {}
 	local order = 1
 
-	-- Whose rules these are, by class, named and colored by the game: "Class: Druid".
 	local classFile = ClassFile()
 	local className = classFile and LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[classFile]
 	if className then
@@ -183,7 +151,6 @@ local function BuildCharacterArgs(characterKey)
 			Kit.Header(L["CHARACTER_RULES_CLASS"]:format((ns.GetClassColor(classFile) or "") .. className .. "|r"), 0)
 	end
 	args.spacerAfterClassLine = Kit.Spacer(0.25)
-	-- Automatically Greed on Low-Level Gear: Off, or Your Level - 1 to - 5; saved only once it differs from the default.
 	args.lowLevelGear = Kit.Row(0.5, nil, {
 		Kit.Label(L["CHARACTER_RULES_LOW_LEVEL"], 0, Kit.TREE_LABEL_WIDTH),
 		{
@@ -212,11 +179,6 @@ local function BuildCharacterArgs(characterKey)
 		order = order + 2
 	end
 
-	--[[
-        Armor Types lightest first, Weapon Types A to Z in the player's
-        language, Other, then Primary Attributes in the character sheet's
-        order and Secondary Attributes A to Z.
-    ]]
 	for _, group in ipairs(ns.CHARACTER_RULE_GEAR_GROUPS) do
 		local rows = {}
 		for _, rowIdentifier in ipairs(ns[group.types]) do
@@ -244,11 +206,7 @@ local function BuildCharacterArgs(characterKey)
 		end
 		AddHeader(group.key, GroupCaption(group))
 		if group.catchAll then
-			--[[
-                The catch-all is one full-width toggle, since a box in a list
-                truncates its name, and its tooltip says what lands there,
-                which the name alone doesn't.
-            ]]
+			-- A full-width toggle: a box in a list truncates its name, and the tooltip says what lands there.
 			local row = rows[1]
 			args["toggle" .. group.key] = {
 				type = "toggle",
@@ -292,10 +250,6 @@ local function BuildCharacterArgs(characterKey)
 		order = order + 1
 	end
 
-	--[[
-        Everything Else: what happens to gear that doesn't match. Each field
-        saves only once it differs from ns.CHARACTER_RULE_UNWANTED_DEFAULTS.
-    ]]
 	local function UnwantedGet(field)
 		return function()
 			return ns.CharacterRuleUnwanted(Rules(), field)
@@ -351,17 +305,7 @@ local function BuildCharacterArgs(characterKey)
 	return args
 end
 
---[[
-    Every character on the account down the left, as on MagicEraser's list
-    panels: childGroups = "tree" splits the panel, and the picked character's
-    rules fill the pane on the right. Registered as a builder function
-    (Options.lua), so AceConfig rebuilds it on every open and a character
-    logged in since shows up. The copy sits on the root group, which a tree
-    draws once above the whole panel rather than in every pane.
-
-    The panel answers to Automated Rolls' switch the way Item Overrides does:
-    nothing hides, but a line says nothing here rolls while it's off.
-]]
+-- The copy sits on the root group, which a tree draws once above the whole panel rather than in every pane.
 ---@return table
 function ns.BuildCharacterRulesOptions()
 	local args = {
@@ -377,11 +321,7 @@ function ns.BuildCharacterRulesOptions()
 	}
 	ns.AddFeatureOffLine(args, 3, "autoGreed")
 
-	--[[
-        Keyed by character, not by position: the tree remembers the picked node
-        by its key, so a key that shifted as characters came and went would
-        quietly pick someone else.
-    ]]
+	-- Keyed by character, not position: the tree remembers the picked node by key.
 	if ns.db then
 		for index, characterKey in ipairs(GetCharacterKeys()) do
 			args[characterKey] = {

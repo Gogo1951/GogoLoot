@@ -240,7 +240,7 @@ ns.OPENABLE_ITEM_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, Classic Era 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
@@ -265,6 +265,7 @@ wago.tools
 	https://wago.tools/db2/ItemSparse?build=1.14.4.51829
 	https://wago.tools/db2/Item?build=1.15.9.70576
 	https://wago.tools/db2/Lock?build=1.15.9.70576
+	https://wago.tools/db2/Item?build=1.14.4.51829
 
 QuestieDB
 	None.

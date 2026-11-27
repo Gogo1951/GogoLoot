@@ -3,24 +3,11 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Whenever anyone in the group raid rolls (a plain /roll from 1 to exactly
-    the number of players in the group), GogoLoot names the player the number
-    lands on, counted down the raid or party list: in a raid the roll's place
-    in the raid roster, in a party 1 for the player and 2 to 5 for party1 to
-    party4, as the party frames list them.
-
-    Me Only, the default, prints it to the player. Group Chat posts it instead,
-    since the sent line shows in the player's own chat too. So several GogoLoot
-    users in one group don't all post the same roll, each sends a claim
-    carrying its roster place as an add-on message the moment it reads the
-    roll, waits ns.RAID_ROLL_CLAIM_WAIT, and posts only if no claim it heard
-    came from an earlier roster place. A claim with no place (an older
-    GogoLoot, which claims only as it posts) holds everyone back. With Loot
-    Announcements off, the master switch over everything GogoLoot posts, Group
-    Chat prints instead.
-
-    Only CHAT_MSG_SYSTEM is read for a roll (ns.ParseRandomRollMessage):
-    anyone can type a roll's words in normal chat.
+    Only CHAT_MSG_SYSTEM is read for a roll: anyone can type a roll's words in
+    normal chat. So several GogoLoot users don't all post the same roll, each
+    sends a claim with its roster place, waits ns.RAID_ROLL_CLAIM_WAIT, and
+    posts only if no earlier place claimed. A claim with no place (an older
+    GogoLoot, which claims only as it posts) holds everyone back.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -38,10 +25,6 @@ local claims = {}
 -- Roster
 --------------------------------------------------------------------------------
 
---[[
-    The player at a roster place: their name as the roster gives it and their
-    class token. nil past the roster's end or for a place with no name yet.
-]]
 ---@param place number
 ---@return string|nil name
 ---@return string|nil classFile
@@ -62,7 +45,6 @@ function ns.GetRaidRollPlayer(place)
 	return name, classFile
 end
 
--- Where a player sits in the roster, by the name key every comparison uses; nil when they aren't in it.
 ---@param playerName string
 ---@return number|nil
 local function RosterPlace(playerName)
@@ -84,11 +66,6 @@ end
 -- Reading a Raid Roll
 --------------------------------------------------------------------------------
 
---[[
-    A roll that counts: the feature on, the player grouped, the roller in the
-    group, a range of exactly 1 to the group's size, and a roll inside it.
-    Returns the roller's roster place.
-]]
 ---@param roller string
 ---@param roll number
 ---@param low number|nil
@@ -105,7 +82,6 @@ local function CountedRoll(roller, roll, low, high)
 	return RosterPlace(roller)
 end
 
--- A name in its class color, for the printed line.
 local function ColoredName(name, classFile)
 	local color = classFile and ns.GetClassColor(classFile)
 	return color and (color .. name .. "|r") or name
@@ -127,7 +103,6 @@ function ns.BuildRaidRollPrint(roller, rollerClass, roll, groupSize, winner, win
 	)
 end
 
--- The claim's key: who rolled what, out of how many.
 local function ClaimKey(roller, roll, high)
 	return table.concat({ ns:NormalizePlayerName(roller) or roller, roll, high }, CLAIM_SEPARATOR)
 end
@@ -152,7 +127,6 @@ local function RecordClaim(key, place)
 	end
 end
 
--- Sends this player's claim on a roll, with its roster place, on the group's add-on channel.
 local function SendClaim(key, place)
 	local channel = ns:GetGroupChatChannel()
 	if channel and C_ChatInfo.SendAddonMessage then
@@ -164,11 +138,7 @@ local function SendClaim(key, place)
 	end
 end
 
---[[
-    Group Chat: claim the roll now, wait, then post unless an earlier roster
-    place claimed it too. The winner's name is read now, when the roll is, so
-    a roster change in the wait can't move it.
-]]
+-- The winner is read with the roll, so a roster change during the wait can't move it.
 local function PostWhenUnclaimed(key, roller, roll, groupSize, winner)
 	local ownPlace = RosterPlace(OwnName()) or 1
 	SendClaim(key, ownPlace)
@@ -210,9 +180,13 @@ local function OnChatMsgSystem(message)
 	ns:PrintMessage(ns.BuildRaidRollPrint(roller, rollerClass, roll, groupSize, winner, winnerClass))
 end
 
--- Another GogoLoot user's claim on a roll; this player's own come back too, and are ignored.
+-- The player's own claims echo back and are ignored.
 local function OnChatMsgAddon(prefix, message, _, sender)
-	if prefix ~= ns.ADDON_MESSAGE_PREFIX or type(message) ~= "string" or ns.IsSecretValue(message) then
+	-- A secret value can't be compared, so it's checked for before anything is.
+	if ns.IsSecretValue(prefix) or ns.IsSecretValue(message) or ns.IsSecretValue(sender) then
+		return
+	end
+	if prefix ~= ns.ADDON_MESSAGE_PREFIX or type(message) ~= "string" then
 		return
 	end
 	local kindPrefix = CLAIM_KIND .. CLAIM_SEPARATOR
@@ -231,10 +205,7 @@ local function OnChatMsgAddon(prefix, message, _, sender)
 	end
 end
 
---[[
-    The prefix is registered at every login: the client forgets it, and the
-    parked Roll Calls, which registers it too, isn't loaded.
-]]
+-- Every login: the client forgets the prefix, and parked Roll Calls, which also registers it, isn't loaded.
 local function OnPlayerLogin()
 	if C_ChatInfo.RegisterAddonMessagePrefix then
 		C_ChatInfo.RegisterAddonMessagePrefix(ns.ADDON_MESSAGE_PREFIX)

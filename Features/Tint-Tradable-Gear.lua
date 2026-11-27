@@ -9,25 +9,11 @@ local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local min = math.min
 
 --[[
-    Lays a colored square over every bag button holding Bind on Pickup gear
-    that can still be traded, so a raid leader sees at a glance what is theirs
-    to hand out before the clock runs out. Purely visual: nothing here touches
-    an item. It answers to its own switch, not to Automated Master Looting.
-
-    The verdict is the item's own tooltip: a trade clock line
-    (ns.GetBagSlotTradeSeconds) means tradable. Only Bind on Pickup items at or
-    above ns.TRADABLE_MIN_QUALITY are read, the same items the Loot Master's
-    Roll List takes, so the tooltip is read for a handful of buttons, never the
-    whole bag. Each verdict is kept with the moment its clock runs out until
-    the bags next change, and a slow check repaints once a kept clock has run
-    out, so the tint leaves as the item turns Soulbound.
-
-    Each bag window draws its own buttons, so each gets an adapter
-    (TINT_ADAPTERS below) that hooks the moment it draws one and hands the
-    button, the bag and slot it shows, and the item it shows to PaintButton.
-    Only the carried bags are tinted: an item has to be in them to be traded.
-    Magic Eraser's Junk Item Tint keeps the long notes on each bag add-on's
-    hooks.
+    Purely visual, and answers to its own switch, not Automated Master Looting.
+    The verdict is the item's trade clock line, read only for Bind on Pickup
+    items at or above ns.TRADABLE_MIN_QUALITY: a handful of buttons, never the
+    whole bag. Each bag window gets an adapter (TINT_ADAPTERS); Magic Eraser's
+    Junk Item Tint keeps the long notes on each bag add-on's hooks.
 ]]
 local paintedButtons = setmetatable({}, { __mode = "k" })
 
@@ -74,10 +60,7 @@ local function FindIcon(button)
 	return button.icon or button.Icon or button.IconTexture or (name and _G[name .. "IconTexture"])
 end
 
---[[
-    One sublevel above the icon, in the icon's own layer, so the tint covers the
-    picture but stays under the stack count and the quality border.
-]]
+-- One sublevel above the icon, in its layer: covers the picture, stays under the count and quality border.
 local function CreateTint(button)
 	local icon = FindIcon(button)
 	local layer, subLevel = "BORDER", 0
@@ -90,11 +73,7 @@ local function CreateTint(button)
 	return tint
 end
 
---[[
-    Tints or clears one button. shownItemId is the item the bag window says the
-    button shows, when it says; a window drawing something other than the live
-    slot then fails the match and gets no tint. A nil bag clears the button.
-]]
+-- A window whose shownItemId isn't the live slot's item gets no tint. A nil bag clears the button.
 local function PaintButton(button, bag, slot, shownItemId)
 	if not button then
 		return
@@ -105,9 +84,14 @@ local function PaintButton(button, bag, slot, shownItemId)
 		paintedButtons[button] = record
 	end
 
+	--[[
+	    What the window asked for is kept as asked, so a repaint asks the same:
+	    the default bags name no item, and a window that does still has to match.
+	]]
+	record.bag, record.slot, record.shownItemId = bag, slot, shownItemId
+
 	-- Switched off, nothing is read: the switch turning on repaints (ns:RefreshTradableTints).
 	if not IsTintOn() then
-		record.bag, record.slot, record.itemId = bag, slot, shownItemId
 		if record.tint then
 			record.tint:Hide()
 		end
@@ -124,7 +108,6 @@ local function PaintButton(button, bag, slot, shownItemId)
 		-- The slot already rules out an unbound item or one below the quality floor, so the item cache isn't asked.
 		canQualify = info and info.isBound ~= false and not (info.quality and info.quality < ns.TRADABLE_MIN_QUALITY)
 	end
-	record.bag, record.slot, record.itemId = bag, slot, itemId
 
 	if itemId and link and canQualify and IsTradableGear(bag, slot, link) then
 		if not record.tint then
@@ -151,10 +134,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Classic Era and TBC redraw a bag through the global ContainerFrame_Update,
-    its buttons named after the frame. WoW Forever's Mainline-style bags redraw
-    through each frame's own UpdateItems, the combined backpack included, and
-    hand their buttons out through EnumerateValidItems.
+    Classic Era and TBC redraw through the global ContainerFrame_Update; WoW
+    Forever through each frame's own UpdateItems, the combined backpack included.
 ]]
 local function PaintClassicContainer(frame)
 	local bag, name = frame:GetID(), frame:GetName()
@@ -427,7 +408,6 @@ local function SetupTintHooks()
 	end
 end
 
--- The installed adapters by name, for Diagnostics.
 function ns:GetTradableTintAdapterNames()
 	local names = {}
 	for _, adapter in ipairs(TINT_ADAPTERS) do
@@ -438,7 +418,7 @@ function ns:GetTradableTintAdapterNames()
 	return names
 end
 
--- Asks the windows whose buttons can show a new slot without drawing it again to redraw. Never with the tint off.
+-- Only windows whose buttons can show a new slot without drawing it again need asking.
 local function RedrawTintWindows()
 	if not IsTintOn() then
 		return
@@ -450,21 +430,16 @@ local function RedrawTintWindows()
 	end
 end
 
---[[
-    Repaints every button painted so far, then has the bag windows redraw, for
-    a change that moves no item: a new color, the switch, a profile change, a
-    clock running out.
-]]
+-- For a change that moves no item: a new color, the switch, a profile change, a clock running out.
 function ns:RefreshTradableTints()
 	for button, record in pairs(paintedButtons) do
-		if record.itemId then
-			PaintButton(button, record.bag, record.slot, record.itemId)
+		if record.bag then
+			PaintButton(button, record.bag, record.slot, record.shownItemId)
 		end
 	end
 	RedrawTintWindows()
 end
 
--- True once a kept clock has run out, so the slow check repaints only when a tint has something to drop.
 local function AnyClockRanOut()
 	local now = Now()
 	for _, expiresAt in pairs(verdicts) do

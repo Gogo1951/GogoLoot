@@ -9,7 +9,7 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > Thanks for helping make this add-on better! The more details you share, the easier it is to track down bugs and get them fixed.
+        > Thanks for helping make this add-on better! The more details you share, the easier it is to track down defects and get them fixed.
         >
         > Pull requests are always welcome, too.
 

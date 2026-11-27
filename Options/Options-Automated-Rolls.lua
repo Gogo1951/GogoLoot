@@ -10,14 +10,7 @@ local GetQualityColor = ns.GetQualityColor
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
---[[
-    autoGreed is the master switch for every automated roll, Item Overrides
-    included, so with it off nothing below it on this panel changes anything.
-    The rest of the panel therefore hides rather than sitting there inert: a
-    player who has turned the feature off is not choosing a threshold, and
-    graying out a page of controls says the same thing at far greater length.
-    Item Overrides keeps its own panel and its own switch.
-]]
+-- With autoGreed off nothing here does anything, so the rest of the panel hides rather than sitting grayed out.
 local function RollsOff()
 	return not ns.db.profile.autoGreed
 end
@@ -29,11 +22,7 @@ local function HideWhenRollsOff(entry)
 	return entry
 end
 
---[[
-    What Print Item in Chat prints, drawn by Kit.Example: a Greed, the default
-    roll, run through its real template and drawn as printed. It leaves while
-    Print Item in Chat is off.
-]]
+-- Greed, the default roll.
 local EXAMPLE_ITEM_QUALITY = 2
 
 local function PrintItemExample()
@@ -41,11 +30,7 @@ local function PrintItemExample()
 	return ns.OptionsPrintedLine(L["MESSAGE_ROLL_PRINT"]:format(GREED, item))
 end
 
---[[
-    What Print Winner Summary prints for a group member's win, the roll worded
-    as the toasts word it and the winner in a class color, as in chat. Shown
-    only while that line prints: Hide Roll Messages on, and Print beside it.
-]]
+-- Shown only while that line prints: Hide Roll Messages on, and Print beside it.
 local EXAMPLE_PLAYER_CLASS = "DRUID"
 local EXAMPLE_ROLL = 95
 
@@ -60,11 +45,7 @@ local function WinnerSummaryExampleHidden()
 	return RollsOff() or not ns.PrintingWinnerSummary()
 end
 
---[[
-    What the Safety Warning prints on entering a dungeon set to Need on
-    Uncommon and lower, the shipped quality ceiling. Its Play Sound row and
-    this Example leave while the warning is off.
-]]
+-- Need on Uncommon and lower, the shipped quality ceiling.
 local function SafetyWarningExample()
 	return ns.OptionsPrintedLine(ns.BuildRollSafetyWarning(ns.NEED, EXAMPLE_ITEM_QUALITY))
 end
@@ -98,15 +79,8 @@ function ns.BuildAutomatedRollOptions()
 	order = order + 1
 
 	--[[
-        Each group context is a label-beside-control row, its caption at the
-        panel's own level with the roll beside it, then on indented sub-rows the
-        quality ceiling that roll applies to and its Include Bind on Pickup.
-        Include Bind on Pickup is off by default, since Bind on Pickup gear is
-        usually worth rolling on yourself; on, that context's roll and
-        Character Overrides' Everything Else roll on it too. Manual turns
-        automation off for that context alone, so Automated Rolls can run in
-        raids but not parties (or the reverse) without touching the master
-        switch, and both sub-rows leave with it, having nothing left to limit.
+        Manual turns automation off for one context alone, without the master
+        switch; its sub-rows leave with it, having nothing left to limit.
     ]]
 	local rollContexts = {
 		{ configurationSuffix = "Party", label = L["ROLLS_IN_PARTY"] },
@@ -155,11 +129,6 @@ function ns.BuildAutomatedRollOptions()
 		order = order + 1
 	end
 
-	--[[
-        Roll Messages: what GogoLoot prints for its own rolls, and the game's
-        roll lines it keeps out of chat. Both are part of Automated Rolls, so
-        they leave with the switch, and neither does anything while it is off.
-    ]]
 	args.spacerBeforeRollMessages = HideWhenRollsOff(Kit.Spacer(order))
 	order = order + 1
 	args.rollMessagesHeader = Kit.Header(L["ROLLS_MESSAGES_HEADER"], order, RollsOff)
@@ -182,11 +151,7 @@ function ns.BuildAutomatedRollOptions()
 	order = order + 1
 	args.spacerAfterPrintRolledItems = HideWhenRollsOff(Kit.Spacer(order))
 	order = order + 1
-	--[[
-        Hide Roll Messages with the winner summary beside it, which leaves the
-        line while the toggle is off (Kit.ToggleRow): with the game's
-        roll lines showing, its won line says who won already.
-    ]]
+	-- The winner summary hides with the toggle off: the game's own won line then says who won.
 	args.hideRollMessagesRow = HideWhenRollsOff(Kit.ToggleRow(order, {
 		type = "toggle",
 		name = L["ROLLS_HIDE_MESSAGES"],
@@ -211,12 +176,6 @@ function ns.BuildAutomatedRollOptions()
 	args.winnerSummaryExampleRow = Kit.Example(order, WinnerSummaryExampleHidden, WinnerSummaryExample)
 	order = order + 1
 
-	--[[
-        Safety Warnings: the reminder on entering a dungeon or raid whose roll
-        is Need or Pass, its Play Sound on an indented row with the speaker
-        where every other speaker on the panels sits, and its Example. Part of
-        Automated Rolls, so it leaves with the switch.
-    ]]
 	args.spacerBeforeSafetyWarnings = HideWhenRollsOff(Kit.Spacer(order))
 	order = order + 1
 	args.safetyWarningsHeader = Kit.Header(L["ROLLS_SAFETY_HEADER"], order, RollsOff)

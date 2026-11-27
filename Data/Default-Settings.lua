@@ -8,27 +8,16 @@ local _, ns = ...
 --------------------------------------------------------------------------------
 
 --[[
-    AceDB-3.0 defaults table, passed to AceDB:New in Features/Core.lua. Three
-    scopes:
-      * profile: loot policy (Automated Rolls, Automated Opening, lockboxes,
-        loot sounds, announcements, master looting), plus the mini-map
-        button (minimap) and the loot toasts' look, so each profile carries
-        its own.
-      * global: account-wide, per the comment on that table below.
-      * char: what belongs to one character, such as its Character Rules and
-        the General tab's loot lines GogoLoot took off it.
-    AceDB serves these defaults through metatables and strips them from the
-    saved table at logout, so there is no manual merge anywhere. The empty
-    ignoredItemsMaster / ignoredItemsSolo lists are seeded from this client's
-    Data/{Folder}/Default-Item-Lists-{Folder}.lua by Core's refill-on-empty
-    rule, never here.
+    AceDB-3.0 defaults (AceDB:New in Features/Core.lua). AceDB strips them
+    from the saved table at logout, so there is no manual merge. The empty
+    item lists are seeded by Core's refill-on-empty rule, never here.
 ]]
 
 ns.DATABASE_DEFAULTS = {
 	profile = {
 		-- The mini-map button's position and its Enable Mini-map Button preference (hide), handed straight to LibDBIcon.
 		minimap = {},
-		-- Enable Announcements: the master switch over everything GogoLoot posts to chat.
+		-- The master switch over everything GogoLoot posts to chat.
 		lootNotifications = true,
 		announceDestinations = true,
 		announceMasterLootAuto = true,
@@ -39,78 +28,46 @@ ns.DATABASE_DEFAULTS = {
 		announceTradeCondition = "always",
 		-- "whisper" | "group" | "self" (printed to the player's own chat, sent to nobody)
 		announceTradeOutput = "whisper",
-		-- Enable Automated Rolls: on, with each character's Character Rules deciding its gear (maintainer, 2026-11-07).
+		-- On, with each character's Character Rules deciding its gear (maintainer, 2026-11-07).
 		autoGreed = true,
-		--[[
-            Automated rolls are configured per group context: the party pair
-            applies whenever IsInRaid() is false, the raid pair whenever it is
-            true. Action values are the ns.MANUAL / ns.PASS / ns.GREED / ns.NEED
-            strings; MANUAL means "leave that context alone".
-        ]]
+		-- The party pair applies whenever IsInRaid() is false, ungrouped included.
 		autoRollActionParty = ns.GREED,
 		autoRollThresholdParty = 2,
 		autoRollActionRaid = ns.GREED,
 		autoRollThresholdRaid = 2,
-		--[[
-            Include Bind on Pickup, per group context: off in both, so the
-            party and raid rolls and Character Overrides' Everything Else leave
-            Bind on Pickup gear to the player. Only Item Overrides roll on it
-            then.
-        ]]
+		-- Off: Bind on Pickup gear is left to the player; only Item Overrides roll on it.
 		rollBindOnPickupParty = false,
 		rollBindOnPickupRaid = false,
-		--[[
-            Print Item in Chat: on, since the roll window closes the moment
-            GogoLoot rolls, and this line is the only record of what came up
-            and which roll was made.
-        ]]
+		-- On: the roll window closes the moment GogoLoot rolls, so this line is the only record.
 		printRolledItems = true,
-		--[[
-            Hide Roll Messages: on, since a five-player roll prints about eleven
-            lines and the winner's toast now carries the result. Who won and
-            what they received stay in chat.
-        ]]
+		-- On: a five-player roll prints about eleven lines. Who won and what they received stay in chat.
 		hideRollMessages = true,
 		-- With Hide Roll Messages on, one GogoLoot line per win in place of the game's won line.
 		winnerSummary = "PRINT",
-		--[[
-            Safety Warnings: on, with its sound. Entering a dungeon or raid
-            while that group's roll is Need or Pass prints a reminder, since
-            either one gives away loot the player may have wanted.
-        ]]
+		-- On: a Need or Pass roll in a dungeon or raid gives away loot the player may have wanted.
 		rollSafetyWarning = true,
 		rollSafetyWarningSound = true,
-		--[[
-            Raid Roll Winner: on, printing to the player only. It reads anyone's
-            raid roll, so it doesn't wait on the Roll Macro.
-        ]]
+		-- On: it reads anyone's raid roll, so it doesn't wait on the Roll Macro.
 		raidRollWinner = true,
 		raidRollOutput = "SELF",
 		-- Off by default (maintainer, 2026-10-05), with no migration: a profile that never set it reads off after updating.
 		autoMasterLoot = false,
 		autoMasterLootOutsideInstances = false,
 		--[[
-            Off by default, and deliberately not part of the always-skipped set
-            it opts out of: handing a quest item to somebody who isn't on the
-            quest wastes the drop, so this is only worth turning on when the
-            recipient is a character the same player controls.
+            Off, and deliberately outside the always-skipped set: a quest item
+            handed to someone not on the quest wastes the drop, so this suits
+            only a recipient the same player controls.
         ]]
 		autoMasterLootQuestItems = false,
 		masterLooterPopup = true,
-		--[[
-            Tradable Gear Tint: Bind on Pickup gear in the bags that can still
-            be traded, tinted pink. On by default and apart from Automated
-            Master Looting, though it sits on that panel for raid leaders.
-        ]]
+		-- On, and apart from Automated Master Looting, though it sits on that panel.
 		tradableTintEnabled = true,
 		tradableTintColor = { r = 1, g = 0, b = 128 / 255, a = 0.5 },
 		customRollList = true,
 		--[[
-            Quality key -> recipient, and deliberately empty: an absent tier is
-            "nobody chosen yet", which auto-distributes nothing and reads as
-            Loot Window. Seeding every tier with "self" would make AceDB
-            re-apply it at each login, so a cleared setup could never survive a
-            reload, and a destination nobody picked would look like one they had.
+            Quality key -> recipient, deliberately empty: unset reads as Loot
+            Window. A seeded "self" would be re-applied by AceDB at each login,
+            so a cleared setup could never survive a reload.
         ]]
 		destinations = {},
 		ignoredItemsMaster = {},
@@ -122,7 +79,6 @@ ns.DATABASE_DEFAULTS = {
 		autoOpenGroup = "ALWAYS",
 		-- Off holds opening back while a fishing pole is in the main hand, so a clam can't break the fishing rhythm.
 		autoOpenWithFishingPole = false,
-		-- Tells the player when Automated Opening, while it is on, leaves an item set to Ignore sealed.
 		openingIgnoreNotifications = true,
 		lockboxTooltips = true,
 		-- "ROGUES" | "ALL"
@@ -134,48 +90,23 @@ ns.DATABASE_DEFAULTS = {
 		lootSoundsEnabled = true,
 		lootSounds = true,
 		lootSoundThreshold = 2,
-		-- Rogues only in practice; nothing else can cast Pick Pocket.
 		pickPocketSound = true,
 		-- Off until the toasts are polished; players can turn them on to try them and give feedback (maintainer, 2026-10-05).
 		lootToasts = false,
-		--[[
-            With the toasts on, the game's Item Loot and Money Loot lines leave
-            the General tab: the toasts carry the same loot.
-        ]]
+		-- With the toasts on, the game's Item Loot and Money Loot lines leave the General tab.
 		standardLootMessages = "DISABLE",
-		--[[
-            Item tooltips on hover. Off, so the stack ignores the mouse entirely
-            and the world under it (a mob to click, a corpse to loot) stays
-            reachable with no hover dead spot.
-        ]]
+		-- Off, so the stack ignores the mouse and leaves no hover dead spot over the world.
 		lootToastTooltips = false,
-		--[[
-            The game's own "You Won" window (WoW Forever's LootAlertSystem) for
-            a roll the player wins. Off, so with the toasts on they are the one
-            word of the win rather than a second, unmatched copy beside it.
-        ]]
+		-- Off, so with the toasts on the game's own "You Won" window isn't a second copy of the win.
 		lootToastBlizzardRollWon = false,
-		--[[
-            Whether this profile has been shown the drag handle and put it away.
-            Per profile on purpose: a new or reset profile is one that has not
-            been introduced to the feature, and should be.
-        ]]
+		-- Per profile on purpose: a new or reset profile should be introduced to the drag handle.
 		lootToastsIntroSeen = false,
 		--[[
-            Filters: which of ns.LOOT_TOAST_FILTER_ROWS get a toast, for the
-            player's own loot (Mine) and the rest of the group's (Group), each
-            keyed by the row's key.
-
-            Mine ships with every row on and every quality at Poor: the toast
-            stack stands in for the loot window Speedy Loot hides, and a window
-            shows what was picked up whatever its color. The loot SOUND keeps its
-            Uncommon threshold, because a sound is an interruption and a row is a
-            record: one wants to be rare, the other wants to be complete.
-
-            Group ships with quest items and Uncommon-or-better weapons and armor:
-            what a group member picks up that the player might be waiting on or
-            rolling for, and none of their cloth and grays. A row left out here is
-            off, and AceDB saves only what the player changes.
+            Mine: every row, every quality, since the stack stands in for the
+            loot window Speedy Loot hides. The loot sound keeps Uncommon: a
+            sound is an interruption, a row a record. Group: quest items and
+            Uncommon-or-better gear the player might be waiting on. A row left
+            out here is off.
         ]]
 		lootToastMine = {
 			ARMOR = true,
@@ -230,11 +161,7 @@ ns.DATABASE_DEFAULTS = {
 		lootToastFontSize = 16,
 		-- One of ns.LOOT_TOAST_FONT_FLAGS.
 		lootToastFontFlags = "OUTLINE",
-		--[[
-            Loot Master: the window for handing out tradable loot by roll, and
-            the Loot Tracker every raider sees. Off, neither window opens and
-            no roll is read. Off while the windows are parked out of the TOCs.
-        ]]
+		-- Loot Master and Loot Tracker: off while the windows are parked out of the TOCs.
 		lootMaster = false,
 		-- Seconds a roll stays open; one of ns.ROLL_LENGTHS.
 		rollLength = 20,
@@ -260,46 +187,28 @@ ns.DATABASE_DEFAULTS = {
 		-- One of ns.DROPS_KEEP_RAIDS.
 		dropsKeepRaids = 5,
 	},
-	--[[
-		Account-wide: the welcome and one-time notices, Speedy Loot and the Roll
-		Macro (which change the client rather than a loot setup), the Openables
-		List changes, and where the toasts and loot windows sit on screen. A
-		profile switch, reset, or delete leaves all of it alone. The mini-map
-		button and the toasts' look are not here: they are in profile.
-	]]
+	-- Account-wide: a profile switch, reset or delete leaves it alone. The mini-map button and toasts' look are profile.
 	global = {
 		showWelcome = true,
-		-- Set once chat has said Automated Rolls is on by default (Features/Automated-Rolls.lua).
 		automatedRollsOnNoticeShown = false,
-		-- It changes how the client's loot window behaves rather than loot policy, so a profile switch or Reset Profile leaves it.
+		-- Changes the client's loot window, not loot policy.
 		speedyLoot = true,
 		-- The Roll Macro is a General macro, shared by every character, so its switch is too.
 		rollMacro = false,
 		--[[
-            The player's Openables List changes, { [itemId] = action }: the
-            listed items set differently from their default (ns.OPENING_OPEN or
-            ns.OPENING_IGNORE), the items they added, and ns.OPENING_REMOVED for
-            the listed items they took off.
-            Account-wide because which containers a player hoards is a decision
-            about the items, not about a loot setup, and saving only the changes
-            is what lets new data reach every player without a migration.
+            { [itemId] = action }, only where it differs from the default, plus
+            ns.OPENING_REMOVED for a listed item taken off, so new data reaches
+            every player without a migration.
         ]]
 		openingActions = {},
-		-- Where the loot toasts sit on screen: a decision about the screen, not the loot.
+		-- Where things sit on screen: a decision about the screen, not the loot.
 		lootToastPosition = {},
-		-- Where the Loot Master and Loot Tracker windows were left, by frame name, for the same reason.
 		lootWindowPositions = {},
 	},
 	char = {
 		-- The General tab's message groups GogoLoot took off it, per character because chat settings are.
 		lootGroupsHiddenByGogoLoot = {},
-		--[[
-            The Loot Master's lists, per character because they are what this
-            character carries: the Roll List's entries in the player's order,
-            the Floor Loot item IDs, what was handed out, and the drops by boss
-            of the last few raids. Kept across a /reload, which a raid leader
-            does mid-raid.
-        ]]
+		-- The Loot Master's lists: what this character carries, kept across a mid-raid /reload.
 		rollList = {},
 		floorLoot = {},
 		awarded = {},

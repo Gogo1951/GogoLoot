@@ -148,11 +148,7 @@ L["TAB_LOOT_MASTER"] = "Beutemeister"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "Pausiert"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Würfelt für dich auf geeignete Gegenstände bis zur gewählten Qualität."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Öffnet Muscheln, Kisten, Geldbeutel und aufgeschlossene Schließkassetten in deinen Taschen."
@@ -171,6 +167,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Wurf"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Wurfprotokoll"
+L["MENU_RECENT_ROLLS"] = "Letzte Würfe"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "Du"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "Kein Wurf"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Alle gepasst"
+L["MENU_ROLL_AUDIT_EMPTY"] = "Noch keine Würfe in dieser Instanz."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -186,8 +196,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d aus"
 
 L["MENU_CLICK_LEFT"] = "Linksklick"
 L["MENU_CLICK_RIGHT"] = "Rechtsklick"
-L["MENU_CLICK_SHIFT_LEFT"] = "Umschalt + Linksklick"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Mittelklick"
 L["MENU_TOGGLE"] = "Ein/Aus"
 
@@ -198,7 +206,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "Ein %s kann sie für dich knacken."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Nutze %s, um sie zu öffnen."
 L["MENU_OPTIONS"] = "GogoLoot-Optionen"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Umschalt + Mittelklick"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "%d weitere"
@@ -263,12 +270,7 @@ L["ITEM_LIST_RESTORE"] = "Standard wiederherstellen"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Lädt ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	'Auf Rezepte, Bücher, Reittiere, Haustiere und legendäre Gegenstände wird nie gewürfelt, auf Questgegenstände nur, wenn sie in den globalen Gegenstandsausnahmen stehen, und auf beim Aufheben gebundene Gegenstände nur, wenn sie in den globalen Gegenstandsausnahmen stehen oder "Beim Aufheben gebunden einschließen" an ist.'
 
@@ -304,20 +306,18 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"Zeigt bei jedem Einloggen die Version von GogoLoot und wo du diese Einstellungen findest."
 L["MINIMAP_BUTTON_ENABLE"] = "Minikarten-Schaltfläche aktivieren"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Zeigt die GogoLoot-Schaltfläche an der Minikarte. Fahre mit der Maus darüber, um das GogoLoot-Menü zu öffnen. Linksklick schaltet Automatisches Würfeln um, Rechtsklick Automatisches Öffnen und Umschalt + Linksklick Beuteankündigungen."
+	"Zeigt die GogoLoot-Schaltfläche an der Minikarte. Fahre mit der Maus darüber, um das GogoLoot-Menü zu öffnen, oder nutze Linksklick, damit es offen bleibt."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Befehle"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Öffnet das Optionsfenster dieses Add-ons."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Funktionen"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Nimmt alles von einer Leiche, sobald du sie öffnest, damit du nie auf das Beutefenster warten musst."
 L["SPEEDY_LOOT_ENABLE"] = "Blitz-Plündern aktivieren"
@@ -416,11 +416,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Legt die niedrigste Gegenstandsqualität fest, für die die Plündermethode gilt. Nur der Gruppenanführer kann das ändern."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Diese Einstellungen werden von %s verwaltet."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] =
@@ -518,7 +514,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Siegerübersicht ausgeben"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Keine Siegerübersicht ausgeben"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Siegerübersicht ausgeben schreibt für jeden Gewinn eine Zeile in den Chat, mit Gewinner, Gegenstand und Siegerwurf, anstelle der Zeile des Spiels. Keine Siegerübersicht ausgeben lässt die Zeile des Spiels stehen, die den Gewinner nennt."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Sicherheitswarnungen"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "Warnen, wenn ich einen Dungeon oder Schlachtzug mit %s oder %s betrete"
@@ -528,10 +523,7 @@ L["ROLLS_SAFETY_WARNING_SOUND"] = "Ton abspielen"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
 	"Spielt zusammen mit der Warnung einen Hinweiston ab, für wenn im Chat viel los ist."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	'Legt den Wurf für bestimmte Gegenstände fest, vorrangig vor deinen Einstellungen unter "Würfeln in Gruppe und Schlachtzug". Nur so würfelt GogoLoot auf einen Questgegenstand oder, solange "Beim Aufheben gebunden einschließen" aus ist, auf einen beim Aufheben gebundenen Gegenstand.'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -621,7 +613,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "Niedrigstufige Ausrüstung"
 L["SANITY_CHECK_ROLLS_OFF"] = "Automatisches Würfeln aus"
 L["SANITY_CHECK_QUALITY"] = "Würfeln in Gruppe und Schlachtzug"
 L["SANITY_CHECK_NEVER"] = "Nie automatisch"
-L["SANITY_CHECK_QUEST"] = "Questgegenstand"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "Beim Anlegen gebunden"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Beim Aufheben gebunden"
 
@@ -1248,7 +1239,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Vergib per Wurf, was du noch handeln kannst, mit der Handelsfrist an jedem Gegenstand, und verfolge jeden Wurf in der Beuteverfolgung. Mittelklick auf die Minikarten-Schaltfläche, oder gib /gogo master bzw. /gogo tracker ein."
+	"Vergib per Wurf, was du noch handeln kannst, mit der Handelsfrist an jedem Gegenstand, und verfolge jeden Wurf in der Beuteverfolgung. Gib /gogo master bzw. /gogo tracker ein."
 L["LOOT_MASTER_ENABLE"] = "Beutemeister aktivieren"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Verfolgt die Beute, die du noch handeln kannst, und ruft zum Würfeln darum auf. Ist das aus, öffnen sich Beutemeister und Beuteverfolgung nie, und kein Wurf wird gelesen."

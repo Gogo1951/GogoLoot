@@ -11,7 +11,7 @@ ns.SPELLS = {
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
 	- The spells GogoLoot listens for or reads, hand-picked, each under the key the code uses.
@@ -20,7 +20,7 @@ Notes
 	- SHADOWMELD is the Night Elf racial. Automated Opening waits while its aura is up, as it does in stealth (Features/Automated-Opening.lua).
 	- The Lockpicking skill line Lockbox Tooltips reads is SKILL_LINE_IDS.LOCKPICKING in Game-IDs, not a spell.
 	- Began as a copy of Data/Vanilla/.
-	- Rechecked against this client's tables at build 1.60.1.70959: every spell is in SpellName under the name its key gives.
+	- Rechecked against this client's tables at build 1.60.1.71139: every spell is in SpellName under the name its key gives.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -30,6 +30,7 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/SpellName?build=1.60.1.70959
+	https://wago.tools/db2/SpellName?build=1.60.1.71139
 
 QuestieDB
 	None.

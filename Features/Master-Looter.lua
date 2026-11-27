@@ -2,26 +2,6 @@
 -- GogoLoot Master Loot Module
 --------------------------------------------------------------------------------
 
---[[
-    Master Loot configuration plumbing:
-      * Loot method and threshold wrappers over Utilities' accessors, mapping
-        between method strings and Enum.LootMethod values.
-      * Eligibility check (WillAutoMasterLoot) for the distribution engine in
-        Master-Looter-Distribution.lua.
-      * Destination tracking — group roster cleanup when a destination player
-        leaves, and the loot type / threshold readout used by the Options
-        panel.
-
-    The manual distribution hook and the automated LOOT_OPENED → GiveMasterLoot
-    distribution engine (with its UI_ERROR_MESSAGE correlation and Pending
-    Hand-out Registry) live in Master-Looter-Distribution.lua, which loads
-    immediately after this file.
-
-    All chat output to the group routes through ns:Announce, which
-    pulls the body template from L[] and applies the target marker and
-    add-on name for the channel. This module never calls SendChatMessage
-    directly.
-]]
 local _, ns = ...
 local L = ns.L
 
@@ -29,11 +9,7 @@ local L = ns.L
 -- API Wrappers (Classic Compatibility)
 --------------------------------------------------------------------------------
 
---[[
-    The loot method crosses the API boundary as an Enum.LootMethod number on the
-    C_PartyInfo API and as a string on the legacy one, so one table owns the
-    mapping in both directions.
-]]
+-- An Enum.LootMethod number on C_PartyInfo, a string on the legacy API.
 local LOOT_METHOD_BY_ENUM = {
 	[Enum.LootMethod.Freeforall] = "freeforall",
 	[Enum.LootMethod.Roundrobin] = "roundrobin",
@@ -68,11 +44,6 @@ function ns:SafeGetLootThreshold()
 	return ns.GetLootThreshold() or 2
 end
 
---[[
-    Only the group leader may change the loot method and threshold, so the
-    options dropdowns are editable only for them. UnitIsGroupLeader is the
-    Classic surface; guard it in case a build lacks it.
-]]
 ---@return boolean
 function ns:IsGroupLeader()
 	if not IsInGroup() then
@@ -84,14 +55,7 @@ function ns:IsGroupLeader()
 	return false
 end
 
---[[
-    Display name of whoever leads the group, the player included when that is
-    them, or nil when solo.
-
-    Check "player" first: a party's unit ids run party1..partyN-1 and never
-    include the player, so walking them alone misses a party the player leads,
-    while a raid's raid1..raidN does include them.
-]]
+-- "player" first: a party's unit ids never include the player, while a raid's do.
 ---@return string|nil
 function ns:GetGroupLeaderName()
 	if not IsInGroup() or type(UnitIsGroupLeader) ~= "function" then
@@ -119,13 +83,7 @@ function ns:GetGroupLeaderName()
 	return nil
 end
 
---[[
-    Setters, group-leader only (the game ignores the call otherwise). Selecting
-    Master Loot needs a master looter, so default it to the leader who made the
-    change; they can reassign from the standard ML window. The C_PartyInfo
-    setter takes the numeric enum rather than the string, so the method is
-    mapped on the way out (ns.SET_LOOT_METHOD_TAKES_ENUM, Utilities.lua).
-]]
+-- Master Loot needs a master looter: the leader who made the change, who can reassign it.
 ---@param method string
 ---@return nil
 function ns:SafeSetLootMethod(method)
@@ -160,13 +118,6 @@ end
 -- Distribution Eligibility
 --------------------------------------------------------------------------------
 
---[[
-    The check the distribution engine (Master-Looter-Distribution.lua) makes
-    before its LOOT_OPENED pass, also shown in the Diagnostics Loot Method
-    report. Returns true when GogoLoot will own the next loot session. Speedy
-    Loot stands down on the wider ns:AreWeMasterLooter instead.
-]]
-
 ---@return boolean
 function ns:WillAutoMasterLoot()
 	if not ns:AreWeMasterLooter() then
@@ -190,22 +141,11 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    A loading screen re-syncs the party's loot state, so for a moment the loot
-    API answers with the default — or with nothing at all — before the real
-    method lands. A zoning master looter reads as "not the master looter", in a
-    group whose method reads "group", and then as both again.
-
-    Every consumer of that state has to ignore the gap, because each mistakes it
-    for a real event: the pop-up reads it as a promotion, the destination reset
-    reads it as the leader changing the loot method, and the leaver sweep reads a
-    transiently empty roster as the group having emptied.
-
-    Readings taken while the state is unreadable are ignored outright and
-    deliberately NOT recorded. Freezing rather than updating is what keeps a
-    genuine change that lands mid-loading-screen: the settle window ends with a
-    fresh reading (BeginZoneChangeSettle, below), which still compares against
-    the state from before it, so the change is noticed a beat late instead of
-    waiting on the next roster event.
+    Around a loading screen the loot API answers the default, or nothing: a
+    zoning master looter reads as demoted, the method as "group", the roster as
+    empty. Such readings are ignored and deliberately NOT recorded, so the
+    reading when the settle window ends still compares against the pre-zone
+    state and catches a real change.
 ]]
 local ZONE_SETTLE_SECONDS = 3
 local ZONE_SETTLE_TIMER = "GogoLoot.MasterLooter.ZoneSettle"
@@ -220,10 +160,6 @@ end
 -- Destination Management
 --------------------------------------------------------------------------------
 
---[[
-    Every destination dropdown's choices: Loot Window, which leaves the quality
-    in the loot window for the player, then Self, then the group.
-]]
 ---@return table
 function ns:GetGroupMemberNames()
 	local memberNames = {
@@ -243,11 +179,7 @@ function ns:GetGroupMemberNames()
 	return memberNames
 end
 
---[[
-    Display order for the destination dropdowns: Loot Window, then Self, then
-    group members alphabetically. The dropdown sorts by key otherwise, which
-    would file those two somewhere among the lowercased names.
-]]
+-- The dropdown sorts by key otherwise, filing Loot Window and Self among the names.
 ---@return table
 function ns:GetGroupMemberSorting()
 	local sorting = { "self" }
@@ -271,22 +203,13 @@ function ns:GetGroupMemberSorting()
 	return sorting
 end
 
---[[
-    Whether the loot threshold reaches a quality, so master loot hands it out at
-    all. A quality below it never reaches the master looter, so the Master
-    Looter panel hides its row and Send All Loot To leaves it out.
-]]
 ---@param quality number
 ---@return boolean
 function ns:IsQualityReachable(quality)
 	return quality >= ns:SafeGetLootThreshold()
 end
 
---[[
-    The destination shared by every quality tier the loot threshold reaches,
-    or nil when they disagree. Backs the Send All Loot To dropdown, which shows
-    blank rather than picking one tier's answer to stand for all of them.
-]]
+-- nil when the reachable tiers disagree: Send All Loot To shows blank rather than one tier's answer.
 ---@return string|nil
 function ns:GetSharedDestination()
 	local shared
@@ -296,13 +219,7 @@ function ns:GetSharedDestination()
 		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
 		if qualityKey and ns:IsQualityReachable(quality) then
 			local destination = ns.db.profile.destinations[qualityKey]
-			--[[
-                An explicit "no destination" is a value in its own right, so the
-                comparison tracks whether a tier has been seen rather than
-                whether `shared` is still nil. Otherwise an unset tier followed
-                by an assigned one would report the assigned player as the
-                answer for all five.
-            ]]
+			-- Unset is a value in its own right, so track whether a tier was seen, not whether `shared` is nil.
 			if not sawTier then
 				shared = destination
 				sawTier = true
@@ -315,11 +232,7 @@ function ns:GetSharedDestination()
 	return shared
 end
 
---[[
-    What a quality's destination dropdown shows: its player, or Loot Window
-    while nobody is picked. Loot Window is never saved, so an unset quality and
-    one sent back to the loot window are the same thing.
-]]
+-- Loot Window is never saved: unset and sent back to the loot window are the same thing.
 ---@param qualityKey string
 ---@return string
 function ns:GetDestinationChoice(qualityKey)
@@ -330,7 +243,6 @@ function ns:GetDestinationChoice(qualityKey)
 	return destination
 end
 
--- Send All Loot To's reading: Loot Window while no quality has anybody, otherwise the shared player or blank.
 ---@return string|nil
 function ns:GetSharedDestinationChoice()
 	for quality = 0, 4 do
@@ -357,11 +269,8 @@ local function IsNonSelfDestination(targetPlayerName)
 end
 
 --[[
-    "self" is stored as a literal, so announcing it verbatim would tell the group
-    that "Self" is holding the loot. Resolve it to the player's own name — which
-    is also what makes switching BACK to yourself announceable at all: the group
-    has already been told somebody else is holding loot, and silence would leave
-    that standing.
+    "self" is resolved to the player's name, which also makes switching BACK to
+    yourself announceable: silence would leave the earlier announcement standing.
 ]]
 ---@param targetPlayerName string
 ---@return string
@@ -372,12 +281,7 @@ local function GetDestinationDisplayName(targetPlayerName)
 	return ns:FormatPlayerName(targetPlayerName)
 end
 
---[[
-    Writes one destination to every tier the loot threshold reaches and
-    announces once, not once per tier. Loot Window clears every tier instead,
-    and says nothing: nobody is holding anything for the group, and the loot
-    window is where the master looter hands it out by hand.
-]]
+-- Announces once, not per tier. Loot Window clears every tier silently: nobody is holding anything.
 ---@param targetPlayerName string
 ---@return nil
 function ns:SetAllDestinations(targetPlayerName)
@@ -421,13 +325,7 @@ function ns:AnnounceDestinationSet(targetPlayerName, qualityKey)
 	ns:Announce(ns:GetGroupChatChannel(), nil, "MESSAGE_DESTINATION_SET", displayName, qualityLabel)
 end
 
---[[
-    Clears every tier to unset, not to Self. "Self" is a deliberate choice the
-    master looter makes; leaving it behind after a setup ends reads as a live
-    instruction to vacuum everything, and hides that nothing was actually chosen.
-    An unset tier auto-distributes nothing and reads as Loot Window, so the
-    next setup starts from a blank slate.
-]]
+-- To unset, never Self: a leftover Self reads as a live instruction nobody chose.
 local function ResetAllDestinations()
 	for quality = 0, 4 do
 		local qualityKey = ns.RARITY_TO_CONFIGURATION_KEY[quality]
@@ -463,11 +361,6 @@ local function GetCurrentGroupMemberLookup()
 end
 
 local function CheckDestinationsForLeavers()
-	--[[
-	    A roster read taken while a loading screen settles can come back empty,
-	    which would reassign every tier to Self and announce a group's worth of
-	    leavers who never left.
-	]]
 	if IsLootStateUnreadable() then
 		return
 	end
@@ -487,10 +380,8 @@ local function CheckDestinationsForLeavers()
 	local chatChannel = ns:GetGroupChatChannel()
 
 	--[[
-        One line per leaver, naming every quality they held, rather than one per
-        quality. A quality the threshold doesn't reach is cleared unannounced,
-        never set to Self: the panel doesn't show it, so the line won't name it,
-        and lowering the threshold later must not reveal a Self nobody chose.
+        An unreachable quality is cleared unannounced, never set to Self:
+        lowering the threshold later must not reveal a Self nobody chose.
     ]]
 	local leavers, leaverOrder = {}, {}
 	local tierCount = 0
@@ -550,27 +441,13 @@ end
 local wasInGroup = IsInGroup()
 
 --[[
-    Pop the master looter window on every false-to-true transition, tracked from
-    a starting assumption of false so logging in already master looter counts as
-    becoming one. Both events that can change the answer route through here, and
-    the flag makes repeat fires of the same state a no-op.
-
-    There is more than one way to be handed the role and all of them belong
-    here: the leader naming you master looter (PARTY_LOOT_METHOD_CHANGED), and
-    the role falling to you because whoever held it left
-    (GROUP_ROSTER_UPDATE, which no loot-method event accompanies). Narrowing the
-    trigger to the loot-method event would silently drop that second case.
+    Starts false, so logging in as master looter counts as becoming one. Both
+    events feed it: the role also falls to you when its holder leaves, on a
+    GROUP_ROSTER_UPDATE no loot-method event accompanies.
 ]]
 local wasMasterLooter = false
 
---[[
-    Changing zones is not one of those ways, though it reads like one: a zoning
-    master looter reads as "not the master looter" and then as one again, which
-    is indistinguishable from a promotion, and GROUP_ROSTER_UPDATE fires freely
-    throughout. IsLootStateUnreadable keeps that gap out of the flag; see the
-    Loading-Screen Guard above for why the reading is frozen rather than
-    recorded.
-]]
+-- Zoning reads as demote-then-promote; IsLootStateUnreadable keeps that gap out of the flag.
 local function CheckMasterLooterPopup()
 	if not ns.db then
 		return
@@ -587,31 +464,10 @@ local function CheckMasterLooterPopup()
 end
 
 --[[
-    Destinations are scoped to one master-loot setup, so any change to the
-    group's loot type clears them to unset. Carrying them across would leave
-    a stale "everything goes to Bob" armed and invisible, ready to route the next
-    session's loot at whoever was named for the last one.
-
-    The comparison is against the last method GogoLoot OBSERVED, and every event
-    that could coincide with a change refreshes that observation, not just
-    PARTY_LOOT_METHOD_CHANGED. That event alone is not enough: it is the
-    leader's action, so it need not reach every member, and where it does fire
-    the loot API may not have caught up by the time the handler runs.
-    GROUP_ROSTER_UPDATE fires far more freely, so whichever arrives first
-    notices the new method and clears.
-
-    Tracking the method rather than resetting on every fire is what keeps a
-    master-looter reassignment — which changes no method — from wiping a setup
-    mid-run. It starts nil so the first reading after login records state instead
-    of counting as a change.
-
-    A reading taken while the loot state is unreadable is skipped and not
-    recorded, so a loading screen cannot wipe a live setup: ns:SafeGetLootMethod
-    maps the client's nil answer to "group", which against a stored "master"
-    reads as the leader having changed the method mid-zone. Freezing rather than
-    recording is what keeps a genuine change that lands mid-loading-screen — the
-    reading taken when the settle window closes still compares against the
-    pre-zone method.
+    Compared against the last method OBSERVED, refreshed by roster updates too:
+    PARTY_LOOT_METHOD_CHANGED need not reach every member, and may beat the API.
+    Tracking the method, not the event, keeps a master-looter reassignment from
+    wiping a setup. Starts nil, so the first reading records rather than resets.
 ]]
 local lastObservedLootMethod = nil
 
@@ -638,13 +494,9 @@ local function OnPartyLootMethodChanged()
 end
 
 --[[
-    What the panels draw from the roster: its names, the leader, the loot
-    method and threshold. GROUP_ROSTER_UPDATE fires for far more than that
-    (members going offline, changing subgroups), and every repaint closes a
-    dropdown the master looter has open, so a roster update repaints only
-    when this changes. Nobody reads it while no panel or pop-up is on screen,
-    so then it is only marked stale, and the next panel drawn reads the roster
-    fresh.
+    Every repaint closes an open dropdown, and GROUP_ROSTER_UPDATE fires for far
+    more than the panels show, so a roster update repaints only when this
+    changes.
 ]]
 local lastPanelSignature = nil
 
@@ -675,7 +527,6 @@ end
 local function OnGroupRosterUpdate()
 	local isCurrentlyInGroup = IsInGroup()
 
-	-- Leaving a group ends the setup too, so the destinations go with it.
 	if wasInGroup and not isCurrentlyInGroup then
 		ResetAllDestinations()
 		lastPanelSignature = nil
@@ -702,7 +553,6 @@ local function OnGroupRosterUpdate()
 	CheckMasterLooterPopup()
 end
 
--- When the window closes, everything ignored during it is read again, as a roster update would.
 local function BeginZoneChangeSettle()
 	isZoneChangeSettling = true
 	ns:After(ZONE_SETTLE_TIMER, ZONE_SETTLE_SECONDS, function()
@@ -712,19 +562,35 @@ local function BeginZoneChangeSettle()
 end
 
 --[[
-    Login and /reload are the two loading screens the pop-up is meant to answer
-    from a standing start — wasMasterLooter begins false, so already holding the
-    role counts as taking it. PLAYER_ENTERING_WORLD reports which case it is, and
-    every other fire of it is a mid-session loading screen: a zone change.
+    A group left while logged out is never seen leaving, so a login that
+    settles solo ends the setup too. Its own timer, outside the settle window,
+    so the pop-up still answers at login.
+]]
+local LOGIN_SOLO_TIMER = "GogoLoot.MasterLooter.LoginSolo"
+
+local function ClearDestinationsIfSoloAtLogin()
+	if ns.db and not IsInGroup() then
+		ResetAllDestinations()
+		ns.RefreshSettings()
+	end
+end
+
+--[[
+    Login and /reload answer the pop-up from a standing start, and a /reload
+    keeps the setup. Every other loading screen is a zone change.
 ]]
 local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
-	if isInitialLogin or isReloadingUi then
+	if isInitialLogin then
+		ns:After(LOGIN_SOLO_TIMER, ZONE_SETTLE_SECONDS, ClearDestinationsIfSoloAtLogin)
+		return
+	end
+	if isReloadingUi then
 		return
 	end
 	BeginZoneChangeSettle()
 end
 
--- Crossing a zone border without a loading screen, which PLAYER_ENTERING_WORLD does not report.
+-- A zone border crossed without a loading screen, which PLAYER_ENTERING_WORLD doesn't report.
 local function OnZoneChangedNewArea()
 	BeginZoneChangeSettle()
 end

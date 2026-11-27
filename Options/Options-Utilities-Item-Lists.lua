@@ -2,19 +2,7 @@
 -- GogoLoot Options — Item Lists
 --------------------------------------------------------------------------------
 
---[[
-    The shared item list builder every list panel is built on (Item Overrides,
-    the Master Looter Ignore List and the Openables List): Add from Bags, the
-    rows and the builder itself; item-input parsing and item-name sorting are
-    the Options-Kit's. The item
-    cache lives in Options-Utilities-Item-Cache.lua, the kind sections and the
-    filters in Options-Utilities-Item-List-Filter.lua, and the
-    GogoLoot_ItemListFilter and GogoLoot_ItemListAdd AceGUI widgets in
-    Options-Utilities-Item-List-Widgets.lua, which reaches what it shares
-    through ns.SetItemListFilter, ns.ITEM_LIST_REMOVE_ICON and
-    ns.MeasureCaptionPixels (Features/Utilities.lua). A row's item is the
-    Options-Kit's Kit.ITEM_LINK_WIDGET.
-]]
+-- The builder behind Item Overrides, the Master Looter Ignore List and the Openables List.
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
@@ -26,14 +14,9 @@ local GetColor = ns.GetColor
 --------------------------------------------------------------------------------
 
 --[[
-    Typed input goes through Kit.ParseItem (a bare ID or a whole item link) and
-    rows sort through Kit.SortItems (by name, uncached last, ties by ID), both
-    the Options-Kit's. What stays here is the name each row is filtered by.
-
-    Each name is read once and never for an item this client doesn't have.
-    Reading an uncached item asks the server for it, and the list repaints
-    often. A name the client has answered with is kept for the session, so a
-    repaint only asks about the items still loading.
+    Reading an uncached name asks the server, and the list repaints often, so
+    a name is kept for the session once read and never asked for an ID not on
+    the client.
 ]]
 local knownItemNames = {}
 
@@ -58,17 +41,10 @@ end
 -- Add from Bags
 --------------------------------------------------------------------------------
 
--- Add from Bags' own first choice, which it rests on: its caption, or the line saying the bags have nothing to add.
+-- The first choice Add from Bags rests on: its caption, or the bags-empty line.
 local BAGS_CAPTION = "CAPTION"
 
---[[
-    Beside every list's add box, a dropdown of what the player carries that the
-    list doesn't hold yet, one choice per distinct item, A to Z by name, each
-    with its icon, link and how many are carried. The bags close when the
-    options open, so this is the way to add an item without dragging it in.
-    The list's canAdd, where it has one, leaves out what it would refuse. Read
-    afresh on every repaint, so it follows the bags.
-]]
+-- The bags close when Options opens, so this is how to add a carried item without dragging it in.
 ---@param sourceTable table
 ---@param canAdd function|nil
 ---@return table values
@@ -102,10 +78,6 @@ end
 -- Shared Item List Builder
 --------------------------------------------------------------------------------
 
---[[
-    Whether two item lists hold the same items with the same values: the saved
-    list against a freshly built default one, for a spec's isDefault.
-]]
 ---@param saved table
 ---@param defaults table
 ---@return boolean
@@ -124,73 +96,34 @@ function ns.ItemListsMatch(saved, defaults)
 end
 
 --[[
-    Used by every item list panel. Handles the lines holding the add box, Add
-    from Bags, the filter and the kind filter, sort, the item kind headers, per-item
-    rows with optional action dropdown, and Restore Defaults at the foot. Pass
-    in a spec table:
+    ns:BuildItemListOptions spec:
+      getSourceTable()   the table whose keys are the item IDs
+      onRestore()        puts the list back to its defaults
+      isDefault()        optional; Restore Defaults is gray while true
+      onAdd(id)          optional; without it there is no add line
+      canAdd(id)         optional; Add from Bags offers only these
+      onRemove(id)       optional; without it there is no remove column
+      notifyKey          registry name; keys the filter, New and the item watch
+      startOrder         optional first order, so a page can seat its own head
+      rowWidth           optional; Kit.TREE_ROW_WIDTH in a tree pane
+      labels             { restoreDesc, restoreConfirm, addDesc, addName,
+                           addFromBagsDesc, removeDesc, removeConfirm }
+      actionColumn       optional { desc, values, sorting, get, set, width };
+                         removing a row then confirms, as it has a setting
+      tagFor(id)         optional short reason or nil; the filter matches it
+      refillsWhenEmpty   optional; RebuildEmptyItemLists refills it at login
 
-      getSourceTable: function returning the table whose keys are the item IDs
-      onRestore: function that puts the list back to its defaults
-      isDefault: optional function returning whether the list already matches
-        its defaults; Restore Defaults is gray while it does (ns.ItemListsMatch
-        compares a saved list against a freshly built default one)
-      onAdd: optional function(itemId) that adds an item to the source; without
-        it the panel has no add line (the add box and Add from Bags)
-      canAdd: optional function(itemId) returning whether the list would take
-        an item; Add from Bags offers only those
-      onRemove: optional function(itemId) that removes an item from the source;
-        without it the rows have no remove column
-      notifyKey: the list's AceConfigRegistry table name, which keys its
-        filter, its New section and its item watch; every edit ends in
-        ns.RefreshSettings()
-      startOrder: optional first order, so a page can seat its own head above
-      rowWidth: optional row width, Kit.TREE_ROW_WIDTH in a tree pane
-      labels: { restoreDesc, restoreConfirm, addDesc, addName, addFromBagsDesc,
-        removeDesc, removeConfirm }; addName and addDesc are the title and body
-        of the add box's tooltip, addFromBagsDesc Add from Bags' tooltip, which
-        defaults to the shared one. Every list's restore button reads Restore
-        Defaults.
-      actionColumn: optional { desc, values, sorting, get, set, width }; when
-        present each row gets an action dropdown, the item label is narrower,
-        and removing a row confirms with labels.removeConfirm, since the row
-        carries a setting of its own.
-        sorting is the AceConfig display order for values (optional)
-        width defaults to ns.ROLL_ACTION_DROPDOWN_WIDTH
-      tagFor: optional function(itemId) returning a short reason, or nil; every
-        row then gets a silver tag column before its dropdown, empty where the
-        item has none, and the filter finds rows by their tag too
-      refillsWhenEmpty: optional true for a list that RebuildEmptyItemLists
-        (Features/Core.lua) refills at login; with no rows and no filter text,
-        a silver line says so
-
-    The rows sit under the list's filter (Options-Utilities-Item-List-Filter.lua), which every list
-    gets. An ID this client doesn't have is never loaded: it gets no row and no
-    request goes out for it. That includes an item WoW Forever lists but its
-    server refuses (IsItemOnClient), which drops out on the repaint that follows
-    the refusal. The saved list itself is left as it is.
+    An ID not on the client gets no row and no request; the saved list keeps it.
 ]]
 
 --[[
-    The remove column is an icon, not a labeled button. An execute carrying an
-    `image` renders as an AceGUI Icon rather than the stock Button, and Button
-    insets its font string 15px from each edge — in a column this narrow that
-    leaves a caption almost no room and clips it to a sliver. The Icon has no
-    such inset, and the group-loot pass texture is already the game's own
-    "no, get rid of this" mark.
-
-    `name` stays empty so the Icon draws no caption under the texture; the
-    label rides in `desc`, which AceConfigDialog shows on hover.
+    An icon, not a Button: Button insets its caption 15px a side, clipping it
+    in a column this narrow. `name` stays empty; the label rides in `desc`.
 ]]
 local REMOVE_ICON = "Interface/Buttons/UI-GroupLoot-Pass-Up"
 ns.ITEM_LIST_REMOVE_ICON = REMOVE_ICON
 local REMOVE_ICON_SIZE = 16
 
---[[
-    One item's row: the item link, the optional reason tag, the optional action
-    dropdown, and the remove icon, as an inline group of its own. The item label
-    absorbs whatever the columns to its right leave behind, so an item row
-    spends the same Kit.ROW_WIDTH every other row does.
-]]
 ---@param args table
 ---@param spec table
 ---@param itemIdentifier number
@@ -274,15 +207,7 @@ local function AddItemRow(args, spec, itemIdentifier, order, widths, tag)
 	}
 end
 
---[[
-    The add line and the blank line after it, for a list with onAdd. The tools
-    take the lines above the rows, Connoisseur's Restocker's parts: adding
-    first, since it is the first thing done with a list, then a blank line,
-    then finding. The add line holds the add box with its hint and its Add
-    button (see GogoLoot_ItemListAdd) in the label column, and Add from Bags in
-    the control column. Each line is a bare group of its own, which pins it to
-    its line.
-]]
+-- Each line is a bare inline group, which pins it to its line.
 ---@return number # the next free order
 local function AddAddRow(args, order, spec)
 	local labels = spec.labels
@@ -298,10 +223,6 @@ local function AddAddRow(args, order, spec)
 		if spec.getSourceTable()[itemIdentifier] ~= nil then
 			ns.RememberNewListItem(spec.notifyKey, itemIdentifier)
 		end
-		--[[
-            Query the item now; if it isn't cached yet, watch for the
-            server's answer so the row updates from "Loading…" in place.
-        ]]
 		if ns.IsItemOutstanding(itemIdentifier) then
 			ns.EnsureItemRefreshWatcher()
 		end
@@ -363,11 +284,6 @@ local function AddAddRow(args, order, spec)
 	return order + 2
 end
 
---[[
-    The filter line: the filter, as wide as the add box so the two boxes stack
-    in one column, and the kind filter under Add from Bags, where every panel's
-    dropdowns sit.
-]]
 ---@return number # the next free order
 local function AddFilterRow(args, order, spec, kindLabels, kindOrder)
 	args.filterRow = {
@@ -414,11 +330,7 @@ local function AddFilterRow(args, order, spec, kindLabels, kindOrder)
 	return order + 1
 end
 
---[[
-    The New section leads the list, its rows taken out of their kinds'
-    sections, and a section it empties goes. The kind filter's choices were
-    read before this, so they still name every kind on the list.
-]]
+-- The kind filter's choices are read before this, so they still name every kind on the list.
 ---@param spec table
 ---@param sections table[]
 ---@return table[]
@@ -453,13 +365,8 @@ local function WithNewSection(spec, sections)
 end
 
 --[[
-    Each section's header, with the space above and below it that every
-    panel's headers get, then its rows (see Item Kind Sections in
-    Options-Utilities-Item-List-Filter.lua). With a kind
-    picked, only its section shows, beside New: what the player just added
-    shows whatever the kind and the filter text say, or an add could land out
-    of sight. A section the filter empties loses its header too. The first header needs no space above it, having
-    spacerBeforeItems.
+    New skips both filters, or an add could land out of sight. The first header
+    needs no space above it, having spacerBeforeItems.
 ]]
 ---@return number # the next free order
 ---@return number # how many rows the filter left showing
@@ -522,7 +429,7 @@ function ns:BuildItemListOptions(spec)
 		end
 	end
 	local itemNames = ReadItemNames(sortedIdentifiers)
-	-- Kit.SortItems' order (A to Z, unnamed last, ties by ID), read from the names already in hand.
+	-- Kit.SortItems' order from the names in hand, so the comparator never queries.
 	table.sort(sortedIdentifiers, function(a, b)
 		local nameA, nameB = itemNames[a], itemNames[b]
 		if nameA == nameB then
@@ -536,14 +443,6 @@ function ns:BuildItemListOptions(spec)
 	end)
 	local sections = ns.GroupItemListByKind(sortedIdentifiers)
 
-	--[[
-        Building the rows above queries each item, which requests any uncached
-        one from the server. Arm the refresh watcher whenever a row is still
-        cold so the panel repaints as the item info streams in (rather than
-        staying on "Loading..." until the window is reopened). The watcher
-        self-unregisters once every list entry has resolved (see
-        RefreshOptionsAfterDelay in Options-Utilities-Item-Cache.lua).
-    ]]
 	for _, itemIdentifier in ipairs(sortedIdentifiers) do
 		if ns.IsItemOutstanding(itemIdentifier) then
 			ns.EnsureItemRefreshWatcher()
@@ -551,7 +450,6 @@ function ns:BuildItemListOptions(spec)
 		end
 	end
 
-	-- The kind filter's choices: Show All Kinds of Items, then every header the list carries, in the list's own order.
 	local kindLabels, kindOrder = { [ns.ITEM_LIST_ALL_KINDS] = L["ITEM_LIST_KIND_ALL"] }, { ns.ITEM_LIST_ALL_KINDS }
 	for _, section in ipairs(sections) do
 		if section.heading ~= "" then
@@ -559,13 +457,12 @@ function ns:BuildItemListOptions(spec)
 			kindOrder[#kindOrder + 1] = section.heading
 		end
 	end
-	-- A kind picked earlier that has since left the list is forgotten, which puts the list back on Show All Kinds of Items.
+	-- A picked kind that left the list is forgotten, so a later item of that kind doesn't narrow it again unasked.
 	if not kindLabels[ns.GetItemListKind(spec.notifyKey)] then
 		ns.SetItemListKind(spec.notifyKey, nil)
 	end
 	local chosenKind = ns.GetItemListKind(spec.notifyKey) or ns.ITEM_LIST_ALL_KINDS
 
-	-- A list without onAdd has no add line and no blank line.
 	if spec.onAdd then
 		order = AddAddRow(args, order, spec)
 	end
@@ -600,12 +497,7 @@ function ns:BuildItemListOptions(spec)
 		order = order + 1
 	end
 
-	--[[
-        Restore Defaults closes the list, right-aligned at the width of its
-        caption: the top of a list is for finding and adding, and a reset used
-        once in a while shouldn't be the biggest button there. It confirms, as
-        every list's own restore undoes real work.
-    ]]
+	-- At the foot, caption-wide: a reset used once in a while shouldn't be the biggest button at the top.
 	args.spacerBeforeRestore = Kit.Spacer(order)
 	order = order + 1
 	args.restoreRow = Kit.Row(order, nil, {
@@ -617,7 +509,6 @@ function ns:BuildItemListOptions(spec)
 			width = ns.OPTIONS_RESTORE_BUTTON_WIDTH,
 			confirm = true,
 			confirmText = labels.restoreConfirm,
-			-- Gray while the list already matches its defaults, like every Reset with nothing to reset.
 			disabled = spec.isDefault,
 			func = function()
 				spec.onRestore()

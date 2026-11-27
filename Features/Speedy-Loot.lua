@@ -2,41 +2,17 @@
 -- GogoLoot Speedy Loot Module
 --------------------------------------------------------------------------------
 
---[[
-    Watches LOOT_READY and loots every slot at once, keeping the loot window
-    hidden so pickup is near instant.
-
-    Gated by ns.db.global.speedyLoot, and stands down for the whole master-loot
-    session whenever ns:AreWeMasterLooter() is true: LootSlot calls in a
-    master-loot session race the distribution path and pop the candidate
-    dropdown for items the engine would have placed automatically.
-
-    The window stays up whenever something is left in it: loot the bags had no
-    room for, or a Bind on Pickup item waiting on the client's bind question. Auto Loot, which this depends on, is enforced by
-    Features/Auto-Loot.lua.
-
-    "The window" is whichever loot window is in use: the game's, or ElvUI's or
-    Tukui's in its place (ns.GetLootWindow).
-]]
+-- "The window" is whichever loot window is in use: the game's, or ElvUI's or Tukui's (ns.GetLootWindow).
 local _, ns = ...
 
 local LOOT_THROTTLE_SECONDS = 0.3
 local lastLootAttemptTime = nil
 
 --[[
-    True only when the most recent pass took everything with bag space to spare,
-    so nothing was left in the window and nothing it asked for can still bounce
-    off full bags. The hook below (LootFrame's OnShow, or its Open method on WoW
-    Forever) re-hides the window the instant the default UI shows it on
-    LOOT_OPENED. That re-show
-    is what makes the window flash for half a second: a plain LootFrame:Hide()
-    on LOOT_READY is a no-op because the frame isn't shown yet, and nothing
-    re-hides it after. Hooking OnShow rather than handling LOOT_OPENED makes the
-    suppression independent of handler order: it hides after whatever showed the
-    frame.
-
-    Cleared on LOOT_CLOSED, so a throttled LOOT_READY can't carry one corpse's
-    "fully looted" verdict onto the next corpse's window.
+    True only when the last pass took everything with bag space to spare. A
+    Hide() on LOOT_READY is a no-op (the frame isn't shown yet), so the show
+    hook below re-hides it, after whatever showed it. Cleared on LOOT_CLOSED,
+    so a throttled LOOT_READY can't carry one corpse's verdict to the next.
 ]]
 local suppressLootWindow = false
 
@@ -44,7 +20,6 @@ local suppressLootWindow = false
 -- Loot Slot Type
 --------------------------------------------------------------------------------
 
--- Money and currency slots take no bag space, so only item slots count against the free slots.
 local function IsItemLootSlot(slotIndex)
 	return GetLootSlotType(slotIndex) == ns.LOOT_SLOT_TYPE_ITEM
 end
@@ -53,17 +28,11 @@ end
 -- Bag Space
 --------------------------------------------------------------------------------
 
--- The key family bit: what the keyring takes.
 local KEY_FAMILY = 256
 
 local GetItemFamily = C_Item.GetItemFamily or GetItemFamily
 
---[[
-    Whether this client has a keyring, asked the way the client itself asks:
-    MoP Classic still defines KEYRING_CONTAINER but has no keyring. The modern
-    C_ActionBar question goes first; IsKeyRingEnabled answers only where it is
-    missing.
-]]
+-- MoP Classic still defines KEYRING_CONTAINER but has no keyring.
 local function HasKeyring()
 	if not KEYRING_CONTAINER then
 		return false
@@ -77,13 +46,7 @@ local function HasKeyring()
 	return false
 end
 
---[[
-    Where this pass's loot can go, read once per pass: free slots in the
-    general-purpose bags, each specialty bag on its own with its family (a
-    quiver, a herb bag, a soul bag), and the keyring where the client has one.
-    `incoming` counts what the pass has already sent for each item, so two
-    stacks of the same cloth in one corpse are measured against each other.
-]]
+-- `incoming` counts what this pass already sent, so two stacks of one cloth are measured against each other.
 local function ReadBagSpace()
 	local space = { general = 0, specialty = {}, incoming = {} }
 	for bagIndex = 0, NUM_BAG_SLOTS do
@@ -96,7 +59,7 @@ local function ReadBagSpace()
 			end
 		end
 	end
-	-- Era and Anniversary only; the keyring takes keys alone, whatever family it reports for itself.
+	-- The keyring takes keys alone, whatever family it reports for itself.
 	if HasKeyring() then
 		local free = C_Container.GetContainerNumFreeSlots(KEYRING_CONTAINER)
 		if free and free > 0 then
@@ -107,20 +70,12 @@ local function ReadBagSpace()
 end
 
 --[[
-    Whether an item has somewhere to go, spending the space it takes. Cheapest
-    first, the same order the client fills bags in:
-
-    1. ONTO A STACK ALREADY CARRIED. The room left on the carried stacks is
-       counted as if every stack but the last were full, which is the least
-       room they can have, so this never promises space that isn't there.
-    2. A SPECIALTY BAG whose family the item shares (arrows in a quiver, herbs
-       in a herb bag). A bag or quiver as loot is never one of these: its own
-       family names what it HOLDS, not where it may go.
-    3. A GENERAL-PURPOSE SLOT.
-
-    An item the client hasn't loaded reads no stack size and no family, and a
-    slot with no link reads nothing at all, so either falls through to a
-    general slot, the conservative choice.
+    Cheapest first, as the client fills bags:
+    1. ONTO A CARRIED STACK, counted as if every stack but the last were full,
+       the least room they can have.
+    2. A SPECIALTY BAG of the item's family. A looted bag or quiver is never
+       one: its family names what it HOLDS, not where it may go.
+    3. A GENERAL SLOT, also where an uncached or linkless item falls.
 ]]
 local function TakeSpaceFor(space, itemLink, itemIdentifier, quantity)
 	local stackSize = itemLink and select(8, C_Item.GetItemInfo(itemLink))
@@ -150,7 +105,6 @@ local function TakeSpaceFor(space, itemLink, itemIdentifier, quantity)
 		taken = true
 	end
 	if taken and itemIdentifier then
-		-- A fresh stack: what it holds is carried room for the next copy in this corpse.
 		space.incoming[itemIdentifier] = (space.incoming[itemIdentifier] or 0) + quantity
 	end
 	return taken
@@ -160,11 +114,7 @@ end
 -- Speedy Loot
 --------------------------------------------------------------------------------
 
---[[
-    When the last pass that took an item closed the loot behind it, for the
-    refused-pickup warning below. Nil while the window stayed up: an item it
-    couldn't take is still in front of the player there.
-]]
+-- nil while the window stayed up: a refused item is still in front of the player there.
 local closedPassAt = nil
 
 local function RunSpeedyLoot()
@@ -173,32 +123,20 @@ local function RunSpeedyLoot()
 	end
 
 	--[[
-        Stand down for the whole loot session whenever we are the master looter,
-        not only when GogoLoot will auto-distribute. Master loot is a managed
-        flow: at-or-above-threshold items are assigned through the master looter
-        window (automatically by Master-Looter.lua, or by hand) and sub-threshold
-        items are handed out by the group method. LootSlot here would vacuum that
-        loot into the master looter's own bags before it can be assigned, and
-        LootSlot on a threshold item pops MasterLooterFrame_Show, which errors on
-        some clients (the nil colorInfo loot-frame crash). AreWeMasterLooter() is
-        the superset of WillAutoMasterLoot(), so this also covers loot outside
-        instances, where auto-distribution is off by default.
+        Not WillAutoMasterLoot(): any LootSlot in a master-loot session vacuums
+        threshold loot into the master looter's bags, or pops
+        MasterLooterFrame_Show, which errors on some clients.
     ]]
 	if ns:AreWeMasterLooter() then
 		return
 	end
 
-	--[[
-        Respect the user's Auto Loot setting plus the modifier-key inversion, so
-        holding the auto-loot modifier still flips behavior as expected.
-    ]]
 	local autoLootEnabled = ns:IsAutoLootCVarEnabled()
 	local modifierKeyHeld = IsModifiedClick("AUTOLOOTTOGGLE")
 	if autoLootEnabled == modifierKeyHeld then
 		return
 	end
 
-	-- Throttle to avoid double-firing on closely spaced LOOT_READY events.
 	local currentTime = GetTime()
 	if lastLootAttemptTime and (currentTime - lastLootAttemptTime) < LOOT_THROTTLE_SECONDS then
 		return
@@ -211,26 +149,13 @@ local function RunSpeedyLoot()
 
 	local space = ReadBagSpace()
 
-	--[[
-        Set whenever the window has to stay up: an item with nowhere to go, or
-        a Bind on Pickup item, whose bind question the client
-        only asks while the loot session is open, so hiding the window would
-        cancel it and leave the item behind. It drives both re-showing the
-        window and the suppression flag below: the window is only suppressed
-        when this pass took everything.
-    ]]
+	-- The client asks a Bind on Pickup item's bind question only while the loot session is open.
 	local leftBehind = false
 	local tookItem = false
 
-	--[[
-        From the bottom of the list upward, mirroring the game's own auto loot
-        and avoiding index shifts as slots empty. Each item is measured against
-        the space read above and spends what it takes (TakeSpaceFor); one with
-        nowhere to go stays in the window, and everything that fits, coin
-        included, is still taken.
-    ]]
+	-- Bottom-up, as the game's own auto loot does, so no index shifts as slots empty.
 	for slotIndex = lootSlotCount, 1, -1 do
-		-- A locked slot is still being rolled for, or isn't the player's to take yet; its roll window handles it.
+		-- A locked slot is still being rolled for, or isn't the player's to take yet.
 		local _, _, quantity, _, _, locked = GetLootSlotInfo(slotIndex)
 		if not locked then
 			if not IsItemLootSlot(slotIndex) then
@@ -239,16 +164,14 @@ local function RunSpeedyLoot()
 				local itemLink = GetLootSlotLink(slotIndex)
 				local itemIdentifier = itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
 				--[[
-                    Ignore on the Openables List only keeps a container sealed
-                    in the bags; it is looted like anything else. Leaving it in
-                    the window would lose it for good on loot that can't be
-                    reopened, such as a fishing catch (maintainer, 2026-11-07).
+                    Openables List Ignore is still looted: left in the window, a
+                    fishing catch is lost for good (maintainer, 2026-11-07).
                 ]]
 				if TakeSpaceFor(space, itemLink, itemIdentifier, quantity or 1) then
 					LootSlot(slotIndex)
 					tookItem = true
 					if itemLink then
-						-- A bind type of nil is an item the client hasn't loaded yet, which may be Bind on Pickup too.
+						-- A nil bind type is an uncached item, which may be Bind on Pickup too.
 						local bindType = select(14, C_Item.GetItemInfo(itemLink))
 						if bindType == nil or bindType == ns.BIND_ON_PICKUP then
 							leftBehind = true
@@ -262,21 +185,15 @@ local function RunSpeedyLoot()
 	end
 
 	--[[
-        Hiding the window closes the loot (the default UI calls CloseLoot from
-        its OnHide), and the hide lands before the server has answered a single
-        LootSlot. The free-slot count is only a guess until then: items from the
-        previous corpse can still be arriving. So once this pass leaves fewer
-        than ns.MIN_FREE_SLOTS general slots free, the line Automated Opening
-        pauses at, the window stays up. It closes itself when the last item is
-        taken, and a pickup that bounces off full bags stays in it instead of on
-        a corpse the player can no longer see.
+        Hiding closes the loot before the server answers any LootSlot, so the
+        free-slot count is only a guess. Under ns.MIN_FREE_SLOTS the window stays
+        up, so a pickup that bounces stays in it rather than on the corpse.
     ]]
 	local bagsTight = tookItem and space.general < ns.MIN_FREE_SLOTS
 
 	suppressLootWindow = not leftBehind and not bagsTight
 	closedPassAt = (suppressLootWindow and tookItem) and currentTime or nil
 
-	-- Belt and braces with the loot window's own show: stranded loot must be seen.
 	local lootWindow = ns.GetLootWindow()
 	if leftBehind and lootWindow then
 		lootWindow:Show()
@@ -286,16 +203,9 @@ local function RunSpeedyLoot()
 end
 
 --[[
-    A pickup the server refused after the pass had already closed the loot:
-    full bags (anything still arriving from the last corpse can fill them), or
-    a unique item already carried. The item is still on the corpse, but the
-    window that would have shown it is gone, and reopening the loot would mean
-    holding every session open until the server answers. So the player is told
-    instead, once per ns.BAG_FULL_COOLDOWN (shared with Automated Opening's
-    warning), with the client's own reason, and for full bags hears their
-    character's inventory-full line (never for a unique item, where "my bags
-    are full" would be wrong). Only within ns.LOOT_BOUNCE_WINDOW of such a pass: any
-    other refusal is the game's to report.
+    A pickup refused after the pass closed the loot is reported, not reopened:
+    reopening would mean holding every session open. The voice line plays for
+    full bags only, never a unique item.
 ]]
 local function OnUiErrorMessage(errorIdentifier, message)
 	if not closedPassAt or (GetTime() - closedPassAt) > ns.LOOT_BOUNCE_WINDOW then
@@ -319,30 +229,14 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Re-hide the loot window the instant it shows, but only when the last pass
-    took everything. This is what actually kills the flash; see
-    suppressLootWindow above.
+    The old LootFrame and ElvUI's and Tukui's are shown by one Show() and close
+    the loot from OnHide, so hiding from OnShow is clean.
 
-    THREE KINDS OF LOOT WINDOW.
-
-    The game's old one (LootFrame_Show, a plain UIPanel) on Era, Anniversary and
-    MoP Classic, and ElvUI's and Tukui's replacements (ElvLootFrame,
-    TukuiLootFrame) on any client: each is shown by one Show() on LOOT_OPENED
-    and closes the loot from its own OnHide, so hiding it from its own OnShow
-    is clean.
-
-    WoW Forever's own window is Retail's (LootFrameMixin), whose Open() shows
-    the frame and THEN keeps going: it sets isOpen and plays its open
-    animation. Hiding from OnShow there lands mid-Open, so Open finishes on a
-    hidden frame that now believes it is open, with its item list already
-    emptied by OnHide. The next time Blizzard re-applies the frame's shown
-    state (SetShown(isOpen)) an empty "Items" window comes back and nothing
-    closes it. So on that frame the hide waits until Open has returned, and
-    goes through the frame's own Close and HideUIPanel, leaving isOpen, the
-    animations and the UI panel slot the way Blizzard's own close leaves them.
-    Open is a mixin method copied onto the frame table itself, so rawget finds
-    it on Forever and nothing on the old frame, whose methods are all widget
-    methods behind the metatable.
+    WoW Forever's Retail LootFrameMixin Open() keeps going after the show: a
+    hide from OnShow lands mid-Open and later strands an empty, un-closable
+    "Items" window. There the hide waits for Open to return and goes through
+    Close and HideUIPanel. Open is a mixin method on the frame table, so rawget
+    finds it only there.
 ]]
 local function HideFromOnShow(frame)
 	if suppressLootWindow then
@@ -350,7 +244,6 @@ local function HideFromOnShow(frame)
 	end
 end
 
--- LootFrame exists at load, since the default UI loads before add-ons.
 if LootFrame then
 	if type(rawget(LootFrame, "Open")) == "function" then
 		hooksecurefunc(LootFrame, "Open", function(self)
@@ -365,11 +258,7 @@ if LootFrame then
 	end
 end
 
---[[
-    ElvUI and Tukui build their loot windows at login, after GogoLoot loads, so
-    their hooks go on the first time loot is ready, before the window's
-    LOOT_OPENED show. Once per frame: a HookScript stacks.
-]]
+-- ElvUI and Tukui build their windows at login, after GogoLoot loads. Once per frame: a HookScript stacks.
 local hookedReplacements = {}
 
 local function HookReplacementLootWindows()
@@ -387,14 +276,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    The LOOT_READY handler that empties the loot slots, and its order is
-    load-bearing. The world-loot stamp and the Pick Pocket sound
-    (Features/Loot-Sounds.lua) read the slots, so both run here, first.
-    Anything else that reads the slots on LOOT_READY belongs here too, before
-    RunSpeedyLoot: this file loads first, so another module's LOOT_READY
-    handler runs after the pass and finds the slots empty. Other modules may
-    listen to LOOT_READY only for the fact that it fired, as Automated Opening
-    does to confirm its open.
+    Order is load-bearing: anything that reads the loot slots on LOOT_READY
+    goes here, before RunSpeedyLoot. Another module's LOOT_READY handler runs
+    after the pass and finds the slots empty.
 ]]
 local function OnLootReady()
 	HookReplacementLootWindows()

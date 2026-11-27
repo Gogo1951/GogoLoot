@@ -71,14 +71,7 @@ ns.CLASS_STAT_STARTER = {
 	DRUID = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT", "STRENGTH" },
 }
 
---[[
-    The drops the Loot Roll Sanity Check draws ten from at a time, one list
-    per section (Options/Options-Sanity-Check.lua): { itemId, kind }. kind is
-    UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a
-    draw can promise each section its greens, blues and Bind on Equip epics,
-    or OTHER for a row that shows one of Automated Rolls' gates. A row this
-    client doesn't have is never drawn.
-]]
+-- { itemId, kind }
 ns.SANITY_CHECK_TRASH = {
 	-- Uncommon
 	{ 12426, "UNCOMMON" }, -- Imperial Plate Boots (BoE)
@@ -111,6 +104,7 @@ ns.SANITY_CHECK_TRASH = {
 	{ 21888, "EPIC" }, -- Gloves of the Immortal (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	-- Uncommon
 	{ 12422, "UNCOMMON" }, -- Imperial Plate Chest (BoE)
@@ -142,6 +136,7 @@ ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	{ 13335, "OTHER" }, -- Deathcharger's Reins (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_RAID_BOSSES = {
 	-- Uncommon
 	{ 8290, "UNCOMMON" }, -- Arcane Robe (BoE)
@@ -184,11 +179,12 @@ ns.SANITY_CHECK_RAID_BOSSES = {
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
 	- Character Rules' armor and weapon rows, and what each class starts with ticked. A row is an item subclass ID, or a name for a row no subclass names. Gear that is a ticked type and carries a ticked stat is left to the player to roll; the rest of the gear is greeded (Features/Character-Rules.lua).
 	- SANITY_CHECK_TRASH, SANITY_CHECK_DUNGEON_BOSSES and SANITY_CHECK_RAID_BOSSES: the Loot Roll Sanity Check's drops, picked from Wowhead's classic item data (zone drop tables for the dungeons and raids of this expansion's last level band, and its most popular items of each quality for gear outside them), then each item checked one by one against Wowhead's tooltip for this client for its quality, its binding and fixed stats (no random enchantment), on 2026-11-16. Not literally from that kind of kill: a section mixes Bind on Pickup and Bind on Equip, and every section holds at least four greens and five blues, and Trash and Raid Bosses at least six Bind on Equip epics, so a draw can always show two of each (Options/Options-Sanity-Check.lua). OTHER rows are picked by hand to show a gate: a mount or legendary (Never Automated), a quest item or token, or a default Item Overrides row. Diagnostics' Validate Data lists each row with its kind, to compare against the item's quality in game.
+	- The Sanity Check draws ten at a time from one list per section (Options/Options-Sanity-Check.lua). kind is UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a draw can promise each section its greens, blues and Bind on Equip epics, or OTHER for a row that shows one of Automated Rolls' gates. A row this client doesn't have is never drawn.
 	- Sixteen of those picks aren't on this client (build 1.60.1.70938), most of them Molten Core, Onyxia, Blackwing Lair and Zul'Gurub epics, and were dropped. Their places went to drops this build's ItemSparse carries, every one of which this client knows: raid-boss epics from Blackwing Lair, Ahn'Qiraj and Naxxramas plus Lord Kazzak's The Eye of Shadow for Raid Bosses, and for Trash the world drop Gloves of Spell Mastery and the raid trash drops Band of Dark Dominion and Gloves of the Immortal, each with its drop source checked in QuestieDB. Every section still holds at least twenty rows, which the offline tests require.
 	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client (WoW Forever 1.60.1.70450, 2026-10-20). Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
@@ -200,7 +196,7 @@ Notes
 	- Forever's weapon changes, checked against this build's SkillRaceClassInfo and SkillLineAbility (wago.tools, 1.60.1.70938) beside Classic Era's (1.15.8.66129), 2026-11-18. Rogues train One-Handed Axes here (the trainer spell's class mask gained Rogue), so they start with it ticked. Druids start with Polearms ticked: the client's tables carry a druid Polearms row on Era too, so they can't settle it alone, but Forever's class guides list it, and the maintainer asked for it (2026-11-18). Play It Forward's WEAPON_SPECS still counts both at 0. Every other class matches Era.
 	- Stats the maintainer added beyond the spec mapping (2026-11-18): Strength for rogues, and Agility for shamans, so melee gear built on either is held for them. Shamans already start with Strength and Intellect.
 	- Hunters start with Thrown ticked: Play It Forward counts it 0 because no hunter spec builds on it, but a hunter trains it, and the user asked for every trainable weapon (2026-11-07).
-	- Rechecked against this client's tables at build 1.60.1.70959: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment. ItemSparse lacks 32 of the drops, which Forever streams from the server; all 32 are in its Item table.
+	- Rechecked against this client's tables at build 1.60.1.71139: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment. ItemSparse lacks 32 of the drops, which Forever streams from the server; all 32 are in its Item table.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -216,6 +212,9 @@ wago.tools
 	https://wago.tools/db2/ItemSubClass?build=1.60.1.70959
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
 	https://wago.tools/db2/Item?build=1.60.1.70959
+	https://wago.tools/db2/ItemSubClass?build=1.60.1.71139
+	https://wago.tools/db2/ItemSparse?build=1.60.1.71139
+	https://wago.tools/db2/Item?build=1.60.1.71139
 
 QuestieDB
 	https://raw.githubusercontent.com/Questie/QuestieDB/master/data/Classic/classicItemDB.lua

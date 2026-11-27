@@ -2,14 +2,7 @@
 -- GogoLoot Lockbox Tooltips
 --------------------------------------------------------------------------------
 
---[[
-    Adds the Lockpicking skill a locked container needs to its tooltip, and for
-    a Rogue colors it by whether their skill is high enough. It answers the
-    question the bag raises on its own: why is this box still sitting there, and
-    what does it take to open it.
-
-    Read-only: nothing here casts, sends chat or writes state.
-]]
+-- Read-only: nothing here casts, sends chat or writes state.
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
@@ -19,19 +12,11 @@ local GetColor = ns.GetColor
 --------------------------------------------------------------------------------
 
 --[[
-    The skill list shows skill-line names, so the rank is found by the skill
-    line's own name, looked up from its ID. The Lockpicking spell's name is a
-    different record and differs from it in some locales (esMX: "Forzar
-    cerraduras" against "Ganzúa"), so it never stands in. The name only finds a
-    rank on a client with a skill-line API; WoW Forever has none, so there the
-    rank is always unknown, but the name still captions the tooltip block. MoP
-    Classic has no Lockpicking skill line at all (Cataclysm retired it), so its
-    data carries no ID and the name stays nil, which adds no tooltip block.
-
-    THE TRAP: the tooltip is not a source for this name. Reading it off the
-    tooltip's own "Requires Lockpicking (225)" line is circular: on a client that
-    doesn't print that line, the name is never learned, the rank is always nil,
-    and the requirement stays neutral white instead of green or red.
+    The skill line's own name, from its ID. Never the Lockpicking spell's name
+    (a different record; esMX words it differently) and never the tooltip's
+    "Requires Lockpicking" line: circular, so on a client that doesn't print it
+    the rank is never found. WoW Forever has no skill-line API, so the name only
+    captions the block; MoP Classic has no Lockpicking skill line, so nil.
 ]]
 local lockpickingSkillName
 
@@ -44,12 +29,7 @@ function ns.GetLockpickingSkillName()
 	return lockpickingSkillName
 end
 
---[[
-    Nil when the rank can't be read: a non-Rogue, an untrained Rogue, a client
-    that hasn't named the skill line yet, or a client with no skill-line API at
-    all (WoW Forever). Every caller treats nil as unknown and falls back to
-    neutral coloring.
-]]
+-- Nil when unreadable (non-Rogue, untrained, skill line not named yet, WoW Forever); callers color neutrally.
 ---@return number|nil
 function ns.GetPlayerLockpickingSkill()
 	return ns.GetSkillLineRankByName(ns.GetLockpickingSkillName())
@@ -59,16 +39,10 @@ end
 -- Tooltip Line
 --------------------------------------------------------------------------------
 
---[[
-    The client may print its own requirement line on some builds, and repeating
-    it would be noise, so the pattern behind ITEM_MIN_SKILL decides which of the
-    two shapes below to add. Matching the format rather than the skill's name
-    keeps it precise: other add-ons print lines that name Lockpicking without
-    stating a requirement, and a name match would read those as the client's.
-]]
+-- The format, not the skill's name: other add-ons print lines naming Lockpicking without stating a requirement.
 local requirementPattern = ns.BuildFormatPattern(ITEM_MIN_SKILL)
 
--- Each tooltip's left-line font-string names, built once per line index: the hover re-runs this.
+-- Built once per line index: a hovered tooltip re-runs the scan every frame.
 local lineNamesByTooltip = {}
 
 ---@param tooltipName string
@@ -88,12 +62,7 @@ local function LeftLineName(tooltipName, lineIndex)
 	return name
 end
 
---[[
-    One pass over a tooltip's lines for both questions the block asks: whether
-    the block is already there, and whether the client states the requirement.
-    The add-on's Short Name is matched as a substring, because our own lines carry a
-    color escape the raw text doesn't.
-]]
+-- The Short Name is matched as a substring: our own lines carry a color escape.
 ---@return boolean hasOurBlock
 ---@return boolean statesRequirement
 local function ScanTooltipLines(tooltip)
@@ -130,11 +99,7 @@ local function AddLockboxLine(tooltip, itemIdentifier)
 	if not requiredSkill then
 		return
 	end
-	--[[
-        The add-on's Short Name doubles as the "already added" mark: a tooltip can
-        be re-processed without being cleared, and one check on the name covers
-        every line the block adds below it.
-    ]]
+	-- A tooltip can be re-processed without being cleared; the Short Name marks the block as added.
 	local hasOurBlock, statesRequirement = ScanTooltipLines(tooltip)
 	if hasOurBlock then
 		return
@@ -146,12 +111,7 @@ local function AddLockboxLine(tooltip, itemIdentifier)
 
 	local skill = ns.IsPlayerRogue() and ns.GetPlayerLockpickingSkill() or nil
 
-	--[[
-        Two shapes, never both. When the client already states the requirement,
-        repeating it is noise, so the block adds the one thing the client won't:
-        the player's own rank, colored by whether it clears the box. When the
-        client says nothing, the requirement itself is the useful line.
-    ]]
+	-- When the client states the requirement, add only the player's rank; otherwise the requirement itself.
 	local label, value, color
 	if statesRequirement then
 		if not skill then
@@ -167,11 +127,6 @@ local function AddLockboxLine(tooltip, itemIdentifier)
 		end
 	end
 
-	--[[
-        Its own block, set off from the client's lines: a blank separator, the
-        add-on's name, then the label and its number as a double line so the
-        number sits in the tooltip's right column.
-    ]]
 	tooltip:AddLine(" ")
 	tooltip:AddLine(GetColor("TITLE") .. L["ADDON_SHORT_NAME"] .. "|r")
 	tooltip:AddDoubleLine(color .. label .. "|r", color .. value .. "|r")
@@ -183,37 +138,15 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    THE BLOCK GOES LAST BY BEING LATE IN THE FRAME, NEVER BY BEING LATE TO IT.
+    The block goes last by being late in the build, never late to it: post-hooks
+    run in registration order, so hooking at PLAYER_LOGIN puts it behind every
+    add-on that hooked while loading. Deferring the add (C_Timer.After(0))
+    strobes, since a hovered bag button re-runs SetBagItem every frame: never add
+    lines outside the build. Best effort by design; a later hook can still land
+    below it.
 
-    Where the block lands in a tooltip is decided by two things:
-
-      - WHEN in the build it adds. A SetBagItem post-hook is about as late as a
-        synchronous add can be: the client's lines are set, and every add-on that
-        adds to the item tooltip while it is built has had its say.
-      - WHERE it sits among other SetBagItem post-hooks, which run in the order
-        they were registered. Hooking at PLAYER_LOGIN rather than while this file
-        loads puts it behind every add-on that hooked while loading.
-
-    A THIRD OPTION IS DELIBERATELY REJECTED. Deferring the add to the next frame
-    with C_Timer.After(0) does put the block under everything, and it FLICKERS
-    BADLY: a hovered bag button re-runs SetBagItem every frame, so the tooltip is
-    rebuilt without the block, gets it a frame later, loses it again, and strobes
-    for as long as the cursor rests on the item. Do not reintroduce it in any
-    form that adds lines outside the build itself.
-
-    So this is best effort by design: an add-on that hooks later, or rebuilds the
-    tooltip on its own schedule, can still land below it. A row out of place
-    beats a tooltip that strobes.
-
-    SetBagItem is hooked unguarded: a widget method on every client GogoLoot
-    ships for, firing for the carried bags and the bank's bags. The bank's own
-    slots show through SetInventoryItem on clients where the bank is container
-    -1; that is hooked too, and only a bank slot can hold a lockbox there. The
-    block also goes wherever else a lockbox is weighed before it reaches the
-    bags: the loot window (SetLootItem), both sides of the trade window
-    (SetTradePlayerItem, SetTradeTargetItem), and a link clicked in chat
-    (ItemRefTooltip's SetHyperlink). Those are hooked only where the client has
-    them, each through the item link the slot holds.
+    SetBagItem exists on every shipped client. The bank's own slots show through
+    SetInventoryItem where the bank is container -1.
 ]]
 local hookInstalled = false
 
@@ -223,7 +156,6 @@ local function LinkItemIdentifier(itemLink)
 	return itemLink and tonumber(string.match(itemLink, "item:(%d+)")) or nil
 end
 
--- Each tooltip method beyond the bags, with how to read the item it shows from the method's own arguments.
 local LINK_HOOKS = {
 	{ tooltip = "GameTooltip", method = "SetLootItem", link = GetLootSlotLink },
 	{ tooltip = "GameTooltip", method = "SetTradePlayerItem", link = GetTradePlayerItemLink },

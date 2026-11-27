@@ -2,12 +2,6 @@
 -- GogoLoot Options — Master Looter: Ignore List
 --------------------------------------------------------------------------------
 
---[[
-    A child panel of Master Looter: items Automated Master Looting skips and
-    leaves for the player to hand out. Not hidden behind the Master Looter
-    switch, which would leave a child panel opening onto a blank page; a line
-    says so while the switch is off.
-]]
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit

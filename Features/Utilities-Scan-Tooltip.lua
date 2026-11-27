@@ -8,20 +8,10 @@ local _, ns = ...
 --------------------------------------------------------------------------------
 
 --[[
-    One hidden tooltip answers every question only a tooltip can: whether a bag
-    slot's container is still locked (Automated Opening, the mini-map's Locked
-    Items, Diagnostics' Locked Boxes), whether an item starts a quest (Loot
-    Toasts), and an item's or spell's lines for Validate Data where the client
-    has no C_TooltipInfo. Made on first use, since a session may never ask.
-
-    THE OWNER IS SET ON EVERY CALL, not once, and that is load-bearing: hiding a
-    tooltip drops its owner, and an unowned tooltip takes a SetBagItem without
-    complaint and populates NOTHING, so every box would read as unlocked.
-    Setting a tooltip also shows it, hence the Hide after every read: shown and
-    hidden inside a single frame, it never renders.
-
-    A GameTooltipTemplate tooltip's lines are only reachable through the frame's
-    name.
+    THE OWNER IS SET ON EVERY CALL: hiding a tooltip drops its owner, and an
+    unowned tooltip takes a SetBagItem silently and populates NOTHING, so every
+    box would read as unlocked. Setting a tooltip also shows it, hence the Hide
+    after every read: within one frame it never renders.
 ]]
 local SCAN_TOOLTIP_NAME = "GogoLootScanTooltip"
 local scanTooltip
@@ -36,10 +26,7 @@ local function PrepareScanTooltip()
 	return scanTooltip
 end
 
---[[
-    Matched against the WHOLE line, never as a substring: LOCKED is a short word,
-    and other add-ons write lines that contain it without meaning it.
-]]
+-- WHOLE line, never a substring: other add-ons write lines containing LOCKED without meaning it.
 ---@param needle string
 ---@return boolean
 local function ScanTooltipHasLine(needle)
@@ -52,12 +39,7 @@ local function ScanTooltipHasLine(needle)
 	return false
 end
 
---[[
-    Whether a bag slot's container still waits on a lock. The second return is
-    the tooltip's line count, for Diagnostics' Locked Boxes probe: zero lines
-    means the tooltip read nothing, which also answers "not locked", and is the
-    failure to look for on a client whose tooltips build differently.
-]]
+-- Zero lines means the tooltip read nothing, which also answers "not locked": Diagnostics looks for it.
 ---@param bagIndex number
 ---@param slotIndex number
 ---@return boolean locked
@@ -71,11 +53,7 @@ function ns.IsItemLocked(bagIndex, slotIndex)
 	return locked, lineCount
 end
 
---[[
-    A bag slot's tooltip as its left lines, color escapes left in, for the Loot
-    Master's trade clock: the game says how long an item can still be traded
-    nowhere else.
-]]
+-- Color escapes left in. The tooltip is the only place the game gives the trade clock.
 ---@param bagIndex number
 ---@param slotIndex number
 ---@return string[]
@@ -92,16 +70,9 @@ function ns.GetBagItemTooltipLines(bagIndex, slotIndex)
 end
 
 --[[
-    "Does this item begin a quest", which the client says in a tooltip and
-    nowhere else: no API on any target client flags it, and the item's class does
-    not give it away either, since quest starters are ordinary weapons, armor and
-    trinkets as often as they are class 12. Read by hyperlink, because this is
-    asked of loot, which may never reach the bags at all.
-
-    The scan is the most expensive question Loot Toasts asks, so it is also the
-    last one asked, and its answer is kept for the session: it never changes
-    for an item. Only an item the client has loaded is kept, since a cold
-    item's tooltip doesn't have the line yet and would read as "no".
+    Only the tooltip says it: quest starters are as often ordinary gear as
+    class 12. Read by hyperlink, since loot may never reach the bags. Kept for
+    the session, but only for a loaded item: a cold one's tooltip reads "no".
 ]]
 local startsQuestByItem = {}
 
@@ -125,14 +96,7 @@ function ns.ItemStartsQuest(itemIdentifier)
 	return startsQuest
 end
 
---[[
-    An item's or spell's tooltip as plain lines, for Validate Data, a right-hand
-    column kept after " >> ". kind is "item" or "spell". C_TooltipInfo hands the
-    lines over as data where the client ships both its GetItemByID and
-    GetSpellByID getters (WoW Forever); elsewhere they are read off the scan
-    tooltip. Color escapes are stripped so each line reads as its words. A read
-    can throw on an odd id, so callers protect it.
-]]
+-- A read can throw on an odd id, so callers protect it.
 local TOOLTIP_DATA_GETTERS = C_TooltipInfo
 	and C_TooltipInfo.GetItemByID
 	and C_TooltipInfo.GetSpellByID
@@ -189,12 +153,7 @@ end
 
 ns.GetTooltipLines = TOOLTIP_DATA_GETTERS and ReadTooltipData or ReadScanTooltip
 
---[[
-    An item's tooltip read from its whole link rather than its id, so a random
-    suffix ("of the Owl") shows the stats it rolled, for Character Rules. Left
-    lines only, color escapes stripped. C_TooltipInfo.GetHyperlink where the
-    client has it (WoW Forever); the scan tooltip elsewhere.
-]]
+-- Read from the whole link, not the id, so a random suffix ("of the Owl") shows the stats it rolled.
 ---@param itemLink string
 ---@return string[]
 function ns.GetItemLinkTooltipLines(itemLink)
@@ -220,11 +179,7 @@ end
 -- Reading the Trade Clock
 --------------------------------------------------------------------------------
 
---[[
-    The seconds a bag slot's item can still be traded for, or nil when its
-    tooltip has no trade clock: not Bind on Pickup, already Soulbound, or never
-    tradable. Shared by the Loot Master's Roll List and the Tradable Gear Tint.
-]]
+-- nil when the tooltip has no trade clock: not Bind on Pickup, already Soulbound, or never tradable.
 ---@param bagIndex number
 ---@param slotIndex number
 ---@return number|nil

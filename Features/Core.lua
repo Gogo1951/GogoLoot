@@ -21,12 +21,7 @@ ns.Version = GetVersion()
 -- Default Ignore List Builders
 --------------------------------------------------------------------------------
 
---[[
-    A default row whose item this client doesn't have is never seeded. The
-    flavor folders should hold no such row (Validate Data flags one as NOT ON
-    CLIENT), and this is the check that keeps a slip there out of the saved
-    list, where it could never load.
-]]
+-- A row whose item this client doesn't have is skipped: saved, it could never load.
 ---@param rows table[] # { itemId, value? } rows from a flavor folder
 ---@param valueFor function # (row) -> the value to store for that item
 ---@return table
@@ -59,26 +54,13 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    GogoLootDB is an AceDB-3.0 database: every profile is stored account-wide in
-    GogoLootDB.profiles, each character's active profile choice in
-    GogoLootDB.profileKeys. Loot policy, the mini-map button and the loot
-    toasts' look live inside the active profile (ns.db.profile). The
-    account-wide records (the global table in Data/Default-Settings.lua: the
-    notices, Speedy Loot, the Roll Macro, the Openables List changes and where
-    the toasts and loot windows sit) live in ns.db.global instead, so
-    switching, resetting, or deleting a profile never touches them: they are
-    decisions about the client, the items and the screen rather than about a
-    loot setup. What belongs to one character lives in ns.db.char.
-
-    Defaults come from ns.DATABASE_DEFAULTS in Data/Default-Settings.lua. There
-    is no manual defaults merge anywhere in the add-on.
+    Loot policy lives in ns.db.profile. Decisions about the client, the items
+    and the screen live in ns.db.global, so a profile switch, reset or delete
+    never touches them; per-character state lives in ns.db.char. AceDB applies
+    ns.DATABASE_DEFAULTS: there is no manual defaults merge.
 ]]
 
---[[
-    Deliberate refill-on-empty: an empty item list is treated as "never
-    configured", so this client's default lists are re-seeded. Runs on load
-    and again whenever the active profile changes or resets.
-]]
+-- Deliberate: an empty item list means "never configured" and is re-seeded.
 local function RebuildEmptyItemLists()
 	local profile = ns.db.profile
 	if next(profile.ignoredItemsMaster) == nil then
@@ -90,18 +72,9 @@ local function RebuildEmptyItemLists()
 end
 
 --[[
-    Fired on OnProfileChanged / OnProfileCopied / OnProfileReset. The new
-    profile's tables replace the old ones wholesale, so everything that
-    caches or displays profile state is repainted here: the item lists re-seed
-    if empty, Auto Loot is enforced if the new profile opens containers, the
-    opening queue is rebuilt under the new profile's rules, the loot toasts take
-    the new profile's look, the minimap icon re-reads autoGreed, the General
-    tab's loot lines follow a changed Loot Toasts setting, the trade checkbox
-    re-reads announceTrade, the mini-map button moves to the new profile's
-    position (ns.db.profile.minimap) and takes its Enable Mini-map Button
-    preference, the bag tints take the new profile's Tradable Gear Tint, and
-    every options panel, the menu and the icon repaint through
-    ns.RefreshSettings().
+    The new profile's tables replace the old ones wholesale, so everything that
+    caches or shows profile state repaints here. Each hook is nil-guarded: a
+    file a flavor's TOC leaves out drops its repaint.
 ]]
 ---@return nil
 function ns:ApplyProfile()
@@ -141,15 +114,9 @@ local eventFrame = CreateFrame("Frame", "GogoLootEventFrame", UIParent)
 ns.eventHandlers = {}
 
 --[[
-    The exported single source of truth for every event the add-on registers.
-    Core's dispatcher fans out from ns.eventHandlers, and the diagnostics Event
-    Registration probe (Diagnostics/Code-Reports.lua) reads THIS list, so the probe
-    can never drift from the events the add-on actually uses — including
-    on-demand, self-unregistering ones like the item lists'
-    GET_ITEM_INFO_RECEIVED watcher, which would be absent from the live handler
-    table at probe time. Update this list whenever a module starts registering a
-    new event: RegisterModuleEvent prints a developer warning if handed an event
-    missing from here. Kept sorted alphabetically.
+    Every event the add-on registers, sorted. Diagnostics reads this list rather
+    than the live handler table, so it also sees on-demand, self-unregistering
+    events. RegisterModuleEvent warns on an event missing from here.
 ]]
 ns.EVENT_NAMES = {
 	"ADDON_LOADED",
@@ -203,7 +170,6 @@ ns.EVENT_NAMES = {
 	"ZONE_CHANGED_NEW_AREA",
 }
 
--- Membership set for the drift guard below, plus the events already warned about.
 local knownEventNames = {}
 for _, eventName in ipairs(ns.EVENT_NAMES) do
 	knownEventNames[eventName] = true
@@ -214,10 +180,7 @@ local warnedUnlistedEvents = {}
 local eventUnits = {}
 local warnedUnitConflicts = {}
 
---[[
-    ns:PrintMessage isn't defined until Announcements.lua loads (after Core), so
-    Core's own registrations fall back to print.
-]]
+-- ns:PrintMessage doesn't exist until Announcements.lua loads, after Core.
 local function PrintDeveloperWarning(warning)
 	if ns.PrintMessage then
 		ns:PrintMessage(warning)
@@ -227,27 +190,17 @@ local function PrintDeveloperWarning(warning)
 end
 
 --[[
-    `unit` registers through RegisterUnitEvent, so the frame wakes only for that
-    unit: UNIT_SPELLCAST_SUCCEEDED fires for every caster in range, and only the
-    player's own casts matter. One frame carries one filter per event, so every
-    handler on a unit event shares the first registration's unit; asking for a
-    different one warns once rather than silently hearing the wrong unit.
+    One frame carries one unit filter per event: every handler on a unit event
+    hears the first registration's unit, and a different one warns once.
 
-    An event this client doesn't have is never registered: RegisterEvent errors
-    on an unknown name, which would stop the file that asked partway through its
-    load. Its handler is dropped with it, and the Event Registration probe in
-    Diagnostics reports the name as invalid on this client.
+    An event this client doesn't have is dropped with its handler: RegisterEvent
+    would error and stop the asking file mid-load. Diagnostics reports it.
 ]]
 ---@param eventName string
 ---@param handlerFunction function
 ---@param unit? string
 ---@return nil
 function ns:RegisterModuleEvent(eventName, handlerFunction, unit)
-	--[[
-        Fail loud in dev when an event is registered without being added to
-        ns.EVENT_NAMES, so the diagnostics probe never silently misses it. Once
-        per event name.
-    ]]
 	if not knownEventNames[eventName] and not warnedUnlistedEvents[eventName] then
 		warnedUnlistedEvents[eventName] = true
 		PrintDeveloperWarning(
@@ -278,10 +231,7 @@ function ns:RegisterModuleEvent(eventName, handlerFunction, unit)
 	table.insert(ns.eventHandlers[eventName], handlerFunction)
 end
 
---[[
-    Not safe to call from inside an event handler — OnEvent iterates the
-    live handler list. Call it from timers or user-driven code paths.
-]]
+-- Never call from inside an event handler: OnEvent iterates the live list.
 ---@param eventName string
 ---@param handlerFunction function
 ---@return nil
@@ -303,7 +253,6 @@ function ns:UnregisterModuleEvent(eventName, handlerFunction)
 end
 
 eventFrame:SetScript("OnEvent", function(self, eventName, ...)
-	-- Diagnostics event-log tap: one boolean check gates all work, so this costs nothing when logging is off.
 	if ns.diagnostics.logging then
 		ns:LogEvent(eventName, ...)
 	end
@@ -317,11 +266,9 @@ eventFrame:SetScript("OnEvent", function(self, eventName, ...)
 end)
 
 --[[
-    The character's class, saved in its own AceDB char section (ns.db.char),
-    which is where Character Rules finds the account's characters: another
-    character's name is drawn in the class color it saved at its last login.
-    It also keeps a character with no rules yet in that list, since AceDB drops
-    an empty char section at logout.
+    Character Rules lists the account's characters from their char sections and
+    colors each by the class saved here. It also keeps a character with no rules
+    in that list: AceDB drops an empty char section at logout.
 ]]
 local function RecordCharacterClass()
 	local _, classFile = UnitClass("player")
@@ -331,11 +278,9 @@ local function RecordCharacterClass()
 end
 
 --[[
-    Characters from another game version, dropped without a word. AceDB keys
-    a character "Name - Realm" on realm clients and "First Last" on the
-    realm-free ones (WoW Forever), so a saved key shaped the other way from
-    the one being played came from a copied WTF folder: its char section,
-    its profile choice and, unless someone still uses it, its own profile go.
+    AceDB keys a character "Name - Realm" on realm clients and "First Last" on
+    WoW Forever, so a key shaped the other way came from a copied WTF folder and
+    is silently dropped, with its profile unless someone still uses it.
 ]]
 local REALM_KEY_SEPARATOR = " - "
 

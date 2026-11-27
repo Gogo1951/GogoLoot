@@ -3,20 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The window the loot is handed out from, in four tabs:
-
-      * Roll List: everything that can be rolled off, in the player's order,
-        each with its trade clock. A row opens to show its rolls, with a
-        Disqualify beside each counted one, and what can be done next.
-        Roll All, Pause and Stop work down the list.
-      * Floor Loot: an item list like the Ignore List, empty to start, of the
-        loot with no trade clock the player wants to roll off.
-      * Awarded: what was handed out, to whom, with the winning roll.
-      * Soft Reserves: a place for a soft-reserve import, empty for now.
-
-    Built the first time it opens. Everything it shows comes from
-    Features/Loot-Master.lua and Features/Roll-Calls.lua; it keeps no state of
-    its own beyond which tab is open, which rows are expanded, and the filter.
+    Tabs: Roll List, Floor Loot, Awarded, and Soft Reserves (drawn, not wired
+    up). Built on first open. It keeps no state of its own beyond the open
+    tab, the expanded rows and the filter.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -227,7 +216,6 @@ local function EntryStatus(entry, session, isNext)
 	return ""
 end
 
--- A whole minute count of an entry's clock, for the detail line.
 ---@param entry table
 ---@return string
 local function TradeLine(entry)
@@ -276,7 +264,6 @@ local function EntryHeadline(entry, session)
 	return origin .. TradeLine(entry)
 end
 
--- The unit to trade with a winner, by name, while they're in the group.
 ---@param nameKey string
 ---@return string|nil
 local function UnitForName(nameKey)
@@ -591,7 +578,6 @@ local function RefreshRollList()
 	end
 	list:Finish()
 
-	-- The toolbar.
 	local rollAll, waiting = ns.rollAll, 0
 	for _, entry in ipairs(entries) do
 		if entry.status == ns.ENTRY_WAITING then
@@ -769,7 +755,6 @@ local function MakeFloorRow(parent)
 	return row
 end
 
--- A Floor Loot item's kind, as the game names its item class, for the list's headings.
 ---@param itemId number
 ---@return string
 local function ItemKind(itemId)
@@ -835,7 +820,7 @@ local function RefreshFloorLoot()
 	panel.addAll:SetEnabled(any)
 end
 
--- Add from Bags: a short menu of what can be added, what was picked up in this instance first.
+-- The Add from Bags menu.
 local function MakeMenuItem(parent)
 	local item = CreateFrame("Button", nil, parent)
 	item:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")

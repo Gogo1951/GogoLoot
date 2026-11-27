@@ -2,11 +2,6 @@
 -- GogoLoot Loot Toasts: Money and Currency
 --------------------------------------------------------------------------------
 
---[[
-    The coin toasts: the amount read out of the game's money line, then drawn
-    as one row through the stack in Features/Loot-Toasts.lua. And the currency
-    toasts (Justice Points, Valor Points), from the game's currency line.
-]]
 local _, ns = ...
 local GetColor = ns.GetColor
 
@@ -14,14 +9,7 @@ local goldPattern = ns.BuildFormatPattern(GOLD_AMOUNT)
 local silverPattern = ns.BuildFormatPattern(SILVER_AMOUNT)
 local copperPattern = ns.BuildFormatPattern(COPPER_AMOUNT)
 
---[[
-    A coin total out of a money message ("You loot 1 Gold, 24 Silver, 7
-    Copper"). The client hands over the sentence, not the number, and matching
-    its OWN GOLD_AMOUNT, SILVER_AMOUNT and COPPER_AMOUNT formats is what makes
-    that work in every locale. A unit the message doesn't mention simply doesn't
-    match, which is the same as none of it. A secret line (WoW Forever, see
-    Utilities-Chat-Lines.lua) reads as no money.
-]]
+-- The client hands over the sentence, not the number; its own formats read it in every locale.
 ---@param message any
 ---@return number
 function ns.ParseMoney(message)
@@ -34,21 +22,11 @@ function ns.ParseMoney(message)
 	return (gold * ns.COPPER_PER_GOLD) + (silver * ns.COPPER_PER_SILVER) + copper
 end
 
---[[
-    One coin: the amount in body white, then its unit in that coin's own color,
-    so a stack of these lines its numbers up as one white column and the eye
-    reads the unit off the color. The symbol is the client's own, so it reads
-    right in a locale that doesn't call them gold, silver and copper.
-]]
 local function Coin(amount, digits, symbol, colorKey)
 	return GetColor("BODY") .. string.format(digits, amount) .. "|r" .. ns.GetMoneyColor(colorKey) .. symbol .. "|r"
 end
 
---[[
-    "123g 02s 27c": the largest unit the amount reaches, then every unit below
-    it padded to two digits, and nothing above it. Padding the lower units lines
-    the numbers up when several toasts stack; a leading "0g" would be noise.
-]]
+-- "123g 02s 27c": lower units padded so stacked toasts line up; no leading "0g".
 local function FormatMoney(copper)
 	local gold = math.floor(copper / ns.COPPER_PER_GOLD)
 	local silver = math.floor((copper % ns.COPPER_PER_GOLD) / ns.COPPER_PER_SILVER)
@@ -68,7 +46,6 @@ local function FormatMoney(copper)
 	return Coin(remainder, "%d", COPPER_AMOUNT_SYMBOL, "COPPER")
 end
 
--- The coin pile says the magnitude before the digits are read.
 local function MoneyIcon(copper)
 	if copper >= ns.COPPER_PER_GOLD then
 		return ns.MONEY_ICON_GOLD
@@ -79,12 +56,6 @@ local function MoneyIcon(copper)
 	return ns.MONEY_ICON_COPPER
 end
 
---[[
-    COIN IS THE ONLY LOOT WITH NO ITEM BEHIND IT: no link, no icon of its own, no
-    quality, so no item-type row or quality could have an opinion about it. It
-    answers to the Money row's Mine box alone, since every kill drops coin and
-    this is the row a player is likeliest to want gone.
-]]
 ---@param copper number
 ---@return nil
 function ns.ShowMoneyToast(copper)
@@ -101,10 +72,6 @@ end
 -- Events
 --------------------------------------------------------------------------------
 
---[[
-    With the loot window hidden, the chat line this event carries is the only
-    record of coin, and the amount comes back out of that sentence.
-]]
 local function OnChatMessageMoney(message)
 	if not ns.db.profile.lootToasts then
 		return
@@ -118,12 +85,7 @@ ns:RegisterModuleEvent("CHAT_MSG_MONEY", OnChatMessageMoney)
 -- Currency
 --------------------------------------------------------------------------------
 
---[[
-    The player's own currency lines, matched whole through the client's own
-    formats like the item loot lines, counted forms first ("%s x%d." would
-    otherwise read as "%s." with the count swallowed into the link). The bonus
-    form adds a suffix after the count.
-]]
+-- Counted forms first: "%s x%d." would otherwise read as "%s." with the count swallowed.
 local CURRENCY_FORMATS = {
 	{ format = CURRENCY_GAINED_MULTIPLE_BONUS, counted = true },
 	{ format = CURRENCY_GAINED_MULTIPLE, counted = true },
@@ -143,11 +105,7 @@ local function FindCurrencyLink(text)
 	return string.match(text, "|c[^|]+|Hcurrency:%d+.-|h%[.-%]|h|r")
 end
 
---[[
-    The currency link out of the player's own currency line, and how many came.
-    A line no format matches but that still carries a currency link counts as
-    one, so a client wording the line its own way still gets a toast.
-]]
+-- A line no format matches but carrying a currency link counts as one, for a client worded its own way.
 ---@param message any
 ---@return string|nil currencyLink
 ---@return number|nil quantity
@@ -175,11 +133,6 @@ function ns.ParseCurrencyMessage(message)
 	return nil
 end
 
---[[
-    The currency's own icon and quality, from C_CurrencyInfo. The quality
-    colors the icon's frame like an item's; a currency the client can't
-    describe gets the question-mark icon and an uncolored frame.
-]]
 local function CurrencyLook(currencyIdentifier)
 	local info = currencyIdentifier and C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(currencyIdentifier)
 	if type(info) ~= "table" then
@@ -188,12 +141,7 @@ local function CurrencyLook(currencyIdentifier)
 	return info.iconFileID or ns.QUESTION_MARK_ICON, info.quality
 end
 
---[[
-    Like coin, currency has no item behind it, so no item-type row has an
-    opinion: it answers to the Currency row's Mine box alone. The game reports
-    only the player's own currency, so there is no Group box. The link stays a
-    link, so hovering the row shows the currency's own tooltip.
-]]
+-- The game reports only the player's own currency, so there is no Group box.
 ---@param currencyLink string
 ---@param quantity number|nil
 ---@return nil

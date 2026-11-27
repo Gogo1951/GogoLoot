@@ -771,7 +771,7 @@ ns.OPENABLE_ITEM_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, MoP Classic 5.5.4.70631
+	2026-11-27, wago.tools, MoP Classic 5.5.4.71089
 
 Notes
 	- Every item this client can open, and what Automated Opening does with each by default. The player's own changes, and the items they added or removed, live in ns.db.global.openingActions (Features/Openable-Items.lua).
@@ -782,7 +782,7 @@ Notes
 	- No client table records what a container holds or drops from, so those come from the CMaNGOS Wrath world DB (WoTLKDB_1_9_14092), the newest open one, for the items Wrath has, with the maintainer's earlier call where it can't tell; a later item's default rests on its lock alone. A note after a row's name gives the evidence for an Ignore.
 	- Gnarlpine Necklace (8049) stays on ns.OPENING_IGNORE_UNIQUE by hand (maintainer, 2026-11-03). It's a quest item, so the tradeable rule would open it, but it is left for the player to open, and a regenerated list must keep it on Ignore.
 	- The "Level N" gear and supply boxes are never on the list (maintainer, 2026-10-04): WoW Forever's data flags them openable (items 274559-278066, Level 23, 38, 57 and 60 gear and the tradeskill supplies), but no player can get one, and a regenerated list must leave them out on every flavor.
-	- Rechecked against this client's tables at build 5.5.4.70960: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). No flagged item is missing.
+	- Rechecked against this client's tables at build 5.5.4.71089: every row is still flagged Openable, every lock agrees with its row's default, and every level in ns.OPENABLE_ITEM_LEVELS is ItemSparse's RequiredLevel (level 1, which every player meets, is never stored). No flagged item is missing.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -796,6 +796,9 @@ wago.tools
 	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
 	https://wago.tools/db2/Item?build=5.5.4.70960
 	https://wago.tools/db2/Lock?build=5.5.4.70960
+	https://wago.tools/db2/ItemSparse?build=5.5.4.71089
+	https://wago.tools/db2/Item?build=5.5.4.71089
+	https://wago.tools/db2/Lock?build=5.5.4.71089
 
 QuestieDB
 	None.

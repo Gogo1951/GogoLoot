@@ -4,20 +4,15 @@
 local _, ns = ...
 
 --[[
-    Every reader here returns nothing for a secret line (ns.IsSecretValue): WoW
-    Forever can hand an add-on a chat line as a secret value, which passes the
-    string check but can't be matched or compared.
+    Every chat-line reader returns nothing for a secret line: WoW Forever can
+    hand one over that passes the string check but can't be matched.
 ]]
 
 --------------------------------------------------------------------------------
 -- Client Format Strings
 --------------------------------------------------------------------------------
 
---[[
-    Swaps an escaped format's placeholders, numbered or not, for captures. Each
-    goes through a stand-in byte first, so a capture already written, (%d+),
-    is never read as a %d still to replace.
-]]
+-- Stand-in bytes first, so a capture already written, (%d+), is never read as a %d still to replace.
 ---@param escapedFormat string
 ---@return string
 local function PlaceholdersToCaptures(escapedFormat)
@@ -31,16 +26,9 @@ local function PlaceholdersToCaptures(escapedFormat)
 end
 
 --[[
-    Turns one of the client's own format strings into a Lua pattern that
-    captures what the client filled in. This is how the add-on reads the game's
-    words in any locale without shipping a translation of them: LOOT_ITEM_SELF
-    becomes the player's own loot line, GOLD_AMOUNT the coin count in a money
-    message, ITEM_MIN_SKILL a lockbox's requirement line.
-
-    The magic characters are escaped first, leaving % alone so the format's own
-    %s and %d survive to become captures. A translation may number its
-    arguments ("%2$s ... %1$s") to put them in another order, so the second
-    return lists, capture by capture, which argument each one is.
+    Reads the game's words in any locale from its own format strings. A
+    translation may number its arguments ("%2$s ... %1$s") to reorder them,
+    hence the argument order beside the pattern.
 ]]
 ---@param format any
 ---@return string|nil pattern
@@ -58,11 +46,9 @@ function ns.BuildFormatPattern(format)
 end
 
 --[[
-    The player's own loot lines, each matched whole. The counted forms go first:
-    "You receive loot: %s." would also match "[Linen Cloth]x2." and swallow the
-    count into the item. Matching the full format rather than a prefix is what
-    keeps this right in locales whose line doesn't end with the item, such as
-    zhCN's, which closes on its own full stop.
+    Counted forms first: "You receive loot: %s." would also match
+    "[Linen Cloth]x2." and swallow the count. Each is matched whole, not as a
+    prefix, for locales whose line doesn't end with the item (zhCN).
 ]]
 local OWN_LOOT_FORMATS = {
 	{ format = LOOT_ITEM_SELF_MULTIPLE, counted = true },
@@ -71,7 +57,6 @@ local OWN_LOOT_FORMATS = {
 	{ format = LOOT_ITEM_PUSHED_SELF, counted = false },
 }
 
--- Another group member's loot lines, in the same counted-first order.
 local GROUP_LOOT_FORMATS = {
 	{ format = LOOT_ITEM_MULTIPLE, counted = true },
 	{ format = LOOT_ITEM_PUSHED_MULTIPLE, counted = true },
@@ -91,11 +76,7 @@ local function BuildLootPatterns(formats)
 	return patterns
 end
 
---[[
-    A loot line's captures in the format's own argument order, whatever order
-    the translation prints them in; nil when the line doesn't match. The find
-    allocates nothing, so only a matching line pays for the tables.
-]]
+-- The find allocates nothing, so only a matching line pays for the tables.
 local function MatchLootLine(entry, message)
 	if not string.find(message, entry.pattern) then
 		return nil
@@ -120,10 +101,8 @@ local function FindItemLink(text)
 end
 
 --[[
-    Every feature that reads a loot line handles the same CHAT_MSG_LOOT in one
-    dispatch, so each parser keeps its last line and answer and hands the answer
-    back when that line comes again. A secret line is turned away before the
-    memo, so it is never stored.
+    Every loot-line feature handles the same CHAT_MSG_LOOT, so each parser
+    memoizes its last line. A secret line is turned away before the memo.
 ]]
 local lastOwnMessage, lastOwnLink, lastOwnQuantity
 local lastGroupMessage, lastGroupLooter, lastGroupLink, lastGroupQuantity
@@ -142,10 +121,6 @@ local function MatchOwnLootLine(message)
 	return nil
 end
 
---[[
-    The item link out of one of the player's own loot messages, and how many
-    came. Nil for anyone else's loot and for anything that is not a loot line.
-]]
 ---@param message any
 ---@return string|nil itemLink
 ---@return number|nil quantity
@@ -176,8 +151,6 @@ local function MatchGroupLootLine(message)
 end
 
 --[[
-    Who looted what out of another group member's loot line, and how many came.
-
     ASK ns.ParseOwnLootMessage FIRST: in zhCN the player's own line
     ("你获得了物品：%s。") also reads as a looter called 你 under the group format
     ("%s获得了物品：%s。"), so only a line that isn't the player's own may come
@@ -203,17 +176,11 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    The game's loot-roll lines, read the way the loot lines are: from the
-    client's own formats, so every locale works. Most of them open on a hidden
-    "[Loot]" history link carrying a number of its own, so the matcher drops
-    that link from the format and the message alike, which leaves the roll as
-    the only number to find. The link itself names the roll, two copies of one
-    item apart, so the matcher hands it back too.
-
-    Captures are read by what they hold rather than where they sit, since a
-    translation may put its arguments in another order: the one carrying an
-    item link is the item, the number is the roll, and the other text is the
-    player.
+    Most roll lines open on a hidden "[Loot]" history link carrying a number of
+    its own, so it is dropped from format and message alike, leaving the roll
+    the only number. The link tells two copies of one item apart, so it is
+    handed back too. Captures are read by what they hold, not where they sit,
+    since a translation may reorder them.
 ]]
 local LEADING_HISTORY_LINK = "^|H.-|h.-|h:?%s*"
 local AFTER_LEADING_HISTORY_LINK = LEADING_HISTORY_LINK .. "(.*)$"
@@ -249,7 +216,6 @@ local function BuildRollMatchers(entries)
 	return matchers
 end
 
--- Each player's roll and its number, printed while a roll is open.
 local rollResultMatchers = BuildRollMatchers({
 	{ LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, ns.ROLL_KIND_NEED },
 	{ LOOT_ROLL_ROLLED_NEED, ns.ROLL_KIND_NEED },
@@ -258,9 +224,8 @@ local rollResultMatchers = BuildRollMatchers({
 })
 
 --[[
-    Who won. With the game's roll spam turned down it prints no roll lines at
-    all, only a won line carrying the winning roll, so those forms go first: the
-    plain form would match them too and lose the roll.
+    With roll spam turned down the game prints only a won line carrying the
+    roll, so those forms go first: the plain form would match them and lose it.
 ]]
 local rollWonMatchers = BuildRollMatchers({
 	{ LOOT_ROLL_YOU_WON_NO_SPAM_NEED, ns.ROLL_KIND_NEED, true },
@@ -293,7 +258,6 @@ for _, matcher in ipairs(rollResultMatchers) do
 	rollChatterMatchers[#rollChatterMatchers + 1] = matcher
 end
 
--- Each matcher list's last line and answer, as for the loot lines above.
 local lastRollMessages, lastRollAnswers = {}, {}
 
 ---@param matchers table[]
@@ -302,7 +266,6 @@ local lastRollMessages, lastRollAnswers = {}, {}
 local function FindRollLine(matchers, message)
 	local text = (string.gsub(message, LEADING_HISTORY_LINK, ""))
 	for _, matcher in ipairs(matchers) do
-		-- The find allocates nothing, so only a line that matches pays for the captures table.
 		local captures = string.find(text, matcher.pattern) and { string.match(text, matcher.pattern) }
 		if captures and captures[1] then
 			local found = { matcher = matcher, historyLink = string.match(message, HISTORY_LINK_CAPTURE) }
@@ -340,11 +303,8 @@ local function MatchRollLine(matchers, message)
 end
 
 --[[
-    True for a roll line that says only who picked what or rolled what. A roll
-    opening prints its history link then the item alone (LOOT_ROLL_STARTED),
-    which as a format is nothing but "%s", so it is recognized by that shape
-    instead, and never by a pattern that would match any line with a link in
-    it.
+    A roll opening (LOOT_ROLL_STARTED) is nothing but "%s" as a format, so it is
+    recognized by its shape, never by a pattern that would match any link line.
 ]]
 ---@param message any
 ---@return boolean
@@ -373,12 +333,7 @@ function ns.ParseRollResultMessage(message)
 	return found.playerName, found.matcher.rollKind, found.roll, found.itemLink, found.historyLink
 end
 
---[[
-    Who won an item: the winner's name (nil when it was the player), then the
-    item, then the winning roll where the line carries one (only the forms
-    printed with the roll spam turned down do), then the roll's own "[Loot]"
-    link where the line carries one.
-]]
+-- winnerName is nil when it was the player; roll only on the forms printed with roll spam turned down.
 ---@param message any
 ---@return boolean|nil isWon
 ---@return string|nil winnerName
@@ -398,26 +353,59 @@ function ns.ParseRollWonMessage(message)
 	return true, winnerName, found.itemLink, found.matcher.rollKind, found.roll, found.historyLink
 end
 
+-- The player's own forms first: the plain form would read "You" as a name.
+local rollPassMatchers = BuildRollMatchers({
+	{ LOOT_ROLL_PASSED_SELF, nil, true },
+	{ LOOT_ROLL_PASSED_SELF_AUTO, nil, true },
+	{ LOOT_ROLL_PASSED_AUTO },
+	{ LOOT_ROLL_PASSED_AUTO_FEMALE },
+	{ LOOT_ROLL_PASSED },
+})
+
+local rollAllPassedMatchers = BuildRollMatchers({ { LOOT_ROLL_ALL_PASSED } })
+
+--[[
+    ASK ns.ParseRollAllPassedMessage FIRST: "Everyone passed on: %s" also reads
+    as a player called Everyone under the plain pass form.
+]]
+---@param message any
+---@return boolean|nil isPass
+---@return string|nil playerName
+---@return string|nil itemLink
+---@return string|nil historyLink
+function ns.ParseRollPassMessage(message)
+	local found = MatchRollLine(rollPassMatchers, message)
+	if not found then
+		return nil
+	end
+	local playerName = not found.matcher.isSelf and found.playerName or nil
+	if not found.matcher.isSelf and not playerName then
+		return nil
+	end
+	return true, playerName, found.itemLink, found.historyLink
+end
+
+---@param message any
+---@return string|nil itemLink
+---@return string|nil historyLink
+function ns.ParseRollAllPassedMessage(message)
+	local found = MatchRollLine(rollAllPassedMatchers, message)
+	if not found or found.playerName then
+		return nil
+	end
+	return found.itemLink, found.historyLink
+end
+
 --------------------------------------------------------------------------------
 -- A /roll
 --------------------------------------------------------------------------------
 
---[[
-    A plain /roll's line, read through the client's own RANDOM_ROLL_RESULT so
-    every locale works. Only CHAT_MSG_SYSTEM is trusted for one: anyone can
-    type "Aero rolls 100 (1-100)" in normal chat. Read by Raid Roll Winner and
-    by the parked Roll Calls.
-]]
+-- Only CHAT_MSG_SYSTEM is trusted: anyone can type "Aero rolls 100 (1-100)" in normal chat.
 local rollPattern, rollArgumentOrder = ns.BuildFormatPattern(RANDOM_ROLL_RESULT)
 if rollPattern then
 	rollPattern = "^" .. rollPattern .. "$"
 end
 
---[[
-    Who rolled, what they got, and the range they rolled in, from a
-    CHAT_MSG_SYSTEM line; nil for any other line. The arguments are read in the
-    format's own order, whatever order the translation prints them in.
-]]
 ---@param message any
 ---@return string|nil playerName
 ---@return number|nil roll
@@ -466,10 +454,7 @@ local function ExpandPluralForms(format)
 	return expanded
 end
 
---[[
-    Each unit's patterns with its length in seconds, longest form first so
-    "hours" is tried before "hour", and the whole trade line's pattern.
-]]
+-- Longest form first, so "hours" is tried before "hour".
 local DURATION_UNITS = {}
 for _, unit in ipairs({
 	{ format = INT_SPELL_DURATION_HOURS, seconds = 3600 },
@@ -493,12 +478,7 @@ if tradeLinePattern then
 	tradeLinePattern = "^" .. tradeLinePattern .. "$"
 end
 
---[[
-    The seconds a tooltip line says an item can still be traded for, or nil
-    for any other line (ns.GetBagSlotTradeSeconds in
-    Utilities-Scan-Tooltip.lua reads the lines). The tooltip counts in whole minutes, so this is right
-    to within a minute.
-]]
+-- The tooltip counts in whole minutes, so this is right to within a minute.
 ---@param line any
 ---@return number|nil
 function ns.ParseTradeTimeLine(line)
@@ -527,19 +507,15 @@ end
 -- Item Quality
 --------------------------------------------------------------------------------
 
--- ns.QUALITY_COLORS read the other way: lowercase hex -> quality.
 local QUALITY_BY_HEX = {}
 for quality, hex in pairs(ns.QUALITY_COLORS) do
 	QUALITY_BY_HEX[string.lower(hex)] = quality
 end
 
 --[[
-    An item link's quality, for the loot sound and the loot toasts. The link's
-    own color answers without a C_Item.GetItemInfo round trip: a hex code on
-    Classic, or a named quality color ("|cnIQ4:") on a Retail-engine client.
-    Anything else falls back to C_Item.GetItemInfo, which has the item cached the
-    moment it is looted; nil means nobody knows, and each caller decides what
-    unknown means.
+    The link's color answers without an item lookup: a hex code on Classic, a
+    named quality ("|cnIQ4:") on a Retail-engine client. nil means unknown, and
+    each caller decides what that means.
 ]]
 ---@param itemLink any
 ---@return number|nil

@@ -39,7 +39,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
@@ -47,7 +47,7 @@ Notes
 	- ITEM_IDS.BIND_PROBE is the Hearthstone, a Bind on Pickup item every character carries. Diagnostics checks against it which C_Item.GetItemInfo return carries the bind type (Diagnostics/Manifests.lua).
 	- SOUND_KIT_IDS.PICK_POCKET is the bag-pickup sound played for a pick-pocket loot window (Features/Loot-Sounds.lua) and previewed beside its option. BAG_FULL_BY_RACE is each race's "inventory is full" voice line, by sex as UnitSex returns it (2 male, 3 female), played when Automated Opening stops for a full bag (Features/Automated-Opening.lua); BAG_FULL_FALLBACK plays for a race with no row.
 	- Validate Data looks up ITEM_IDS only. SKILL_LINE_IDS and SOUND_KIT_IDS hold IDs no client API looks up, so it only counts their rows.
-	- Rechecked against this client's tables at build 1.60.1.70959: the Lockpicking skill line is in SkillLine, the bind probe and every sample item are in ItemSparse, each sample at the quality its key names, and every sound kit is in SoundKit.
+	- Rechecked against this client's tables at build 1.60.1.71139: the Lockpicking skill line is in SkillLine, the bind probe and every sample item are in ItemSparse, each sample at the quality its key names, and every sound kit is in SoundKit.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -61,6 +61,10 @@ wago.tools
 	https://wago.tools/db2/SkillLine?build=1.60.1.70959
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
 	https://wago.tools/db2/SoundKit?build=1.60.1.70959
+	https://wago.tools/db2/SkillLine?build=1.60.1.71139
+	https://wago.tools/db2/ItemSparse?build=1.60.1.71139
+	https://wago.tools/db2/Item?build=1.60.1.71139
+	https://wago.tools/db2/SoundKit?build=1.60.1.71139
 
 QuestieDB
 	None.
