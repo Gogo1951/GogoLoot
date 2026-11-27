@@ -2,12 +2,6 @@
 -- GogoLoot Options — Item List Widgets
 --------------------------------------------------------------------------------
 
---[[
-    The two custom AceGUI widgets the shared item list builder
-    (Options-Utilities-Item-Lists.lua) draws with: GogoLoot_ItemListFilter, the
-    filter box, and GogoLoot_ItemListAdd, the add box and its button. A row's
-    item is the Options-Kit's Kit.ITEM_LINK_WIDGET.
-]]
 local _, ns = ...
 local L = ns.L
 
@@ -22,17 +16,9 @@ local AceGUI = LibStub("AceGUI-3.0")
 --------------------------------------------------------------------------------
 
 --[[
-    The filter box above every item list: a magnifying glass, then a box that
-    reads "Filter items..." while empty and shows a clear button while not. Used
-    via dialogControl on the AceConfig "input" entry BuildItemListOptions adds.
-    AceConfigDialog hands that entry's `arg` to SetCustomData, which is how the
-    box knows whose filter it is, and so whether a redraw owes it the keyboard
-    back (see Options-Utilities-Item-List-Filter.lua).
-
-    Typing filters as the player goes, rather than on Enter as a stock AceGUI
-    EditBox would: the box writes the list's filter itself and asks for a
-    redraw once typing pauses. Enter still applies at once, through the entry's
-    set.
+    A stock EditBox reports Enter alone, so this box writes the list's filter
+    itself as the player types. The entry's `arg` (via SetCustomData) says
+    whose filter it is, and so whether a redraw owes it the keyboard back.
 ]]
 local filterWidgetType = ns.ITEM_LIST_FILTER_WIDGET_TYPE
 local filterWidgetVersion = 1
@@ -40,7 +26,6 @@ local filterWidgetVersion = 1
 -- A redraw rebuilds within a frame or two; a box built later than this is a fresh visit, not a redraw.
 local FILTER_FOCUS_HANDOVER_SECONDS = 1
 
--- The list whose filter box last had the keyboard, where its cursor sat, and until when a redraw may take it back.
 local focusedFilterList, focusedFilterCursor
 local focusHandoverUntil = 0
 
@@ -54,18 +39,11 @@ local SEARCH_ICON_SIZE = 16
 local SEARCH_ICON_LEFT = 0
 -- InputBoxTemplate draws its left cap past the box's edge, so the box starts this far right of the icon.
 local SEARCH_ICON_GAP = 16
---[[
-    Where the box starts, clear of the icon, and how far in from the widget's
-    right edge it ends (its right cap sits on its edge). The add pair on the
-    line above spans the same stretch (GogoLoot_ItemListAdd), so the two boxes
-    stack in one column.
-]]
+-- The add box spans the same stretch, so the two boxes stack in one column.
 local FILTER_BOX_LEFT = SEARCH_ICON_LEFT + SEARCH_ICON_SIZE + SEARCH_ICON_GAP
 local FILTER_BOX_RIGHT_INSET = 2
--- The rows' red remove icon, as Connoisseur's Restocker clears its filter: the same "get rid of this" mark everywhere on the panel.
 local CLEAR_ICON = REMOVE_ICON
 local CLEAR_ICON_SIZE = 16
--- The clear icon's inset from the box's right edge, and the room the text keeps clear of it.
 local CLEAR_ICON_INSET = 4
 local CLEAR_ICON_TEXT_GAP = 8
 
@@ -101,11 +79,7 @@ local function FilterBox_OnFocusGained(editbox)
 	focusedFilterList = widget.registryName
 end
 
---[[
-    A box losing the keyboard while its frame still shows is the player leaving
-    it. One losing it hidden is a redraw releasing it (or the options closing),
-    which opens a short window for the rebuilt box to take it back.
-]]
+-- Losing focus while hidden means a redraw (or Options closing) released it: open a short handover window.
 local function FilterBox_OnFocusLost(editbox)
 	local widget = editbox.obj
 	if widget.frame:IsShown() then
@@ -182,10 +156,7 @@ function filterMethods:ClearFocus()
 	self.editbox:ClearFocus()
 end
 
---[[
-    Called by AceConfigDialog after SetText, with the entry's arg. A redraw of
-    the list whose box just had the keyboard hands it straight back.
-]]
+-- AceConfigDialog calls this after SetText, with the entry's arg.
 function filterMethods:SetCustomData(arg)
 	self.registryName = arg and arg.registryName
 	if self.registryName and self.registryName == focusedFilterList and GetTime() <= focusHandoverUntil then
@@ -223,7 +194,6 @@ local function FilterWidgetConstructor()
 	editbox:SetScript("OnEnter", FilterBox_OnEnter)
 	editbox:SetScript("OnLeave", FilterBox_OnLeave)
 
-	-- The same small gray hint as the add box above it (GogoLoot_ItemListAdd), so the two boxes match.
 	local placeholder = editbox:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
 	placeholder:SetPoint("LEFT", editbox, "LEFT", 0, 0)
 	placeholder:SetPoint("RIGHT", editbox, "RIGHT", 0, 0)
@@ -263,29 +233,18 @@ AceGUI:RegisterWidgetType(filterWidgetType, FilterWidgetConstructor, filterWidge
 --------------------------------------------------------------------------------
 
 --[[
-    The line above an item list's filter, Connoisseur's Restocker add pair: a
-    box that reads "Drop item here, or type item ID" while it is empty, with an
-    Add button bolted to its right, so adding never depends on knowing to
-    press Enter. Used via dialogControl on the AceConfig "input" entry
-    BuildItemListOptions adds. Every way in fires OnEnterPressed with what to
-    add, which AceConfigDialog hands to that entry's set:
-
-      * Add, or Enter in the box: what was typed, an item ID or a pasted link.
-      * An item dropped on the box, or clicked into it off the cursor: its
-        link, added as it lands, as the stock AceGUI EditBox does.
-
-    The box empties as it hands its text over. The button and the box show the
-    entry's one tooltip, being two halves of one control.
+    The Add button means adding never depends on knowing to press Enter. The
+    button, Enter, a drop and a click with an item on the cursor all fire
+    OnEnterPressed, which reaches the entry's set.
 ]]
 local addWidgetType = ns.ITEM_LIST_ADD_WIDGET_TYPE
 local addWidgetVersion = 1
 
--- The widget and its box take the filter's heights, so the two lines match.
 -- Kept off the spacing scale: UIPanelButtonTemplate's stock height, which its art is drawn for.
 local ADD_BUTTON_HEIGHT = 22
 -- Tucks the box's right cap under the button, so the pair reads as one control.
 local ADD_BOX_BUTTON_OVERLAP = 4
--- Fitted to its caption and never narrower than this, so a longer word in another locale widens the button.
+-- Fitted to its caption, so a longer word in another locale widens the button.
 local ADD_BUTTON_MIN_WIDTH = 64
 local ADD_BUTTON_CAPTION_PADDING = 32
 
@@ -402,7 +361,6 @@ local function AddWidgetConstructor()
 		math.max(ADD_BUTTON_MIN_WIDTH, MeasureCaptionPixels(L["ITEM_LIST_ADD_BUTTON"]) + ADD_BUTTON_CAPTION_PADDING),
 		ADD_BUTTON_HEIGHT
 	)
-	-- Ends where the filter's box below it does.
 	button:SetPoint("RIGHT", frame, "RIGHT", -FILTER_BOX_RIGHT_INSET, 0)
 	button:SetScript("OnClick", AddButton_OnClick)
 	button:SetScript("OnEnter", AddControl_OnEnter)
@@ -413,7 +371,6 @@ local function AddWidgetConstructor()
 	editbox:SetFontObject(ChatFontNormal)
 	editbox:SetTextInsets(0, 0, FILTER_BOX_TEXT_INSET, FILTER_BOX_TEXT_INSET)
 	editbox:SetHeight(FILTER_BOX_HEIGHT)
-	-- Over the filter's box, clear of its magnifying glass, so the two boxes stack in one column.
 	editbox:SetPoint("LEFT", frame, "LEFT", FILTER_BOX_LEFT, 0)
 	editbox:SetPoint("RIGHT", button, "LEFT", ADD_BOX_BUTTON_OVERLAP, 0)
 	editbox:SetScript("OnTextChanged", AddBox_OnTextChanged)
@@ -425,12 +382,7 @@ local function AddWidgetConstructor()
 	editbox:SetScript("OnEnter", AddControl_OnEnter)
 	editbox:SetScript("OnLeave", AddControl_OnLeave)
 
-	--[[
-	    The hint, shown only while the box is empty. A font string rather than
-	    the box's own text, so nothing clips it for us: anchored on both sides
-	    and kept to one line, a hint that outgrows the box ends inside it instead
-	    of running on under the Add button.
-	]]
+	-- Anchored both sides on one line, so a hint that outgrows the box ends inside it, not under the Add button.
 	local placeholder = editbox:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
 	placeholder:SetPoint("LEFT", editbox, "LEFT", 0, 0)
 	placeholder:SetPoint("RIGHT", editbox, "RIGHT", 0, 0)

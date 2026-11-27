@@ -1,13 +1,6 @@
 local _, ns = ...
 
---[[
-    Character Rules' armor and weapon rows, and what each class starts with
-    ticked. A row is an item subclass ID, or a name for a row no subclass
-    names. Gear that is a ticked type and carries a ticked stat is left to the
-    player to roll; the rest of the gear is greeded (Features/Character-Rules.lua).
-]]
-
--- The armor rows, in panel order: lightest first, then shields, held off-hands and relics.
+-- { armor subclass ID, or "HELD" }, in panel order: lightest first, then shields, held off-hands and relics
 ns.CHARACTER_RULE_ARMOR_TYPES = {
 	1, -- Cloth
 	2, -- Leather
@@ -17,7 +10,7 @@ ns.CHARACTER_RULE_ARMOR_TYPES = {
 	"HELD", -- Held In Off-hand: armor subclass 0, told apart by its INVTYPE_HOLDABLE slot
 }
 
--- The weapon rows. The panel sorts them A to Z by the client's own names.
+-- { weapon subclass ID }, which the panel sorts A to Z by the client's own names
 ns.CHARACTER_RULE_WEAPON_TYPES = {
 	0, -- One-Handed Axes
 	1, -- Two-Handed Axes
@@ -80,14 +73,7 @@ ns.CLASS_STAT_STARTER = {
 	MONK = { "AGILITY", "INTELLECT", "SPELL_POWER", "SPIRIT" },
 }
 
---[[
-    The drops the Loot Roll Sanity Check draws ten from at a time, one list
-    per section (Options/Options-Sanity-Check.lua): { itemId, kind }. kind is
-    UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a
-    draw can promise each section its greens, blues and Bind on Equip epics,
-    or OTHER for a row that shows one of Automated Rolls' gates. A row this
-    client doesn't have is never drawn.
-]]
+-- { itemId, kind }
 ns.SANITY_CHECK_TRASH = {
 	-- Uncommon
 	{ 81518, "UNCOMMON" }, -- Lory Feather Band (BoP)
@@ -121,6 +107,7 @@ ns.SANITY_CHECK_TRASH = {
 	{ 89842, "EPIC" }, -- Gauntlets of the Shadow's Caress (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	-- Uncommon
 	{ 80740, "UNCOMMON" }, -- Ambermist Gloves (BoP)
@@ -150,6 +137,7 @@ ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	{ 95974, "EPIC" }, -- Abandoned Zandalari Greatbelt (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_RAID_BOSSES = {
 	-- Uncommon
 	{ 82530, "UNCOMMON" }, -- Summit Guardian Warboots (BoP)
@@ -191,10 +179,12 @@ ns.SANITY_CHECK_RAID_BOSSES = {
 How We Got the Data
 
 Last Validated
-	2026-11-18, MoP Classic 5.5.4.70960
+	2026-11-27, wago.tools, MoP Classic 5.5.4.71089
 
 Notes
+	- Character Rules' armor and weapon rows, and what each class starts with ticked. A row is an item subclass ID, or a name for a row no subclass names. Gear that is a ticked type and carries a ticked stat is left to the player to roll; the rest of the gear is greeded (Features/Character-Rules.lua).
 	- SANITY_CHECK_TRASH, SANITY_CHECK_DUNGEON_BOSSES and SANITY_CHECK_RAID_BOSSES: the Loot Roll Sanity Check's drops, picked from Wowhead's mop-classic item data (zone drop tables for the dungeons and raids of this expansion's last level band, and its most popular items of each quality for gear outside them), then each item checked one by one against Wowhead's tooltip for this client for its quality, its binding and fixed stats (no random enchantment), on 2026-11-16. Not literally from that kind of kill: a section mixes Bind on Pickup and Bind on Equip, and every section holds at least four greens and five blues, and Trash and Raid Bosses at least six Bind on Equip epics, so a draw can always show two of each (Options/Options-Sanity-Check.lua). OTHER rows are picked by hand to show a gate: a mount or legendary (Never Automated), a quest item or token, or a default Item Overrides row. Diagnostics' Validate Data lists each row with its kind, to compare against the item's quality in game.
+	- The Sanity Check draws ten at a time from one list per section (Options/Options-Sanity-Check.lua). kind is UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a draw can promise each section its greens, blues and Bind on Equip epics, or OTHER for a row that shows one of Automated Rolls' gates. A row this client doesn't have is never drawn.
 	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client (its tables as of 2026-10-29, MoP Classic 5.5.4.70631). Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
 	- Weapons: every type the class can train (WEAPON_SPECS above 0), assuming the character has trained everything (maintainer, 2026-11-07).
@@ -205,7 +195,7 @@ Notes
 	- No relic rows: Librams, Idols and Totems left the game in Mists of Pandaria, and Thrown went with the ranged slot.
 	- Hunters start with bows, guns and crossbows only, as Play It Forward lists them: from Mists of Pandaria on the ranged weapon is a hunter's main hand.
 	- Play It Forward's Mists specs name healing and spell damage, which merged into spell power on this client, so both start as SPELL_POWER; its healer and hybrid-caster specs gear for Spirit, which starts ticked for them.
-	- Rechecked against this client's tables at build 5.5.4.70960: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment.
+	- Rechecked against this client's tables at build 5.5.4.71089: every armor and weapon row is a subclass in ItemSubClass, and every Sanity Check drop is in ItemSparse at the quality and binding its kind and comment give, with no random enchantment.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -214,11 +204,12 @@ Wowhead
 	https://www.wowhead.com/mop-classic (dataEnv 15), the Sanity Check lists only
 
 wago.tools
-	https://wago.tools/db2/ItemSparse
-	https://wago.tools/db2/ItemSubClass
 	https://wago.tools/db2/ItemSubClass?build=5.5.4.70960
 	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
 	https://wago.tools/db2/Item?build=5.5.4.70960
+	https://wago.tools/db2/ItemSubClass?build=5.5.4.71089
+	https://wago.tools/db2/ItemSparse?build=5.5.4.71089
+	https://wago.tools/db2/Item?build=5.5.4.71089
 
 QuestieDB
 	None.

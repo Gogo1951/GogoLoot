@@ -3,36 +3,18 @@
 --------------------------------------------------------------------------------
 
 --[[
-    A panel of its own, right after Loot Toasts: its description, then Enable
-    Loot Sounds, the master switch, then the chime with its minimum quality and
-    the Pick Pocket sound, each carrying a speaker that plays it (Kit.ToggleRow). Everything below the master switch leaves
-    the panel while it is off. Nothing on it hides behind the toasts' toggle:
-    the sounds play with no toast on screen.
-
-    Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
-      lootSoundsEnabled
-        - the master switch: Loot-Sounds.lua plays neither sound while it is off
-      lootSounds + lootSoundThreshold
-        - the chime and its minimum quality
-      pickPocketSound
-        - the Pick Pocket sound
-
-    The Pick Pocket sound is its own toggle rather than a sub-option of the
-    chime, because it answers a different question: the chime reports what came
-    out of a corpse, filtered by quality; this reports that a Pick Pocket landed
-    at all, which is mostly coin.
+    Pick Pocket is its own toggle, not a sub-option of the chime: the chime
+    reports corpse loot by quality, this that a Pick Pocket landed at all
+    (mostly coin).
 ]]
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
 
---[[
-    The chime starts at Uncommon and offers nothing lower: a sound is an
-    interruption and wants to be rare. The toasts, a record, start at Poor.
-]]
+-- Nothing below Uncommon: a sound is an interruption and wants to be rare.
 local SOUND_QUALITY_VALUES, SOUND_QUALITY_SORTING = ns.OptionsQualityChoices(2, "+")
 
--- The game's own name for Pick Pocket, read as the panel is built; blank until the client has it.
+-- Blank until the client has the spell name.
 local function PickPocketName()
 	return C_Spell.GetSpellName(ns.SPELLS.PICK_POCKET) or ""
 end
@@ -84,7 +66,7 @@ function ns.BuildLootSoundOptions()
 			end),
 		}),
 	}
-	-- The two sound rows leave with the master switch; their own toggles still decide what rides on their lines.
+	-- On the row group, so the toggles still decide what rides on their own lines.
 	args.lootSoundRow.hidden = LootSoundsOff
 	args.pickPocketRow.hidden = LootSoundsOff
 

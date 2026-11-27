@@ -2,15 +2,9 @@
 -- GogoLoot Loot Toasts: Filters
 --------------------------------------------------------------------------------
 
--- Which loot gets a toast, by the Filters panel's Mine and Group boxes (ns.LOOT_TOAST_FILTER_ROWS).
 local _, ns = ...
 
---[[
-    The Filters row an item falls under, by the type the client files it under.
-    A subclass row (Mount, Companion Pets) wins over its class's row, which is
-    how Miscellaneous leaves them out. C_Item.GetItemInfoInstant answers from
-    the client's own database, so the row is known the moment the item drops.
-]]
+-- A subclass row (Mount, Companion Pets) wins over its class's row, which is how Miscellaneous leaves them out.
 local FILTER_ROWS_BY_CLASS, FILTER_ROWS_BY_SUBCLASS = {}, {}
 for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
 	if row.subclassIdentifier then
@@ -32,23 +26,10 @@ local function FilterRowFor(itemIdentifier)
 end
 
 --[[
-    Whether an item gets a toast, by the Mine boxes for the player's own loot
-    and the Group boxes for anyone else's. An item counts when its type's box is
-    ticked and, on a rarity row, it reaches the quality beside the box. Three
-    rows reach across types: Openables (an item on the Openables List, whatever
-    it is set to, since the toast is the player's cue that the add-on may be
-    about to act), Bind on Pickup, and Quest, which also takes an item the game
-    binds as a quest item whatever its class (Soft-shelled Clam is a Key), and
-    a quest STARTER, as often an ordinary trinket or blade as a quest item.
-
-    ORDER HERE IS BY COST. The list lookup and the type are free, Bind on Pickup
-    needs the full C_Item.GetItemInfo, which can answer nil on a cold cache;
-    that reads as "not Bind on Pickup". The player's own loot is cached the
-    moment it is looted; another member's may not be, so ns.ShowLootToast asks
-    for an uncached one it turned down and judges it once more. The quest
-    starter costs a tooltip, so it is last. A quality nobody can read passes a
-    rarity row: a toast is a display, and silently swallowing something that
-    was looted is the worse failure.
+    ORDER IS BY COST: list and type are free, Bind on Pickup needs the full
+    item info (a cold nil reads "not Bind on Pickup"), the quest starter costs a
+    tooltip. An unreadable quality passes a rarity row: swallowing real loot is
+    the worse failure.
 ]]
 ---@param quality number|nil
 ---@param itemIdentifier number|nil

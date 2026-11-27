@@ -19,11 +19,7 @@ ns.CHARACTER_RULE_STAT_KEYS = {
 	"MP5",
 }
 
---[[
-    { [spellId] = { statKey, ... } }: one item "Equip:" spell for every way this
-    client words a stat line, and the stats it carries. Features/Character-
-    Rules.lua builds each line's pattern from the spell's own description.
-]]
+-- { [spellId] = { statKey, ... } }
 ns.CHARACTER_RULE_EQUIP_SPELLS = {
 	-- Spell power and healing
 	[9397] = { "SPELL_POWER", "HEALING_POWER" }, -- Increases damage and healing done by magical spells and effects by up to #.
@@ -58,14 +54,15 @@ ns.CHARACTER_RULE_EQUIP_SPELLS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, Classic Era 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
-	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rules.lua drops the rest, and any section left empty, at load.
+	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rule-Stats.lua drops the rest, and any section left empty, at load.
 	- Every stat. The primary attributes come from GetItemStats and the tooltip's stat lines; the secondary stats (spell power, healing, attack power, crit, hit and mana per 5) are "Equip:" item spells, read off the tooltip through CHARACTER_RULE_EQUIP_SPELLS.
 	- CHARACTER_RULE_EQUIP_SPELLS: every item spell with an On Equip trigger (ItemEffect.TriggerType 1) whose effects apply a stat aura (SpellEffect.EffectAura 13 spell damage, except the physical-only school mask 1; 135 healing; 99 and 124 attack power; 85 mana regeneration; 52 and 57 crit; 54 and 55 hit; on TBC, 189 ratings for crit and hit), grouped by Spell.Description_lang, keeping one spell per wording. Wordings no item carries more than once were kept when they read as plain stats and dropped when they don't (a set bonus, a one-off proc). Defense, dodge, parry, block and weapon skill have no box, so they are left out.
-	- Each wording's pattern is built in game from the spell's own description in the player's language (Features/Character-Rules.lua), so nothing here is localized, and no pattern was taken from another add-on.
+	- Each wording's pattern is built in game from the spell's own description in the player's language (Features/Character-Rule-Stats.lua), so nothing here is localized, and no pattern was taken from another add-on.
 	- Rechecked against this client's tables at build 1.15.9.70576: every Equip spell is in SpellName.
+	- Rerun against this client's tables at build 1.15.9.70576, counting only items first seen by build 1.14.4.51829: every wording two or more of them carry has its row, and the wordings only one carries are party auras, procs or blank, so none was added. Four rows, 467142, 468785, 436239 and 432639, are spells first seen after that build, worded only on Season of Discovery items. They stay, because this client knows them and a test holds this list identical to Data/Discovery's.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -78,6 +75,7 @@ wago.tools
 	https://wago.tools/db2/SpellEffect?build=1.15.9.70576
 	https://wago.tools/db2/Spell?build=1.15.9.70576
 	https://wago.tools/db2/SpellName?build=1.15.9.70576
+	https://wago.tools/db2/SpellName?build=1.14.4.51829
 
 QuestieDB
 	None.

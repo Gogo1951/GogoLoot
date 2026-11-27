@@ -3,22 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Speedy Loot hides the loot window, so the only record of what was picked up
-    is the chat log. Toasts are a small on-screen readout of the same thing:
-    icon, colored link, quantity. Which loot gets one is the Filters rows: a
-    Mine and a Group box per item type (see ns.LOOT_TOAST_FILTER_ROWS), so the
-    rest of the group's pickups can join the player's, each naming its looter.
-    An item won on a roll says how it was won.
-
-    The stack reads like a chat log. A new entry appears at the anchor and
-    everything already on screen shifts one row away from it, upward by
-    default, downward when lootToastGrowth is "DOWN", so the oldest row is
-    always the one at the far end, fading out of it. That keeps the reading
-    order stable, and the row the player just triggered is always in the same
-    place on screen.
-
-    The anchor the stack hangs from, its drag handle and the first-login
-    introduction live in Features/Loot-Toasts-Handle.lua.
+    The stack reads like a chat log: a new row appears at the anchor and the
+    rest shift one row away, so the newest is always in the same place and the
+    oldest fades out of the far end.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -26,76 +13,44 @@ local GetColor = ns.GetColor
 local LSM = LibStub("LibSharedMedia-3.0")
 
 --[[
-    THE GRID. Every size in a row is a step of the 2, 4, 8, 16, 32 scale at
-    the default font size (GRID_FONT_SIZE, 16), and scales with the font from
-    there (GridSize), so the layout keeps its proportions at every size. At 16:
-
-        row 32, the framed icon filling it: 28 of art inside a 2 border
-        8 from the frame to the text, 8 between rows, so 40 row to row
-
-    The frame is the item's quality color, the way bags and the loot window
-    mark quality, and its corners are rounded (see ICON_BORDER_MASK). The icon
-    art is cropped by ICON_CROP on every side to drop the bevel Blizzard
-    paints into each icon, which would otherwise double the frame.
+    THE GRID: every size is set at GRID_FONT_SIZE and scales with the font
+    (GridSize), so the layout keeps its proportions. ICON_CROP drops the bevel
+    Blizzard paints into each icon, which would otherwise double the frame.
 ]]
 local GRID_FONT_SIZE = 16
-local ROW_UNITS = 32 -- The row's height, which the framed icon fills
+local ROW_UNITS = 32
 local BORDER_UNITS = 2
 local TEXT_GAP_UNITS = 8
 local ROW_SPACING_UNITS = 8
 local ICON_CROP = 0.07
 
 --[[
-    Rounded corners. A texture can't round its own corners, so each square is
-    cut by an alpha mask shipped with the add-on: the frame by one whose
-    corners are 4 of its 32, the art by one whose corners are 2 of its 28, so
-    the two curves stay concentric (outer radius less the border) at every
-    size. Both are 64-pixel squares, a power of two as masks must be.
+    The frame's corners are 4 of its 32 and the art's 2 of its 28, so the two
+    curves stay concentric. Masks must be a power of two: both are 64 pixels.
 ]]
 local ICON_BORDER_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon-Border-Mask.tga"
 local ICON_ART_MASK = "Interface\\AddOns\\GogoLoot\\Includes\\Images\\Toast-Icon-Art-Mask.tga"
 
---[[
-    A dark shade behind each row, darkest at the icon and fading to nothing a
-    few characters past the end of the text, so the text holds up over a bright
-    world without a hard box edge. BACKDROP_TAIL_UNITS is that fade-out run
-    beyond the text, on the grid (64 at the default size). The shade starts
-    under the middle of the icon, so its square end stays hidden behind the
-    rounded frame.
-]]
+-- The shade starts under the middle of the icon, so its square end hides behind the rounded frame.
 local BACKDROP_ALPHA = 0.7
 local BACKDROP_DARK = CreateColor(0, 0, 0, BACKDROP_ALPHA)
 local BACKDROP_CLEAR = CreateColor(0, 0, 0, 0)
 local BACKDROP_TAIL_UNITS = 64
 
---[[
-    Motion. A new row slides in from the side the stack lines up on and fades
-    up while it does; a burst of loot enters one row per
-    ns.LOOT_TOAST_ENTRY_INTERVAL rather than all at once, so each can be read
-    as it arrives. The slide is on the grid too (16 at the default size).
-]]
 local SLIDE_DURATION = 0.2
 local SLIDE_UNITS = 16
 
---[[
-    An Epic or better item lights its row in its quality color for a moment,
-    brightest at the icon and fading along the row like the shade under it.
-]]
 local FLASH_MIN_QUALITY = 4
 local FLASH_ALPHA = 0.6
 local FLASH_DURATION = 1
 
 --[[
-    How wide a row may get: roughly 64 characters at any size, since a glyph
-    averages about half the em box. That clears the longest thing Classic can
-    name, a random-suffix weapon, with room for a quantity. It scales with the
-    font, because doubling the font halves how many characters fit a fixed
-    width. It is a ceiling, not the working width: Measure sizes the text to the
-    string and truncates only a name that overruns it.
+    About 64 characters at any size (a glyph averages half the em box), enough
+    for a random-suffix weapon and a quantity. A ceiling: Measure sizes the text
+    to the string and truncates only past it.
 ]]
 local TEXT_WIDTH_RATIO = 32
 
--- Sample rows the position preview shows when the cap is Unlimited, which has no count to mirror.
 local SAMPLE_COUNT_UNLIMITED = 8
 
 local pool = {}
@@ -106,17 +61,7 @@ local samples = {}
 -- Appearance
 --------------------------------------------------------------------------------
 
---[[
-    Fonts come from LibSharedMedia, the registry other add-ons publish their
-    faces into. GogoLoot ships it, so the dropdown is never empty: on its own
-    the library still registers the faces the client itself carries, and it
-    masks its list by locale, so a koKR client is only offered faces that can
-    draw Korean.
-
-    "DEFAULT" is our own sentinel rather than a registered face: it resolves to
-    whatever GameFontNormal uses, the only right answer on a locale whose client
-    ships its own font. A face the library no longer knows falls back to it too.
-]]
+-- "DEFAULT" is GameFontNormal's face, the only right answer on a locale whose client ships its own font.
 local function FontPath(value, defaultPath)
 	if not value or value == "DEFAULT" then
 		return defaultPath
@@ -124,10 +69,7 @@ local function FontPath(value, defaultPath)
 	return LSM:IsValid("font", value) and LSM:Fetch("font", value) or defaultPath
 end
 
---[[
-    Rebuilt on every call rather than cached, so a face registered by an add-on
-    that loaded after this one still turns up the next time the dropdown opens.
-]]
+-- Rebuilt on every call, so a face registered by a later add-on still turns up.
 ---@return table values
 ---@return table sorting
 function ns.GetLootToastFontChoices()
@@ -140,12 +82,7 @@ function ns.GetLootToastFontChoices()
 	return values, sorting
 end
 
---[[
-    THE FLAG STRING CARRIES THE WEIGHT, because the client offers no bold:
-    SetFont takes a face, a size and a flag string, and a thicker outline is what
-    reads as heavier against a bright world. "NONE" is ours and resolves to the
-    empty string SetFont expects.
-]]
+-- THE FLAG STRING CARRIES THE WEIGHT: the client offers no bold, so a thicker outline reads heavier.
 local function ResolveFlags()
 	local flags = ns.db and ns.db.profile.lootToastFontFlags
 	if not flags or flags == "NONE" then
@@ -158,11 +95,7 @@ local function FontSize()
 	return (ns.db and ns.db.profile.lootToastFontSize) or ns.LOOT_TOAST_FONT_SIZE_MIN
 end
 
---[[
-    Resolved once per restack and passed down: every row in a pass uses the same
-    face. Deliberately not cached across restacks, so a face registered later,
-    or a font change, reaches rows already on screen.
-]]
+-- Deliberately not cached across restacks, so a later face or a font change reaches rows on screen.
 local function ResolveFont()
 	local fallbackPath = GameFontNormal:GetFont()
 	return FontPath(ns.db and ns.db.profile.lootToastFont, fallbackPath), FontSize(), ResolveFlags(), fallbackPath
@@ -175,12 +108,10 @@ local function ApplyFont(fontString, path, size, flags, fallbackPath)
 	end
 end
 
--- A grid size (in units at GRID_FONT_SIZE) at the current font size, whole, and never below `minimum`.
 local function GridSize(units, minimum)
 	return math.max(minimum, math.floor(units * FontSize() / GRID_FONT_SIZE + 0.5))
 end
 
--- The framed icon, border included: what the text and the hover area measure from. It fills the row.
 local function FramedIconSize()
 	return GridSize(ROW_UNITS, 8)
 end
@@ -189,7 +120,6 @@ local function BorderSize()
 	return GridSize(BORDER_UNITS, 1)
 end
 
--- The art inside the frame.
 local function IconSize()
 	return FramedIconSize() - 2 * BorderSize()
 end
@@ -202,11 +132,7 @@ local function RowSpacing()
 	return GridSize(ROW_SPACING_UNITS, 2)
 end
 
---[[
-    Unlimited is stored as 0, which must never reach the cap arithmetic as a
-    number: `#active >= 0` is always true and would retire every row the moment
-    it was drawn. It resolves to infinity, so the same comparison never fires.
-]]
+-- Unlimited is stored as 0, and `#active >= 0` would retire every row as it was drawn.
 local function MaxVisible()
 	local limit = ns.db and ns.db.profile.lootToastMaxVisible
 	if not limit or limit <= ns.LOOT_TOAST_UNLIMITED then
@@ -219,33 +145,20 @@ local function RowWidth()
 	return FramedIconSize() + IconGap() + math.floor(FontSize() * TEXT_WIDTH_RATIO)
 end
 
---[[
-    Which end of the anchor a row hangs off, and which side of the row its icon
-    takes. The handle's caption goes to the opposite end, so the preview text and
-    the rows never collide.
-]]
 local function AlignsRight()
 	return ns.db ~= nil and ns.db.profile.lootToastAlign == "RIGHT"
 end
 
--- The handle lays its caption out by the same alignment (Features/Loot-Toasts-Handle.lua).
 ns.LootToastsAlignRight = AlignsRight
 
--- The framed icon fills the row, so the row is exactly as tall as it.
 local function RowHeight()
 	return FramedIconSize()
 end
 
 --[[
-    One owner for every font-dependent measurement and the row's internal
-    layout, run from Restack, so a change to the font, size or alignment reaches
-    toasts already on screen.
-
-    THE TRAP: a text box spanning the whole row makes the name's position depend
-    on its justification, and one row holding a stale justification stranded
-    its name at the far end, far from its own icon. So the box is sized to the
-    string (SetWidth(0) auto-sizes) and pinned to the icon; only a name too long
-    for the row takes a fixed width, and it fills that box.
+    THE TRAP: a text box spanning the row makes the name's position depend on
+    its justification, and a stale one strands the name far from its icon. So
+    the box is sized to the string (SetWidth(0)) and pinned to the icon.
 ]]
 local function Measure(toast, path, size, flags, fallbackPath)
 	local iconSize = IconSize()
@@ -259,7 +172,6 @@ local function Measure(toast, path, size, flags, fallbackPath)
 	toast.text:ClearAllPoints()
 	toast.backdrop:ClearAllPoints()
 
-	-- The frame wraps the icon on every side, so it is drawn from the icon rather than placed on its own.
 	toast.border:ClearAllPoints()
 	toast.border:SetPoint("TOPLEFT", toast.icon, "TOPLEFT", -border, border)
 	toast.border:SetPoint("BOTTOMRIGHT", toast.icon, "BOTTOMRIGHT", border, -border)
@@ -267,11 +179,7 @@ local function Measure(toast, path, size, flags, fallbackPath)
 	-- Font first: SetFont resets a font string's justification.
 	ApplyFont(toast.text, path, size, flags, fallbackPath)
 
-	--[[
-	    The shade spans the row's height from the middle of the icon to just
-	    past the text, darkest on the icon side. SetGradient's first color is always the
-	    left end, so the two colors swap with the alignment.
-	]]
+	-- SetGradient's first color is always the left end, so the colors swap with the alignment.
 	local dark, clear = BACKDROP_DARK, BACKDROP_CLEAR
 	toast.text:SetWidth(0)
 	if AlignsRight() then
@@ -303,7 +211,6 @@ local function Measure(toast, path, size, flags, fallbackPath)
 		toast.text:SetWidth(maxTextWidth)
 	end
 
-	-- The hover area runs from the frame's outer edge to the end of the text, the frame's height tall.
 	toast.hover:ClearAllPoints()
 	if AlignsRight() then
 		toast.hover:SetPoint("TOPRIGHT", toast.border, "TOPRIGHT")
@@ -316,11 +223,7 @@ local function Measure(toast, path, size, flags, fallbackPath)
 	end
 end
 
---[[
-    The icon's frame takes the item's quality color. Coin has no quality (see
-    Features/Loot-Toasts-Money.lua), so its frame stays black: still framed,
-    the same size as every other row, but saying nothing about rarity.
-]]
+-- Coin has no quality, so its frame stays black.
 local function SetToastQuality(toast, quality)
 	if quality then
 		toast.border:SetVertexColor(ns.GetQualityColorRGB(quality))
@@ -333,21 +236,15 @@ end
 -- Toast Frames
 --------------------------------------------------------------------------------
 
--- The time on screen is a setting, so it is stamped on the animation at play time.
 local function PlayFade(toast)
 	toast.fadeOut:SetStartDelay(ns.db.profile.lootToastDuration)
 	toast.fade:Play()
 end
 
 --[[
-    New loot keeps the whole stack up: every row already on screen starts its
-    time over, and one already fading comes back to full, so a run of pickups
-    stays readable together and leaves together. Not a row under the pointer,
-    whose fade is paused for its tooltip and resumes when the pointer leaves,
-    and not the samples, which never fade.
-
-    THE TRAP: stopping a fade can fire its OnFinished, which would release the
-    row. `restarting` tells that handler this stop is not the end.
+    So a run of pickups leaves together. THE TRAP: stopping a fade can fire its
+    OnFinished, which would release the row; `restarting` says this stop is not
+    the end.
 ]]
 local function RestartFades()
 	for _, toast in ipairs(active) do
@@ -361,7 +258,6 @@ local function RestartFades()
 	end
 end
 
--- Slides in from beyond the side the rows line up on: from the left on a left-aligned stack.
 local function PlayEnter(toast)
 	local distance = GridSize(SLIDE_UNITS, 4)
 	local offset = AlignsRight() and distance or -distance
@@ -382,22 +278,13 @@ local function PlayFlash(toast, quality)
 	toast.flashAnimation:Play()
 end
 
---[[
-    Whether a row's hover area takes the pointer: only an item row, and only
-    with Enable Tooltips on Loot Toast Items on. Off, the whole stack is mouse
-    transparent, so hovering and clicking go straight to the world beneath.
-]]
 local function TakesPointer(toast)
 	return toast.itemLink ~= nil and ns.db ~= nil and ns.db.profile.lootToastTooltips == true
 end
 
 --[[
-    An item row shows the item's own tooltip on hover, the one chat shows for
-    the same link. It sits against the hovered icon and name, on the side away
-    from where the rows line up. THE TRAP: not against the row's frame, which is
-    RowWidth() wide whatever the text, so a short name left the tooltip stranded
-    far across the screen. The fade pauses while the pointer is on the row and
-    resumes where it left off, so a row can't vanish from under a tooltip being read.
+    THE TRAP: anchored to the hover child, not the row, which is RowWidth()
+    wide whatever the text, so a short name would strand the tooltip.
 ]]
 local function OnToastEnter(hover)
 	local toast = hover:GetParent()
@@ -423,7 +310,7 @@ local function OnToastLeave(hover)
 	if GameTooltip:IsOwned(hover) then
 		GameTooltip:Hide()
 	end
-	-- Hiding a row under the pointer leaves it too; a pooled row has no fade to resume.
+	-- Hiding a row under the pointer leaves it too, and a pooled row has no fade to resume.
 	if toast.itemLink and not toast.pooled then
 		toast.fade:Play()
 	end
@@ -436,11 +323,9 @@ local function AcquireToast()
 		return toast
 	end
 	toast = CreateFrame("Frame", nil, UIParent)
-	-- Measure positions the backdrop, border, icon, text and hover area per alignment; the flash follows the backdrop.
 	-- White bases, so the gradient and the quality tint are the only color either carries.
 	toast.backdrop = toast:CreateTexture(nil, "BACKGROUND")
 	toast.backdrop:SetColorTexture(1, 1, 1, 1)
-	-- The Epic flash glows over the shade, across the same span; its gradient is painted with the shade's.
 	toast.flash = toast:CreateTexture(nil, "BACKGROUND", nil, 1)
 	toast.flash:SetColorTexture(1, 1, 1, 1)
 	toast.flash:SetBlendMode("ADD")
@@ -450,7 +335,6 @@ local function AcquireToast()
 	toast.border:SetColorTexture(1, 1, 1, 1)
 	toast.icon = toast:CreateTexture(nil, "ARTWORK")
 	toast.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
-	-- The masks follow their textures' size and place, so Measure never touches them.
 	toast.borderMask = toast:CreateMaskTexture()
 	toast.borderMask:SetTexture(ICON_BORDER_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 	toast.borderMask:SetAllPoints(toast.border)
@@ -460,15 +344,12 @@ local function AcquireToast()
 	toast.iconMask:SetAllPoints(toast.icon)
 	toast.icon:AddMaskTexture(toast.iconMask)
 	toast.text = toast:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	-- One line, always. An over-long name truncates rather than breaking the row.
 	toast.text:SetWordWrap(false)
 
 	--[[
-        THE TRAP: the row is far wider than its text (RowWidth is a ceiling), so
-        a mouse-enabled row would put a long invisible strip over the world. The
-        hover area is a child covering only the icon and text (see Measure), it
-        takes the pointer only on an item row with tooltips on (see TakesPointer), and it never
-        takes clicks, so a click on a toast still reaches whatever is behind it.
+        THE TRAP: the row is far wider than its text, so a mouse-enabled row
+        would lay an invisible strip over the world. Only this child takes the
+        pointer, motion only, never clicks.
     ]]
 	toast.hover = CreateFrame("Frame", nil, toast)
 	toast.hover:SetMouseClickEnabled(false)
@@ -488,12 +369,7 @@ local function AcquireToast()
 		end
 	end)
 
-	--[[
-	    The slide: a zero-length jump out to the side, then the glide back to
-	    the row's place while it fades up. Translations don't persist, so the
-	    row is exactly where Restack put it once this ends, and a restack while
-	    it plays carries the slide along with the row.
-	]]
+	-- Translations don't persist, so the row ends exactly where Restack put it.
 	toast.enter = toast:CreateAnimationGroup()
 	toast.enterOffset = toast.enter:CreateAnimation("Translation")
 	toast.enterOffset:SetDuration(0)
@@ -521,16 +397,10 @@ local function AcquireToast()
 end
 
 --[[
-    `active` runs oldest first, and the offset is measured from the END of the
-    list, so the newest row sits at the anchor and age carries a row away from
-    it. Adding a row raises the count, so every row already up moves one step;
-    retiring the oldest drops the count and every survivor's index together,
-    which cancels, so nothing near the anchor twitches.
-
-    Rows pin to a corner of the anchor, never its center: growth picks the top
-    or bottom edge and alignment picks the left or right end. Centered, a row's
-    width would decide where its icon landed and a font change would walk the
-    stack across the screen.
+    Offsets run from the END of `active` (oldest first), so retiring the oldest
+    moves nothing near the anchor. Rows pin to a corner, never the center: a
+    centered row's width would move its icon, and a font change would walk the
+    stack.
 ]]
 local function Restack()
 	local count = #active
@@ -547,15 +417,10 @@ local function Restack()
 end
 
 --[[
-    THE TRAP: callers loop until a list shrinks, so a release that removed
-    nothing would spin forever and freeze the client. The two removals below
-    therefore ALWAYS run, and every call makes progress.
-
-    Only the pooling is idempotent: stopping the fade can fire its own
-    OnFinished, which releases the same frame again, and pooling it twice would
-    hand one frame out as two rows.
-
-    A loop releasing several rows passes skipRestack and restacks once after it.
+    THE TRAP: callers loop until a list shrinks, so the two removals ALWAYS
+    run. Only the pooling is guarded: stopping the fade can fire OnFinished,
+    which releases the same frame again, and pooling it twice hands one frame
+    out as two rows.
 ]]
 ---@param toast table
 ---@param skipRestack boolean|nil
@@ -602,13 +467,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Bag Count: how many of the item the player now carries, after the count
-    the toast looted, as "x3 (27)". It reads live rather than once, because the
-    client may print the loot line before the bags take the item or after: the
-    count is read as the toast goes up and again whenever the bags settle while
-    it is on screen, so it always lands on the true number. Shown only when it
-    says more than the toast's own count, so a first stack or a piece of gear
-    reads as before.
+    Bag Count reads live: the loot line may land before or after the bags take
+    the item, so it is re-read whenever the bags settle.
 ]]
 local function WriteToastText(toast)
 	local carried = toast.countItem and ns.db.profile.lootToastBagCount and C_Item.GetItemCount(toast.countItem)
@@ -619,13 +479,7 @@ local function WriteToastText(toast)
 	end
 end
 
---[[
-    Everything a row does once its icon and text are decided, so an item and a
-    coin pile reach the screen the same way. The cap retires the OLDEST toast
-    rather than dropping the new one: a burst of loot should show what just
-    arrived. An item row passes its link, for its tooltip; an item of the
-    player's own also passes its id and looted count, for Bag Count.
-]]
+-- The cap retires the OLDEST toast, so a burst shows what just arrived.
 ---@param icon number|string
 ---@param text string
 ---@param itemLink string|nil
@@ -634,7 +488,6 @@ end
 ---@param quality number|nil # colors the icon's frame; nil for coin
 ---@return nil
 local function EnterToast(icon, text, itemLink, countItem, countQuantity, quality)
-	-- The Restack below covers every release here.
 	while #active >= MaxVisible() do
 		ns.ReleaseLootToast(active[1], true)
 	end
@@ -656,13 +509,7 @@ local function EnterToast(icon, text, itemLink, countItem, countQuantity, qualit
 	PlayFade(toast)
 end
 
---[[
-    Rows enter one per ns.LOOT_TOAST_ENTRY_INTERVAL. A row with nothing ahead
-    of it and no row just entered goes up at once; anything else waits its turn
-    in `pending`, which drains on one timer at a time. Bag Count is read as a
-    row enters, not as it queues, so a queued row still lands on the true
-    count. Turning the toasts off empties the queue.
-]]
+-- Rows enter one per ns.LOOT_TOAST_ENTRY_INTERVAL, so a burst can be read as it arrives.
 local pending = {}
 local lastEntryAt = nil
 local drainScheduled = false
@@ -704,31 +551,16 @@ local function PushToast(icon, text, itemLink, countItem, countQuantity, quality
 	ScheduleDrain()
 end
 
--- The money toasts reach the screen the same way (Features/Loot-Toasts-Money.lua).
 ns.PushLootToast = PushToast
 
--- Another group member's name, in their class color while the roster still holds them, silver once it doesn't.
 local function LooterNameColor(looterName)
 	return ns:GetGroupMemberClassColor(looterName) or GetColor("HELP")
 end
 
---[[
-    Another member's item may not be cached yet, and its bind type, which the
-    Bind on Pickup and Quest rows read, is unknown until it is. One the filters
-    turn down while uncached is asked for and judged once more a moment later.
-]]
+-- A group item turned down while uncached (bind type unknown) is judged once more.
 local GROUP_ITEM_RETRY_SECONDS = 1
 
---[[
-    The square brackets a link carries are chat punctuation, marking where a
-    link starts and ends in running text; a toast is one item on its own line,
-    so they go. The escape sequence stays, so the text is still a real link.
-
-    A group member's loot names its looter after the item, so every row's item
-    still starts at its icon. An item won on a roll adds the winning roll, in
-    silver, after the looter, or after "You Won" when it was the player's,
-    while Winning Roll is on for that side.
-]]
+-- A link's brackets are chat punctuation and go; the escape stays, so it is still a real link.
 ---@param itemLink string
 ---@param quantity number|nil
 ---@param looterName string|nil # nil for the player's own loot
@@ -779,27 +611,20 @@ end
 -- Samples
 --------------------------------------------------------------------------------
 
---[[
-    ReleaseLootToast takes the frame out of `samples` itself, so drain the tail.
-    Its caller, ns.RefreshLootToastSamples, restacks once afterwards.
-]]
 local function ReleaseSamples()
 	while #samples > 0 do
 		ns.ReleaseLootToast(samples[#samples], true)
 	end
 end
 
--- The cap just changed: trim now, so the setting just picked is the one on screen.
 ---@return nil
 function ns.ApplyLootToastLimit()
-	-- ns.RefreshLootToastSamples, below, restacks once for every release here.
 	while #active > MaxVisible() do
 		ns.ReleaseLootToast(active[1], true)
 	end
 	ns.RefreshLootToastSamples()
 end
 
--- Enable Tooltips on Loot Toast Items just changed: the rows already up follow it now.
 ---@return nil
 function ns.ApplyLootToastTooltips()
 	for _, toast in ipairs(active) do
@@ -826,14 +651,8 @@ local function LowestMineQuality()
 end
 
 --[[
-    While the handle is up it stands in one "Example Item" sample per row the
-    cap allows, each in a random quality at or above the lowest quality ticked
-    on a Mine rarity row (Poor when none is), with a potion icon to match. The
-    preview shows at once where the stack sits, how many rows it holds, what
-    the font looks like, and which qualities the Mine rarity rows let through.
-    The samples are rebuilt on every appearance change, and the reshuffled
-    colors make the preview visibly answer each one. Samples never fade; they
-    go when the handle does.
+    Rebuilt on every appearance change: the reshuffled colors make the preview
+    visibly answer each one. Samples never fade; they go with the handle.
 ]]
 ---@return nil
 function ns.RefreshLootToastSamples()
@@ -867,13 +686,8 @@ end
 -- Events
 --------------------------------------------------------------------------------
 
---[[
-    The player's own loot, and the rest of the group's. The client prints loot
-    lines only for the player's own party or raid, so a line naming someone else
-    is already a group member's; the Group boxes decide whether it shows.
-]]
+-- The client prints loot lines only for the player's own group, so any other name is a member's.
 local function OnChatMessageLoot(message)
-	-- A roll line is never a loot line; Loot-Toasts-Winning-Rolls.lua records it on its own handler.
 	if not ns.db.profile.lootToasts or ns.ParseRollResultMessage(message) or ns.ParseRollWonMessage(message) then
 		return
 	end
@@ -888,7 +702,6 @@ local function OnChatMessageLoot(message)
 	end
 end
 
--- The bags settled: every own-loot toast on screen re-reads its count (see WriteToastText), while Bag Count is on.
 local function OnBagUpdateDelayed()
 	if not ns.db or not ns.db.profile.lootToastBagCount then
 		return

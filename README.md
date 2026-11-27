@@ -67,10 +67,9 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 | Action | Effect |
 | --- | --- |
-| Hover | Opens the mini-map menu |
-| Left-Click | Toggles Automated Rolls |
+| Hover or Left-Click | Opens the mini-map menu |
 
-The menu switches each feature on or off, shows what Automated Rolls rolls in a party and in a raid, and lists any lockboxes still waiting on a Rogue.
+The menu switches each feature on or off, shows what Automated Rolls rolls in a party and in a raid, keeps a Roll Audit of who rolled what in this instance, and lists any lockboxes still waiting on a Rogue.
 
 ### Game Settings
 
@@ -82,7 +81,7 @@ Speedy Loot and Automated Opening need the game's Auto Loot setting, so GogoLoot
 * **Tradable Gear Tint** // BoP gear you can still trade is tinted in your bags, so you see what's yours to hand out before it binds.
 * **Roll Macro** // One button rolls 1-100, 1-99 for off-spec, or a raid roll, and GogoLoot names whoever a raid roll lands on.
 * **Quiet Roll Chat** // The game's roll spam gives way to one line per win.
-* **Check Before It Rolls** // The Loot Roll Sanity Check shows what Automated Rolls would do with random drops for your character.
+* **Check Before It Rolls** // Hover any item to see what Automated Rolls would roll on it in a party or raid, or run the Loot Roll Sanity Check on random drops.
 
 ## Testing & Localization Status
 

@@ -33,7 +33,7 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, Season of Discovery 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).

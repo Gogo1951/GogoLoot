@@ -4,14 +4,7 @@ if ns.IS_DISCOVERY then
 	return
 end
 
---[[
-    Character Rules' armor and weapon rows, and what each class starts with
-    ticked. A row is an item subclass ID, or a name for a row no subclass
-    names. Gear that is a ticked type and carries a ticked stat is left to the
-    player to roll; the rest of the gear is greeded (Features/Character-Rules.lua).
-]]
-
--- The armor rows, in panel order: lightest first, then shields, held off-hands and relics.
+-- { armor subclass ID, or "HELD" }, in panel order: lightest first, then shields, held off-hands and relics
 ns.CHARACTER_RULE_ARMOR_TYPES = {
 	1, -- Cloth
 	2, -- Leather
@@ -24,7 +17,7 @@ ns.CHARACTER_RULE_ARMOR_TYPES = {
 	9, -- Totems
 }
 
--- The weapon rows. The panel sorts them A to Z by the client's own names.
+-- { weapon subclass ID }, which the panel sorts A to Z by the client's own names
 ns.CHARACTER_RULE_WEAPON_TYPES = {
 	0, -- One-Handed Axes
 	1, -- Two-Handed Axes
@@ -82,14 +75,7 @@ ns.CLASS_STAT_STARTER = {
 	DRUID = { "AGILITY", "ATTACK_POWER", "HEALING_POWER", "INTELLECT", "MP5", "SPELL_POWER", "SPIRIT", "STRENGTH" },
 }
 
---[[
-    The drops the Loot Roll Sanity Check draws ten from at a time, one list
-    per section (Options/Options-Sanity-Check.lua): { itemId, kind }. kind is
-    UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a
-    draw can promise each section its greens, blues and Bind on Equip epics,
-    or OTHER for a row that shows one of Automated Rolls' gates. A row this
-    client doesn't have is never drawn.
-]]
+-- { itemId, kind }
 ns.SANITY_CHECK_TRASH = {
 	-- Uncommon
 	{ 12426, "UNCOMMON" }, -- Imperial Plate Boots (BoE)
@@ -123,6 +109,7 @@ ns.SANITY_CHECK_TRASH = {
 	{ 19927, "EPIC" }, -- Mar'li's Touch (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	-- Uncommon
 	{ 12422, "UNCOMMON" }, -- Imperial Plate Chest (BoE)
@@ -154,6 +141,7 @@ ns.SANITY_CHECK_DUNGEON_BOSSES = {
 	{ 13335, "OTHER" }, -- Deathcharger's Reins (BoP)
 }
 
+-- { itemId, kind }
 ns.SANITY_CHECK_RAID_BOSSES = {
 	-- Uncommon
 	{ 8290, "UNCOMMON" }, -- Arcane Robe (BoE)
@@ -196,10 +184,12 @@ ns.SANITY_CHECK_RAID_BOSSES = {
 How We Got the Data
 
 Last Validated
-	2026-11-18, Classic Era 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
+	- Character Rules' armor and weapon rows, and what each class starts with ticked. A row is an item subclass ID, or a name for a row no subclass names. Gear that is a ticked type and carries a ticked stat is left to the player to roll; the rest of the gear is greeded (Features/Character-Rules.lua).
 	- SANITY_CHECK_TRASH, SANITY_CHECK_DUNGEON_BOSSES and SANITY_CHECK_RAID_BOSSES: the Loot Roll Sanity Check's drops, picked from Wowhead's classic item data (zone drop tables for the dungeons and raids of this expansion's last level band, and its most popular items of each quality for gear outside them), then each item checked one by one against Wowhead's tooltip for this client for its quality, its binding and fixed stats (no random enchantment), on 2026-11-16. Not literally from that kind of kill: a section mixes Bind on Pickup and Bind on Equip, and every section holds at least four greens and five blues, and Trash and Raid Bosses at least six Bind on Equip epics, so a draw can always show two of each (Options/Options-Sanity-Check.lua). OTHER rows are picked by hand to show a gate: a mount or legendary (Never Automated), a quest item or token, or a default Item Overrides row. Diagnostics' Validate Data lists each row with its kind, to compare against the item's quality in game.
+	- The Sanity Check draws ten at a time from one list per section (Options/Options-Sanity-Check.lua). kind is UNCOMMON, RARE, EPIC_BOE or EPIC by the item's quality and binding, so a draw can promise each section its greens, blues and Bind on Equip epics, or OTHER for a row that shows one of Automated Rolls' gates. A row this client doesn't have is never drawn.
 	- The starter lists every character gets until the player changes a box, worked out from Play It Forward's Match-Armor, Match-Weapons and Match-Specs tables, which its author validated on this client (its tables as of 2026-10-29, Classic Era 1.15.9.70576). Nothing is saved until the player changes a box, and Reset to Class Defaults clears what was saved.
 	- Armor: every material the class can wear, its own and every lighter one (Play It Forward's NATIVE_ARMOR steps give the heaviest), so a paladin starts with Cloth, Leather, Mail and Plate and a druid with Cloth and Leather. Play It Forward ticks only the class's own materials; GogoLoot ticks the lighter ones too, mostly for healers, who wear them (maintainer, 2026-11-07). Shields, held off-hands and relics: the classes whose Play It Forward WEAPON_SPECS count is above 0.
 	- Weapons: every type the class can train (WEAPON_SPECS above 0), assuming the character has trained everything (maintainer, 2026-11-07).

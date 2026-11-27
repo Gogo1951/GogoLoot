@@ -9,24 +9,15 @@ local CountKeys = ns.CountDiagnosticKeys
 
 --[[
     Existence and shape checks only: read-only, no side effects, no protected
-    calls. One row per API GogoLoot calls or guards, wherever it lives, plus the
-    globals its core loop can't run without. Modern and legacy fallbacks are
-    listed separately so the report shows exactly what each client provides,
-    and Validate-Data.lua appends the readers its own export uses. The two trade-result globals are the only strings
-    probed for that path: both the trade watcher and the master-loot error
-    correlation match on numeric message ids resolved through
-    GetGameMessageInfo, and read those globals only as a fallback for a client
-    where the constants resolved to no id at all. Which constants did resolve
-    is reported by Loot Method, since an existence check cannot show that.
+    calls. Modern and legacy fallbacks are separate rows, so a FAIL on one half
+    shows which branch this client took.
 ]]
--- Builds the check for a global of one type, read by name so a client without it reads nil.
 local function GlobalIsType(globalName, expectedType)
 	return function()
 		return type(_G[globalName]) == expectedType
 	end
 end
 
--- Builds the check for a function inside a namespace table.
 local function MemberIsFunction(namespaceName, memberName)
 	return function()
 		local namespace = _G[namespaceName]
@@ -37,7 +28,7 @@ end
 ns.DIAGNOSTIC_API_CHECKS = {
 	-- { label, testFunction }
 
-	-- Add-on metadata — Core.lua version lookup, Flavor.lua, the Other Add-ons report, and Automated Opening Context's Open Sesame check
+	-- Add-on metadata — version, flavor, the Other Add-ons report, the Open Sesame check
 	{
 		"C_AddOns.GetAddOnMetadata",
 		function()
@@ -106,12 +97,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 		end,
 	},
 	{ "C_Spell.IsSpellDataCached", MemberIsFunction("C_Spell", "IsSpellDataCached") },
-	--[[
-	    The tooltip-text pair ns.GetTooltipLines picks between: the data getters
-	    where the client ships both, the hidden scan tooltip where it doesn't. A
-	    FAIL on one half is the report working, since the pair says which branch
-	    this client took.
-	]]
+	-- ns.GetTooltipLines takes the data getters where the client ships both, else the hidden scan tooltip.
 	{ "C_TooltipInfo.GetItemByID", MemberIsFunction("C_TooltipInfo", "GetItemByID") },
 	{ "C_TooltipInfo.GetSpellByID", MemberIsFunction("C_TooltipInfo", "GetSpellByID") },
 	{
@@ -123,11 +109,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 				and type(GameTooltip.NumLines) == "function"
 		end,
 	},
-	--[[
-	    Validate Data's other item reads; one a client lacks leaves its columns
-	    blank. The stat read goes through ns.GetItemStats, so a client needs
-	    either C_Item.GetItemStats or the legacy GetItemStats.
-	]]
+	-- Validate Data's other item reads; one a client lacks leaves its columns blank. ns.GetItemStats needs either half.
 	{ "C_Item.GetDetailedItemLevelInfo", MemberIsFunction("C_Item", "GetDetailedItemLevelInfo") },
 	{ "C_Item.GetItemStats", MemberIsFunction("C_Item", "GetItemStats") },
 	{ "GetItemStats (legacy)", GlobalIsType("GetItemStats", "function") },
@@ -198,12 +180,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	},
 	-- Speedy Loot hides the window through this frame's OnShow hook; without it the window flashes.
 	{ "LootFrame (frame)", GlobalIsType("LootFrame", "table") },
-	--[[
-	    Speedy Loot's bag-space budget: a specialty bag's family through either
-	    half of the family read, and the keyring where the client has one,
-	    asked through whichever of the two keyring checks it ships. A FAIL on
-	    one half of a pair is the report saying which this client took.
-	]]
+	-- Speedy Loot's bag-space budget: a bag's family, and the keyring where the client has one, each read either way.
 	{ "C_Item.GetItemFamily", MemberIsFunction("C_Item", "GetItemFamily") },
 	{ "GetItemFamily (legacy)", GlobalIsType("GetItemFamily", "function") },
 	{ "KEYRING_CONTAINER (number)", GlobalIsType("KEYRING_CONTAINER", "number") },
@@ -388,7 +365,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 		end,
 	},
 
-	-- Auto-loot CVar — Auto-Loot.lua / Utilities.lua; SetCVar and GetCVar are Diagnostics' own, for its Taint Log and its CVar, Display and Taint reads
+	-- Auto-loot CVar — Auto-Loot.lua / Utilities.lua; SetCVar and GetCVar are Diagnostics' own
 	{
 		"C_CVar.GetCVarBool",
 		function()
@@ -452,13 +429,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	-- The group channel an announcement goes to — Announcements.lua
 	{ "LE_PARTY_CATEGORY_INSTANCE (number)", GlobalIsType("LE_PARTY_CATEGORY_INSTANCE", "number") },
 
-	--[[
-        Master-loot error correlation and trade-result detection both resolve
-        constant names to this client's numeric ids through GetGameMessageInfo,
-        so that one API is all there is to probe. Which constants actually
-        resolved is reported by the Loot Method report, since an
-        existence check can't show that.
-    ]]
+	-- Master-loot errors and trade results match on ids resolved through this; Loot Method shows which resolved.
 	{
 		"GetGameMessageInfo",
 		function()
@@ -466,11 +437,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 		end,
 	},
 
-	--[[
-        Trade result globals — Announcements-Trade.lua. These are only the
-        fallback for a client where neither constant resolved to an id; the ids
-        themselves are in the Loot Method report.
-    ]]
+	-- Trade result text — Announcements-Trade.lua, only for a client where neither constant resolved to an id
 	{
 		"ERR_TRADE_COMPLETE",
 		function()
@@ -499,6 +466,16 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "SpellIsTargeting", GlobalIsType("SpellIsTargeting", "function") },
 	{ "CursorHasItem", GlobalIsType("CursorHasItem", "function") },
 	{ "GameTooltip.GetItem", MemberIsFunction("GameTooltip", "GetItem") },
+	-- The roll preview hooks through this where the client has it, else OnTooltipSetItem — Roll-Preview-Tooltip.lua
+	{ "TooltipDataProcessor.AddTooltipPostCall", MemberIsFunction("TooltipDataProcessor", "AddTooltipPostCall") },
+	{
+		"Enum.TooltipDataType.Item",
+		function()
+			return type(Enum) == "table" and type(Enum.TooltipDataType) == "table" and Enum.TooltipDataType.Item ~= nil
+		end,
+	},
+	-- The tooltip a clicked item link opens, the preview's other tooltip
+	{ "ItemRefTooltip (frame)", GlobalIsType("ItemRefTooltip", "table") },
 	{ "UnitCastingInfo", GlobalIsType("UnitCastingInfo", "function") },
 	{ "UnitChannelInfo", GlobalIsType("UnitChannelInfo", "function") },
 	{ "IsStealthed", GlobalIsType("IsStealthed", "function") },
@@ -540,23 +517,13 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "GOLD_AMOUNT_SYMBOL (string)", GlobalIsType("GOLD_AMOUNT_SYMBOL", "string") },
 	{ "SILVER_AMOUNT_SYMBOL (string)", GlobalIsType("SILVER_AMOUNT_SYMBOL", "string") },
 	{ "COPPER_AMOUNT_SYMBOL (string)", GlobalIsType("COPPER_AMOUNT_SYMBOL", "string") },
-	--[[
-	    The player's own currency lines, read back for a currency toast, and the
-	    currency's icon — Loot-Toasts-Money.lua. Currency arrived with
-	    Cataclysm, so a FAIL is expected on the earlier clients.
-	]]
+	-- Currency toasts — Loot-Toasts-Money.lua. Currency arrived with Cataclysm, so a FAIL is expected before it.
 	{ "CURRENCY_GAINED (string)", GlobalIsType("CURRENCY_GAINED", "string") },
 	{ "CURRENCY_GAINED_MULTIPLE (string)", GlobalIsType("CURRENCY_GAINED_MULTIPLE", "string") },
 	{ "CURRENCY_GAINED_MULTIPLE_BONUS (string)", GlobalIsType("CURRENCY_GAINED_MULTIPLE_BONUS", "string") },
 	{ "C_CurrencyInfo.GetCurrencyInfo", MemberIsFunction("C_CurrencyInfo", "GetCurrencyInfo") },
 
-	--[[
-        The roll lines, read back for the winning roll on a toast and kept out
-        of chat by Hide Roll Messages — Utilities-Chat-Lines.lua. The core forms every
-        client prints; a FAIL means that line goes unread there. The others
-        (Disenchant, the quiet won lines) are read only where the client has
-        them.
-    ]]
+	-- The core roll lines every client prints — Utilities-Chat-Lines.lua; a FAIL means that line goes unread there.
 	{ "LOOT_ROLL_NEED (string)", GlobalIsType("LOOT_ROLL_NEED", "string") },
 	{ "LOOT_ROLL_GREED (string)", GlobalIsType("LOOT_ROLL_GREED", "string") },
 	{ "LOOT_ROLL_PASSED (string)", GlobalIsType("LOOT_ROLL_PASSED", "string") },
@@ -564,6 +531,8 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "LOOT_ROLL_ROLLED_GREED (string)", GlobalIsType("LOOT_ROLL_ROLLED_GREED", "string") },
 	{ "LOOT_ROLL_WON (string)", GlobalIsType("LOOT_ROLL_WON", "string") },
 	{ "LOOT_ROLL_YOU_WON (string)", GlobalIsType("LOOT_ROLL_YOU_WON", "string") },
+	-- Roll Audit lists a roll everyone passed on from this line — Roll-Audit.lua
+	{ "LOOT_ROLL_ALL_PASSED (string)", GlobalIsType("LOOT_ROLL_ALL_PASSED", "string") },
 	{ "NEED (string)", GlobalIsType("NEED", "string") },
 	{ "GREED (string)", GlobalIsType("GREED", "string") },
 	-- Hide Roll Messages — Roll-Messages.lua
@@ -577,14 +546,9 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "AlertFrame.IsEventRegistered", MemberIsFunction("AlertFrame", "IsEventRegistered") },
 
 	--[[
-	    Tradable Gear Tint — Tint-Tradable-Gear.lua: the trade clock line it
-	    reads off an item's tooltip, with the units it counts in, and the
-	    default bags' redraw it hooks. Clients with the modern bag frames
-	    redraw through each frame's own UpdateItems instead, so a FAIL on
-	    ContainerFrame_Update is expected there, and a FAIL on the modern
-	    frames is expected on the others; Loot Method lists the bag windows it
-	    hooked. The clock counts down against the server time, else the
-	    computer's own.
+	    Tradable Gear Tint — Tint-Tradable-Gear.lua: the tooltip's trade clock
+	    and the bag redraw it hooks, legacy or modern frames, so a FAIL on one
+	    of that pair is expected.
 	]]
 	{ "BIND_TRADE_TIME_REMAINING (string)", GlobalIsType("BIND_TRADE_TIME_REMAINING", "string") },
 	{ "INT_SPELL_DURATION_HOURS (string)", GlobalIsType("INT_SPELL_DURATION_HOURS", "string") },
@@ -595,11 +559,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	{ "NUM_CONTAINER_FRAMES (number)", GlobalIsType("NUM_CONTAINER_FRAMES", "number") },
 	{ "GetServerTime", GlobalIsType("GetServerTime", "function") },
 
-	--[[
-	    Automated Opening's Fishing Pole hold-off reads the main hand's item
-	    class and subclass: Data.lua takes the enum, else the legacy global,
-	    else a fixed number, and the slot from INVSLOT_MAINHAND, else 16.
-	]]
+	-- Automated Opening's Fishing Pole hold-off; Data.lua falls back to fixed numbers.
 	{
 		"Enum.ItemWeaponSubclass.Fishingpole",
 		function()
@@ -613,12 +573,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 
 	-- The Loot Toasts Quest row's quest-starter read — Utilities-Scan-Tooltip.lua
 	{ "ITEM_STARTS_QUEST (string)", GlobalIsType("ITEM_STARTS_QUEST", "string") },
-	--[[
-	    The item classes the Filters rows and the item lists' headers file
-	    items under, Data.lua's ns.ITEM_CLASS_* constants: the legacy globals
-	    first, then Enum.ItemClass, then a fixed number. A FAIL on one half is
-	    the report saying which this client took.
-	]]
+	-- Data.lua's ns.ITEM_CLASS_*: Enum.ItemClass first, then the legacy globals, then a fixed number.
 	{ "LE_ITEM_CLASS_ARMOR (number)", GlobalIsType("LE_ITEM_CLASS_ARMOR", "number") },
 	{
 		"Enum.ItemClass",
@@ -626,7 +581,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 			return type(Enum) == "table" and type(Enum.ItemClass) == "table"
 		end,
 	},
-	-- The bind types and the Mount and Companion Pets subclasses, from the same kind of route: the enum, else a fixed number.
+	-- The bind types and the Mount and Companion Pets subclasses: the enum, else a fixed number.
 	{
 		"Enum.ItemBind",
 		function()
@@ -639,7 +594,7 @@ ns.DIAGNOSTIC_API_CHECKS = {
 			return type(Enum) == "table" and type(Enum.ItemMiscellaneousSubclass) == "table"
 		end,
 	},
-	-- The mini-map tooltip names each group context with these — Minimap-Button.lua
+	-- The group context names — Minimap-Menu.lua, Roll-Preview-Tooltip.lua
 	{ "PARTY (string)", GlobalIsType("PARTY", "string") },
 	{ "RAID (string)", GlobalIsType("RAID", "string") },
 	-- A group member's name on a toast takes their class color from here; without it the name reads silver.
@@ -672,11 +627,9 @@ ns.DIAGNOSTIC_API_CHECKS = {
 	-- The Rogue's class name in the Lockboxes text and the Locked reason
 	{ "LOCALIZED_CLASS_NAMES_MALE (table)", GlobalIsType("LOCALIZED_CLASS_NAMES_MALE", "table") },
 	--[[
-        Proves bindType's return position rather than trusting it: the probe
-        item is Bind on Pickup and in every bag, so a FAIL here with the
-        Hearthstone cached means the Bind on Pickup toast option reads the wrong
-        return on this client.
-    ]]
+	    Proves bindType's return position: a FAIL with the Hearthstone cached
+	    means the Bind on Pickup reads take the wrong return on this client.
+	]]
 	{
 		"C_Item.GetItemInfo bindType (14th return) on the Hearthstone",
 		function()
@@ -733,11 +686,9 @@ ns.DIAGNOSTIC_API_CHECKS = {
 --------------------------------------------------------------------------------
 
 --[[
-    The probes read feature state through the accessors the feature files
-    export (ns:IsAutomatedOpeningPaused, ns:AreWeMasterLooter and the like), so
-    a report shows the exact values the features act on rather than a copy of
-    their logic. Where a feature keeps a gate to itself, the probe prints each
-    input the gate reads instead.
+    Probes read state through the feature files' own accessors, so a report
+    shows the values the features act on; where a gate is private, they print
+    its inputs.
 ]]
 
 -- The add-on's own example reports, appended to the shared Event Log intro.
@@ -757,7 +708,6 @@ local function LinkCell(link)
 	return link and (tostring(link):gsub("|", "||")) or ""
 end
 
--- The profile every switch below is read from, and the character whose own section Character Rules reads.
 local function AppendProfileLines(lines)
 	lines[#lines + 1] = string.format(
 		"Profile: %s // Character: %s",
@@ -775,7 +725,6 @@ local function AppendProfileLines(lines)
 	)
 end
 
--- autoLootDefault, the one CVar GogoLoot reads and enforces (Features/Auto-Loot.lua), raw and as the add-on reads it.
 local function AppendAutoLootLine(lines)
 	lines[#lines + 1] = string.format(
 		"Auto Loot (autoLootDefault CVar): raw %s, as GogoLoot reads it %s, enforced while Speedy Loot or Automated Opening is on: %s",
@@ -793,7 +742,6 @@ local function AppendFreeSlotsLine(lines)
 	)
 end
 
--- Every bag slot's item link, bag 0 first.
 local function BagItemLinks()
 	local links = {}
 	for bagIndex = 0, NUM_BAG_SLOTS do
@@ -814,26 +762,16 @@ ns.DiagnosticBagItemLinks = BagItemLinks
 --------------------------------------------------------------------------------
 
 --[[
-    Live read of the loot-method APIs the master-looter path depends on. An
-    existence check can't prove the APIs return the shapes GogoLoot's guards
-    expect, so this prints the actual return values, the Enum.LootMethod
-    constants the modern API is mapped onto (Master-Looter.lua SafeGetLootMethod),
-    and how GogoLoot ultimately interprets them via AreWeMasterLooter and
-    WillAutoMasterLoot, then every setting and destination Automated Master
-    Looting reads. All calls are read-only.
+    An existence check can't prove the loot-method APIs return the shapes
+    GogoLoot's guards expect, so this prints their actual returns and how
+    GogoLoot reads them. Read-only.
 ]]
 
 local function PackReturns(...)
 	return select("#", ...), { ... }
 end
 
---[[
-    One "constant -> id on this client" block, sorted so two reports from
-    different clients diff cleanly. `describe` turns the constant table's value
-    into the trailing note, since the two tables carry different things: the
-    loot table carries the locale key it announces, the trade table the result
-    it means.
-]]
+-- Sorted, so two clients' reports diff cleanly. `describe` gives each table's trailing note.
 ---@param lines table
 ---@param heading string
 ---@param constants table
@@ -859,16 +797,11 @@ local function AppendResolvedIdLines(lines, heading, constants, resolvedIds, des
 	end
 end
 
--- The loading-screen guard's timer in Features/Master-Looter.lua, which ns:IsTimerPending reads by name.
+-- Must match the timer names in Features/Master-Looter.lua: ns:IsTimerPending reads them by name.
 local ZONE_SETTLE_TIMER = "GogoLoot.MasterLooter.ZoneSettle"
+local LOGIN_SOLO_TIMER = "GogoLoot.MasterLooter.LoginSolo"
 
---[[
-    Tradable Gear Tint (Features/Tint-Tradable-Gear.lua) answers to its own
-    switch: the bag windows it hooked, the color it lays (an alpha of 0 draws
-    nothing), and each carried item it reads, Bind on Pickup at or above
-    ns.TRADABLE_MIN_QUALITY, with the trade clock its tooltip gives. No clock
-    means Soulbound, so no tint. Reading a tooltip is a read.
-]]
+-- Tradable Gear Tint (Features/Tint-Tradable-Gear.lua). An alpha of 0 draws nothing; no trade clock means Soulbound.
 local function AppendTradableTintLines(lines, profile)
 	local color = profile.tradableTintColor or {}
 	local hooked = ns.GetTradableTintAdapterNames and ns:GetTradableTintAdapterNames() or {}
@@ -881,11 +814,7 @@ local function AppendTradableTintLines(lines, profile)
 		tostring(color.a),
 		#hooked > 0 and table.concat(hooked, ", ") or "none"
 	)
-	--[[
-	    The slot's own bound flag and quality come first, as PaintButton reads
-	    them; an item that passes those but hasn't loaded yet gets no tint until
-	    it does.
-	]]
+	-- The slot's bound flag and quality first, as PaintButton reads them; an unloaded item gets no tint until it loads.
 	local read = {}
 	for bagIndex = 0, NUM_BAG_SLOTS do
 		for slotIndex = 1, C_Container.GetContainerNumSlots(bagIndex) or 0 do
@@ -926,12 +855,7 @@ local function AppendTradableTintLines(lines, profile)
 	end
 end
 
---[[
-    What Automated Master Looting reads before it hands anything out: the group
-    and instance it is in, its switches, and each quality's destination with
-    whether the loot threshold lets that quality reach the master looter at
-    all. An unset destination is Loot Window: nothing goes out automatically.
-]]
+-- What Automated Master Looting reads before it hands anything out.
 local function AppendMasterLootSettings(lines)
 	local _, instanceType = GetInstanceInfo()
 	lines[#lines + 1] = ""
@@ -947,6 +871,11 @@ local function AppendMasterLootSettings(lines)
 	lines[#lines + 1] = string.format(
 		"Loading-screen guard settling (loot state ignored for a moment): %s",
 		YesNo(ns:IsTimerPending(ZONE_SETTLE_TIMER))
+	)
+	-- A login that settles solo clears every destination (ClearDestinationsIfSoloAtLogin in Features/Master-Looter.lua).
+	lines[#lines + 1] = string.format(
+		"Login solo check waiting (clears the destinations if you're still solo when it runs): %s",
+		YesNo(ns:IsTimerPending(LOGIN_SOLO_TIMER))
 	)
 
 	local profile = ns.db and ns.db.profile
@@ -978,13 +907,10 @@ local function AppendMasterLootSettings(lines)
 end
 
 --[[
-    The names the game offers one loot slot to, keyed the way the distribution
-    pass looks a destination up (BuildCandidateMap in
-    Features/Master-Looter-Distribution.lua): lowercased, and normalized
-    without a realm. The pass also drops a normalized name two candidates
-    share, which this leaves in.
+    Keyed as BuildCandidateMap (Features/Master-Looter-Distribution.lua) keys
+    them: the lowercased full name, plus the realm-stripped name only where
+    one candidate carries it.
 ]]
--- As BuildCandidateMap keys them: the full name, plus the realm-stripped name only where one candidate carries it.
 local function SlotCandidates(slotIndex)
 	local candidates, names, normalizedCounts = {}, {}, {}
 	for groupIndex = 1, GetNumGroupMembers() do
@@ -1006,11 +932,7 @@ local function SlotCandidates(slotIndex)
 	return candidates, names
 end
 
---[[
-    The first check that keeps one slot from being handed out, in the order
-    TryDistributeSlot in Features/Master-Looter-Distribution.lua makes them, or
-    who it would go to.
-]]
+-- Checks in TryDistributeSlot's order (Features/Master-Looter-Distribution.lua); keep the two in step.
 local function MasterLootSlotVerdict(profile, itemInformation, itemIdentifier, candidates)
 	if not itemInformation then
 		return "NOT CACHED (the pass waits for it)"
@@ -1047,11 +969,7 @@ local function MasterLootSlotVerdict(profile, itemInformation, itemIdentifier, c
 	return "HANDS OUT TO " .. tostring(resolvedName)
 end
 
---[[
-    The open loot window slot by slot: what each holds, who the game offers it
-    to, and the verdict. Read while the window is open; with WillAutoMasterLoot
-    false, nothing is handed out whatever a row says.
-]]
+-- With WillAutoMasterLoot false, nothing is handed out whatever a row says.
 local function AppendOpenLootWindow(lines)
 	local slotCount = GetNumLootItems()
 	lines[#lines + 1] = ""
@@ -1086,7 +1004,7 @@ end
 function ns:BuildLootMethodReport()
 	local lines = { GetClientHeader(), "" }
 
-	-- Raw API returns — legacy first, then modern, so the report shows what each client exposes.
+	-- Raw returns, legacy then modern, so the report shows what each client exposes.
 	if type(GetLootMethod) == "function" then
 		local count, values = PackReturns(GetLootMethod())
 		lines[#lines + 1] = string.format("GetLootMethod() [legacy] -> %d value(s):", count)
@@ -1119,10 +1037,6 @@ function ns:BuildLootMethodReport()
 		lines[#lines + 1] = "Enum.LootMethod: not available (legacy string API in use)"
 	end
 
-	--[[
-	    How GogoLoot interprets the above. WillAutoMasterLoot additionally depends
-	    on the Automated Master Looting setting and, outside instances, its override.
-	]]
 	lines[#lines + 1] = ""
 	lines[#lines + 1] = "GogoLoot interpretation:"
 	lines[#lines + 1] =
@@ -1144,18 +1058,10 @@ function ns:BuildLootMethodReport()
 	end
 
 	--[[
-        Which message constants resolved to a numeric id on this client, for both
-        the master-loot errors and the trade results. An existence check can't
-        show this: the ids are per-flavor and are looked up by name through
-        GetGameMessageInfo, so a constant that resolves to nothing here is a
-        result this client will never report — a trade watcher that works on Era
-        and is dead on Anniversary looks identical to one that works everywhere
-        until this block is read.
-
-        Both tables go through one walk. The scan is the entire cost of the
-        lookup, and running it twice would only invite the two blocks to disagree
-        about how many messages the client carries.
-    ]]
+	    Ids are per flavor and looked up by name, so a constant that resolves
+	    to nothing here is a result this client never reports. One walk serves
+	    both tables, so the two blocks can't disagree about the message count.
+	]]
 	lines[#lines + 1] = ""
 	if type(ns.GetGameMessageInfo) ~= "function" then
 		lines[#lines + 1] = "Game message ids: GetGameMessageInfo not available"
@@ -1208,14 +1114,7 @@ end
 -- Speedy Loot Context
 --------------------------------------------------------------------------------
 
---[[
-    What the Loot Sounds read beyond their switches: the open loot window's
-    source (CurrentLootSource in Features/Loot-Sounds.lua chimes only for a
-    corpse, chest or node, never for loot an item made), whether the player's
-    casts read secret on WoW Forever (a secret Pick Pocket cast never arms its
-    sound), and the game's own sound switch and master volume, which both
-    sounds play through.
-]]
+-- What the Loot Sounds read beyond their switches (CurrentLootSource in Features/Loot-Sounds.lua).
 local function AppendLootSoundInputs(lines)
 	local slotCount = GetNumLootItems()
 	if slotCount > 0 then
@@ -1249,12 +1148,8 @@ local function AppendLootSoundInputs(lines)
 end
 
 --[[
-    The space a Speedy Loot pass measures loot against (ReadBagSpace in
-    Features/Speedy-Loot.lua): each bag's free slots and family, 0 for a
-    general-purpose bag, and the keyring where the client has one, asked the
-    way the feature asks. A herb or a key with no bag of its family left takes
-    a general slot, so a full herb bag can strand loot while general slots
-    read free.
+    As ReadBagSpace (Features/Speedy-Loot.lua) reads it; family 0 is a general
+    bag. An item with no bag of its family left takes a general slot.
 ]]
 local function AppendBagSpaceLines(lines)
 	local bags = {}
@@ -1278,12 +1173,9 @@ local function AppendBagSpaceLines(lines)
 end
 
 --[[
-    Every slot in the open loot window with what the pass reads on it, bottom
-    first as the pass walks it: a LOCKED slot is skipped (still being rolled
-    for, or not the player's yet), and a taken item whose bind type is Bind on
-    Pickup, or nil because the client hasn't loaded it, keeps the window up.
-    STACK, CARRIED and FAMILY are what the pass weighs to find the item room
-    (TakeSpaceFor). Reading an item's info may ask the client to load it.
+    Bottom first, as the pass walks it. A LOCKED slot is skipped; a Bind on
+    Pickup or not-yet-loaded item keeps the window up. STACK, CARRIED and
+    FAMILY are what TakeSpaceFor weighs.
 ]]
 local function AppendSpeedyLootSlots(lines)
 	local slotCount = GetNumLootItems()
@@ -1325,12 +1217,10 @@ local function AppendSpeedyLootSlots(lines)
 end
 
 --[[
-    Speedy Loot (Features/Speedy-Loot.lua) acts on LOOT_READY only when its
-    switch is on, the player isn't the master looter, and Auto Loot and the
-    auto-loot modifier disagree (Auto Loot on and the key up, or off and the key
-    held), and it keeps the window up when the bags run short. The Loot Sounds
-    read the same loot window. The modifier's key comes from GetModifiedClick,
-    which GogoLoot itself never calls, so it is read through _G and may be nil.
+    Speedy Loot acts on LOOT_READY only with its switch on, not as master
+    looter, and when Auto Loot and the auto-loot modifier disagree.
+    GetModifiedClick is read through _G and may be nil: GogoLoot itself never
+    calls it.
 ]]
 function ns:BuildSpeedyLootContextReport()
 	local lines = { GetClientHeader(), "" }
@@ -1358,11 +1248,7 @@ function ns:BuildSpeedyLootContextReport()
 	)
 	AppendFreeSlotsLine(lines)
 	AppendBagSpaceLines(lines)
-	--[[
-	    The window the pass hides is ElvUI's or Tukui's where one is loaded,
-	    else LootFrame, hidden through its Open method where the frame carries
-	    one (WoW Forever) and through OnShow everywhere else.
-	]]
+	-- LootFrame is hidden through its Open method where it carries one (WoW Forever), else through OnShow.
 	local lootWindow = ns.GetLootWindow()
 	lines[#lines + 1] = string.format(
 		"Loot window: %s, shown %s, slots now %d; LootFrame hidden through %s",
@@ -1392,11 +1278,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    The windows Automated Opening waits out (IsInteractionActive in
-    Features/Automated-Opening.lua), by their global names. A client lacks the
-    auction house it doesn't use, which reads as closed. The loot window is
-    whichever ns.GetLootWindow picks, ElvUI's or Tukui's ahead of LootFrame,
-    as the opener reads it.
+    As IsInteractionActive (Features/Automated-Opening.lua) lists them; a frame
+    the client lacks reads as closed. The loot window is added separately.
 ]]
 local INTERACTION_FRAMES = {
 	"MerchantFrame",
@@ -1410,7 +1293,6 @@ local INTERACTION_FRAMES = {
 	"QuestFrame",
 }
 
--- The open windows by name, or "none".
 local function OpenInteractionFrames()
 	local shown = {}
 	for _, frameName in ipairs(INTERACTION_FRAMES) do
@@ -1426,9 +1308,8 @@ local function OpenInteractionFrames()
 end
 
 --[[
-    Stealth and Shadowmeld as the opener reads them. On WoW Forever an aura or a
-    cast can read secret, and a secret can't be tested, so each is asked of
-    C_Secrets first and left unread when it would be secret, as the feature does.
+    On WoW Forever an aura or cast can read secret, and a secret can't be
+    tested, so each is asked of C_Secrets first and left unread if secret.
 ]]
 local function AppendStealthAndCastLines(lines)
 	local auraSecret = C_Secrets.ShouldSpellAuraBeSecret(ns.SPELLS.SHADOWMELD) and true or false
@@ -1468,7 +1349,6 @@ local function AppendWaitingOnPlayerLine(lines)
 	)
 end
 
--- The Openables List: the data's rows, the player's saved changes by kind, and what is listed now.
 local function AppendOpenablesLines(lines)
 	local changed, added, removed = 0, 0, 0
 	for itemIdentifier, action in pairs(ns.db.global.openingActions) do
@@ -1516,11 +1396,9 @@ end
 local OPEN_SESAME_FOLDER = "Open-Sesame"
 
 --[[
-    Everything Automated Opening checks before an open (IsSafeToOpen and the
-    open tick in Features/Automated-Opening.lua), each input as it reads now,
-    then the list and lockbox settings behind which items it opens at all. The
-    items it set aside after refused opens are held inside that file and don't
-    show here; a /reload or a level-up clears them.
+    IsSafeToOpen's inputs and the open tick's (Features/Automated-Opening.lua).
+    Items set aside after refused opens stay private to that file and don't
+    show here.
 ]]
 function ns:BuildOpeningContextReport()
 	local lines = { GetClientHeader(), "" }
@@ -1570,12 +1448,7 @@ end
 -- Locked Boxes
 --------------------------------------------------------------------------------
 
---[[
-    What Automated Opening would do with one bag slot, read the way ShouldOpen
-    in Features/Automated-Opening.lua reads it: not listed, set to Ignore,
-    waiting for a level, waiting for its lock, or ready. An item set aside after
-    refused opens still reads OPEN here.
-]]
+-- As ShouldOpen (Features/Automated-Opening.lua) reads it; an item set aside after refused opens still reads OPEN.
 local function OpeningVerdict(action, requiredLevel, locked)
 	if action == nil then
 		return "NOT LISTED"
@@ -1593,10 +1466,9 @@ local function OpeningVerdict(action, requiredLevel, locked)
 end
 
 --[[
-    Whether the client's own tooltip already states the Lockpicking
-    requirement, matched as Lockbox Tooltips matches it (ITEM_MIN_SKILL). When
-    it does, Lockbox Tooltips adds only your rank, and adds nothing at all
-    where your rank can't be read.
+    Matched as Lockbox Tooltips matches it. When the client states the
+    requirement, Lockbox Tooltips adds only your rank, or nothing if the rank
+    can't be read.
 ]]
 local function ClientStatesRequirement(bagIndex, slotIndex)
 	local pattern = ns.BuildFormatPattern(ITEM_MIN_SKILL)
@@ -1612,16 +1484,9 @@ local function ClientStatesRequirement(bagIndex, slotIndex)
 end
 
 --[[
-    Every openable item in the bags with the verdict Automated Opening acts on:
-    its data default, reason included (UNLOCKED, IGNORE_RAID and the like), its
-    action (nil for one the player removed), the level it needs (blank while
-    the item isn't cached), and whether the scan tooltip reads it as locked.
-    The tooltip's line count is what separates a truly unlocked box from a scan
-    tooltip that read nothing at all, since both answer "not locked". Then
-    what Lockbox Tooltips reads on it: the Lockpicking it needs, blank for an
-    item the data doesn't list (which gets no tooltip block), and whether the
-    client's tooltip already states that. A lockbox off the Openables List
-    still gets a row. Read-only; nothing here opens anything.
+    TOOLTIP_LINES separates a truly unlocked box from a scan tooltip that read
+    nothing, since both answer "not locked". A lockbox off the Openables List
+    still gets a row. Read-only.
 ]]
 ---@return string
 function ns:BuildLockedBoxesReport()
@@ -1719,19 +1584,9 @@ local function SavedRules()
 end
 
 --[[
-    What decides a roll (EvaluateRoll in Features/Automated-Rolls.lua): the
-    master switch, Item Overrides ahead of everything else, then Character
-    Rules for anything that isn't a quest item, then the group context's
-    setting, which only ever takes items that aren't Bind on Pickup.
-    Legendaries, recipes, mounts and pets are never rolled on at all. Hide Roll
-    Messages answers to the master switch too.
-
-    A roll open now is checked as the roll handler checks it: whether its link
-    has resolved, whether Need and Greed are open to the player (a Need with no
-    Need open falls back to Greed, and nothing rolls without Greed), and
-    whether its retry is still polling for an item the client hasn't loaded.
-    The retry's timer name is ROLL_RETRY_TIMER_PREFIX in
-    Features/Automated-Rolls.lua plus the roll id.
+    An open roll is checked as the roll handler checks it: a Need with no Need
+    open falls back to Greed, and nothing rolls without Greed. Must match
+    ROLL_RETRY_TIMER_PREFIX in Features/Automated-Rolls.lua.
 ]]
 local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
 
@@ -1774,10 +1629,8 @@ local function AppendOpenRolls(lines)
 end
 
 --[[
-    How many of the Equip spells whose descriptions word the stat lines have
-    loaded this session: one that hasn't builds no pattern, so its stat goes
-    unseen on an Equip line. Read before Roll Verdicts and Gear Stats, which
-    ask the client to load them.
+    An Equip spell not loaded yet builds no pattern, so its stat goes unseen
+    on an Equip line. Read before Roll Verdicts and Gear Stats ask for them.
 ]]
 local function EquipSpellsLoaded()
 	local loaded, total = 0, 0
@@ -1793,11 +1646,9 @@ local function EquipSpellsLoaded()
 end
 
 --[[
-    The Roll Safety Warning (CheckRollSafety in Features/Automated-Rolls.lua)
-    prints a moment after a loading screen into a dungeon or raid, with
-    Automated Rolls on, when the roll that applies there is Need or Pass. A
-    /reload stays quiet, and so does coming back to the same instance with the
-    same roll within half an hour, which this can't see.
+    CheckRollSafety (Features/Automated-Rolls.lua) also stays quiet on a
+    /reload and on a return to the same instance with the same roll within
+    half an hour, which this can't see.
 ]]
 local SAFETY_WARNING_ROLLS = { [ns.NEED] = true, [ns.PASS] = true }
 
@@ -1813,6 +1664,55 @@ local function AppendRollSafetyLines(lines, profile)
 		tostring(action),
 		YesNo(profile.autoGreed and profile.rollSafetyWarning and inInstance and SAFETY_WARNING_ROLLS[action])
 	)
+end
+
+-- The same hook test Features/Roll-Preview-Tooltip.lua makes at load.
+local function AppendRollPreviewLine(lines, profile)
+	local hasPostCall = TooltipDataProcessor
+		and TooltipDataProcessor.AddTooltipPostCall
+		and Enum
+		and Enum.TooltipDataType
+	lines[#lines + 1] = string.format(
+		"Roll preview on item tooltips: shows now %s (needs Automated Rolls), hooked through %s",
+		YesNo(profile.autoGreed),
+		hasPostCall and "TooltipDataProcessor" or "OnTooltipSetItem"
+	)
+end
+
+--[[
+    Roll Audit (Features/Roll-Audit.lua), newest first. A roll still waiting
+    on its won or everyone-passed line is private to that file and doesn't
+    show here.
+]]
+local ROLL_AUDIT_SHOWN = 5
+
+local function AppendRollAuditLines(lines)
+	local audit = ns.GetRollAudit()
+	local _, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
+	lines[#lines + 1] = string.format(
+		"Roll Audit: %d rolls listed; here: instance type %s, instance ID %s",
+		#audit,
+		tostring(instanceType),
+		tostring(instanceID)
+	)
+	for index = 1, math.min(#audit, ROLL_AUDIT_SHOWN) do
+		local roll = audit[index]
+		local winner = roll.winner
+		local winnerText = "nobody"
+		if winner then
+			winnerText = winner.isPlayer and "you" or tostring(winner.name)
+		end
+		lines[#lines + 1] = string.format(
+			"  %s: everyone passed %s, winner %s, %d players listed",
+			LinkCell(roll.itemLink or "nil"),
+			YesNo(roll.everyonePassed),
+			winnerText,
+			#roll.lines
+		)
+	end
+	if #audit > ROLL_AUDIT_SHOWN then
+		lines[#lines + 1] = string.format("  (%d older rolls not shown)", #audit - ROLL_AUDIT_SHOWN)
+	end
 end
 
 function ns:BuildRollsContextReport()
@@ -1887,6 +1787,9 @@ function ns:BuildRollsContextReport()
 		"Automated Rolls on notice printed (once, at the first login with the switch on): %s",
 		YesNo(ns.db.global.automatedRollsOnNoticeShown)
 	)
+	AppendRollPreviewLine(lines, profile)
+	lines[#lines + 1] = ""
+	AppendRollAuditLines(lines)
 	lines[#lines + 1] = ""
 	lines[#lines + 1] = "Rolls open now:"
 	AppendOpenRolls(lines)
@@ -1898,12 +1801,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    What Automated Rolls would do with one item if it dropped now, decided by
-    the live roll's own ns.DecideRoll (Features/Automated-Rolls.lua) under the
-    group the player is in: the check that settled it, then the roll or ROLL
-    WINDOW for one left to the player. A live roll also says whether Need or
-    Greed is open to the player, which decides a Need that falls back to
-    Greed; an item can't, so a NEED verdict may roll Greed.
+    Decided by the live roll's own ns.DecideRoll. Only a live roll knows
+    whether Need is open, so a NEED verdict may still roll Greed.
 ]]
 local ROLL_REASON_LABELS = {
 	OFF = "AUTOMATED ROLLS OFF",
@@ -1951,11 +1850,7 @@ function RollVerdict(itemLink, itemIdentifier, quality)
 	return label .. ", " .. (rollAction and ("ROLLS " .. string.upper(tostring(rollAction))) or "ROLL WINDOW")
 end
 
---[[
-    One row per distinct item in the bags, with the verdict above, so "it
-    didn't roll on this" can be checked against an item already won by hand.
-    Read-only; nothing here rolls.
-]]
+-- So "it didn't roll on this" can be checked against an item already won by hand. Read-only.
 ---@return string
 function ns:BuildRollVerdictsReport()
 	local profile = ns.db and ns.db.profile
@@ -2030,7 +1925,6 @@ local function StatsCell(found)
 	return #cells > 0 and table.concat(cells, "; ") or "none"
 end
 
--- What this character's rules say about one piece: WANTED or NOT WANTED, with the box it fell under, or NOT JUDGED.
 ---@param itemLink string
 ---@param rules table|nil
 ---@return string
@@ -2049,12 +1943,8 @@ local function RuleCell(itemLink, rules)
 end
 
 --[[
-    Every armor and weapon piece in the bags and on the character, with the
-    stats Character Rules reads on it and where each came from, and what this
-    character's rules say about it: WANTED or NOT WANTED, with the box it fell
-    under (TYPELESS for a cloak, ring, neck or trinket). The same read the roll makes, so a piece that rolled
-    when it shouldn't have can be checked without waiting for another drop.
-    Read-only; nothing here rolls.
+    The same read the roll makes, so a piece that rolled when it shouldn't
+    have can be checked without waiting for another drop. Read-only.
 ]]
 ---@return string
 function ns:BuildGearStatsReport()
@@ -2102,7 +1992,6 @@ end
 -- Loot Toasts Context
 --------------------------------------------------------------------------------
 
--- One side of a Filters row: off, on, or on from a quality.
 local function FilterCell(shown, qualities, row)
 	if not shown[row.key] then
 		return "off"
@@ -2113,11 +2002,7 @@ local function FilterCell(shown, qualities, row)
 	return "on"
 end
 
---[[
-    The General tab's message groups, as Standard Loot Messages reads them
-    (Features/Standard-Loot-Messages.lua): it acts only once the client has
-    initialized the frame, and only when the wanted state changes.
-]]
+-- Standard Loot Messages acts only once the client has initialized ChatFrame1, and only on a change.
 local function AppendStandardLootMessageLines(lines, profile)
 	local wanted = not (profile.lootToasts and profile.standardLootMessages == ns.STANDARD_LOOT_MESSAGES_DISABLE)
 	lines[#lines + 1] = string.format(
@@ -2145,13 +2030,7 @@ local function AppendStandardLootMessageLines(lines, profile)
 	)
 end
 
---[[
-    Everything that decides whether loot gets a toast and how it looks: the
-    switch, the handle, the look, each Filters row for the player's loot and the
-    group's (ns.IsLootToastWanted in Features/Loot-Toasts-Filters.lua), and the
-    chat tab lines the toasts stand in for. Where the stack sits is in Display
-    Context.
-]]
+-- Where the stack sits is in Display Context.
 function ns:BuildLootToastsContextReport()
 	local lines = { GetClientHeader(), "" }
 	AppendProfileLines(lines)
@@ -2223,7 +2102,6 @@ end
 local EXAMPLE_LOOTER = "Aero"
 local EXAMPLE_COUNT = 3
 
--- One loot line built from the client's own format, or nil and the error when the format won't take the arguments.
 local function BuildLine(format, ...)
 	if type(format) ~= "string" then
 		return nil, "format missing on this client"
@@ -2236,9 +2114,8 @@ local function BuildLine(format, ...)
 end
 
 --[[
-    Each loot format, the arguments it takes in its English order (a
-    translation that reorders them numbers its placeholders, and the client's
-    format honors that), and what the parser should hand back.
+    { constant, count }, arguments in English order: a translation that
+    reorders them numbers its placeholders, which the client's format honors.
 ]]
 local OWN_LINE_FORMATS = {
 	{ "LOOT_ITEM_SELF", 1 },
@@ -2255,11 +2132,9 @@ local GROUP_LINE_FORMATS = {
 }
 
 --[[
-    Whether a roll reader would take a loot line for its own: the toast
-    handler hands a line to the roll records first and drops one they claim
-    (ns.RecordRollLine), and Hide Roll Messages keeps roll chatter out of
-    chat. Read through the parsers alone, never RecordRollLine, which stores
-    what it reads. Nil when nothing claims it.
+    Whether a roll reader would claim a loot line, which the toast handler
+    would then drop. Read through the parsers alone, never RecordRollLine,
+    which stores what it reads.
 ]]
 local function RollClaim(line)
 	if select(4, ns.ParseRollResultMessage(line)) then
@@ -2351,12 +2226,7 @@ local function AppendMoneyLine(lines)
 	)
 end
 
---[[
-    The player's own currency lines, which every currency toast reads back
-    through ns.ParseCurrencyMessage (Features/Loot-Toasts-Money.lua). Built
-    with a made-up currency link, since the bags hold none; SKIP where the
-    client has no such format.
-]]
+-- Made up, since the bags hold no currency.
 local EXAMPLE_CURRENCY_LINK = "|cffffffff|Hcurrency:1|h[Example Currency]|h|r"
 
 local CURRENCY_LINE_FORMATS = {
@@ -2388,11 +2258,9 @@ end
 local EXAMPLE_ROLL = 77
 
 --[[
-    One roll line built from the client's own format. The arguments are filled
-    by kind rather than by position, since the parsers read each capture by what
-    it holds: a number is the roll (or, first in a line that opens on the
-    "[Loot]" history link, that link's own id), the last text argument is the
-    item and any other is the player.
+    Arguments filled by kind, not position, as the parsers read them: a
+    number is the roll (or, first in a line opening on the "[Loot]" history
+    link, that link's id), the last text is the item, any other the player.
 ]]
 local function BuildRollLine(format, link)
 	if type(format) ~= "string" then
@@ -2446,6 +2314,15 @@ local ROLL_WON_FORMATS = {
 	{ "LOOT_ROLL_WON" },
 }
 
+-- Each pass as Roll Audit reads it: { constant, true for the player's own }.
+local ROLL_PASS_FORMATS = {
+	{ "LOOT_ROLL_PASSED_SELF", true },
+	{ "LOOT_ROLL_PASSED_SELF_AUTO", true },
+	{ "LOOT_ROLL_PASSED_AUTO" },
+	{ "LOOT_ROLL_PASSED_AUTO_FEMALE" },
+	{ "LOOT_ROLL_PASSED" },
+}
+
 -- The lines Hide Roll Messages keeps out of chat besides the rolls above: the roll opening and every pick.
 local ROLL_CHATTER_FORMATS = {
 	"LOOT_ROLL_STARTED",
@@ -2464,7 +2341,6 @@ local ROLL_CHATTER_FORMATS = {
 	"LOOT_ROLL_LOST_ROLL",
 }
 
--- One roll line's result: SKIP for a format this client doesn't have, ERROR for one that won't build.
 local function AppendRollLine(lines, constant, link, check)
 	local line, problem = BuildRollLine(_G[constant], link)
 	if line == nil then
@@ -2480,10 +2356,7 @@ local function AppendRollLine(lines, constant, link, check)
 	end
 end
 
---[[
-    The roll lines, read back the way Winning Roll on a toast, Hide Roll
-    Messages and the winner summary read them (Features/Utilities-Chat-Lines.lua).
-]]
+-- A pass must not read as everyone passing, which Roll Audit asks first.
 local function AppendRollLines(lines, link)
 	for _, entry in ipairs(ROLL_RESULT_FORMATS) do
 		AppendRollLine(lines, entry[1], link, function(line)
@@ -2510,6 +2383,28 @@ local function AppendRollLines(lines, link)
 				)
 		end)
 	end
+	for _, entry in ipairs(ROLL_PASS_FORMATS) do
+		AppendRollLine(lines, entry[1], link, function(line)
+			local isPass, passer, parsedLink = ns.ParseRollPassMessage(line)
+			local allPassed = ns.ParseRollAllPassedMessage(line) ~= nil
+			local ok = isPass
+				and not allPassed
+				and passer == (not entry[2] and EXAMPLE_LOOTER or nil)
+				and parsedLink == link
+			return ok,
+				string.format(
+					"Roll Audit reads a pass %s, by %s, as everyone passing %s",
+					YesNo(isPass),
+					passer and tostring(passer) or "you",
+					YesNo(allPassed)
+				)
+		end)
+	end
+	AppendRollLine(lines, "LOOT_ROLL_ALL_PASSED", link, function(line)
+		local parsedLink = ns.ParseRollAllPassedMessage(line)
+		local ok = parsedLink == link
+		return ok, "Roll Audit reads everyone passed: " .. YesNo(ok)
+	end)
 	for _, constant in ipairs(ROLL_CHATTER_FORMATS) do
 		AppendRollLine(lines, constant, link, function(line)
 			local hidden = ns.IsRollChatterMessage(line)
@@ -2529,14 +2424,10 @@ local function SampleLink()
 end
 
 --[[
-    Loot Toasts, Loot Sounds, Automated Opening's rescan and its notices all
-    start from a CHAT_MSG_LOOT or CHAT_MSG_MONEY line read back through the
-    client's own formats (Features/Utilities-Chat-Lines.lua). This builds each
-    line the client would print, with a real link from the bags so the link's
-    own shape is the client's, and runs it through the same parsers, then the
-    roll lines the same way. A FAIL names a format this client's line no longer
-    matches. Then what the toast filters make of that item. Builds strings only:
-    nothing is printed to chat or shown on screen.
+    Builds each line the client would print, with a real link from the bags so
+    the link's shape is the client's, and runs it through the same parsers. A
+    FAIL names a format this client's line no longer matches. Builds strings
+    only: nothing is printed or shown.
 ]]
 function ns:BuildLootLineReport()
 	local lines = { GetClientHeader(), "" }
@@ -2562,11 +2453,6 @@ function ns:BuildLootLineReport()
 		tostring(quality),
 		tostring(ns:GetOpeningAction(itemIdentifier))
 	)
-	--[[
-	    What the Filters rows read on it (ns.IsLootToastWanted): its item class
-	    and subclass, which pick its row, its bind type for the Bind on Pickup
-	    and Quest rows, and whether its tooltip starts a quest.
-	]]
 	local _, _, _, _, _, classIdentifier, subclassIdentifier = C_Item.GetItemInfoInstant(itemIdentifier)
 	-- Nil while the client hasn't loaded the item.
 	local bindType = select(14, C_Item.GetItemInfo(itemIdentifier))
@@ -2593,12 +2479,7 @@ end
 -- Loot Announcements Context
 --------------------------------------------------------------------------------
 
---[[
-    Everything GogoLoot sends goes through ns:Announce (Features/Announcements.lua),
-    which sends nothing at all while Enable Loot Announcements is off, and to the
-    group channel ns:GetGroupChatChannel resolves, nil when not grouped. Each
-    sender then has its own switch.
-]]
+-- ns:Announce sends nothing while Enable Loot Announcements is off; each sender then has its own switch.
 function ns:BuildAnnouncementsContextReport()
 	local lines = { GetClientHeader(), "" }
 	AppendProfileLines(lines)
@@ -2648,25 +2529,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Roll-Macro.lua keeps ns.ROLL_MACRO_NAME among the General macros while
-    Enable Roll Macro is on: it makes it at each load when it's missing, puts
-    its icon and text back when either differs, and can't make it while the
-    General tab is full. Every change waits out combat. How full the tab is
-    comes from GetNumMacros, which GogoLoot itself never calls, so it is read
-    through _G; its size, MAX_ACCOUNT_MACROS, comes from the game's Macros
-    window, so it reads nil until that window has loaded. The macro's
-    middle-click rolls up to the group's size, which GetNumGroupMembers reads
-    as 0 alone.
-]]
---[[
-    Raid Roll Winner (Features/Raid-Roll-Winner.lua) names the winner only for
-    a /roll from exactly 1 to the group's size, two players or more, read from
-    the game's own roll line, and only for a roller and a winner it finds by
-    roster place (ns.GetRaidRollPlayer, which reads the raid roster alone, so
-    a party finds no one). Group Chat claims the roll over the add-on channel,
-    waits, and posts unless a GogoLoot user at an earlier roster place claimed
-    it too; with Enable Loot Announcements off it prints instead. The prefix registration is read through _G, since
-    GogoLoot itself never asks for it.
+    Raid Roll Winner counts only a /roll from 1 to the group's size, two or
+    more, with roller and winner found by roster place. With Enable Loot
+    Announcements off, Group output prints instead.
 ]]
 local function AppendRaidRollLines(lines, groupSize)
 	local profile = ns.db.profile
@@ -2732,6 +2597,11 @@ local function AppendRaidRollLines(lines, groupSize)
 	end
 end
 
+--[[
+    GetNumMacros is read through _G, since GogoLoot itself never calls it;
+    MAX_ACCOUNT_MACROS comes from the Macros window, so it reads nil until
+    that window has loaded.
+]]
 ---@return string
 function ns:BuildRollMacroContextReport()
 	local lines = { GetClientHeader(), "" }
@@ -2787,11 +2657,7 @@ end
 -- Player & Spells
 --------------------------------------------------------------------------------
 
---[[
-    The spells the add-on gates on or listens for, as ns.SPELLS keys, in report
-    order. Most "nothing happens" reports from a Rogue come down to a spell this
-    client doesn't answer for, or a rank it can't read.
-]]
+-- The ns.SPELLS keys the add-on gates on or listens for, in report order.
 ns.DIAGNOSTIC_SPELLS = { "PICK_LOCK", "PICK_POCKET", "SHADOWMELD" }
 
 ---@return string
@@ -2841,15 +2707,10 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Every record GogoLoot shows or matches by the name this client gives it,
-    for the Localization tab's Game Names report. Each row reads the name
-    exactly as the features do. The client strings are Blizzard UI labels and
-    formats, so each one's id is its own constant name: the loot, money and roll
-    lines are the formats GogoLoot reads chat back with, and a NIL there is a
-    line that goes unread on this client. Character Rules adds its captions
-    and the full ITEM_MOD formats it matches tooltip lines with, below. A row
-    whose name loads late (a spell) adds request, which the report calls and
-    polls.
+    The Game Names report: every name GogoLoot shows or matches, read exactly
+    as the features read it. A NIL on a chat format is a line that goes unread
+    on this client. A row whose name loads late (a spell) adds `request`,
+    which the report calls and polls.
 ]]
 local function UiLabel(constant)
 	return {
@@ -2924,6 +2785,7 @@ local UI_LABELS = {
 	"LOOT_ROLL_PASSED_AUTO_FEMALE",
 	"LOOT_ROLL_PASSED_SELF_AUTO",
 	"LOOT_ROLL_LOST_ROLL",
+	"LOOT_ROLL_ALL_PASSED",
 	"LOOT_ROLL_ROLLED_NEED",
 	"LOOT_ROLL_ROLLED_NEED_ROLE_BONUS",
 	"LOOT_ROLL_ROLLED_GREED",
@@ -2958,12 +2820,9 @@ for _, constant in ipairs(UI_LABELS) do
 end
 
 --[[
-    The Character Rules panel's captions, for the stats and sections this
-    client offers (ns.CHARACTER_RULE_STATS and ns.CHARACTER_RULE_GROUPS, already
-    cut to Data/{Folder}/Character-Rule-Stats-{Folder}.lua at load): each
-    stat's label as the panel shows it, and each section's game label, which
-    WoW Forever and later have and the panel replaces with its own words where
-    it reads NIL.
+    The Character Rules captions this client offers (already cut to its
+    folder at load). A section label reads NIL before WoW Forever, where the
+    panel uses its own words.
 ]]
 for _, group in ipairs(ns.CHARACTER_RULE_GROUPS) do
 	AddNameLookup(UiLabel(group.labelGlobal))
@@ -3054,11 +2913,7 @@ if ns.SKILL_LINE_IDS.LOCKPICKING then
 	})
 end
 
---[[
-    The item types the Loot Toasts Filters rows and the item lists' headers are
-    captioned with, by class (or class and subclass) id, as the panels read
-    them (Options/Options-Loot-Toast-Filters.lua).
-]]
+-- The item types the Loot Toasts Filters rows and the item lists' headers are captioned with.
 for _, row in ipairs(ns.LOOT_TOAST_FILTER_ROWS) do
 	if row.subclassIdentifier then
 		AddNameLookup({
@@ -3085,12 +2940,7 @@ end
 -- Saved Variables
 --------------------------------------------------------------------------------
 
---[[
-    The saved tables GogoLoot fills in itself, which the Saved Variables dump
-    prints as a row count: what was handed out, the drops by boss of the last
-    few raids, and what was picked up this instance. A raid's worth of drops
-    runs to hundreds of item links, more than the output box shows.
-]]
+-- Dumped as a row count: a raid's worth runs to hundreds of item links, more than the output box shows.
 ns.DIAGNOSTIC_SAVED_SUMMARY_KEYS = {
 	awarded = true,
 	dropRaids = true,
@@ -3102,19 +2952,11 @@ ns.DIAGNOSTIC_SAVED_SUMMARY_KEYS = {
 --------------------------------------------------------------------------------
 
 --[[
-    One entry per file in the flavor folders, and one report row per entry on
-    the Data tab. Each entry's label is the table-name part of its file name,
-    so ns.DataSourceFileName can name the file this client's folder built, and
-    one manifest serves every flavor. Each source names the static table on ns
-    (a name, not a reference, so a table this client's folder never built still
-    gets a row) and its kind: "item", "spell", or "other" for ids no client
-    API looks up. Ids are reached through rowId(key, row) over the table's
-    pairs, since the tables come in three shapes: rows of { itemId, ... }, maps
-    keyed by item id, and maps whose values are the ids (spells and skill lines
-    by name, sample items by quality). dataColumns
-    carries the shipped row's own values as { header, getter(key, row) }, so
-    the export sets what the file says beside what the client says. Adding a data file adds an entry here, and the panel
-    and the validator pick it up with no second list.
+    One entry per flavor-folder file; `label` is the file stem. `table` is a
+    name, not a reference, so a table this folder never built still gets a
+    row. `kind` "other" is ids no client API looks up. rowId(key, row) copes
+    with the three table shapes. dataColumns, { header, getter(key, row) },
+    set the file's values beside the client's.
 ]]
 local function FirstFieldIsId(_, row)
 	return type(row) == "table" and row[1] or nil

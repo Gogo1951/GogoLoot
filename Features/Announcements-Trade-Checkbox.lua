@@ -2,12 +2,7 @@
 -- GogoLoot Trade Window Checkbox
 --------------------------------------------------------------------------------
 
---[[
-    Mirrors the "Enable Trade Announcements" toggle beside the trade window. It
-    is parented to UIParent and only anchored to TradeFrame, so nothing is
-    written to Blizzard's panel; it shows while a trade is open and leaves with
-    TRADE_CLOSED. The summary itself is Features/Announcements-Trade.lua's.
-]]
+-- Parented to UIParent, only anchored to TradeFrame, so nothing is written into Blizzard's frame.
 local _, ns = ...
 local L = ns.L
 
@@ -72,11 +67,7 @@ local function CreateTradeAnnounceCheckbox()
 	tradeAnnounceCheckbox = checkbox
 end
 
---[[
-    The checkbox leaves the trade window while Enable Announcements is off:
-    the master switch silences trades too, so a ticked box there would promise a
-    summary that never goes out.
-]]
+-- Hidden while Enable Announcements is off: a ticked box would promise a summary that never goes out.
 ---@return nil
 function ns:SyncTradeCheckbox()
 	if not tradeAnnounceCheckbox then

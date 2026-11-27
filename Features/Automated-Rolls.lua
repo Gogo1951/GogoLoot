@@ -8,26 +8,14 @@ local L = ns.L
 -- Add-on-Initiated Roll Tracking
 --------------------------------------------------------------------------------
 
---[[
-    Every RollOnLoot this module issues is recorded here first, so the
-    CONFIRM_LOOT_ROLL handler auto-confirms bind dialogs only for rolls
-    GogoLoot started. Player-initiated rolls keep Blizzard's confirmation
-    dialog. CANCEL_LOOT_ROLL clears entries so finished or expired rolls
-    leave no stale state behind.
-]]
-
+-- Only GogoLoot's own rolls get their bind dialog auto-confirmed; the player's keep Blizzard's.
 local rollsInitiatedByAddon = {}
 
 --[[
-    Rolls whose item info wasn't cached when START_LOOT_ROLL fired are polled by
-    a named timer until the info resolves or the roll ends — CANCEL_LOOT_ROLL
-    canceling the timer is the real teardown. The timer identifier carries the
-    roll id, so ns:IsTimerPending is the duplicate-ticker guard.
-
-    The attempt cap only backstops a cancel that never arrives, so it is sized
-    past the 60-second roll window and must never become the give-up point: a
-    war-effort token's first drop of the night can keep its item query in
-    flight past any short cap while the roll still has most of its minute left,
+    CANCEL_LOOT_ROLL cancelling the named timer is the teardown. The attempt cap
+    only backstops a cancel that never arrives, so it is sized past the 60-second
+    roll window and must never become the give-up point: a war-effort token's
+    first drop of the night can keep its item query in flight past a short cap,
     and giving up there means no roll and no error.
 ]]
 local ROLL_RETRY_TIMER_PREFIX = "GogoLoot.RollRetry."
@@ -35,10 +23,9 @@ local ROLL_RETRY_INTERVAL = 0.5
 local ROLL_RETRY_MAX_ATTEMPTS = 150
 
 --[[
-    Print Item in Chat: the roll window closes the moment GogoLoot rolls, so
-    without this line the player never sees what came up or what was picked.
-    It names the roll actually made, so a Need that fell back to Greed reads
-    as Greed. The game's own word for each roll, as the dropdowns use.
+    Print Item in Chat: the roll window closes the moment GogoLoot rolls. The
+    line names the roll actually made, so a Need that fell back to Greed reads
+    as Greed.
 ]]
 local ROLL_ACTION_WORDS = {
 	[ns.ROLL_ACTION_NEED] = NEED,
@@ -63,15 +50,10 @@ local function ExecuteTrackedRoll(rollIdentifier, rollAction, rollItemLink)
 end
 
 --[[
-    The threshold path is configured per group context: raids read the raid
-    settings, everything else (party, and the rare ungrouped roll) reads the
-    party settings: the roll, its Up to Quality, and Include Bind on Pickup.
-    Nothing here looks at the loot method — GogoLoot acts on every
-    START_LOOT_ROLL the client raises, so a roll that opens during a
-    master-loot session is automated exactly like one from Group Loot or Need
-    Before Greed.
+    Raids read the raid settings; party and the rare ungrouped roll read the
+    party's. No loot-method check: a roll in a master-loot session is automated
+    like any other.
 ]]
--- A group context's Include Bind on Pickup: the raid's in a raid, the party's anywhere else.
 ---@param inRaid boolean
 ---@return boolean
 function ns.RollsBindOnPickup(inRaid)
@@ -113,17 +95,7 @@ end
 -- Roll Evaluation
 --------------------------------------------------------------------------------
 
---[[
-    What Automated Rolls does with one item, for a character's rules and
-    class: the roll to make (ns.NEED, ns.GREED or ns.PASS), or nil to leave
-    the roll window to the player, then why ("OFF", "NEVER", "OVERRIDE",
-    "QUEST", "LOW_LEVEL", "WANTED", "EVERYTHING_ELSE", "BIND_ON_PICKUP",
-    "MANUAL", "QUALITY" or "ABOVE_QUALITY"). EvaluateRoll makes the roll it
-    returns; the Loot Roll Sanity Check shows it, passing inRaid to read the In
-    Party or In Raid settings whatever group the player is in. The gates run
-    in a fixed order, and the order is the design (README-Technical.md, Item
-    Overrides vs. the Automated Rolls Toggle).
-]]
+-- A nil roll leaves the window to the player. The gates run in a fixed order, and the order is the design.
 ---@param itemIdentifier number
 ---@param itemInformation table
 ---@param itemLink string
@@ -144,12 +116,9 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 	end
 
 	--[[
-        Item Overrides: a per-item override is an explicit instruction, so it
-        bypasses the threshold, the BoP guard, and the quest-class skip below.
-        It runs ahead of that skip deliberately — the AQ and ZG tokens the
-        default list exists to roll on are all quest-class (see
-        ns:IsQuestClassItem), so checking the skip first would make the whole
-        feature a no-op for them.
+        Item Overrides bypass the threshold, the BoP guard and the quest skip,
+        and run ahead of that skip deliberately: the AQ and ZG tokens the default
+        list exists for are all quest-class.
     ]]
 	if ns.db.profile.customRollList then
 		local rollOverride = ns.db.profile.ignoredItemsSolo[itemIdentifier]
@@ -161,7 +130,6 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		end
 	end
 
-	-- Unlisted quest items are never picked up by the threshold path on their own
 	if ns:IsQuestClassItem(itemInformation) then
 		return nil, "QUEST"
 	end
@@ -169,25 +137,14 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 	local contextRollAction, contextRollThreshold, contextBindOnPickup = GetContextRollSettings(inRaid)
 
 	--[[
-        Character Rules: gear this character wants (a ticked type carrying a
-        ticked stat) keeps its roll window, whatever the quality settings
-        say. Gear it doesn't want rolls the way its Everything Else row says
-        (Greed by default), up to the group context's Up to Quality, Bind on
-        Pickup only while Include Bind on Pickup is on, unless the group
-        context is set to Manual. Gear past that quality falls through to the
-        threshold path below.
+        Wanted gear keeps its roll window at any quality. Unwanted gear rolls its
+        Everything Else action up to the context's quality unless the context is
+        Manual; past that quality it falls through to the threshold path.
     ]]
 	local verdict = ns.CharacterRuleVerdict(itemInformation, itemLink, rules, classFile)
 	local bindOk = itemInformation.bindType ~= ns.BIND_ON_PICKUP or contextBindOnPickup
 
-	--[[
-        Automatically Greed on Low-Level Gear: gear whose required level is
-        far enough below the character's (Your Level - 5 by default) Greeds,
-        matching or not, up to the group context's Up to Quality, so a leveling
-        character never waits on gear it has outgrown. Bind on Pickup only
-        while Include Bind on Pickup is on, and never while the group context
-        is set to Manual.
-    ]]
+	-- Low-Level Gear Greeds, wanted or not, so a leveling character never waits on gear it has outgrown.
 	if
 		verdict
 		and bindOk
@@ -202,7 +159,6 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		return nil, "WANTED"
 	end
 	if verdict == ns.CHARACTER_RULE_UNWANTED and contextRollAction ~= ns.MANUAL then
-		-- Manual: gear that doesn't match keeps its roll window, whatever the quality settings say.
 		if ns.CharacterRuleUnwanted(rules, "action") == ns.MANUAL then
 			return nil, "EVERYTHING_ELSE"
 		end
@@ -211,7 +167,6 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 		end
 	end
 
-	-- The threshold path touches BoP items only while Include Bind on Pickup is on
 	if itemInformation.bindType == ns.BIND_ON_PICKUP and not contextBindOnPickup then
 		return nil, "BIND_ON_PICKUP"
 	end
@@ -226,47 +181,54 @@ function ns.DecideRoll(itemIdentifier, itemInformation, itemLink, quality, rules
 	return nil, "ABOVE_QUALITY"
 end
 
---[[
-    Evaluates a roll and takes the configured automated action. Re-reads all
-    roll data fresh, so it behaves identically whether called from
-    START_LOOT_ROLL or from a later retry tick.
+-- A caller holding the exact link passes it, so Character Rules reads its random suffix's stats.
+---@param itemIdentifier number
+---@param inRaid boolean
+---@param exactLink string|nil
+---@return string|nil rollAction
+---@return string|nil reason
+function ns.DecidePlayerRoll(itemIdentifier, inRaid, exactLink)
+	local itemLink = exactLink or select(2, C_Item.GetItemInfo(itemIdentifier))
+	local itemInformation = itemLink and ns:SafeGetItemInfo(itemLink)
+	if not itemInformation then
+		return nil, nil
+	end
+	local _, classFile = UnitClass("player")
+	return ns.DecideRoll(
+		itemIdentifier,
+		itemInformation,
+		itemLink,
+		itemInformation.quality,
+		ns.db.char.characterRules,
+		classFile,
+		UnitLevel("player"),
+		inRaid
+	)
+end
 
-    Returns true when the decision was reached — whether or not it produced a
-    roll, and including the case where the item is skipped — meaning no retry
-    is needed. Returns false while the item is still unresolved, so the caller
-    should retry: an uncached item reads as a nil GetLootRollItemLink and a nil
-    GetItemInfo until the client's item query answers, and the class/subclass
-    hard skips need the full item info, so the roll is never decided from
-    GetLootRollItemInfo's quality/BoP arguments alone.
+--[[
+    True once decided, rolled or not; false while the item is unresolved, so the
+    caller retries. Re-reads everything, so a retry tick behaves exactly like the
+    event. Never decided from GetLootRollItemInfo alone: the class and subclass
+    skips need full item info.
 ]]
 local function EvaluateRoll(rollIdentifier)
 	if not ns.db then
 		return true
 	end
 
-	--[[
-        Master switch: when Automated Rolls is off, nothing rolls
-        automatically, Item Overrides included.
-    ]]
 	if not ns.db.profile.autoGreed then
 		return true
 	end
 
-	--[[
-        GetLootRollItemInfo returns: texture, name, count, quality,
-        bindOnPickUp, canNeed, canGreed, canDisenchant, ...
-    ]]
+	-- texture, name, count, quality, bindOnPickUp, canNeed, canGreed, canDisenchant, ...
 	local _, _, _, rollQuality, _, rollNeedAllowed, rollGreedAllowed = GetLootRollItemInfo(rollIdentifier)
 
 	--[[
-        A nil link is an unresolved item, not a dead roll. The client returns
-        nil here until its item query answers — Blizzard's own
-        GroupLootFrame_OnShow reads nil item info in the same state and bails —
-        which is the normal condition of a war-effort token's first drop of the
-        session. Treating it as "roll no longer live" silently drops Item
-        Overrides tokens whose drop races the item cache: no retry, no roll, no
-        error. Dead rolls don't reach this read, because CANCEL_LOOT_ROLL
-        cancels the retry timer outright.
+        A nil link is an unresolved item, not a dead roll (Blizzard's
+        GroupLootFrame_OnShow bails the same way): the normal state of a token's
+        first drop of the session. Dead rolls never get here, since
+        CANCEL_LOOT_ROLL cancels the retry.
     ]]
 	local rollItemLink = GetLootRollItemLink(rollIdentifier)
 	if not rollItemLink then
@@ -300,14 +262,9 @@ local function EvaluateRoll(rollIdentifier)
 end
 
 --[[
-    Polls a roll whose item info wasn't cached at START_LOOT_ROLL time. Runs
-    every ROLL_RETRY_INTERVAL until the info resolves and the roll is decided.
-    Each tick re-arms the same named timer, so CANCEL_LOOT_ROLL canceling that
-    name is all it takes to tear the poll down when the roll ends; the attempt
-    cap only bounds a cancel that never arrives. There is deliberately no
-    "still live?" probe inside the tick — the one read that could answer it,
-    GetLootRollItemLink, is nil for unresolved items too, and bailing on it
-    would drop exactly the rolls the retry exists for.
+    Deliberately no "still live?" probe in the tick: the one read that could
+    answer, GetLootRollItemLink, is nil for unresolved items too, and bailing on
+    it would drop exactly the rolls the retry exists for.
 ]]
 ---@param rollIdentifier number
 ---@return nil
@@ -362,18 +319,10 @@ ns:RegisterModuleEvent("CANCEL_LOOT_ROLL", OnCancelLootRoll)
 --------------------------------------------------------------------------------
 
 --[[
-    Need and Pass both give loot away without asking: Need takes it from the
-    group, Pass leaves it to them. So entering a dungeon or raid while the roll
-    GogoLoot will make there is one of those prints a reminder in chat, and,
-    with Play Sound on, plays an alert. The roll is the one the rolls
-    themselves read (GetContextRollSettings): the raid's in a raid group, the
-    party's otherwise. Greed and Manual say nothing.
-
-    It waits a moment after the loading screen so the line lands below the
-    zone-in chatter, and checks again then in case the player has already
-    left. A /reload inside the instance stays quiet. Coming back into the same
-    instance with the same roll inside SAFETY_WARNING_REPEAT_SECONDS stays
-    quiet too, so a corpse run doesn't repeat it; a later run warns again.
+    Need and Pass both give loot away unasked, so entering a dungeon or raid with
+    either set warns. It waits so the line lands below the zone-in chatter; the
+    same instance and roll within SAFETY_WARNING_REPEAT_SECONDS stays quiet, so
+    a corpse run doesn't repeat it.
 ]]
 local SAFETY_WARNING_TIMER = "GogoLoot.RollSafetyWarning"
 local SAFETY_WARNING_DELAY = 3
@@ -384,7 +333,6 @@ local SAFETY_WARNING_ACTIONS = { [ns.NEED] = NEED, [ns.PASS] = PASS }
 
 local lastSafetyWarning
 
--- The warning's text: the roll in the game's word, then the quality ceiling in its color.
 ---@param action string ns.NEED or ns.PASS
 ---@param threshold number
 ---@return string
@@ -394,7 +342,7 @@ function ns.BuildRollSafetyWarning(action, threshold)
 	return L["MESSAGE_ROLL_SAFETY_WARNING"]:format(SAFETY_WARNING_ACTIONS[action] or action, quality)
 end
 
--- The alert, on the Master channel so it's heard with sound effects off; the panel's speaker plays it too.
+-- Master channel, so it's heard with sound effects off.
 function ns.PlayRollSafetyWarning()
 	PlaySoundFile(ns.ROLL_SAFETY_WARNING_SOUND_FILE, "Master")
 end
@@ -445,12 +393,7 @@ ns:RegisterModuleEvent("PLAYER_ENTERING_WORLD", OnPlayerEnteringWorld)
 -- Automated Rolls On by Default
 --------------------------------------------------------------------------------
 
---[[
-    Automated Rolls ships on (maintainer, 2026-11-07), which reaches every
-    player who never changed the switch, since AceDB saves only changes. So
-    once per account, at a login where it's on, chat says so and where to turn
-    it off.
-]]
+-- Ships on (maintainer, 2026-11-07), reaching everyone who never touched the switch, so chat says so once per account.
 local function OnPlayerLogin()
 	if not ns.db or not ns.db.profile.autoGreed or ns.db.global.automatedRollsOnNoticeShown then
 		return

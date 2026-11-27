@@ -3,29 +3,17 @@
 --------------------------------------------------------------------------------
 
 --[[
-    A child panel of Automated Opening: what a lockbox needs, and when the
-    player is told one is waiting. It sits under Automated Opening because a
-    picked lockbox is one more thing that opens, but it isn't part of opening:
-    the tooltips work whether or not anything opens on its own, so nothing here
-    hides behind that switch. The notices speak for Automated Opening, so a
-    silver status line under the page's description says so while it is off,
-    naming the feature and the page its switch is on. Both features
-    carry a scope on their toggle's line rather than only an on/off, since a
-    non-Rogue can't pick a lock and has little use for either; the scope leaves
-    the line while its toggle is off (Kit.ToggleRow). The scope rule both
-    apply lives in Features/Utilities.lua.
+    The tooltips work whether or not anything opens, so nothing here hides
+    behind Automated Opening's switch. Both rows carry a scope, since a
+    non-Rogue can't pick a lock and has little use for either.
 ]]
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
 
---[[
-    The example the Enable Lockbox Notifications row names: the lowest item ID
-    this flavor's data sets to open once it is unlocked.
-]]
+-- The lowest ID this flavor's data sets to open once unlocked.
 local exampleLockedContainer = nil
 
--- Also warmed at login with the other example items (ns:WarmItemCache).
 ---@return number|nil
 function ns.ExampleLockedContainer()
 	if not exampleLockedContainer then
@@ -41,7 +29,6 @@ function ns.ExampleLockedContainer()
 	return exampleLockedContainer
 end
 
--- What Enable Lockbox Notifications prints, drawn as printed by Kit.Example while it could print.
 local function LockboxNotificationExample()
 	local item = ns.OptionsExampleLink(ns.ExampleLockedContainer() or ns.SAMPLE_ITEM_IDS[2])
 	return ns.OptionsPrintedLine(L["MESSAGE_ITEM_WILL_AUTO_OPEN"]:format(item))
@@ -65,10 +52,7 @@ end
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
---[[
-    Lockbox Tooltips is left out of the TOC where the client has no Lockpicking
-    skill line (MoP Classic), and its rows leave with it.
-]]
+-- Lockbox Tooltips is left out of the MoP Classic TOC (no Lockpicking skill line), and its rows leave with it.
 ---@return table
 function ns.BuildLockboxOptions()
 	local hasTooltips = ns.GetLockpickingSkillName ~= nil
@@ -119,7 +103,7 @@ function ns.BuildLockboxOptions()
 					Kit.Set("profile", "lockboxNotificationsScope")
 				),
 			}),
-			-- Leaves whenever the notice couldn't print: opening off, or a scope this character is outside.
+			-- Hidden whenever the notice couldn't print: opening off, or a scope this character is outside.
 			notificationsExampleRow = Kit.Example(8, function()
 				local profile = ns.db.profile
 				return not (

@@ -3,13 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    A panel of its own after Master Looter, rather than a child of it: the
-    Loot Master is for anyone holding tradable loot, and the Loot Tracker for
-    every raider, not only the game's master looter.
-
-    The switch, then four sections: how rolls are called, which rolls count,
-    the trade clock, Floor Loot, and the Loot Tracker. Everything below the
-    switch leaves the panel while it is off, as on Automated Opening.
+    Its own panel, not a child of Master Looter: the Loot Master is for anyone
+    holding tradable loot, and the Loot Tracker for every raider.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -19,7 +14,6 @@ local function LootMasterOff()
 	return not ns.db.profile.lootMaster
 end
 
--- The made-up player in the panel's example line.
 local EXAMPLE_PLAYER = "Aero"
 local EXAMPLE_ITEM_QUALITY = 4
 local EXAMPLE_REPEAT_ROLL = 92

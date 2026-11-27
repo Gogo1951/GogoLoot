@@ -43,7 +43,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, Season of Discovery 1.15.9.70576
+	2026-11-27, wago.tools, Classic Era 1.15.9.70576
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
@@ -64,6 +64,7 @@ wago.tools
 	https://wago.tools/db2/SoundKit?build=1.15.9.70576
 	https://wago.tools/db2/SkillLine?build=1.15.9.70576
 	https://wago.tools/db2/ItemSparse?build=1.15.9.70576
+	https://wago.tools/db2/Item?build=1.15.9.70576
 
 QuestieDB
 	None.

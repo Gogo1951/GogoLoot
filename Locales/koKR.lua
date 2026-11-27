@@ -151,11 +151,7 @@ L["TAB_LOOT_MASTER"] = "전리품 관리자"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "일시 중지"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"선택한 품질까지 대상 아이템에 대신 주사위를 굴립니다."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
@@ -175,6 +171,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "주사위"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "주사위 기록"
+L["MENU_RECENT_ROLLS"] = "최근 주사위"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "나"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "주사위 안 함"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "모두 포기"
+L["MENU_ROLL_AUDIT_EMPTY"] = "이 인스턴스에서 아직 주사위가 없습니다."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -190,8 +200,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d개 꺼짐"
 
 L["MENU_CLICK_LEFT"] = "왼쪽 클릭"
 L["MENU_CLICK_RIGHT"] = "오른쪽 클릭"
-L["MENU_CLICK_SHIFT_LEFT"] = "Shift + 왼쪽 클릭"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "가운데 클릭"
 L["MENU_TOGGLE"] = "켜기/끄기"
 
@@ -202,7 +210,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s에게 부탁하면 자물쇠를 열어 줍�
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "%s 기술을 사용해 자물쇠를 여세요."
 L["MENU_OPTIONS"] = "GogoLoot 설정"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + 가운데 클릭"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "외 %d개"
@@ -268,12 +275,7 @@ L["ITEM_LIST_RESTORE"] = "기본값 복원"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "불러오는 중 ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"제조법, 책, 탈것, 애완동물, 전설 아이템에는 절대 주사위를 굴리지 않으며, 퀘스트 아이템은 전역 아이템별 설정에 있을 때만, 획득 시 귀속 아이템은 전역 아이템별 설정에 있거나 획득 시 귀속 포함이 켜져 있을 때만 굴립니다."
 
@@ -309,20 +311,18 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"접속할 때마다 GogoLoot의 버전과 이 설정을 찾는 위치를 표시합니다."
 L["MINIMAP_BUTTON_ENABLE"] = "미니맵 버튼 사용"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"미니맵에 GogoLoot 버튼을 표시합니다. 버튼에 마우스를 올리면 GogoLoot 메뉴가 열립니다. 왼쪽 클릭은 자동 주사위, 오른쪽 클릭은 자동 열기, Shift + 왼쪽 클릭은 전리품 공지를 켜거나 끕니다."
+	"미니맵에 GogoLoot 버튼을 표시합니다. 버튼에 마우스를 올리면 GogoLoot 메뉴가 열리고, 왼쪽 클릭하면 메뉴가 열린 채로 유지됩니다."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/명령어"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "이 애드온의 설정 창을 엽니다."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "기능"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"시체를 여는 즉시 모든 것을 가져오므로, 전리품 창을 기다릴 필요가 없습니다."
 L["SPEEDY_LOOT_ENABLE"] = "빠른 획득 사용"
@@ -422,11 +422,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"획득 방식이 적용되는 가장 낮은 아이템 품질을 정합니다. 파티장만 변경할 수 있습니다."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "이 설정은 %s님이 관리합니다."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "변경하려면 파티에 참여하세요. 파티장만 변경할 수 있습니다."
@@ -524,7 +520,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "승자 요약 표시"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "승자 요약 표시 안 함"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"'승자 요약 표시'는 게임 자체 메시지 대신, 승리할 때마다 승자, 아이템, 승리 주사위를 담은 한 줄을 대화창에 표시합니다. '승자 요약 표시 안 함'은 누가 이겼는지 알려 주는 게임의 메시지를 그대로 둡니다."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "안전 경고"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "%s 또는 %s(으)로 설정된 던전이나 공격대에 입장하면 경고"
@@ -534,10 +529,7 @@ L["ROLLS_SAFETY_WARNING_SOUND"] = "소리 재생"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
 	"경고와 함께 알림음을 재생합니다. 대화창이 바쁠 때 유용합니다."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"특정 아이템의 주사위를 파티 및 공격대 주사위 설정보다 우선하여 정합니다. GogoLoot가 퀘스트 아이템에, 또는 획득 시 귀속 포함이 꺼져 있을 때 획득 시 귀속 아이템에 주사위를 굴리는 유일한 방법입니다."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -628,7 +620,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "저레벨 장비"
 L["SANITY_CHECK_ROLLS_OFF"] = "자동 주사위 꺼짐"
 L["SANITY_CHECK_QUALITY"] = "파티 및 공격대 주사위"
 L["SANITY_CHECK_NEVER"] = "자동 처리 안 함"
-L["SANITY_CHECK_QUEST"] = "퀘스트 아이템"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "착용 시 귀속"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "획득 시 귀속"
 
@@ -1264,7 +1255,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"아직 거래할 수 있는 전리품을 아이템별 거래 기한과 함께 주사위로 분배하고, 전리품 추적기에서 모든 주사위를 지켜보세요. 미니맵 버튼을 가운데 클릭하거나 /gogo master 또는 /gogo tracker를 입력하세요."
+	"아직 거래할 수 있는 전리품을 아이템별 거래 기한과 함께 주사위로 분배하고, 전리품 추적기에서 모든 주사위를 지켜보세요. /gogo master 또는 /gogo tracker를 입력하세요."
 L["LOOT_MASTER_ENABLE"] = "전리품 관리자 사용"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"아직 거래할 수 있는 전리품을 추적하고 주사위를 요청합니다. 끄면 전리품 관리자와 전리품 추적기가 열리지 않고 주사위도 읽지 않습니다."

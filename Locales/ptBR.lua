@@ -148,11 +148,7 @@ L["TAB_LOOT_MASTER"] = "Gerente de Saque"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "Pausado"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Rola por você nos itens elegíveis até a qualidade que você escolher."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
 	"Abre mariscos, caixotes, bolsas de moedas e cofres destrancados nas suas bolsas."
@@ -171,6 +167,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Rolagem"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Registro de rolagens"
+L["MENU_RECENT_ROLLS"] = "Rolagens recentes"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "Você"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "Sem rolagem"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Todos passaram"
+L["MENU_ROLL_AUDIT_EMPTY"] = "Nenhuma rolagem nesta instância ainda."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -186,8 +196,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d desligados"
 
 L["MENU_CLICK_LEFT"] = "Clique esquerdo"
 L["MENU_CLICK_RIGHT"] = "Clique direito"
-L["MENU_CLICK_SHIFT_LEFT"] = "Shift + Clique esquerdo"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Clique do meio"
 L["MENU_TOGGLE"] = "Alternar"
 
@@ -198,7 +206,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "Um %s pode destrancá-los para você."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Use %s para destrancá-los."
 L["MENU_OPTIONS"] = "Opções do GogoLoot"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + Clique do meio"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "Mais %d"
@@ -262,12 +269,7 @@ L["ITEM_LIST_RESTORE"] = "Restaurar Padrões"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Carregando ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Nunca rola em receitas, livros, montarias, mascotes ou lendários, só rola em itens de missão se estiverem em Exceções Globais de Itens, e só rola em itens que se vinculam ao ser recolhidos se estiverem em Exceções Globais de Itens ou Incluir Vinculado ao Recolher estiver ativado."
 
@@ -302,20 +304,18 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"Mostra a versão do GogoLoot e onde encontrar estas configurações sempre que você entra no jogo."
 L["MINIMAP_BUTTON_ENABLE"] = "Ativar Botão do Minimapa"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Mostra o botão do GogoLoot no minimapa. Passe o cursor sobre ele para abrir o menu do GogoLoot. Clique esquerdo alterna as Rolagens Automáticas, Clique direito a Abertura Automática, e Shift + Clique esquerdo os Anúncios de Saque."
+	"Mostra o botão do GogoLoot no minimapa. Passe o cursor sobre ele para abrir o menu do GogoLoot, ou use o Clique esquerdo para mantê-lo aberto."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Comandos"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Abre a janela de opções deste add-on."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Recursos"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Pega tudo de um corpo assim que você o abre, para você nunca esperar pela janela de saque."
 L["SPEEDY_LOOT_ENABLE"] = "Ativar Saque Rápido"
@@ -413,11 +413,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Define a qualidade de item mais baixa à qual o método de saque se aplica. Só o líder do grupo pode mudar isso."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Estas configurações são controladas por %s."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "Entre em um grupo para mudar isto. Só o líder do grupo pode."
@@ -512,7 +508,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Mostrar Resumo do Vencedor"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Não Mostrar Resumo do Vencedor"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Mostrar Resumo do Vencedor põe no chat uma linha para cada vitória, com o vencedor, o item e a rolagem vencedora, no lugar da linha do próprio jogo. Não Mostrar Resumo do Vencedor mantém a linha do jogo dizendo quem ganhou."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Avisos de Segurança"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "Avisar ao Entrar em Masmorra ou Raide com %s ou %s"
@@ -521,10 +516,7 @@ L["ROLLS_SAFETY_WARNING_DESCRIPTION"] =
 L["ROLLS_SAFETY_WARNING_SOUND"] = "Tocar Som"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] = "Toca um alerta junto com o aviso, para quando o chat está agitado."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Define a rolagem para itens específicos, antes das suas Rolagens em Grupo e Raide. É a única forma de o GogoLoot rolar em um item de missão, ou em um item vinculado ao recolher enquanto Incluir Vinculado ao Recolher estiver desativado."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -613,7 +605,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "Equipamento de Nível Baixo"
 L["SANITY_CHECK_ROLLS_OFF"] = "Rolagens Automáticas Desativadas"
 L["SANITY_CHECK_QUALITY"] = "Rolagens em Grupo e Raide"
 L["SANITY_CHECK_NEVER"] = "Nunca Automático"
-L["SANITY_CHECK_QUEST"] = "Item de Missão"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "Vinculado ao Equipar"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Vinculado ao Recolher"
 
@@ -1233,7 +1224,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Distribua por rolagem o que ainda pode ser negociado, com o prazo de troca de cada item, e acompanhe cada rolagem no Rastreador de Saque. Clique do meio no botão do minimapa, ou digite /gogo master ou /gogo tracker."
+	"Distribua por rolagem o que ainda pode ser negociado, com o prazo de troca de cada item, e acompanhe cada rolagem no Rastreador de Saque. Digite /gogo master ou /gogo tracker."
 L["LOOT_MASTER_ENABLE"] = "Ativar Gerente de Saque"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Acompanha o saque que você ainda pode negociar e pede rolagens nele. Desativado, o Gerente de Saque e o Rastreador de Saque nunca abrem e nenhuma rolagem é lida."

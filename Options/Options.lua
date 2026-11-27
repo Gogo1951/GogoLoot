@@ -11,27 +11,9 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 --------------------------------------------------------------------------------
 
 --[[
-    Every panel registers through Kit.RegisterPanel (Options-Kit.lua), as its
-    builder function, so every repaint rebuilds it. The registry names
-    (ns.OPTIONS_REGISTRY) are stable identifiers and never localized; the
-    display names are. A child panel nests under its parent by the category ID
-    the parent's registration captured, and its page title reads "Parent >
-    Child" (Kit.SubPanelTitle) while the tree shows the plain name.
-]]
-
---[[
-    The feature panels in Settings-tree order: the features every player uses
-    first (looting, rolls with Item Overrides, Character Rules and the Loot
-    Roll Sanity Check under it, opening), then the three that report loot,
-    what the player sees, what they hear, then what the group is told, then
-    the master looter's own, and the Roll Macro. LootMaster, last, is the
-    parked Loot Master panel: its builder exists only while its file loads,
-    so the loop in ns.RegisterOptionsPanels skips it today. (The GogoLoot
-    page's Features section follows the menu's order instead, ns.FEATURES.) A
-    row with a `parent` nests beneath it, and a parent is listed before its
-    children, so its category ID is captured by the time they need it.
-    Profiles, Feedback & Support and Diagnostic Tools come after all of these,
-    in that order.
+    Settings-tree order. A parent comes before its children, so its category
+    ID is captured by the time they need it. LootMaster is parked: its builder
+    exists only while its file loads, so registration skips it.
 ]]
 local FEATURE_PANELS = {
 	{ key = "SpeedyLoot", builder = "BuildSpeedyLootOptions", title = "TAB_SPEEDY_LOOT" },
@@ -87,10 +69,6 @@ local FEATURE_PANELS = {
 	{ key = "LootMaster", builder = "BuildLootMasterOptions", title = "TAB_LOOT_MASTER" },
 }
 
---[[
-    A child panel's builder, with its page title set to "Parent > Child". The
-    tree shows the display name passed to Kit.RegisterPanel, the plain name.
-]]
 ---@param panel table # a FEATURE_PANELS row with a parent
 ---@param panelsByKey table
 ---@return function
@@ -120,19 +98,12 @@ end
 function ns.RegisterOptionsPanels()
 	Kit.RegisterPanel("General", ns.BuildGeneralOptions, L["ADDON_TITLE"])
 
-	--[[
-        Registered only, never added to the Blizzard tree: the master looter
-        pop-up opens as its own AceConfigDialog window (Options-Master-Looter-Popup.lua).
-    ]]
+	-- Registered only, never in the tree: the pop-up opens as its own AceConfigDialog window.
 	if ns.BuildMasterLooterPopupOptions then
 		AceConfigRegistry:RegisterOptionsTable(ns.OPTIONS_REGISTRY.MasterLooterPopup, ns.BuildMasterLooterPopupOptions)
 	end
 
-	--[[
-        Display order in Blizzard's settings UI is the order of registration. A
-        panel whose parent never registered (its file left out of this
-        flavor's TOC) is skipped rather than registered in the wrong place.
-    ]]
+	-- Registration order is tree order. A panel whose parent never registered is skipped, not misplaced.
 	local panelsByKey, registered = {}, {}
 	for _, panel in ipairs(FEATURE_PANELS) do
 		panelsByKey[panel.key] = panel
@@ -166,13 +137,7 @@ function ns.RegisterOptionsPanels()
 		Kit.RegisterPanel("Diagnostics", ns.BuildDiagnosticsOptions, ns.DiagnosticsStrings.TAB)
 	end
 
-	--[[
-        Closing the Options window ends an item list's New section (see
-        Options-Utilities-Item-List-Filter.lua) and stops waiting on the items of
-        the list panels it showed (Options-Utilities-Item-Cache.lua). SettingsPanel
-        is the window on every client GogoLoot ships for; hooked rather than
-        replaced, so Blizzard's own OnHide still runs.
-    ]]
+	-- Hooked, not replaced, so Blizzard's own OnHide still runs.
 	if SettingsPanel then
 		SettingsPanel:HookScript("OnHide", ns.ForgetNewListItems)
 		SettingsPanel:HookScript("OnHide", ns.ForgetPanelItemLists)

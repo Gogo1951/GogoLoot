@@ -343,6 +343,28 @@ function Kit.LabelRow(order, hidden, caption, control, desc, helper)
 end
 
 --[[
+    A copyable link: a TITLE-colored caption 0.6 wide beside a read-only box
+    holding the URL, filling the rest of ROW_WIDTH. The caption is one short
+    word and the box a full URL, so it never takes LabelRow's columns. The game
+    can't open links, so the box is there to copy from; typing in it does
+    nothing.
+]]
+function Kit.LinkRow(order, caption, url)
+	return Kit.Row(order, nil, {
+		Kit.Label(Kit.Color("TITLE", caption), nil, 0.6),
+		{
+			type = "input",
+			name = "",
+			width = Kit.ROW_WIDTH - 0.6,
+			get = function()
+				return url
+			end,
+			set = function() end,
+		},
+	})
+end
+
+--[[
     A section's field sets, one under the other with a spacer between each: a
     field set is a control with what belongs to it (its sub-rows, its helper
     line, its Example). Returns one arg.
@@ -369,9 +391,30 @@ function Kit.SubLabelRow(order, hidden, caption, control, desc)
 	})
 end
 
--- An on/off choice under the control it belongs to.
-function Kit.SubToggleRow(order, hidden, toggle)
+--[[
+    A lone button on a row of its own: its own name on it, at the control
+    column's width, in the control column, never at the left edge at its
+    default width. caption, when given, sits in the label column.
+]]
+function Kit.ButtonRow(order, hidden, button, caption)
+	local name = button.name
+	local row = Kit.LabelRow(order, hidden, caption or " ", button, caption and button.desc or nil)
+	button.name = name
+	return row
+end
+
+--[[
+    An on/off choice under the control it belongs to. preview, when given, is
+    a sound switch's speaker (Kit.SoundPreview) past the row's end, where
+    Kit.ToggleRow puts every other speaker. It stays while the switch is off:
+    it plays whether or not the sound is on, and hearing it first is the point.
+]]
+function Kit.SubToggleRow(order, hidden, toggle, preview)
 	toggle.name = Kit.SubLabel(toggle.name)
+	if preview then
+		toggle.width = Kit.ROW_WIDTH - Kit.SUB_INDENT_WIDTH
+		return Kit.SubRow(order, hidden, { toggle, preview })
+	end
 	toggle.width = Kit.ROW_WIDTH - Kit.SUB_INDENT_WIDTH - 0.2
 	return Kit.SubRow(order, hidden, { toggle })
 end
@@ -513,6 +556,7 @@ end
       block            true for a feature players flip mid-session
       apply(value)     optional: writes the value and its side effects; default writes it
       confirm          optional: a key asked before switching off
+      disabled()       optional: true grays the Enable switch out (another feature it needs is off)
       click            optional: the button click its Toggle row names (MINIMAP MENU)
       gate()           optional: true when this character can use it (menu only)
       opensOptions     optional: an OPTIONS_REGISTRY key its More Features row opens
@@ -538,6 +582,7 @@ function Kit.FeatureSwitch(setting, order, width)
 		confirm = feature.confirm and function(_, value)
 			return not value and L[feature.confirm] or false
 		end or nil,
+		disabled = feature.disabled,
 		get = function()
 			local node, key = Resolve(feature.store, feature.setting)
 			return node and node[key]
@@ -654,7 +699,8 @@ function Kit.Example(order, hidden, getLines)
 					type = "description",
 					name = function()
 						local lines = getLines()
-						return type(lines) == "table" and table.concat(lines, "\n") or lines
+						-- A blank line between lines, so each reads as its own chat line.
+						return type(lines) == "table" and table.concat(lines, "\n\n") or lines
 					end,
 					fontSize = "medium",
 					width = Kit.ROW_WIDTH - Kit.SUB_INDENT_WIDTH,

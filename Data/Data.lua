@@ -16,10 +16,8 @@ ns.SAVED_VARIABLES_NAME = "GogoLootDB"
 --------------------------------------------------------------------------------
 
 --[[
-    Prefer the client's own symbol: the modern Enum first, then for an item
-    class the legacy LE_ITEM_CLASS_* global, then the numeric value, which is
-    correct on every flavor we target. Reading a symbol first means a future
-    renumbering doesn't silently reclassify items.
+    The client's own symbol first (Enum, then the legacy LE_* global), the
+    number last, so a future renumbering can't silently reclassify items.
 ]]
 
 ns.BIND_ON_PICKUP = (Enum and Enum.ItemBind and Enum.ItemBind.OnAcquire) or 1
@@ -40,10 +38,9 @@ ns.ITEM_SUBCLASS_COMPANION_PET = (
 ns.ITEM_SUBCLASS_MOUNT = (Enum and Enum.ItemMiscellaneousSubclass and Enum.ItemMiscellaneousSubclass.Mount) or 5
 
 --[[
-    Class 1 is the client's "Container", which is a BAG, the thing loot goes in,
-    not the lockbox Automated Opening opens; those are ns.OPENABLE_ITEMS, matched
-    by id, never by class. Quivers and ammo pouches are their own class rather
-    than bags, so each gets a Filters row of its own on the Loot Toasts panel.
+    Class 1 "Container" is a bag, not a lockbox: openables are matched by id
+    (ns.OPENABLE_ITEMS), never by class. Quivers and ammo pouches are their
+    own class, not bags.
 ]]
 ns.ITEM_CLASS_BAG = (Enum and Enum.ItemClass and Enum.ItemClass.Container) or LE_ITEM_CLASS_CONTAINER or 1
 ns.ITEM_CLASS_QUIVER = (Enum and Enum.ItemClass and Enum.ItemClass.Quiver) or LE_ITEM_CLASS_QUIVER or 11
@@ -67,12 +64,7 @@ ns.TRADE_ITEM_SLOT_COUNT = 6
 -- UI Colors
 --------------------------------------------------------------------------------
 
---[[
-    Raw palette only: plain 6-char hex strings, never prefixed with |cff —
-    the display prefix is prepended where the derived tables are built. The
-    derived COLORS / COLORS_RGB tables and the GetColor / GetColorRGB /
-    GetQualityColor accessors live in Utilities.lua.
-]]
+-- Plain RRGGBB, never |cff-prefixed: Utilities.lua builds ns.COLORS / ns.COLORS_RGB from these.
 
 ns.PALETTE = {
 	TITLE = "FFD100", -- Gold: Titles, Headers, Section Names, Field Titles
@@ -100,10 +92,7 @@ ns.CLASS_COLORS = {
 	WARRIOR = "C69B6D",
 }
 
---[[
-    The house roster the options panels' Example lines name, by class token,
-    each drawn in its class color. Proper names, the same in every locale.
-]]
+-- The options panels' Example names, by class token. Proper names, never translated.
 ns.SAMPLE_NAMES = {
 	HUNTER = "Spek",
 	PRIEST = "Katz",
@@ -121,11 +110,9 @@ ns.SAMPLE_NAMES = {
 --------------------------------------------------------------------------------
 
 --[[
-    Leads every message sent to other players (see Announce in
-    Announcements.lua), on every flavor. WoW Forever blocks raid markers only
-    in /say and public channels such as General, which GogoLoot never sends
-    to. One marker per add-on, chosen so GogoLoot's messages stay visually
-    distinct from other Gogo1951 add-ons the player may be running.
+    Leads every message sent to other players. WoW Forever blocks raid markers
+    only in /say and public channels, which GogoLoot never sends to. Each
+    Gogo1951 add-on has its own marker, so their messages stay distinct.
 ]]
 
 --[[
@@ -161,12 +148,7 @@ ns.ROLL_OVERRIDE_LABELS = {
 	[ns.PASS] = PASS,
 }
 
---[[
-    Display order for every roll-action dropdown, passed to AceConfig as
-    `sorting`. Without it the dropdown sorts by key (greed, manual, need,
-    pass); this keeps the four actions in one fixed, least-to-most aggressive
-    order everywhere they appear.
-]]
+-- Every roll-action dropdown's `sorting`, least to most aggressive; without it AceConfig sorts by key.
 ns.ROLL_OVERRIDE_ORDER = { ns.MANUAL, ns.PASS, ns.GREED, ns.NEED }
 
 -- The roll window's own button art for each roll, as the mini-map menu shows it; Manual has none.
@@ -177,22 +159,13 @@ ns.ROLL_ICONS = {
 }
 
 --[[
-    Character Rules: what each character wants. Gear that is a ticked armor
-    or weapon type and carries a ticked stat is left to the player to roll;
-    every other armor or weapon is rolled the way the character's Everything
-    Else row says (Greed up to Epic by default; Bind on Pickup only while
-    the group context's Include Bind on Pickup, rollBindOnPickupParty or
-    rollBindOnPickupRaid, is on).
-    Every character starts on its class's list (Data/{Folder}/
-    Character-Rule-Gear-Types-{Folder}.lua) and saves only the boxes the
+    Character Rules: gear of a ticked type carrying a ticked stat is left to
+    the player; other armor and weapons roll as the Everything Else row says.
+    Every character starts on its class's list and saves only the boxes the
     player changes (maintainer, 2026-11-07).
 ]]
 
---[[
-    The panel's two stat sections, in order. Each is captioned with the game's
-    own label (labelGlobal) on a client that has it, WoW Forever and later, and
-    with its locale key (caption) on one that doesn't.
-]]
+-- Captioned by the game's labelGlobal where the client has it (WoW Forever and later), else the locale caption.
 ns.CHARACTER_RULE_GROUPS = {
 	{ key = "PRIMARY", caption = "CHARACTER_RULES_PRIMARY", labelGlobal = "STAT_CATEGORY_PRIMARY_ATTRIBUTES" },
 	{
@@ -204,18 +177,11 @@ ns.CHARACTER_RULE_GROUPS = {
 }
 
 --[[
-    The stats a rule can name. `group` is the panel section a stat sits in:
-    the primary attributes in the character sheet's order, as listed here, and
-    the secondary ones A to Z by their name in the player's language, which
-    the panel sorts as it builds. `itemMods` are the GetItemStats keys that
-    carry the stat, and `label` is the game's own name for it, already in the
-    player's language. Spell Power is damage and healing in one stat, so it
-    counts for both rules.
-
-    An `everyClass` stat starts ticked for every class (crit and hit, which
-    count melee and spell ratings as one, and which every role takes). Every
-    other stat starts from the class's starter list, and Stamina is on none
-    (maintainer, 2026-11-07).
+    Primary stats keep this order; secondary ones sort A to Z by label as the
+    panel builds. `itemMods` are the GetItemStats keys that carry the stat;
+    Spell Power counts for both the damage and healing rules. `everyClass`
+    stats start ticked for every class; the rest come from the class starter
+    list, and Stamina is on none (maintainer, 2026-11-07).
 ]]
 ns.CHARACTER_RULE_STATS = {
 	{
@@ -299,14 +265,9 @@ ns.CHARACTER_RULE_STATS = {
 }
 
 --[[
-    Character Rules' armor and weapon sections, under the stats, then the
-    Other catch-all. Each row is one item subclass, named by the client
-    (C_Item.GetItemSubClassInfo), or a named row (ns.CHARACTER_RULE_GEAR_ROW_LABELS).
-    `types` and `starter` name the tables on ns that each flavor folder's
-    Character-Rule-Gear-Types-{Folder}.lua fills: the rows, in panel order,
-    and which of them each class starts with ticked. A section whose folder
-    lists no rows is dropped at load. Weapons sort A to Z by name; armor keeps
-    its listed order, lightest first.
+    `types` and `starter` name the ns tables each flavor's
+    Character-Rule-Gear-Types-{Folder}.lua fills; a section with no rows is
+    dropped at load. Armor keeps its listed order, lightest first.
 ]]
 ns.CHARACTER_RULE_GEAR_GROUPS = {
 	{
@@ -324,12 +285,7 @@ ns.CHARACTER_RULE_GEAR_GROUPS = {
 		starter = "CLASS_WEAPON_STARTER",
 		sortByLabel = true,
 	},
-	--[[
-        Last, a catch-all: any armor or weapon no row above names (a fishing
-        pole, a Miscellaneous weapon, gear from a subclass the data never
-        listed), so the player still has a say over it. Every class starts
-        with it ticked. Captioned with the game's own OTHER.
-    ]]
+	-- Catch-all for gear no row above names (a fishing pole, an unlisted subclass); every class starts with it ticked.
 	{
 		key = "OTHER",
 		labelGlobal = "OTHER",
@@ -341,11 +297,7 @@ ns.CHARACTER_RULE_GEAR_GROUPS = {
 
 ns.CHARACTER_RULE_OTHER_TYPES = { "GEAR" }
 
---[[
-    The rows not named by an item subclass, which C_Item.GetItemSubClassInfo
-    can't caption: held off-hands, told apart by their slot (they share armor
-    subclass 0 with rings), and the Other row.
-]]
+-- Rows no item subclass names: held off-hands go by slot (they share armor subclass 0 with rings), and Other.
 ns.CHARACTER_RULE_GEAR_ROW_LABELS = {
 	HELD = INVTYPE_HOLDABLE,
 	GEAR = ns.L["CHARACTER_RULES_OTHER_GEAR"],
@@ -356,11 +308,7 @@ ns.CHARACTER_RULE_GEAR_SLOT_ROWS = {
 	INVTYPE_HOLDABLE = "HELD",
 }
 
---[[
-    Slots any class wears, so their type never decides: a cloak is cloth by
-    subclass, and the rest are armor subclass 0 Miscellaneous. Stats alone
-    decide whether the character wants one.
-]]
+-- Slots any class wears, so stats alone decide: a cloak is cloth by subclass, the rest armor subclass 0.
 ns.CHARACTER_RULE_TYPELESS_SLOTS = {
 	INVTYPE_CLOAK = true,
 	INVTYPE_FINGER = true,
@@ -374,17 +322,10 @@ ns.CHARACTER_RULE_SKIPPED_SLOTS = {
 	INVTYPE_TABARD = true,
 }
 
---[[
-    The Everything Else row: what happens to gear the character doesn't want.
-    Each field is saved only once the player changes it from these.
-]]
+-- The Everything Else row, for gear the character doesn't want; a field is saved only once changed from these.
 ns.CHARACTER_RULE_UNWANTED_DEFAULTS = {
 	action = ns.GREED,
-	--[[
-        Gear whose required level is at least this many levels below the
-        character's Greeds whatever it matches, so outgrown gear never waits
-        on a leveling player; 0 is off (maintainer, 2026-11-07).
-    ]]
+	-- Greeds gear this many levels below the character whatever it matches; 0 is off (maintainer, 2026-11-07).
 	lowLevelGear = 5,
 }
 
@@ -412,12 +353,7 @@ ns.ROLL_THRESHOLD_LABELS = {
 	[4] = ns.L["THRESHOLD_AND_LOWER"]:format(ITEM_QUALITY4_DESC),
 }
 
---[[
-    Which kind of roll won, as ns.ParseRollResultMessage reads it off the
-    client's roll lines. Features/Loot-Toasts-Winning-Rolls.lua turns each into
-    the game's own word (NEED, GREED, ROLL_DISENCHANT) for the toast.
-    Disenchant exists only where the client offers it.
-]]
+-- The roll kind ns.ParseRollResultMessage reads off a roll line; Disenchant only where the client offers it.
 ns.ROLL_KIND_NEED = "NEED"
 ns.ROLL_KIND_GREED = "GREED"
 ns.ROLL_KIND_DISENCHANT = "DISENCHANT"
@@ -426,11 +362,7 @@ ns.ROLL_KIND_DISENCHANT = "DISENCHANT"
 -- Master Loot Destinations
 --------------------------------------------------------------------------------
 
---[[
-    The destination dropdowns' first choice: nobody picked, so that quality
-    waits in the loot window. Never saved; picking it clears the quality's
-    destination, and an unset quality reads back as it.
-]]
+-- Nobody picked, so the quality waits in the loot window. Never saved: picking it clears the destination.
 ns.DESTINATION_LOOT_WINDOW = "lootwindow"
 
 --------------------------------------------------------------------------------
@@ -438,10 +370,8 @@ ns.DESTINATION_LOOT_WINDOW = "lootwindow"
 --------------------------------------------------------------------------------
 
 --[[
-    The panel grid (row, label, control, sub-row, tree and remove-icon widths)
-    is the Options-Kit's (Options/Options-Kit.lua), published as ns.OPTIONS_*.
-    It loads with the Options group, after this file, so what is left here
-    reads no grid width; the list and filter widths built from the grid sit in
+    The panel grid (ns.OPTIONS_*) is Options-Kit's and loads after this file,
+    so nothing here may read it; widths built from it sit in
     Options/Options-Utilities.lua.
 ]]
 
@@ -454,13 +384,7 @@ ns.OPTIONS_ITEM_TAG_WIDTH = 0.65
 -- Restore Defaults, at the foot of an item list, right-aligned: wide enough for its caption and no wider.
 ns.OPTIONS_RESTORE_BUTTON_WIDTH = 1
 
---[[
-    The Loot Toasts Filters rows: a narrow caption column for the item type,
-    then a Mine column and a Group column of one width each (in
-    Options-Utilities.lua), so every Group box lines up whatever sits in the
-    Mine column. A column holds its box, and on a rarity row the quality
-    dropdown beside it.
-]]
+-- The Loot Toasts Filters rows' caption column; Mine and Group columns share one width so every Group box lines up.
 ns.OPTIONS_FILTER_LABEL_WIDTH = 1
 ns.OPTIONS_FILTER_BOX_WIDTH = 0.45
 
@@ -468,11 +392,7 @@ ns.OPTIONS_FILTER_BOX_WIDTH = 0.45
 -- Quality Constants
 --------------------------------------------------------------------------------
 
---[[
-    Plain RRGGBB hex strings, matching the format used by PALETTE /
-    COLORS. For inline-color strings ("|cffRRGGBB"), use
-    ns.GetQualityColor(quality).
-]]
+-- Plain RRGGBB like ns.PALETTE; ns.GetQualityColor(quality) gives the |cff form.
 ns.QUALITY_COLORS = {
 	[0] = "9D9D9D", -- Poor (Gray)
 	[1] = "FFFFFF", -- Common (White)
@@ -504,19 +424,11 @@ ns.QUALITY_DISPLAY_NAMES = {
 --------------------------------------------------------------------------------
 
 --[[
-    The Loot Toasts panel's Filters rows, in panel order, each with a
-    Mine box and a Group box (the saved lootToastMine and lootToastGroup
-    tables, keyed by `key`). A row with `classIdentifier` is one of the game's
-    item types and takes the client's own name for it; one with a subclass too
-    is that subclass alone (Mount, Companion Pets), which the Miscellaneous row
-    then leaves out. A `rarity` row carries a quality dropdown beside each
-    ticked box (lootToastMineQuality, lootToastGroupQuality); every other row
-    shows its items whatever their quality. `minimumExpansion` keeps a type off
-    a client that has none of it. The last three are GogoLoot's own groupings,
-    captioned from the locale (`labelKey`) or, for Money, with the client's own
-    word (`label`), and Money has no Group box: the game reports no other
-    player's coin. The item-type rows after the rarity ones are sorted by
-    their client name as the panel is built.
+    `key` keys lootToastMine / lootToastGroup. A row with a subclass is that
+    subclass alone, which its class row then leaves out. `rarity` adds a
+    quality dropdown (lootToastMineQuality / lootToastGroupQuality).
+    `mineOnly`: the game reports no other player's coin or currency. The
+    type rows after the rarity ones sort by client name as the panel builds.
 ]]
 ns.LOOT_TOAST_FILTER_ROWS = {
 	{ key = "ARMOR", classIdentifier = ns.ITEM_CLASS_ARMOR, rarity = true },
@@ -549,11 +461,7 @@ ns.LOOT_TOAST_FILTER_ROWS = {
 -- Automated Opening
 --------------------------------------------------------------------------------
 
---[[
-    Opening pauses below this many free general-purpose bag slots and resumes on
-    reaching it, and Speedy Loot keeps the loot window up once a pass leaves
-    fewer than this, so the two features share one line.
-]]
+-- Free general bag slots below which opening pauses and Speedy Loot keeps the window up: one line for both.
 ns.MIN_FREE_SLOTS = 4
 
 -- The loot windows ElvUI and Tukui put in place of the game's (see ns.GetLootWindow).
@@ -575,27 +483,20 @@ ns.ITEM_ANNOUNCE_COOLDOWN = 5 -- Seconds before the same item may be announced a
 ns.STATUS_REPEAT_COOLDOWN = 5 -- Seconds before an identical status message may print again
 
 --[[
-    What Automated Opening does with each openable item, the two values of the
-    Openables List dropdowns: Open, or Ignore, which leaves it alone.
-
-    The player's choices are saved only where they differ from an item's
-    default (see Features/Openable-Items.lua). OPENING_REMOVED is saved for a
-    listed item the player took off the list, and is never a dropdown value.
+    The Openables List dropdown's two values. OPENING_REMOVED is saved for a
+    listed item the player took off, and is never a dropdown value.
 ]]
 ns.OPENING_OPEN = "OPEN"
 ns.OPENING_IGNORE = "IGNORE"
 ns.OPENING_REMOVED = "REMOVED"
 
 --[[
-    Each flavor folder's ns.OPENABLE_ITEMS rows give an item's default, one of
-    five: OPENING_OPEN; OPENING_UNLOCKED, a lockbox, opened once it is picked;
-    OPENING_IGNORE_RAID, a raid boss drop; OPENING_IGNORE_UNIQUE, which may hold
-    a unique item; or OPENING_IGNORE, which may hold Bind on Pickup loot. The
-    three Ignores go only to a container that can itself be traded, but for
-    Gnarlpine Necklace (8049), a quest item set to Ignore by hand in every
-    folder (README-Notes.md → Decisions). The
-    last four carry a reason, which the Openables List shows as a tag on the
-    row, whatever the player sets it to, and a looted container's notice gives.
+    The other data defaults: UNLOCKED, a lockbox, opened once picked;
+    IGNORE_RAID, a raid boss drop; IGNORE_UNIQUE, may hold a unique item;
+    and OPENING_IGNORE, may hold Bind on Pickup loot. The Ignores go only to
+    a container that can itself be traded, but for Gnarlpine Necklace (8049),
+    set to Ignore by hand in every folder. A reason shows as the row's tag
+    whatever the player sets.
 ]]
 ns.OPENING_UNLOCKED = "UNLOCKED"
 ns.OPENING_IGNORE_RAID = "IGNORE_RAID"
@@ -606,10 +507,7 @@ ns.OPENING_ACTION_LABELS = {
 	[ns.OPENING_IGNORE] = ns.L["OPENING_ACTION_IGNORE"],
 }
 
---[[
-    Display order for the Openables List dropdowns, passed to AceConfig as
-    `sorting`: without it the dropdown sorts by key, which puts Ignore first.
-]]
+-- The Openables List dropdowns' `sorting`; by key, Ignore would come first.
 ns.OPENING_ACTION_ORDER = {
 	ns.OPENING_OPEN,
 	ns.OPENING_IGNORE,
@@ -630,11 +528,7 @@ ns.ROLL_SAFETY_WARNING_SOUND_FILE = "Interface\\AddOns\\"
 -- Seconds after a corpse or chest's loot window closes during which a loot message may still play the chime.
 ns.LOOT_SOUND_WINDOW = 1
 
---[[
-    Seconds a loot window may follow a Pick Pocket cast and still count as its
-    haul. Pick Pocket's window opens at once, so this only has to span the
-    cast-to-loot gap.
-]]
+-- Seconds a loot window may follow a Pick Pocket cast and still count as its haul.
 ns.PICK_POCKET_LOOT_WINDOW = 1
 
 --------------------------------------------------------------------------------
@@ -650,10 +544,8 @@ ns.LOOT_TOAST_ENTRY_INTERVAL = 0.15
 ns.LOOT_TOAST_DURATIONS = { 1, 2, 3, 5, 8, 13, 21 }
 
 --[[
-    Most rows on screen at once, in the same widening steps so the two dropdowns
-    read as a pair. Unlimited is stored as 0, a sentinel rather than a count, and
-    the one value the cap code has to special-case: a literal cap of zero would
-    retire every row on sight.
+    Most rows on screen at once. Unlimited is stored as 0, a sentinel the cap
+    code must special-case: a literal cap of zero would retire every row.
 ]]
 ns.LOOT_TOAST_COUNTS = { 1, 2, 3, 5, 8, 13, 21 }
 ns.LOOT_TOAST_UNLIMITED = 0
@@ -666,25 +558,15 @@ ns.WINNER_SUMMARY_NONE = "NONE"
 ns.STANDARD_LOOT_MESSAGES_DISABLE = "DISABLE"
 ns.STANDARD_LOOT_MESSAGES_ENABLE = "ENABLE"
 
---[[
-    The face list comes from LibSharedMedia; only the sizes are ours, offered as
-    a dropdown in steps of two, so the Text section's rows share one height. A
-    size saved between the steps is offered too, so it still reads back.
-]]
+-- Font faces come from LibSharedMedia. A size saved between these steps is offered too, so it still reads back.
 ns.LOOT_TOAST_FONT_SIZE_MIN = 8
 ns.LOOT_TOAST_FONT_SIZES = { 8, 10, 12, 14, 16, 18, 20, 22, 24 }
 
---[[
-    The client's own SetFont flag strings, in the order the dropdown offers them:
-    the weight ladder first, then the two monochrome variants. "NONE" is ours,
-    standing for the empty flag string SetFont wants instead of a name.
-]]
+-- SetFont flag strings in dropdown order. "NONE" is ours, for the empty string SetFont wants.
 ns.LOOT_TOAST_FONT_FLAGS = { "NONE", "OUTLINE", "THICKOUTLINE", "MONOCHROME", "MONOCHROMEOUTLINE" }
 
 --[[
-    One potion icon per item quality, color-matched to the quality it stands
-    for, so a sample toast reads as that quality at a glance. Used only by the
-    position preview; a real toast draws the looted item's own icon.
+    The position preview's sample toasts, a potion colored to each quality.
     { [quality] = iconPath }
 ]]
 ns.LOOT_TOAST_SAMPLE_ICONS = {
@@ -696,10 +578,7 @@ ns.LOOT_TOAST_SAMPLE_ICONS = {
 	[5] = "Interface\\Icons\\inv_potion_135", -- Legendary (orange)
 }
 
---[[
-    Coin piles for the money toast, one per magnitude, so the icon says roughly
-    how much before the digits are read.
-]]
+-- The money toast's icon, one coin pile per magnitude.
 ns.MONEY_ICON_GOLD = "Interface\\Icons\\INV_Misc_Coin_02"
 ns.MONEY_ICON_SILVER = "Interface\\Icons\\INV_Misc_Coin_04"
 ns.MONEY_ICON_COPPER = "Interface\\Icons\\INV_Misc_Coin_06"
@@ -708,12 +587,9 @@ ns.MONEY_ICON_COPPER = "Interface\\Icons\\INV_Misc_Coin_06"
 ns.QUESTION_MARK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 --[[
-    The Roll Macro (Features/Roll-Macro.lua), a General macro so every character
-    on the account shares it. Left-click rolls 1-100, right-click 1-99 for an
-    off-spec roll, middle-click 1 to the group's size for a raid roll (1-100
-    alone). The name is the same in every locale, and the icon is a stack of
-    gold coins: no dice icon exists on every client. The icon is a file ID
-    because GetMacroInfo answers with one, so it can be compared.
+    The Roll Macro: left-click 1-100, right-click 1-99 (off-spec),
+    middle-click 1 to the group's size (raid roll). Coins, since no dice icon
+    exists on every client; a file ID, since GetMacroInfo answers with one.
 ]]
 ns.ROLL_MACRO_NAME = "- Roll"
 ns.ROLL_MACRO_ICON = 133784 -- Interface\Icons\INV_Misc_Coin_01
@@ -721,10 +597,9 @@ ns.ROLL_MACRO_BODY =
 	'/run local b,n=GetMouseButtonClicked(),GetNumGroupMembers() RandomRoll(1,b=="MiddleButton" and n>0 and n or b=="RightButton" and 99 or 100)'
 
 --[[
-    Raid Roll Winner (Features/Raid-Roll-Winner.lua): where the winner goes,
-    the raidRollOutput setting's two values, and how long each GogoLoot user
-    in the group waits per roster place before posting, so the first in the
-    roster posts and the rest hear its claim and stay quiet.
+    Raid Roll Winner's raidRollOutput values, and the wait per roster place
+    before posting, so the first GogoLoot user posts and the rest hear its
+    claim and stay quiet.
 ]]
 ns.RAID_ROLL_OUTPUT_SELF = "SELF"
 ns.RAID_ROLL_OUTPUT_GROUP = "GROUP"
@@ -733,12 +608,7 @@ ns.RAID_ROLL_CLAIM_WAIT = 1 -- seconds
 ns.COPPER_PER_SILVER = 100
 ns.COPPER_PER_GOLD = 10000
 
---[[
-    One color per coin, for the g/s/c suffixes while the numbers stay body white.
-    These are the client's conventions rather than the add-on's, which is why
-    they sit apart from ns.PALETTE: gold, silver and copper look the way they
-    look in every money display in the game.
-]]
+-- The g/s/c suffix colors: the game's money conventions, so kept apart from ns.PALETTE.
 ns.MONEY_PALETTE = {
 	GOLD = "FFD700",
 	SILVER = "C7C7CF",
@@ -749,14 +619,12 @@ ns.MONEY_PALETTE = {
 -- Trade Output Labels
 --------------------------------------------------------------------------------
 
--- Maps the announceTradeOutput setting values to their display labels.
 ns.TRADE_OUTPUT_LABELS = {
 	["whisper"] = WHISPER,
 	["group"] = ns.L["CHANNEL_GROUP_CHAT"],
 	["self"] = ns.L["CHANNEL_ME_ONLY"],
 }
 
--- Maps the announceTradeCondition setting values to their display labels, in the dropdown's order.
 ns.TRADE_CONDITION_LABELS = {
 	["always"] = ns.L["TRADE_CONDITION_ALWAYS"],
 	["party_or_raid"] = ns.L["TRADE_CONDITION_PARTY_OR_RAID"],
@@ -789,9 +657,9 @@ ns.ROLL_CHANNEL_RAID_WARNING = "RAID_WARNING"
 ns.ROLL_CHANNEL_GROUP = "GROUP"
 
 --[[
-    Seconds of grace after a roll closes in which a roll still counts, for lag.
-    Rolls just before a call or just after the grace show in the list as not
-    counted, for this many seconds either side, so the raid can see why.
+    Grace after a roll closes in which a roll still counts, for lag. Rolls
+    within EARLY / LATE seconds outside the window show as not counted, so the
+    raid can see why.
 ]]
 ns.ROLL_GRACE_SECONDS = 1
 ns.ROLL_EARLY_SECONDS = 5
@@ -821,7 +689,6 @@ ns.LOOT_SOURCE_BAGS = "BAGS"
 ns.LOOT_SOURCE_FLOOR = "FLOOR"
 ns.LOOT_SOURCE_CORPSE = "CORPSE"
 
--- A Roll List entry's state.
 ns.ENTRY_WAITING = "WAITING"
 ns.ENTRY_ROLLING = "ROLLING"
 ns.ENTRY_TIED = "TIED"
@@ -829,11 +696,7 @@ ns.ENTRY_WON = "WON"
 ns.ENTRY_NOBODY = "NOBODY"
 ns.ENTRY_EXPIRED = "EXPIRED"
 
---[[
-    The trade clock's colors: yellow under half an hour, red under ten minutes.
-    The row's bar is scaled to the two-hour window the Classic clients give; a
-    clock read longer than that just fills the bar.
-]]
+-- Trade clock colors (yellow, red) and the two-hour window its bar scales to; a longer clock fills the bar.
 ns.TRADE_YELLOW_SECONDS = 1800
 ns.TRADE_RED_SECONDS = 600
 ns.TRADE_WINDOW_SECONDS = 7200
@@ -865,12 +728,7 @@ ns.DROPS_BOSS_MIN_QUALITY = 2
 -- AceConfig Registry Names
 --------------------------------------------------------------------------------
 
---[[
-    Stable identifiers for RegisterOptionsTable / NotifyChange /
-    AddToBlizOptions and the custom AceGUI widget type. Never localized —
-    cross-module NotifyChange calls and the Blizzard options tree reference
-    them by exact string.
-]]
+-- Never localized: NotifyChange calls and the Blizzard options tree match these by exact string.
 
 ns.OPTIONS_REGISTRY = {
 	General = ADDON_NAME,

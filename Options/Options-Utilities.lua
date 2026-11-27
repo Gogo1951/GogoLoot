@@ -2,21 +2,11 @@
 -- GogoLoot Options — Utilities
 --------------------------------------------------------------------------------
 
---[[
-    What every Options panel shares beyond the Options-Kit (Options-Kit.lua,
-    loaded first, the rows, lines, Examples, One Refresh and panel
-    registration): ns.FEATURES, the feature-off status line, quality choices,
-    and the sample players and items the Examples use. The watch that closes a
-    dropdown scrolled out of view is Options-Utilities-Dropdown-Watch.lua. The
-    item lists are built in
-    Options-Utilities-Item-Lists.lua, over Options-Utilities-Item-Cache.lua and
-    Options-Utilities-Item-List-Filter.lua.
-]]
+-- What every Options panel shares beyond the Options-Kit: ns.FEATURES, the feature-off line, quality choices, Example samples.
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
 
--- Every string the kit draws, in this client's language (Options-Kit.md → Strings).
 Kit.SetText({
 	example = L["SAMPLE_EXAMPLE"],
 	loading = L["LOADING_ITEM"],
@@ -29,16 +19,7 @@ Kit.SetText({
 -- List and Filter Widths
 --------------------------------------------------------------------------------
 
---[[
-    The widths GogoLoot's own pieces take from the kit's grid, so they load
-    after it.
-
-    An item list's add box and its filter each take a line above the rows, in
-    the label column: the add box first, sharing its line with Add from Bags in
-    the control column, then the filter, sharing its line with the kind filter.
-    The one width for both boxes stacks them in one column and keeps either from
-    reading as the more important.
-]]
+-- The add box and the filter share one width, so they stack in one column and neither outranks the other.
 ns.OPTIONS_ITEM_LIST_TOOL_WIDTH = Kit.LABEL_WIDTH
 
 -- The Loot Toasts Filters grid's Mine and Group columns, and a rarity row's quality dropdown inside one.
@@ -50,15 +31,10 @@ ns.OPTIONS_FILTER_QUALITY_WIDTH = ns.OPTIONS_FILTER_COLUMN_WIDTH - ns.OPTIONS_FI
 --------------------------------------------------------------------------------
 
 --[[
-    Every feature's switch, in the mini-map menu's order: its blocks first
-    (Automated Rolls, Automated Opening, Loot Announcements), then More
-    Features. The root panel's Features section, each feature panel's Enable
-    switch and the mini-map menu all build from these records (Options-Kit.md →
-    Features), so the three can never drift. apply writes the value and its
-    side effects; ns.RefreshSettings() follows every write.
-
-    descArgs is GogoLoot's own: the values a description's %s slots take,
-    read as the switch is drawn, since three name the game's own settings.
+    Every feature's switch, in the mini-map menu's order. The root panel's
+    Features section, each panel's Enable switch and the menu all build from
+    these records, so they can't drift. descArgs (GogoLoot's own) fills a
+    description's %s slots as the switch is drawn.
 ]]
 ns.FEATURES = {
 	{
@@ -68,7 +44,6 @@ ns.FEATURES = {
 		caption = "ROLLS_ENABLE",
 		desc = "ROLLS_ENABLE_DESCRIPTION",
 		block = true,
-		click = "LeftButton",
 	},
 	{
 		store = "profile",
@@ -80,7 +55,6 @@ ns.FEATURES = {
 			return AUTO_LOOT_DEFAULT_TEXT
 		end,
 		block = true,
-		click = "RightButton",
 		apply = function(value)
 			ns.db.profile.autoOpen = value
 			if value then
@@ -96,7 +70,6 @@ ns.FEATURES = {
 		caption = "ANNOUNCEMENTS_ENABLE",
 		desc = "ANNOUNCEMENTS_ENABLE_DESCRIPTION",
 		block = true,
-		click = "ShiftLeftButton",
 		apply = function(value)
 			ns.db.profile.lootNotifications = value
 			-- The trade window's checkbox and the pop-up's destination toggle leave and return with it.
@@ -175,7 +148,6 @@ function ns.GetFeature(setting)
 	end
 end
 
--- A feature's switch description, its %s slots filled.
 ---@param feature table # an ns.FEATURES record
 ---@return string
 function ns.FeatureDescription(feature)
@@ -196,11 +168,7 @@ function ns.FeatureSwitch(setting, order, width)
 	return toggle
 end
 
---[[
-    The root panel's Features section: Kit.FeatureSwitches, two to a line in
-    ns.FEATURES order, with each switch's description slots filled. The kit
-    lays the records out pair by pair, so the Nth record is the Nth switch.
-]]
+-- The kit lays the records out pair by pair, so the Nth record is the Nth switch.
 ---@param order number
 ---@return table
 function ns.FeatureSwitches(order)
@@ -220,12 +188,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    A child panel's silver line while the feature it belongs to is off, naming
-    the feature in gold and the page its switch is on (Style Guide → OPTIONS
-    PANEL: a sub-panel opens with a silver status line naming the switch). Its
-    trailing spacer comes with it, and both leave while the feature is on. The
-    panel's own settings stay, so a player can set them up first. Returns the
-    next free order.
+    A child panel's silver line, plus spacer, while its parent feature is off.
+    The panel's own settings stay, so a player can set them up first. Returns
+    the next free order.
 ]]
 ---@param args table
 ---@param order number
@@ -251,12 +216,7 @@ end
 -- Quality Choices
 --------------------------------------------------------------------------------
 
---[[
-    A quality dropdown's values from `lowest` up to Epic, each in the game's own
-    quality color so the tiers read like the items themselves, and the order to
-    show them in. `suffix` ("+") makes a threshold read as one where no caption
-    says so.
-]]
+-- Quality values from `lowest` up to Epic in quality colors. `suffix` ("+") marks a threshold where no caption says so.
 ---@param lowest number
 ---@param suffix? string
 ---@return table values
@@ -275,15 +235,8 @@ end
 -- Example Samples
 --------------------------------------------------------------------------------
 
---[[
-    What the Examples fill their messages with (Kit.Example, Kit.PrintedLine,
-    Kit.SentLine draw them). Everybody but "you" is from ns.SAMPLE_NAMES, and
-    every item is a real link from ns.SAMPLE_ITEM_IDS or the flavor's data,
-    which reads as loading until the client has it; the panel's function names
-    fill it in on the next repaint.
-]]
+-- Example items are real links that read as loading until cached; the panel's function names fill them in on the next repaint.
 
--- A roster player, in their class color, the way a printed line names a group member.
 ---@param classFile string
 ---@return string
 function ns.OptionsExampleOther(classFile)

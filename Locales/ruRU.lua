@@ -155,11 +155,7 @@ L["TAB_LOOT_MASTER"] = "Распорядитель добычи"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "Приостановлено"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] =
 	"Бросает кубики за вас на подходящие предметы вплоть до выбранного качества."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] =
@@ -179,6 +175,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Бросок"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Журнал бросков"
+L["MENU_RECENT_ROLLS"] = "Недавние броски"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "Вы"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "Без броска"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Все отказались"
+L["MENU_ROLL_AUDIT_EMPTY"] = "В этом подземелье бросков пока не было."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -194,8 +204,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "Выкл.: %d"
 
 L["MENU_CLICK_LEFT"] = "Левый клик"
 L["MENU_CLICK_RIGHT"] = "Правый клик"
-L["MENU_CLICK_SHIFT_LEFT"] = "Shift + левый клик"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Средний клик"
 L["MENU_TOGGLE"] = "Переключить"
 
@@ -206,7 +214,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "%s может вскрыть их для ва�
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = 'Используйте "%s", чтобы отпереть их.'
 L["MENU_OPTIONS"] = "Настройки GogoLoot"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Shift + средний клик"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "Еще: %d"
@@ -274,12 +281,7 @@ L["ITEM_LIST_RESTORE"] = "Восстановить по умолчанию"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Загрузка ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	'Никогда не бросает на рецепты, книги, транспорт, питомцев и легендарные предметы, на предметы для заданий бросает, только если они есть в списке "Глобальные особые предметы", а на предметы, персональные при поднятии, только если они есть в этом списке или включено "Включая персональные при поднятии".'
 
@@ -316,20 +318,18 @@ L["WELCOME_MESSAGE_DESCRIPTION"] =
 	"При каждом входе в игру показывает версию GogoLoot и где найти эти настройки."
 L["MINIMAP_BUTTON_ENABLE"] = "Включить кнопку у миникарты"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Показывает кнопку GogoLoot у миникарты. Наведите на неё курсор, чтобы открыть меню GogoLoot. Левый клик включает и выключает Автоброски, правый клик делает то же с Автооткрытием, а Shift + левый клик с оповещениями о добыче."
+	"Показывает кнопку GogoLoot у миникарты. Наведите на неё курсор, чтобы открыть меню GogoLoot, или нажмите левой кнопкой, чтобы меню оставалось открытым."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Команды"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Открывает окно настроек этого аддона."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Функции"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Забирает всю добычу с трупа в момент открытия, так что вам не придется ждать окна добычи."
 L["SPEEDY_LOOT_ENABLE"] = "Включить Быстрый сбор"
@@ -430,11 +430,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Задает самое низкое качество предметов, к которому применяется способ дележа. Изменить его может только лидер группы."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Этими настройками управляет: %s."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] =
@@ -539,7 +535,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Выводить итоги розыгрыш�
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Не выводить итоги розыгрыша"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	'"Выводить итоги розыгрыша" выводит в чат одну строку на каждую победу с победителем, предметом и победным броском вместо игровой строки. "Не выводить итоги розыгрыша" оставляет игровую строку о том, кто выиграл.'
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Предупреждения"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] =
@@ -550,10 +545,7 @@ L["ROLLS_SAFETY_WARNING_SOUND"] = "Проигрывать звук"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
 	"Проигрывает сигнал вместе с предупреждением, на случай если в чате много сообщений."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	'Задает бросок для отдельных предметов в обход ваших настроек "Броски в группе и рейде". Только так GogoLoot будет бросать на предметы для заданий, а также на предметы, персональные при поднятии, пока выключено "Включая персональные при поднятии".'
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -648,7 +640,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "Низкоуровневое снаряжение
 L["SANITY_CHECK_ROLLS_OFF"] = "Автоброски выключены"
 L["SANITY_CHECK_QUALITY"] = "Броски в группе и рейде"
 L["SANITY_CHECK_NEVER"] = "Никогда автоматически"
-L["SANITY_CHECK_QUEST"] = "Предмет для задания"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "Персональный при надевании"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Персональный при поднятии"
 
@@ -1309,7 +1300,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Разыгрывайте добычу, которую еще можно передать, с таймером обмена у каждого предмета, и следите за каждым броском в Журнале добычи. Средний клик по кнопке у миникарты или команды /gogo master и /gogo tracker."
+	"Разыгрывайте добычу, которую еще можно передать, с таймером обмена у каждого предмета, и следите за каждым броском в Журнале добычи. Команды: /gogo master и /gogo tracker."
 L["LOOT_MASTER_ENABLE"] = "Включить Распорядителя добычи"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Отслеживает добычу, которую еще можно передать, и объявляет на нее розыгрыши. Если выключено, Распорядитель добычи и Журнал добычи не открываются, а броски не считываются."

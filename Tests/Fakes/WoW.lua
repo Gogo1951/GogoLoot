@@ -30,8 +30,7 @@ local function stub(name)
 end
 Fake.stub = stub
 
---- AceDB applies scalar and table defaults by copying them in, so the fake does
---- the same: code reading the saved tables sees what the real library writes.
+--- Copies defaults in, as AceDB does, so code reads what the real library writes.
 ---@param destination table
 ---@param source table
 ---@return nil
@@ -73,7 +72,6 @@ function Fake.newEnvironment()
 		unitRealms = {},
 		-- Every AceConfigDialog:AddToBlizOptions call, in order.
 		blizOptions = {},
-		-- AceConfigDialog status tables by registry name.
 		dialogStatus = {},
 		-- Every options table registered, by registry name: the builder function or the table.
 		optionsTables = {},
@@ -83,7 +81,6 @@ function Fake.newEnvironment()
 		itemStats = {},
 		-- [rollId] = { itemId, canNeed, canGreed }; canNeed/canGreed default true.
 		lootRolls = {},
-		-- Every RollOnLoot the add-on issued, in order.
 		rollsPerformed = {},
 		-- AceDB profile callbacks, by event name, as registered by Core.
 		dbCallbacks = {},
@@ -105,7 +102,6 @@ function Fake.newEnvironment()
 		freeSlotsPerBag = 4,
 		-- Every C_Container.UseContainerItem call, in order: { bag, slot }.
 		usedContainerItems = {},
-		-- Every LootSlot call, in order, by slot index.
 		lootedSlots = {},
 		-- Every PlaySound / PlaySoundFile call, in order: { kind, sound }.
 		sounds = {},
@@ -126,10 +122,10 @@ function Fake.newEnvironment()
 		secretCasts = false,
 		playerClassFile = "WARRIOR",
 		playerLevel = 60,
-		-- Every LibDataBroker object the add-on made, by name, so a test can click the button.
+		-- LibDataBroker objects by name, so a test can click the button.
 		brokerObjects = {},
 		minimapButtons = {},
-		-- Every frame the add-on created, in order, so a test can find the toasts it drew.
+		-- Every frame created, in order, so a test can find the toasts.
 		createdFrames = {},
 		-- Every AceGUI widget type the add-on registered, by name, so a test can build one and drive it.
 		widgetConstructors = {},
@@ -249,10 +245,7 @@ function Fake.newEnvironment()
 					parent = parent,
 					categoryID = categoryID,
 				})
-				--[[
-				    The panel frame, which keeps its script hooks so a test can
-				    hide it the way the Settings window does.
-				]]
+				-- Keeps its script hooks, so a test can hide it the way the Settings window does.
 				local panelFrame = { name = name, hooks = {} }
 				function panelFrame:HookScript(scriptName, hook)
 					self.hooks[scriptName] = self.hooks[scriptName] or {}
@@ -406,11 +399,6 @@ function Fake.newEnvironment()
 		return env.unpack(results, 2, results.n)
 	end
 
-	--[[
-	    Timers are collected rather than run, so a test advances time explicitly
-	    and asserts on what fired. Real elapsed time would make the suite flaky.
-	]]
-	-- A ColorMixin stand-in: the loot toasts hand these to SetGradient.
 	-- The client's bit library, which Lua 5.1 lacks; only band is read.
 	env.bit = {
 		band = function(a, b)
@@ -424,6 +412,7 @@ function Fake.newEnvironment()
 			return result
 		end,
 	}
+	-- A ColorMixin stand-in: the loot toasts hand these to SetGradient.
 	env.CreateColor = function(r, g, b, a)
 		return { r = r, g = g, b = b, a = a }
 	end
@@ -431,10 +420,9 @@ function Fake.newEnvironment()
 		return state.now or 0
 	end
 	--[[
-	    A ticker re-arms itself after each fire, so a retry loop driven by one
-	    actually retries under Fake.advance. Its next due time is one interval
-	    past the clock the advance moved to, so a ticker fires once per advance
-	    call rather than spinning the whole interval budget in a single step.
+	    Timers are collected, not run: a test advances time and asserts on what
+	    fired. A ticker re-arms one interval past the clock the advance moved
+	    to, so it fires once per Fake.advance call rather than spinning.
 	]]
 	local function scheduleTicker(seconds, callback)
 		local ticker = { cancelled = false }
@@ -536,21 +524,15 @@ function Fake.newEnvironment()
 	env.DeleteMacro = function(index)
 		table.remove(state.macros, index)
 	end
-	--[[
-	    True only for the unit that actually leads, so the options rows can tell
-	    a leader from a member. Answering true for everything would hide the
-	    non-leader path the way a single UnitName once hid the roster walk.
-	]]
+	-- True only for the unit that leads: answering true for all would hide the non-leader path.
 	env.UnitIsGroupLeader = function(unitIdentifier)
 		return state.inGroup and state.leaderUnit ~= nil and unitIdentifier == state.leaderUnit
 	end
 	--[[
-	    Per-unit, not one name for everything: the roster helpers walk party1..N
-	    and compare against the player, so a fake that answers "Tester" for every
-	    unit makes every group member look like the player.
-
-	    The second return is state.unitRealms: a realm on most flavors, a last
-	    name on WoW Forever, which fills it for the player too.
+	    Per unit: the roster helpers compare each member against the player, so
+	    one name for every unit would make every member look like the player.
+	    The second return is a realm on most flavors, a last name on WoW Forever
+	    (the player's included).
 	]]
 	env.UnitName = function(unitIdentifier)
 		local unit = unitIdentifier or "player"
@@ -611,7 +593,7 @@ function Fake.newEnvironment()
 			return true
 		end,
 	}
-	-- Only the unit a test names assists; the leader is state.leaderUnit, as above.
+	-- Only the unit a test names (state.assistantUnit) assists.
 	env.UnitIsGroupAssistant = function(unitIdentifier)
 		return state.inGroup and state.assistantUnit ~= nil and unitIdentifier == state.assistantUnit
 	end
@@ -619,7 +601,7 @@ function Fake.newEnvironment()
 	env.GetServerTime = function()
 		return state.serverTime or 1700000000
 	end
-	-- Trading: every item picked up from the bags and every trade slot clicked, in order.
+	-- Every trade slot clicked, in order.
 	env.ClickTradeButton = function(tradeSlot)
 		state.tradeClicks = state.tradeClicks or {}
 		table.insert(state.tradeClicks, tradeSlot)
@@ -876,7 +858,7 @@ function Fake.newEnvironment()
 		GetItemSubClassInfo = function(classId, subclassId)
 			return ITEM_SUBCLASS_NAMES[classId .. ":" .. subclassId]
 		end,
-		-- Answers only for an item a test gave an equipLocation or an item type; every other read stays nil as before.
+		-- Answers only for an item a test gave an equipLocation or an item type; nil otherwise.
 		GetItemInfoInstant = function(identifier)
 			local itemId = tonumber(tostring(identifier):match("item:(%d+)") or identifier)
 			local entry = itemId and state.itemNames[itemId]
@@ -967,17 +949,11 @@ function Fake.newEnvironment()
 	env.C_QuestLog = {}
 
 	--[[
-	    Loot rolls. A roll's quality and BoP flag are read back out of
-	    state.itemNames rather than stored on the roll, so a test describes an
-	    item once and GetLootRollItemInfo and GetItemInfo cannot disagree about
-	    it — EvaluateRoll consults both in turn, and a fake that let them drift
-	    would be testing a client state that cannot occur.
-
-	    A roll whose item has no itemNames entry is an UNCACHED item, and reads
-	    exactly like the real client's: nil link here, nil name from
-	    GetLootRollItemInfo, nil from GetItemInfo. A test models the item query
-	    answering by filling in state.itemNames mid-flight — which is how the
-	    war-effort-token cache race is reproduced.
+	    A roll's quality and BoP flag are read from state.itemNames, not stored
+	    on the roll, so GetLootRollItemInfo and GetItemInfo can never disagree.
+	    A roll whose item has no itemNames entry is uncached, as on the client:
+	    nil link, nil name, nil GetItemInfo. Filling the entry mid-roll models
+	    the item query answering.
 	]]
 	env.GetLootRollItemLink = function(rollIdentifier)
 		local roll = state.lootRolls[rollIdentifier]
@@ -1018,15 +994,9 @@ function Fake.newEnvironment()
 	end
 
 	--[[
-	    Widgets the add-on creates and then positions and writes to answer like
-	    objects: a catch-all that returns nil would error on the first chained
-	    call. Methods nothing asserts on stay no-ops.
-	]]
-	--[[
-	    Widget methods are PascalCase, and a real widget answers any other
-	    unset key with nil, so the no-op catch-all covers method names only. A
-	    catch-all for every key would make a plain field such as a pooled flag
-	    read as set.
+	    Unset methods (PascalCase keys) answer as no-ops, so chained calls work.
+	    Any other unset key reads nil, as on a real widget: a catch-all for every
+	    key would make a plain field such as a pooled flag read as set.
 	]]
 	local function noOpMethod(key)
 		if type(key) == "string" and key:match("^%u") then
@@ -1133,7 +1103,6 @@ function Fake.newEnvironment()
 	function frameMethods:CreateTexture()
 		return newObject()
 	end
-	-- The menu places itself from the button's center and the screen's size; a fake frame has neither, so 0.
 	function frameMethods:GetEffectiveScale()
 		return 1
 	end
@@ -1504,13 +1473,10 @@ function Fake.newEnvironment()
 	env.INVSLOT_MAINHAND = 16
 
 	--[[
-	    Globals Classic Era genuinely does not have, which the catch-all below
-	    must therefore NOT manufacture. A stub is truthy, so it wins the
-	    `LE_ITEM_CLASS_x or Enum.ItemClass.x or <number>` chain in Data.lua and
-	    leaves ns.ITEM_CLASS_QUEST holding a table no classId can ever equal —
-	    which silently disables every class-based skip for the whole suite.
-	    Same reasoning as the header note about namespaced APIs: a permissive
-	    stub in the wrong place buys nothing and hides real failures.
+	    Globals Classic Era lacks, which the catch-all must not manufacture. A
+	    stub is truthy, so it would win Data.lua's `LE_ITEM_CLASS_x or ... or
+	    <number>` chains and leave ns.ITEM_CLASS_QUEST a table no classId equals,
+	    silently disabling every class-based skip.
 	]]
 	local absentGlobals = {
 		LE_ITEM_CLASS_RECIPE = true,

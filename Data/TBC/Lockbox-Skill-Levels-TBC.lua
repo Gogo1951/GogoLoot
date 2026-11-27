@@ -29,7 +29,7 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, TBC Anniversary 2.5.6.70577
+	2026-11-27, wago.tools, TBC Anniversary 2.5.6.70577
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).

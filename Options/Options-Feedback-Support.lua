@@ -7,15 +7,11 @@ local Kit = ns.OptionsKit
 
 local GetColor = ns.GetColor
 
---[[
-    The four link rows split Kit.ROW_WIDTH unevenly: their labels are one
-    short word, while the box beside them holds a full URL the player is meant
-    to select and copy, so the label takes 0.6 and the box the rest of the row.
-]]
+-- The label is one short word; the box holds a full URL to select and copy.
 local LINK_LABEL_WIDTH = 0.6
 local LINK_URL_WIDTH = Kit.ROW_WIDTH - LINK_LABEL_WIDTH
 
--- { captionKey, linkKey }, in display order. The URLs live in ns.LINKS (Data/Data.lua).
+-- { captionKey, ns.LINKS key }
 local LINKS = {
 	{ "OPTIONS_DISCORD", "DISCORD" },
 	{ "OPTIONS_CURSEFORGE", "CURSEFORGE" },
@@ -37,11 +33,7 @@ local LEVEL_UP_PARAGRAPHS = {
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
---[[
-    The group's name is the page's title, drawn when the page opens; the tree
-    lists it as Feedback & Support, the name it is registered under
-    (Options/Options.lua).
-]]
+-- The group's name is the page title; the tree shows the registered name, Feedback & Support.
 ---@return table
 function ns.BuildFeedbackSupportOptions()
 	local args = {}

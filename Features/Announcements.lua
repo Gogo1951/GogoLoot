@@ -2,12 +2,6 @@
 -- GogoLoot Announcements Module
 --------------------------------------------------------------------------------
 
---[[
-    The PrintMessage and Announce helpers, group-channel resolution, the
-    status channel Automated Opening prints through, and the login welcome
-    message. Trade announcements live in Announcements-Trade.lua and route
-    through Announce here.
-]]
 local _, ns = ...
 local L = ns.L
 local GetColor = ns.GetColor
@@ -17,33 +11,12 @@ local GetColor = ns.GetColor
 --------------------------------------------------------------------------------
 
 --[[
-    PrintMessage and Announce are siblings:
-      * PrintMessage writes to the player's local chat frame (informational),
-        add-on name first, in the branded colors:
-          "GogoLoot // <body>"
-        The body ends the line, so it carries its own end punctuation.
-      * Announce sends a chat message to other players via
-        C_ChatInfo.SendChatMessage,
-        pulling the body template from L[formatKey] and decorating it with
-        the target marker and the add-on's Short Name. Every channel GogoLoot
-        sends to uses the one format, on every flavor:
-          WHISPER/PARTY/RAID/INSTANCE_CHAT -> "{rt4} <body> // GogoLoot"
-        The name follows the body, so sent bodies carry no end punctuation.
-        All cross-player chat output should route through Announce so the
-        marker, name, and separator are handled in one place and locale
-        strings stay clean bodies. It also enforces Enable Loot Announcements
-        (lootNotifications) for everything sent: with the master switch off,
-        Announce sends nothing, whoever calls it, hand-outs and failure reports
-        included.
-
-    BuildAnnounceMessage builds the same decorated message without sending,
-    so callers can measure against ns.CHAT_MESSAGE_MAX_LENGTH and split long
-    content at safe boundaries before announcing (see ns:AnnounceParts).
-    It takes no channel: the format is the same on every channel GogoLoot
-    sends to.
+    Printed: "GogoLoot // <body>", so a printed body carries its own end
+    punctuation. Sent: "{rt4} <body> // GogoLoot" on every channel, so a sent
+    body carries none. Announce is the only sender, and Enable Loot
+    Announcements (lootNotifications) silences everything it sends.
 ]]
 
--- The exact line PrintMessage prints, which the options panels' Example lines draw too.
 ---@param text string
 ---@return string
 function ns.BuildPrintMessage(text)
@@ -94,14 +67,10 @@ function ns:Announce(channel, target, formatKey, ...)
 end
 
 --[[
-    Sends a list of parts (item links with counts, an enchant, money) as one or
-    more announcements, packing as many parts into each message as fit within
-    ns.CHAT_MESSAGE_MAX_LENGTH. Splits only at part boundaries, since an item
-    link broken mid-escape is rejected by the client, and repeats the template
-    so every message reads as a complete announcement. A single part over the
-    limit on its own is sent anyway: it cannot be shortened without destroying
-    the link. formatArguments(joinedParts) returns the template's arguments in
-    order, because templates differ in where the list sits.
+    Splits only at part boundaries: the client rejects an item link broken
+    mid-escape, so a single part over ns.CHAT_MESSAGE_MAX_LENGTH is sent anyway.
+    formatArguments(joinedParts) exists because templates differ in where the
+    list sits.
 ]]
 ---@param channel string|nil
 ---@param target string|nil
@@ -126,11 +95,7 @@ function ns:AnnounceParts(channel, target, formatKey, parts, formatArguments)
 	end
 end
 
---[[
-    Returns nil when not in a group — callers must guard or fall back
-    (the trade announcement path in Announcements-Trade.lua whispers the
-    trade partner instead).
-]]
+-- nil when not in a group: callers must guard or fall back.
 ---@return string|nil
 function ns:GetGroupChatChannel()
 	if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
@@ -148,13 +113,10 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Automated Opening's pause, resume and inventory-full lines go through here
-    rather than straight to PrintMessage, for two reasons. A quiet window holds
-    them back across a loading screen and the moments after, when bags and group
-    state churn and a pause and its resume can land a second apart. And an
-    identical line within ns.STATUS_REPEAT_COOLDOWN prints once. StatusPrint
-    returns whether the player has been told: false only for a line the quiet
-    window held back, which the caller still owes.
+    A quiet window holds lines back across a loading screen, when a pause and
+    its resume can land a second apart, and an identical line within
+    ns.STATUS_REPEAT_COOLDOWN prints once. StatusPrint returns false only for a
+    line the quiet window held back, which the caller still owes.
 ]]
 local quietUntil = 0
 local lastStatusText = nil
@@ -185,9 +147,8 @@ function ns:StatusPrint(text)
 end
 
 --[[
-    One notice per item per ns.ITEM_ANNOUNCE_COOLDOWN. The two Ignore notices
-    share the stamp on purpose: a player just told Speedy Loot left an item
-    behind doesn't also need telling it won't be opened.
+    The two Ignore notices share the stamp on purpose: a player just told Speedy
+    Loot left an item behind doesn't also need telling it won't be opened.
 ]]
 local lastAnnouncedAt = {}
 

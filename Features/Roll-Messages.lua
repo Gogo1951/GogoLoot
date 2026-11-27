@@ -9,16 +9,9 @@ local L = ns.L
 --------------------------------------------------------------------------------
 
 --[[
-    Keeps the game's per-roll lines out of every chat frame: who picked Need,
-    Greed or Pass, and each number rolled (ns.IsRollChatterMessage). What each
-    winner received still prints. Who won prints too: as the game's own line,
-    or, with the dropdown beside the toggle on Print Winner Summary, as
-    GogoLoot's one line naming the winner, the item and the winning roll, which
-    stands in for the game's.
     A chat filter only changes what the frames draw, so CHAT_MSG_LOOT still
-    reaches every handler, the toasts' roll tracking included. It is part of
-    Automated Rolls, so it hides nothing while the master switch is off, and
-    the saved choice waits for the switch to come back on.
+    reaches every handler, the toasts' roll tracking included. Part of Automated
+    Rolls, so it hides nothing while the master switch is off.
 ]]
 ---@return boolean
 local function HidingRollMessages()
@@ -43,12 +36,7 @@ local function FilterRollChatter(_, _, message)
 	return PrintingWinnerSummary() and ns.ParseRollWonMessage(message) or false
 end
 
---[[
-    The winner summary, from the winning-roll tracking the loot toasts use
-    (Loot-Toasts-Winning-Rolls.lua), which reads the game's roll lines whether
-    or not they are drawn. winnerName is nil when the player won; rollText is
-    the roll as the toasts show it ("Greed 95"), nil when none was recorded.
-]]
+-- winnerName is nil when the player won; rollText ("Greed 95") is nil when none was recorded.
 ---@param winnerName string|nil
 ---@param itemLink string
 ---@param rollText string|nil
@@ -72,7 +60,6 @@ function ns.OnRollWon(winnerName, itemLink, rollText)
 	end
 end
 
--- The modern ChatFrameUtil first, then the legacy global, for a client that has only the one.
 local AddMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
 if AddMessageEventFilter then
 	AddMessageEventFilter("CHAT_MSG_LOOT", FilterRollChatter)

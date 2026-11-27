@@ -148,11 +148,7 @@ L["TAB_LOOT_MASTER"] = "Gestore del bottino"
 -- Automated Opening is on but waiting for empty bag slots.
 L["MENU_PAUSED"] = "In pausa"
 
---[[
-    The mini-map menu titles each feature with its options-panel name, and
-    gives each a description of its own, two lines at most: the panels' longer
-    text doesn't fit the menu.
-]]
+-- Each feature's mini-map menu description: two lines at most, since the panels' longer text doesn't fit the menu.
 L["MINIMAP_AUTOMATED_ROLLS_DESCRIPTION"] = "Tira per te sugli oggetti idonei fino alla qualità che scegli."
 L["MINIMAP_AUTOMATED_OPENING_DESCRIPTION"] = "Apre vongole, casse, borsellini e cassette sbloccate nelle tue sacche."
 -- Under Automated Opening's description in the mini-map menu while it is paused, one per hold. Argument: the free bag slots it waits for.
@@ -170,6 +166,20 @@ L["MINIMAP_ANNOUNCEMENTS_DESCRIPTION"] =
 L["MENU_ROLLS_SETTING"] = "%s, %s"
 -- The Party and Raid flyouts' first heading, over the roll; the second is ROLLS_UP_TO_QUALITY, the page's own.
 L["MENU_ROLLS_AUTOMATION"] = "Tiro"
+
+-- Roll Audit, after Raid in Automated Rolls: it opens Recent Rolls, the rolls since you entered this instance.
+L["MENU_ROLL_AUDIT"] = "Registro dei tiri"
+L["MENU_RECENT_ROLLS"] = "Tiri recenti"
+-- The player, in Recent Rolls, in place of their own name.
+L["MENU_ROLL_AUDIT_YOU"] = "Tu"
+-- An item's winner and their roll. Arguments: the winner's name, the game's word for the roll (Need, Greed).
+L["MENU_ROLL_AUDIT_WINNER"] = "%s, %s"
+-- One player's roll on an item. Arguments: the game's word for the roll, the number rolled.
+L["MENU_ROLL_AUDIT_RESULT"] = "%s, %d"
+-- A group member who never picked Need, Greed or Pass on an item.
+L["MENU_ROLL_AUDIT_NO_ROLL"] = "Nessun tiro"
+L["MENU_ROLL_AUDIT_ALL_PASSED"] = "Tutti hanno passato"
+L["MENU_ROLL_AUDIT_EMPTY"] = "Ancora nessun tiro in questa istanza."
 --[[
     Under the flyouts' choices, above links to both pages. Arguments:
     TAB_ITEM_OVERRIDES, TAB_CHARACTER_RULES. While Enable Global Item
@@ -185,8 +195,6 @@ L["MENU_FEATURE_COUNT_OFF"] = "%d disattivate"
 
 L["MENU_CLICK_LEFT"] = "Clic sinistro"
 L["MENU_CLICK_RIGHT"] = "Clic destro"
-L["MENU_CLICK_SHIFT_LEFT"] = "Maiusc + Clic sinistro"
--- Middle-Click opens the loot windows, only while they are loaded.
 L["MENU_CLICK_MIDDLE"] = "Clic centrale"
 L["MENU_TOGGLE"] = "Attiva/Disattiva"
 
@@ -197,7 +205,6 @@ L["MINIMAP_LOCKED_ITEMS_HINT"] = "Un %s può scassinarli per te."
 -- The same, shown to a Rogue. Argument: the game's own name for Pick Lock.
 L["MINIMAP_LOCKED_ITEMS_HINT_ROGUE"] = "Usa %s per aprirli."
 L["MENU_OPTIONS"] = "Opzioni di GogoLoot"
-L["MENU_CLICK_SHIFT_MIDDLE"] = "Maiusc + Clic centrale"
 
 -- Under the first eight rows of a menu list. Argument: how many more there are.
 L["MENU_MORE"] = "Altri %d"
@@ -261,12 +268,7 @@ L["ITEM_LIST_RESTORE"] = "Ripristina predefiniti"
 -- Placeholder shown in the item lists until the client caches an item's info.
 L["LOADING_ITEM"] = "Caricamento ID: %d"
 
---[[
-    Appended to the Automated Rolls description. Global Item Overrides is the
-    one way a quest item gets rolled on, and Global Item Overrides or Include
-    Bind on Pickup the way a Bind on Pickup item does; nothing ever rolls on
-    the rest.
-]]
+-- Appended to the Automated Rolls description.
 L["SAFETY_SKIP_NOTE"] =
 	"Non tira mai su ricette, libri, cavalcature, mascotte o leggendari, tira sugli oggetti di missione solo se sono in Eccezioni globali per oggetto, e sugli oggetti Si vincola alla raccolta solo se sono in Eccezioni globali per oggetto o se Includi Si vincola alla raccolta è attivo."
 
@@ -300,20 +302,18 @@ L["WELCOME_MESSAGE"] = "Attiva messaggio di benvenuto"
 L["WELCOME_MESSAGE_DESCRIPTION"] = "Mostra la versione di GogoLoot e dove trovare queste impostazioni a ogni accesso."
 L["MINIMAP_BUTTON_ENABLE"] = "Attiva pulsante della minimappa"
 L["MINIMAP_BUTTON_CLICKS_DESCRIPTION"] =
-	"Mostra il pulsante di GogoLoot sulla minimappa. Passaci sopra con il cursore per il menu di GogoLoot. Clic sinistro attiva o disattiva Tiri automatici, Clic destro Apertura automatica e Maiusc + Clic sinistro Annunci del bottino."
+	"Mostra il pulsante di GogoLoot sulla minimappa. Passaci sopra con il cursore per il menu di GogoLoot, oppure fai Clic sinistro per tenerlo aperto."
 
 L["OPTIONS_COMMANDS_HEADER"] = "/Comandi"
 L["OPTIONS_COMMAND"] = "/gogo"
 L["OPTIONS_COMMAND_DESCRIPTION"] = "Apre l'interfaccia delle opzioni di questo add-on."
 
--- The section holding every feature's switch.
 L["OPTIONS_FEATURES_HEADER"] = "Funzioni"
 
 --------------------------------------------------------------------------------
 -- Options: Speedy Loot
 --------------------------------------------------------------------------------
 
--- The opening line of the Speedy Loot panel, above its switch.
 L["SPEEDY_LOOT_DESCRIPTION"] =
 	"Prende tutto da un cadavere appena lo apri, così non aspetti mai la finestra del bottino."
 L["SPEEDY_LOOT_ENABLE"] = "Attiva Bottino rapido"
@@ -411,11 +411,7 @@ L["MASTER_LOOTER_LOOT_METHOD_DESCRIPTION"] =
 L["MASTER_LOOTER_LOOT_THRESHOLD_DESCRIPTION"] =
 	"Stabilisce la qualità minima degli oggetti a cui si applica il metodo di predazione. Solo il capogruppo può cambiarla."
 
---[[
-    Shown above the two dropdowns whenever the player is in a group, naming
-    whoever controls them, including the player themselves. Argument: the group
-    leader. Hidden only while solo, where there is no leader to name.
-]]
+-- Shown above the two dropdowns while in a group. Argument: the group leader, who may be the player.
 L["MASTER_LOOTER_CURRENT_LOOT_CONTROLLED_BY"] = "Queste impostazioni sono gestite da %s."
 -- Shown in the same place while solo, where the two dropdowns are grayed out.
 L["MASTER_LOOTER_SOLO_NOTE"] = "Unisciti a un gruppo per cambiarle. Solo il capogruppo può farlo."
@@ -512,7 +508,6 @@ L["ROLLS_WINNER_SUMMARY_PRINT"] = "Scrivi riepilogo dei vincitori"
 L["ROLLS_WINNER_SUMMARY_NONE"] = "Non scrivere riepilogo dei vincitori"
 L["ROLLS_WINNER_SUMMARY_DESCRIPTION"] =
 	"Scrivi riepilogo dei vincitori mette in chat una riga per ogni vittoria, con il vincitore, l'oggetto e il tiro vincente, al posto della riga del gioco. Non scrivere riepilogo dei vincitori lascia la riga del gioco che dice chi ha vinto."
--- The Safety Warnings section on the Automated Rolls panel.
 L["ROLLS_SAFETY_HEADER"] = "Avvisi di sicurezza"
 -- Arguments: the game's own words for Need and Pass, in both.
 L["ROLLS_SAFETY_WARNING"] = "Avvisami quando entro in un dungeon o un'incursione impostati su %s o %s"
@@ -522,10 +517,7 @@ L["ROLLS_SAFETY_WARNING_SOUND"] = "Riproduci suono"
 L["ROLLS_SAFETY_WARNING_SOUND_DESCRIPTION"] =
 	"Riproduce un avviso insieme al messaggio, per quando la chat è affollata."
 
---[[
-    Global Item Overrides, under Automated Rolls: items with a roll action of
-    their own.
-]]
+-- Global Item Overrides, under Automated Rolls: items with a roll action of their own.
 L["ITEM_OVERRIDES_DESCRIPTION"] =
 	"Stabilisce il tiro per oggetti specifici, prima dei tuoi Tiri in gruppo e incursione. È l'unico modo in cui GogoLoot tira su un oggetto di missione, o su un oggetto Si vincola alla raccolta finché Includi Si vincola alla raccolta è disattivato."
 -- Shown on Global Item Overrides and Character Overrides while Automated Rolls is off.
@@ -615,7 +607,6 @@ L["SANITY_CHECK_LOW_LEVEL"] = "Equipaggiamento di basso livello"
 L["SANITY_CHECK_ROLLS_OFF"] = "Tiri automatici disattivati"
 L["SANITY_CHECK_QUALITY"] = "Tiri in gruppo e incursione"
 L["SANITY_CHECK_NEVER"] = "Mai automatico"
-L["SANITY_CHECK_QUEST"] = "Oggetto di missione"
 L["SANITY_CHECK_BIND_ON_EQUIP"] = "Si vincola all'equipaggiamento"
 L["SANITY_CHECK_BIND_ON_PICKUP"] = "Si vincola alla raccolta"
 
@@ -1240,7 +1231,7 @@ L["DROPS_WINNER_ROLL"] = "%s %d"
 --------------------------------------------------------------------------------
 
 L["LOOT_MASTER_PANEL_DESCRIPTION"] =
-	"Assegna con un tiro ciò che puoi ancora scambiare, con il tempo di scambio di ogni oggetto, e segui ogni tiro nel Monitor del bottino. Clic centrale sul pulsante della minimappa, oppure scrivi /gogo master o /gogo tracker."
+	"Assegna con un tiro ciò che puoi ancora scambiare, con il tempo di scambio di ogni oggetto, e segui ogni tiro nel Monitor del bottino. Scrivi /gogo master o /gogo tracker."
 L["LOOT_MASTER_ENABLE"] = "Attiva Gestore del bottino"
 L["LOOT_MASTER_ENABLE_DESCRIPTION"] =
 	"Tiene traccia del bottino che puoi ancora scambiare e chiede di tirare per assegnarlo. Se è disattivato, Gestore e Monitor del bottino non si aprono mai e nessun tiro viene letto."

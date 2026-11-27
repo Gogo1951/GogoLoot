@@ -4,15 +4,10 @@
 local _, ns = ...
 
 --[[
-    An AceGUI dropdown's list is parented to UIParent, anchored to the dropdown,
-    so the panel's scroll area never clips it: scroll with a list open and the
-    list rides along with its dropdown, out past the bottom of the Options
-    window. Blizzard's own menus close when their owner scrolls, and this does
-    the same: while a dropdown has its list open, a change in where it sits
-    inside its scroll area closes the list.
-
-    The watch runs only while the Options window (SettingsPanel) is open, and
-    checks only the open dropdown, so it costs nothing the rest of the time.
+    An AceGUI dropdown's list is parented to UIParent, so scrolling the panel
+    carries it out of the Options window. Like Blizzard's menus, close it when
+    its dropdown moves inside the scroll area. Runs only while SettingsPanel is
+    shown.
 ]]
 local AceGUI = LibStub("AceGUI-3.0")
 

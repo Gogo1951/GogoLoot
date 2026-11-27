@@ -11,7 +11,7 @@ ns.SPELLS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, TBC Anniversary 2.5.6.70577
+	2026-11-27, wago.tools, TBC Anniversary 2.5.6.70577
 
 Notes
 	- The spells GogoLoot listens for or reads, hand-picked, each under the key the code uses.

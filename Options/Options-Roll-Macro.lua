@@ -2,19 +2,7 @@
 -- GogoLoot Options — Roll Macro
 --------------------------------------------------------------------------------
 
---[[
-    The panel after Automated Master Looting: Enable Roll Macro, then what the
-    macro does with each mouse button, which leaves while the macro is off, then
-    Raid Rolls: what a raid roll is and Enable Raid Roll Winner
-    (Raid-Roll-Winner.lua) with where it says the winner. Raid Rolls shows
-    whether or not the macro is on, since it reads anyone's raid roll.
-
-    Schema (ns.DATABASE_DEFAULTS in Default-Settings.lua):
-      global.rollMacro
-        - account-wide, like the General macro it keeps; read by Roll-Macro.lua
-      profile.raidRollWinner, profile.raidRollOutput
-        - read by Raid-Roll-Winner.lua
-]]
+-- Raid Rolls shows whether or not the macro is on, since it reads anyone's raid roll.
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
@@ -25,7 +13,6 @@ local GetColor = ns.GetColor
 -- Click Rows
 --------------------------------------------------------------------------------
 
--- Each mouse button's name as a white caption, beside what it rolls.
 local CLICK_ROWS = {
 	{ click = "MENU_CLICK_LEFT", action = "ROLL_MACRO_LEFT_CLICK" },
 	{ click = "MENU_CLICK_RIGHT", action = "ROLL_MACRO_RIGHT_CLICK" },
@@ -40,9 +27,9 @@ local function RollMacroOff()
 end
 
 --[[
-    One row per button, every name in a column as wide as the longest one
-    measured in this client's language, plus padding, so the three rolls line
-    up. A description's medium font is the font MeasureCaptionPixels reads.
+    The name column fits the longest name in this client's language, so the
+    rolls line up. A description's medium font is the one MeasureCaptionPixels
+    reads.
 ]]
 ---@param firstOrder number
 ---@param args table # the panel's args; the rows are added to it
@@ -81,7 +68,6 @@ local function RaidRollWinnerOff()
 	return not ns.db.profile.raidRollWinner
 end
 
--- The line the current Me Only or Group Chat choice gives, as the player's chat shows it.
 local function RaidRollExampleLine()
 	if ns.db.profile.raidRollOutput == ns.RAID_ROLL_OUTPUT_GROUP then
 		return Kit.SentLine(

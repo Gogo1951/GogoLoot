@@ -3,13 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Speedy Loot and Automated Opening both depend on the game's Auto Loot
-    setting: Speedy Loot only speeds up what Auto Loot takes, and a container
-    Automated Opening opens would otherwise sit in an open loot window. So the
-    autoLootDefault CVar is enforced while either feature is on, and the two
-    feature toggles are the opt-out every enforced write has to carry. The
-    write only ever fires when the CVar is actually off, and prints nothing:
-    both features' descriptions and README.md disclose it.
+    Speedy Loot and Automated Opening both need the game's Auto Loot, so it is
+    enforced while either is on; the two switches are the opt-out. It prints
+    nothing: both features' descriptions disclose it.
 ]]
 local _, ns = ...
 
@@ -18,10 +14,6 @@ function ns:IsAutoLootNeeded()
 	return ns.db ~= nil and (ns.db.global.speedyLoot or ns.db.profile.autoOpen) and true or false
 end
 
---[[
-    Called at login when either feature is on, whenever either is switched on,
-    and on any profile change while either is on.
-]]
 ---@return nil
 function ns.EnsureAutoLoot()
 	if not ns:IsAutoLootCVarEnabled() then
@@ -29,12 +21,7 @@ function ns.EnsureAutoLoot()
 	end
 end
 
---[[
-    Only enforce for a player actually running one of the two features. The
-    one-shot flag is set when the check is scheduled rather than on the first
-    fire, so turning a feature on later still gets its login-time enforcement on
-    the next loading screen.
-]]
+-- Set when scheduled, so a feature turned on later still gets enforced at the next loading screen.
 local hasCheckedAutoLoot = false
 
 local function OnPlayerEnteringWorld()

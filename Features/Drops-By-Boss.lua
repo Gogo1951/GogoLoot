@@ -3,18 +3,10 @@
 --------------------------------------------------------------------------------
 
 --[[
-    What dropped in each raid, boss by boss, for the Loot Tracker's Drops tab
-    and /gogo drops: printed, posted to the group, or copied as plain text.
-
-    A boss is known from ENCOUNTER_END. The first corpse looted within
-    ns.BOSS_LOOT_WINDOW of the kill is taken to be the boss's, by its loot
-    source GUID, and its items at or above ns.DROPS_BOSS_MIN_QUALITY are
-    recorded under the boss; any other corpse's items at or above
-    ns.DROPS_TRASH_MIN_QUALITY go under Trash. Whoever opens a corpse sends
-    what they recorded to the group's other GogoLoot users, so a raider who
-    never opens the boss still sees its drops. Who got each item comes from
-    the roll that gave it out, or the loot line when it was handed out
-    without one.
+    What dropped in each raid, boss by boss. The first corpse looted within
+    ns.BOSS_LOOT_WINDOW of ENCOUNTER_END is taken as the boss's; any other
+    goes under Trash. Whoever opens the boss sends its drops to the group's
+    other GogoLoot users, so a raider who never opens it still sees them.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -46,12 +38,7 @@ local function CurrentInstanceName()
 	return nil
 end
 
---[[
-    The record of the instance the player is in, started on its first drop.
-    One record per visit: going back into the same instance within twelve
-    hours carries on the same record, so a wipe and a run back don't split
-    the night in two.
-]]
+-- Re-entering the same instance within this carries on its record, so a wipe and run back don't split the night.
 local SAME_VISIT_SECONDS = 12 * 3600
 
 ---@return table|nil
@@ -96,10 +83,7 @@ local function BossRecord(raid, bossKey)
 	return boss
 end
 
---[[
-    Records one item under a boss, once per corpse slot: a corpse reopened, or
-    the same drop sent by two raiders, is the same drop.
-]]
+-- Once per corpse slot: a corpse reopened, or the same drop sent by two raiders, is the same drop.
 ---@param bossKey string
 ---@param sourceKey string
 ---@param itemLink string
@@ -183,10 +167,7 @@ local function ItemId(itemLink)
 	return itemLink and tonumber(string.match(itemLink, "item:(%d+)"))
 end
 
---[[
-    Marks who got an item: the newest matching drop with nobody against it,
-    bosses before trash.
-]]
+-- The newest boss's matching drop with no winner yet; trash is never marked.
 ---@param itemLink string
 ---@param winnerName string
 ---@param value number|nil
@@ -211,12 +192,10 @@ local function MarkWinner(itemLink, winnerName, value)
 	end
 end
 
--- From the Loot Master: a roll of the player's settled.
 --[[
-    A roll can finish more than once: a followed roll by its own clock and
-    again when the caller's result arrives, any roll again after a
-    disqualification moves the win. Each time, the drop it marked first takes
-    the latest result.
+    A roll can finish more than once (its own clock, then the caller's result,
+    or a disqualification moving the win); the drop it marked first takes the
+    latest result.
 ]]
 function ns.OnDropRollFinished(session)
 	local item = session.dropItem
@@ -229,10 +208,7 @@ function ns.OnDropRollFinished(session)
 	end
 end
 
---[[
-    Someone else's loot line in an instance: the item was handed out without a
-    roll here (master loot, or a roll this client didn't follow).
-]]
+-- Someone else's loot line: handed out without a roll here (master loot, or a roll not followed).
 local function OnLootMessage(message)
 	if not ns.db or not ns.db.profile.lootMaster or not CurrentInstanceName() then
 		return
@@ -250,7 +226,6 @@ ns:RegisterModuleEvent("ENCOUNTER_END", OnEncounterEnd)
 ns:RegisterModuleEvent("LOOT_OPENED", OnLootOpened)
 ns:RegisterModuleEvent("CHAT_MSG_LOOT", OnLootMessage)
 
--- The boss the newest drop of an item came from, for a Roll List entry's tooltip and row.
 ---@param itemLink string
 ---@return string|nil
 function ns:GetDropBossForItem(itemLink)
@@ -285,7 +260,6 @@ function ns:GetDropBossName(boss)
 	return boss.name or L["DROPS_TRASH"]
 end
 
--- One drop as a print shows it: the link, its count, and who got it, in their class color.
 ---@param item table
 ---@param withWinner boolean
 ---@param plain? boolean # no link or color, for the Copy box
@@ -326,7 +300,7 @@ function ns:PrintDrops(raid)
 	end
 end
 
--- Each boss's drops to the group, one line or more per boss. Names go out plain: chat colors them itself.
+-- Names go out plain: chat colors them itself.
 ---@param raid table|nil
 ---@param withWinner boolean
 ---@return nil
@@ -355,7 +329,7 @@ function ns:PostDrops(raid, withWinner)
 	end
 end
 
--- The raid as plain text, no links or colors, for the Copy box and Discord.
+-- For the Copy box and Discord.
 ---@param raid table|nil
 ---@param withWinner boolean
 ---@return string

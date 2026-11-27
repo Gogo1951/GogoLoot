@@ -12,14 +12,8 @@ local GetQualityColor = ns.GetQualityColor
 --------------------------------------------------------------------------------
 
 --[[
-    Rows drawn on the Master Looter panel and again in the master looter pop-up
-    (Options-Master-Looter-Popup.lua) are built once here and added to whichever
-    args table asks for them: the pop-up toggle, the leader note, loot method,
-    loot threshold and Send All Loot To, each taking (args, order) and
-    returning the next free order. The Enable Automated Master Looting switch
-    is ns.FeatureSwitch("autoMasterLoot"), placed by each caller. The pop-up's remaining shared row, the
-    destination-messages toggle, is built in Options-Announcements.lua, which
-    owns that setting.
+    Rows shared with the master looter pop-up, built once so the two can't
+    drift. Each takes (args, order) and returns the next free order.
 ]]
 
 -- Personal Loot is listed only where the client names it, so the dropdown reads it back rather than going blank.
@@ -38,11 +32,8 @@ local function BuildLootTypeValues()
 end
 
 --[[
-    The loot-threshold floor is client-specific: TBC and later stop at Uncommon
-    (green), while Classic Era allows all the way down to Poor (gray), and
-    SetLootThreshold accepts those lower values there (confirmed by the
-    LootThresholdCommon reference add-on). Flavor.lua counts WoW Forever as
-    expansion 1, so Forever offers the Era list too.
+    TBC and later stop at Uncommon; Classic Era's SetLootThreshold accepts down
+    to Poor. Flavor.lua counts WoW Forever as expansion 1, so it gets Era's list.
 ]]
 local function BuildThresholdValues()
 	local values = {
@@ -58,32 +49,16 @@ local function BuildThresholdValues()
 	return values
 end
 
---[[
-    Only the group leader can change the loot method and threshold, so the two
-    dropdowns are editable for the leader and disabled for everyone else. Who
-    does control them is named once by the leader note row above the pair, not on
-    the labels themselves.
-]]
 local function IsNotLeader()
 	return not ns:IsGroupLeader()
 end
 
---[[
-    Automated Master Looting's master switch really is the master switch:
-    ns:WillAutoMasterLoot returns false outright when autoMasterLoot is off, so
-    nothing that tunes the automation changes anything until it is on. That is
-    why those rows hide rather than gray — a control that is never drawn has no
-    use for a disabled state.
-]]
+-- ns:WillAutoMasterLoot ignores every tuning row while autoMasterLoot is off, so they hide rather than gray.
 local function IsAutomationOff()
 	return not ns.db.profile.autoMasterLoot
 end
 
---[[
-    Composed rather than assigned: some rows already answer to something else —
-    a quality row below the loot threshold — and the master switch has to be an
-    additional reason to hide, never a replacement for theirs.
-]]
+-- Composed, not assigned: the master switch adds a reason to hide, never replaces a row's own.
 ---@param entry table
 ---@return table # the same entry, hidden while the master switch is off
 local function HideWhenAutomationOff(entry)
@@ -105,13 +80,7 @@ local function HideWhenAutomationOff(entry)
 	return entry
 end
 
---[[
-    Three methods have no threshold to apply: Free for All opens every drop to
-    the whole group, Round Robin hands whole drops out in turn, and Personal
-    Loot (MoP Classic) gives each player their own. None consults quality, so the row is hidden outright instead of left showing a value that
-    changes nothing. Callers hide the spacer that pairs with the row so its
-    absence does not leave a double gap.
-]]
+-- None of these consults quality, so the threshold row hides; callers hide its paired spacer too.
 local THRESHOLDLESS_LOOT_METHODS = {
 	freeforall = true,
 	roundrobin = true,
@@ -125,11 +94,8 @@ end
 ns.IsLootThresholdIrrelevant = IsLootThresholdIrrelevant
 
 --[[
-    Who controls the two dropdowns, said once above them rather than repeated
-    around them. It names the leader whoever that is, the player included, so the
-    line reads as a statement about whose group it is rather than as a complaint
-    about a control being grayed out. Solo, where there is no leader to name, a
-    silver line says why both are grayed out and how to change them.
+    Names the leader whoever it is, the player included, so it reads as whose
+    group it is rather than as a complaint about a grayed-out control.
 ]]
 ---@param args table
 ---@param order number
@@ -151,11 +117,7 @@ function ns.AddLeaderNoteRow(args, order)
 	return order + 2
 end
 
---[[
-    Loot method, loot threshold and Send All Loot To answer to no toggle, so they
-    are label-beside-control rows (Kit.LabelRow) rather than sub-options, one
-    arg each under `key`, hidden whole.
-]]
+-- These answer to no toggle, so they are label-beside-control rows rather than sub-options.
 ---@param args table
 ---@param key string
 ---@param order number
@@ -208,11 +170,7 @@ function ns.AddLootThresholdRow(args, order)
 	}, IsLootThresholdIrrelevant)
 end
 
---[[
-    Sets every quality at once. It reads back as the shared destination only
-    when all qualities already agree, so a mixed set of per-quality choices shows
-    blank rather than misreporting one quality's player as the answer for all.
-]]
+-- Reads back only when every quality agrees, so a mixed set shows blank rather than one quality's player.
 ---@param args table
 ---@param order number
 ---@param hidden? function # hides both the label and the dropdown when it returns true
@@ -238,13 +196,7 @@ function ns.AddSendAllDestinationRow(args, order, hidden)
 	}, hidden)
 end
 
---[[
-    The pop-up's own on/off switch, on the panel and again inside the pop-up
-    itself — the window you would most want to turn it off from is the one that
-    just opened uninvited, and hunting through Options to do it is the wrong
-    answer. Built here like the other shared rows so the two can never drift, and
-    it refreshes both surfaces so a change made in one is reflected in the other.
-]]
+-- Also inside the pop-up: the window you'd most want to turn it off from is the one that just opened uninvited.
 ---@param args table
 ---@param order number
 ---@return number # the next free order
@@ -268,13 +220,7 @@ end
 -- Loot Destinations
 --------------------------------------------------------------------------------
 
---[[
-    One row per quality the loot threshold lets master loot reach, Epic down,
-    each captioned in its own quality's color: the player picks who receives
-    that quality. Qualities below the threshold never pass through master loot,
-    so their rows are hidden rather than left showing a choice that does
-    nothing.
-]]
+-- A quality below the loot threshold never passes through master loot, so its row hides.
 local DESTINATION_QUALITIES = {
 	{ quality = 4, key = "epic", label = ITEM_QUALITY4_DESC },
 	{ quality = 3, key = "rare", label = ITEM_QUALITY3_DESC },
@@ -289,11 +235,7 @@ local function IsBelowLootThreshold(quality)
 	return not ns:IsQualityReachable(quality)
 end
 
---[[
-    True while no quality the threshold reaches has anybody picked: then
-    automation hands nothing out, and every drop waits in the loot window. A
-    partial setup reads fine without a line, since its blank rows say so.
-]]
+-- A partial setup needs no note: its blank rows say so.
 local function NoDestinationPicked()
 	for _, entry in ipairs(DESTINATION_QUALITIES) do
 		local destination = ns.db.profile.destinations[entry.key]
@@ -332,13 +274,7 @@ local function AddDestinationRows(args, order)
 			get = function()
 				return ns:GetDestinationChoice(qualityKey)
 			end,
-			--[[
-                Announce every pick, including switching back to yourself: the
-                group has already been told somebody else is holding this
-                quality, so staying quiet would leave that standing. Loot Window
-                clears the quality and says nothing, the way Send All Loot To
-                does.
-            ]]
+			-- Every pick is announced, back to yourself included, or the group's last notice would stand.
 			set = function(_, value)
 				if value == ns.DESTINATION_LOOT_WINDOW then
 					ns.db.profile.destinations[qualityKey] = nil
@@ -359,12 +295,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    The switch in the label column and its color in the control column, on
-    one line like Magic Eraser's Junk Item Tint, the color leaving while the
-    switch is off. Its own switch,
-    not Automated Master Looting's: the tint is on whether or not anything is
-    handed out, and sits here because raid leaders are the ones who need it.
-    Both repaint the bags at once (Features/Tint-Tradable-Gear.lua).
+    Its own switch, not Automated Master Looting's: the tint works whether or
+    not anything is handed out, and sits here because raid leaders need it.
 ]]
 local function IsTradableTintOff()
 	return not ns.db.profile.tradableTintEnabled
@@ -416,16 +348,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Automated Master Looting opens the panel with its switch and the two on/off
-    choices under it, then Loot Destinations, who receives each quality: without
-    destinations the automation hands nothing out, so they sit beside the
-    switch rather than a page away. Both leave while the switch is off.
-
-    Group Loot Settings follows, whatever the switch says, and Tradable Gear
-    Tint comes after it.
-    The loot method and threshold are the group's, which GogoLoot reads rather
-    than owns, and the pop-up opens whenever the player becomes Master Looter,
-    automation or not, so its switch sits with the settings it shows.
+    Group Loot Settings never hide with the switch: the method and threshold
+    are the group's, and the pop-up opens on becoming Master Looter whether
+    automation is on or not.
 ]]
 ---@return table
 function ns.BuildMasterLooterOptions()
@@ -458,7 +383,6 @@ function ns.BuildMasterLooterOptions()
 	})
 	order = order + 1
 
-	-- Loot Destinations
 	args.spacerBeforeDestinations = HideWhenAutomationOff(Kit.Spacer(order))
 	order = order + 1
 	args.destinationsHeader = Kit.Header(L["TAB_LOOT_DESTINATIONS"], order, IsAutomationOff)
@@ -483,7 +407,6 @@ function ns.BuildMasterLooterOptions()
 	-- The quality rows are Send All Loot To's sub-rows, so they sit tight under it.
 	order = AddDestinationRows(args, order)
 
-	-- Group Loot Settings
 	args.spacerBeforeCurrentLoot = Kit.Spacer(order)
 	order = order + 1
 	args.currentLootHeader = Kit.Header(L["MASTER_LOOTER_CURRENT_LOOT_HEADER"], order)
@@ -499,7 +422,6 @@ function ns.BuildMasterLooterOptions()
 	order = order + 1
 	order = ns.AddPopupToggleRow(args, order)
 
-	-- Tradable Gear Tint
 	args.spacerBeforeTradableTint = Kit.Spacer(order)
 	order = order + 1
 	args.tradableTintHeader = Kit.Header(L["TRADABLE_TINT_HEADER"], order)

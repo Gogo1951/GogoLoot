@@ -41,7 +41,7 @@ ns.SOUND_KIT_IDS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, TBC Anniversary 2.5.6.70577
+	2026-11-27, wago.tools, TBC Anniversary 2.5.6.70577
 
 Notes
 	- The game IDs GogoLoot's code reads by key, hand-picked, each under the key the code uses.
@@ -62,6 +62,7 @@ wago.tools
 	https://wago.tools/db2/SoundKit?build=2.5.6.70577
 	https://wago.tools/db2/SkillLine?build=2.5.6.70577
 	https://wago.tools/db2/ItemSparse?build=2.5.6.70577
+	https://wago.tools/db2/Item?build=2.5.6.70577
 
 QuestieDB
 	None.

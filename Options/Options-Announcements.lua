@@ -3,33 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    One panel for everything GogoLoot tells other players: trade summaries and
-    master loot. What it shows and plays for the player alone lives on the Loot
-    Toasts and Loot Sounds panels. Enable Loot Announcements is the panel's
-    master switch, and everything below it leaves the panel while it is off:
-    Trade Announcements, then Master Looter Announcements, each under its own
-    header. The saved key is lootNotifications.
-
-    Schema (ns.DATABASE_DEFAULTS.profile in Default-Settings.lua):
-      lootNotifications
-        - the master switch: ns:Announce (Announcements.lua) sends nothing
-          while it is off
-      announceTrade, announceTradeCondition, announceTradeOutput
-        - read by Announcements-Trade.lua; the checkbox on the trade window
-          writes announceTrade too, and repaints this panel when it does
-      announceDestinations
-        - gates MESSAGE_DESTINATION_SET / MESSAGE_DESTINATION_LEFT
-      announceMasterLootAuto + announceMasterLootAutoThreshold
-        - gates the announce inside Master-Looter-Distribution.lua's
-          TryDistributeSlot (items handed out by the auto path)
-      announceMasterLootManual
-        - gates the announce for items handed out by hand (the GiveMasterLoot
-          hook in Master-Looter-Distribution.lua)
-
-    The auto path is threshold-gated (default Blue+) so routine auto-loot
-    doesn't spam chat. Manual hand-outs via the standard ML candidate dropdown
-    are deliberate, so they take no threshold: every one is announced while
-    its own switch and the master switch are on.
+    Automated hand-outs are threshold-gated so routine loot doesn't spam chat.
+    Manual hand-outs are deliberate, so they take no threshold.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -44,14 +19,8 @@ local function TradeAnnouncementsOff()
 end
 
 --[[
-    Shared with the master looter pop-up (Options-Master-Looter-Popup.lua), which
-    carries it third, after its own switch and Enable Automated Master Looting:
-    the destination the player is about to pick in that window is exactly what
-    this decides whether to announce, so the answer belongs beside the question
-    rather than a panel away. Built once here so the two can
-    never drift, and ns.RefreshSettings() repaints both, since they can be open at once.
-    It leaves both with the master switch, since nothing it decides can be
-    posted while that is off.
+    Shared with the master looter pop-up, beside the destination it announces.
+    Hides with the master switch on both, since nothing it decides can post.
 ]]
 ---@param args table
 ---@param order number
@@ -77,14 +46,6 @@ end
 -- Examples
 --------------------------------------------------------------------------------
 
---[[
-    What each announcement posts, drawn by Kit.Example from the template and
-    decoration the real one uses, ns:BuildAnnounceMessage, as party chat. The
-    trade example follows Send Trade Summary To: a whisper as Aero receives
-    it, party chat, or for Me Only the printed line from the _PRINT template.
-    Each leaves while its own toggle is off, and with the master switch, like
-    everything else below it.
-]]
 local EXAMPLE_PLAYER_CLASS = "DRUID"
 -- Two of one item for 5 gold: a trade that shows a count and money both.
 local EXAMPLE_TRADE_COUNT = 2
@@ -134,15 +95,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Always offers Common+ through Epic+ regardless of the game's current loot
-    threshold. ML distribution can only happen at-or-above the loot threshold,
-    so options below it have no functional effect — but pinning the menu at
-    Common+ keeps the user's chosen "announce everything" / "announce blue+"
-    intent stable across loot-threshold changes, instead of silently bumping
-    their saved selection upward each time.
-
-    Poor (0) is left off, so a Poor hand-out, possible only where the loot
-    threshold reaches Poor (Classic Era and WoW Forever), is never announced.
+    Common+ whatever the loot threshold, so a saved choice stays put when the
+    threshold changes. Poor is left off, so a Poor hand-out is never announced.
 ]]
 local ANNOUNCE_THRESHOLD_VALUES, ANNOUNCE_THRESHOLD_SORTING = ns.OptionsQualityChoices(1, "+")
 
@@ -150,12 +104,6 @@ local ANNOUNCE_THRESHOLD_VALUES, ANNOUNCE_THRESHOLD_SORTING = ns.OptionsQualityC
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
---[[
-    Each toggle carries what belongs to it the way every GogoLoot panel does
-    (Kit.ToggleRow, Kit.SubLabelRow): a single setting on the toggle's
-    own line, which leaves the line while the toggle is off, and a captioned
-    setting on an indented row below, which leaves the panel with it.
-]]
 ---@return table
 function ns.BuildAnnouncementOptions()
 	local args = {
@@ -164,11 +112,7 @@ function ns.BuildAnnouncementOptions()
 		lootNotifications = ns.FeatureSwitch("lootNotifications", 3),
 	}
 
-	--[[
-        Everything below the switch goes through Add, which gives it the next
-        order and hides it with the switch, on top of any condition of its own,
-        so nothing added later can be left standing on a switched-off panel.
-    ]]
+	-- Add hides every entry with the switch, on top of its own condition, so nothing is left on a switched-off panel.
 	local order = 3
 	local function Add(key, entry)
 		order = order + 1
@@ -187,7 +131,6 @@ function ns.BuildAnnouncementOptions()
 		Add(key, Kit.Spacer(0))
 	end
 
-	-- Trade Announcements
 	AddSpacer("spacerBeforeTrade")
 	Add("tradeHeader", Kit.Header(L["TAB_TRADE_ANNOUNCEMENTS"], 0))
 	AddSpacer("spacerAfterTradeHeader")
@@ -217,12 +160,6 @@ function ns.BuildAnnouncementOptions()
 			},
 		})
 	)
-	--[[
-	    Where summaries go, as a captioned dropdown under the toggle: whispered
-	    to the trade partner, posted to group chat, or printed to the player
-	    alone. It writes the saved announceTradeOutput string ("whisper" |
-	    "group" | "self") the trade module and the trade window's tooltip read.
-	]]
 	Add(
 		"tradeOutputRow",
 		Kit.SubLabelRow(0, TradeAnnouncementsOff, L["TRADE_CHANNEL"], {
@@ -237,7 +174,6 @@ function ns.BuildAnnouncementOptions()
 	)
 	Add("tradeExampleRow", Kit.Example(0, TradeAnnouncementsOff, TradeExample))
 
-	-- Master Looter Announcements
 	AddSpacer("spacerBeforeMasterLooter")
 	Add("masterLooterHeader", Kit.Header(L["TAB_MASTER_LOOTER_ANNOUNCEMENTS"], 0))
 	AddSpacer("spacerAfterMasterLooterHeader")
@@ -279,12 +215,7 @@ function ns.BuildAnnouncementOptions()
 			return not ns.db.profile.announceMasterLootAuto
 		end, AutomatedHandOutExample)
 	)
-	--[[
-	    Items handed out by hand post the same line as the automated ones, and
-	    take no threshold: each one was a deliberate choice. They still get an
-	    example of their own, since this toggle posts to the whole group too
-	    (maintainer, 2026-11-03).
-	]]
+	-- Its own example, since this toggle posts to the whole group too (maintainer, 2026-11-03).
 	AddSpacer("spacerBeforeManual")
 	Add("manualAnnounce", {
 		type = "toggle",

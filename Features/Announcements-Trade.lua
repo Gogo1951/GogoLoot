@@ -2,26 +2,12 @@
 -- GogoLoot Trade Announcements Module
 --------------------------------------------------------------------------------
 
---[[
-    Snapshots both sides of a trade and posts a summary when it completes —
-    whispered to the trade partner by default, sent to group chat, or printed
-    to the player's own chat alone (Me Only), per the announceTradeOutput
-    setting. The trade window's checkbox is
-    Features/Announcements-Trade-Checkbox.lua. All sent output routes through ns:Announce
-    (Announcements.lua), which is where Enable Announcements silences it; the
-    Me Only print reads that switch itself.
-]]
 local _, ns = ...
 local L = ns.L
 
 --------------------------------------------------------------------------------
 -- State Management
 --------------------------------------------------------------------------------
-
---[[
-    ResetTradeState wipes tradeState in place rather than reallocating, so
-    references held by the handlers below stay valid across a reset.
-]]
 
 local tradeState = {
 	player = nil,
@@ -35,6 +21,7 @@ local tradeState = {
 	theirMoney = 0,
 }
 
+-- Wiped in place, so references to its tables stay valid across a reset.
 local function ResetTradeState()
 	tradeState.player = nil
 	tradeState.playerFullName = nil
@@ -68,25 +55,17 @@ local function GetTheirTradeSlotCount(slotIndex)
 end
 
 --[[
-    The two trade-info functions do NOT return the enchant slot's service
-    description in the same position:
+    The two trade-info functions do NOT return the enchant text in the same
+    position:
 
       GetTradePlayerItemInfo -> name, texture, numItems, quality,
                                 ENCHANTMENT (5), canLoseTransmog (6)
       GetTradeTargetItemInfo -> name, texture, quantity,  quality,
                                 isUsable (5),   ENCHANT (6)
 
-    Reading a fixed sixth return for both works for their side and silently
-    fails for ours: position 6 on our side is canLoseTransmog, a boolean, so
-    the string check rejects it and every service performed on OUR item
-    vanishes from the summary. That is the lockbox case (the box sits in our
-    own enchant slot while the rogue applies Pick Lock) and equally every
-    enchant somebody else puts on our gear.
-
-    Each caller therefore passes the position for the function it is reading.
-    Never share one index between the two.
+    Never share one index between the two: every service on OUR item (Pick
+    Lock on our lockbox, an enchant on our gear) would vanish.
 ]]
-
 local TRADE_ENCHANT_RETURN_PLAYER = 5
 local TRADE_ENCHANT_RETURN_TARGET = 6
 
@@ -160,11 +139,7 @@ local function BuildItemListStrings(itemTable)
 	return finalStrings
 end
 
---[[
-    Returns the summary as a list of parts (item links with counts, then the
-    enchant, then money) rather than one string, so the announcement step can
-    split across messages at part boundaries when the total is too long.
-]]
+-- Parts, not one string, so a long summary can split at part boundaries.
 local function BuildTradeSummaryParts(itemTable, enchantDescription, moneyAmount)
 	local summaryParts = BuildItemListStrings(itemTable)
 
@@ -180,10 +155,6 @@ local function BuildTradeSummaryParts(itemTable, enchantDescription, moneyAmount
 	return summaryParts
 end
 
---[[
-    The same summary as one line, for a caller showing a trade rather than
-    sending one: the Announcements panel's example.
-]]
 ---@param itemTable table # { link, count } by trade slot
 ---@param enchantDescription string|nil
 ---@param moneyAmount number # copper
@@ -225,10 +196,7 @@ local function SnapshotTradeItems()
 	tradeState.theirEnchantDescription = nil
 	tradeState.ourEnchantDescription = nil
 
-	--[[
-        Our enchant slot has an item: they are performing a service on our item
-        — an enchant on our gear, or Pick Lock on a lockbox we handed over.
-    ]]
+	-- Crossed: an item in OUR enchant slot means THEY perform the service, and vice versa.
 	local ourEnchantSlotLink = GetTradePlayerItemLink(enchantSlot)
 	if ourEnchantSlotLink then
 		local enchantName = SafeGetTradeEnchantName(GetTradePlayerItemInfo, enchantSlot, TRADE_ENCHANT_RETURN_PLAYER)
@@ -237,7 +205,6 @@ local function SnapshotTradeItems()
 		end
 	end
 
-	-- Their enchant slot has an item: we are performing a service on their item
 	local theirEnchantSlotLink = GetTradeTargetItemLink(enchantSlot)
 	if theirEnchantSlotLink then
 		local enchantName = SafeGetTradeEnchantName(GetTradeTargetItemInfo, enchantSlot, TRADE_ENCHANT_RETURN_TARGET)
@@ -259,11 +226,8 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Me Only: the summary printed to the player's own chat, sent to nobody. A
-    print has no 255-byte ceiling to split at, so each side's list goes out
-    whole, in the _PRINT templates, which end on their own punctuation as every
-    printed line does. It answers to Enable Announcements like every other
-    summary: ns:Announce reads that switch for the sent ones.
+    Me Only: a print has no 255-byte ceiling, so each list goes out whole. It
+    reads Enable Announcements itself, since it bypasses ns:Announce.
 ]]
 local function PrintTradeSummary()
 	if not ns.db.profile.lootNotifications then
@@ -345,14 +309,7 @@ local function AnnounceTradeComplete()
 		return
 	end
 
-	--[[
-        Pick the locale-aware template based on which side(s) of the trade had
-        contents, then route through the central Announce helper which applies
-        the target marker and add-on name for the channel and sends. A
-        two-sided summary that fits the chat limit goes out as a single
-        message; one that does not is decomposed into the one-sided GAVE and
-        RECEIVED templates, each split at part boundaries by ns:AnnounceParts.
-    ]]
+	-- A two-sided summary over the chat limit splits into the one-sided GAVE and RECEIVED templates.
 	if #ourParts > 0 and #theirParts > 0 then
 		local ourSummary = table.concat(ourParts, ", ")
 		local theirSummary = table.concat(theirParts, ", ")
@@ -381,11 +338,9 @@ local function BeginTrade()
 	tradeState.playerClass = select(2, UnitClass("npc"))
 
 	--[[
-        Keep the realm suffix for the whisper target: a cross-realm partner
-        (possible in battlegrounds) is only routable as "Name-Realm", while the
-        stripped tradeState.player is what the message templates display. WoW
-        Forever has no realms: the second half is a last name, and the whisper
-        goes to "First Last", the form its chat gives as a message's author.
+        A cross-realm partner is only whisperable as "Name-Realm". On WoW
+        Forever the second half is a last name, and the whisper goes to
+        "First Last".
     ]]
 	local partnerName, partnerRealm = UnitName("npc")
 	if ns.FLAVOR == "Camelot" then
@@ -398,13 +353,9 @@ local function BeginTrade()
 end
 
 --[[
-    The record is the window as it stood when a player accepted. Any change to
-    the window clears both acceptances, so the last accept before the trade
-    goes through always reads the final contents, money and enchant slot
-    included. The per-slot change events are deliberately not followed: as the
-    trade executes, WoW Forever empties our side of the window
-    (TRADE_PLAYER_ITEM_CHANGED) just before "Trade complete.", and reading that
-    would drop everything we gave from the summary.
+    Any change clears both acceptances, so the last accept reads the final
+    window. The per-slot change events are deliberately not followed: WoW
+    Forever empties our side just before "Trade complete.".
 ]]
 local function OnTradeAcceptUpdate(playerAccepted, targetAccepted)
 	if playerAccepted == 1 or targetAccepted == 1 then
@@ -416,32 +367,15 @@ local function OnTradeRequestCancel()
 	ResetTradeState()
 end
 
---[[
-    UI_INFO_MESSAGE's first argument is a numeric message id, so the trade result
-    is read from that rather than compared against the client's translated text.
-    Matching on the id is what keeps this working where an ERR_* global is not
-    bound as a string, the same reason the master-loot error correlation resolves
-    ids (Master-Looter-Distribution.lua).
-]]
 local TRADE_RESULT_BY_CONSTANT = {
 	ERR_TRADE_COMPLETE = "complete",
 	ERR_TRADE_CANCELLED = "cancelled",
 }
 
---[[
-    Diagnostics reads this to report which of these constants resolved to an id
-    on this client, the same way Master-Looter-Distribution.lua exports its error
-    constants. The ids are per-flavor, so a table that resolves on Era can come
-    back empty on Anniversary and take the whole watcher down with it — an
-    existence check on the ERR_* globals below would not show that.
-]]
+-- For Diagnostics: ids are per flavor, and an existence check on the ERR_* globals wouldn't show a miss.
 ns.TRADE_RESULT_CONSTANTS = TRADE_RESULT_BY_CONSTANT
 
---[[
-    Resolved on first use, not at load: the walk costs a full table scan and
-    nothing needs it until a trade actually ends. Runtime only, never persisted,
-    so a client patch that renumbers the ids cannot be read back from stale data.
-]]
+-- Resolved on first use, never saved: a patch may renumber the ids.
 local tradeResultById
 
 local function GetTradeResult(messageId, informationMessage)
@@ -476,7 +410,6 @@ local function OnUiInfoMessage(messageId, informationMessage)
 		ResetTradeState()
 	elseif tradeResult == "complete" then
 		AnnounceTradeComplete()
-		-- The Loot Master moves what a winner just received to Awarded.
 		if ns.OnLootMasterTradeCompleted then
 			ns.OnLootMasterTradeCompleted(tradeState.player, tradeState.ourItems)
 		end

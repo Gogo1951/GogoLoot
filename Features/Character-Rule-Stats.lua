@@ -2,20 +2,9 @@
 -- GogoLoot Character Rule Stats
 --------------------------------------------------------------------------------
 
---[[
-    The stat reader Character Rules judges gear by (Features/Character-Rules.lua):
-    which stats this client offers, and which of them an item carries, from
-    GetItemStats and the tooltip's own stat and Equip lines.
-]]
 local _, ns = ...
 
---[[
-    Only the stats this client's flavor folder offers
-    (ns.CHARACTER_RULE_STAT_KEYS, Data/{Folder}/Character-Rule-Stats-{Folder}.lua),
-    and only the sections left holding one, so the panel, the stat reader and
-    the roll check all see the same list. A rule saved for a stat the client
-    doesn't offer is simply never read.
-]]
+-- So the panel, the stat reader and the roll check see one list; a rule saved for an unoffered stat is never read.
 local function KeepOfferedStats()
 	local offered, groupsInUse = {}, {}
 	for _, statKey in ipairs(ns.CHARACTER_RULE_STAT_KEYS) do
@@ -50,7 +39,6 @@ local function AddStatSource(found, statKey, source)
 	sources[#sources + 1] = source
 end
 
--- The random suffix id an item link carries, nil for none, for Diagnostics' Gear Stats report.
 ---@param itemLink string
 ---@return number|nil
 function ns.GetLinkRandomSuffix(itemLink)
@@ -64,11 +52,8 @@ function ns.GetLinkRandomSuffix(itemLink)
 end
 
 --[[
-    One whole-line pattern per stat line the tooltip can print, to the rule
-    keys it counts for. Built on first use from the FULL ITEM_MOD_* formats
-    ("%c%s Stamina"), which are what the tooltip prints, never from the
-    ITEM_MOD_*_SHORT labels the dropdowns are captioned with: several locales
-    word the line apart from the label ("+15 p. de intelecto", "지능 +15").
+    Built from the full ITEM_MOD_* formats the tooltip prints, never the _SHORT
+    labels: several locales word the line apart from the label ("지능 +15").
 ]]
 local statLinePatterns
 
@@ -109,15 +94,10 @@ local function StatLinePatterns()
 end
 
 --[[
-    "Equip:" lines (Classic Era, Season of Discovery and TBC). There spell
-    power, healing, attack power, crit, hit and mana per 5 are item spells,
-    which GetItemStats doesn't report. Each flavor folder lists one spell for
-    every way the game words such a line (ns.CHARACTER_RULE_EQUIP_SPELLS), and
-    each line's pattern is built from that spell's own description, as the
-    client words it in the player's language, numbers made wildcards, behind
-    the game's ITEM_SPELL_TRIGGER_ONEQUIP. So no locale needs patterns of its
-    own. A description that hasn't loaded yet is asked for and built on a
-    later read; PLAYER_LOGIN asks for them all.
+    Classic Era, SoD and TBC carry secondary stats as "Equip:" item spells, which
+    GetItemStats doesn't report. Each pattern is built from the spell's own
+    description in the player's language, so no locale needs patterns of its
+    own. An unloaded description is requested and built on a later read.
 ]]
 local equipLinePatterns, equipLineEntries, equipSpellsRead = {}, {}, {}
 
@@ -191,20 +171,10 @@ local function AddTooltipStats(itemLink, found)
 end
 
 --[[
-    Which of ns.CHARACTER_RULE_STATS an item carries, as { [statKey] =
-    { source, ... } }, naming every source that saw the stat for Diagnostics'
-    Gear Stats report. Three sources, because none sees every stat:
-      * GetItemStats, for the item's own stats. On WoW Forever and later
-        clients that includes spell power, attack power and crit. On WoW
-        Forever it reads the random suffix in the link too: Lupine Cord of
-        the Tiger reports the Strength and Agility its suffix rolled.
-      * The tooltip's "+15 Intellect" lines, matched against the game's own
-        stat-line formats, so in any language: a second look at the primary
-        attributes, random suffix included, for a client whose GetItemStats
-        sees only the base item. Play It Forward reads its stats the same way.
-      * The tooltip's "Equip:" lines (EquipLinePatterns, above), for the
-        secondary stats Classic Era, Season of Discovery and TBC carry as item
-        spells.
+    { [statKey] = { source, ... } }; sources are kept for Diagnostics. Three
+    sources, because none sees every stat: GetItemStats (base item only on the
+    Classic clients; WoW Forever also reads the random suffix), the tooltip's
+    stat lines (random suffixes), and its Equip lines.
 ]]
 ---@param itemLink string
 ---@return table

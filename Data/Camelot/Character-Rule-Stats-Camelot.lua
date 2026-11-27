@@ -22,10 +22,10 @@ ns.CHARACTER_RULE_EQUIP_SPELLS = {}
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
-	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rules.lua drops the rest, and any section left empty, at load.
+	- The stat keys Character Rules offers on this client, from ns.CHARACTER_RULE_STATS (Data/Data.lua); Features/Character-Rule-Stats.lua drops the rest, and any section left empty, at load.
 	- Every key: this client's items carry their secondary stats as item stats GetItemStats reports.
 	- CHARACTER_RULE_EQUIP_SPELLS is empty on purpose: this client reports every secondary stat through GetItemStats, so no "Equip:" line needs matching.
 

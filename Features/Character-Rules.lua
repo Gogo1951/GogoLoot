@@ -2,18 +2,8 @@
 -- GogoLoot Character Rules
 --------------------------------------------------------------------------------
 
---[[
-    What each character wants: the class starter lists, and the verdict
-    Automated Rolls asks for before it rolls on gear. The stat reader it judges
-    by is Features/Character-Rule-Stats.lua.
-]]
 local _, ns = ...
 
---[[
-    Only the armor and weapon sections this client's flavor folder lists rows
-    for (Data/{Folder}/Character-Rule-Gear-Types-{Folder}.lua). A folder whose
-    tables are empty offers neither.
-]]
 local function KeepOfferedGearGroups()
 	for index = #ns.CHARACTER_RULE_GEAR_GROUPS, 1, -1 do
 		local rows = ns[ns.CHARACTER_RULE_GEAR_GROUPS[index].types]
@@ -28,12 +18,7 @@ KeepOfferedGearGroups()
 -- What a Character Wants
 --------------------------------------------------------------------------------
 
---[[
-    One box's key in a character's saved choices: "ARMOR_4" is plate,
-    "WEAPON_15" daggers, "ARMOR_HELD" held off-hands, "OTHER_GEAR" the
-    catch-all, "STAT_STRENGTH" Strength. A row is an item subclass ID, or a
-    name for a row no subclass names.
-]]
+-- Saved keys: "ARMOR_4" plate, "WEAPON_15" daggers, "ARMOR_HELD", "OTHER_GEAR", "STAT_STRENGTH".
 ---@param group table # a ns.CHARACTER_RULE_GEAR_GROUPS row
 ---@param row number|string
 ---@return string
@@ -59,7 +44,7 @@ local function ListHas(list, value)
 	return false
 end
 
--- Whether a class's starter list ticks a box: a table on ns named by `starterTable`, keyed by class.
+-- starterTable names a table on ns, keyed by class.
 ---@param starterTable string|nil
 ---@param classFile string|nil
 ---@param value number|string
@@ -70,11 +55,9 @@ local function StarterHas(starterTable, classFile, value)
 end
 
 --[[
-    Whether a box starts ticked for a class. A class the folder doesn't list,
-    or nil (a character that hasn't logged in since its class was recorded),
-    starts with every box clear, but for Other, which starts ticked for
-    everyone (maintainer, 2026-11-07): what the add-on can't name keeps its
-    roll window until the player says otherwise.
+    An unlisted or unrecorded class starts with every box clear, except Other,
+    ticked for everyone (maintainer, 2026-11-07): what the add-on can't name
+    keeps its roll window until the player says otherwise.
 ]]
 ---@param classFile string|nil
 ---@param group table
@@ -99,12 +82,7 @@ function ns.CharacterRuleStatStarter(classFile, statKey)
 	return StarterHas("CLASS_STAT_STARTER", classFile, statKey)
 end
 
---[[
-    Whether one box is ticked for a character: what it saved, or its class's
-    starter list. Only a box that differs from the starter list is saved
-    (rules.wanted[key] = true or false), so a character whose boxes were never
-    touched saves nothing and follows any later change to the list.
-]]
+-- Only a box that differs from the starter is saved, so an untouched character follows later starter changes.
 ---@param rules table|nil # the character's characterRules
 ---@param key string
 ---@param starter boolean
@@ -137,7 +115,6 @@ function ns.CharacterRuleWantsStat(rules, classFile, statKey)
 	return Ticked(rules, ns.CharacterRuleStatKey(statKey), ns.CharacterRuleStatStarter(classFile, statKey))
 end
 
--- One Everything Else field for a character: what it saved, or ns.CHARACTER_RULE_UNWANTED_DEFAULTS.
 ---@param rules table|nil
 ---@param field string # "action" or "lowLevelGear"
 ---@return any
@@ -152,13 +129,7 @@ function ns.CharacterRuleUnwanted(rules, field)
 	return saved
 end
 
---[[
-    Whether an item is low-level gear for a character under Automatically
-    Greed on Low-Level Gear: its required level is at least that many levels
-    below the character's. Gear with no level requirement (0) counts as
-    low-level. Off (0), or a level or required level nobody can read, is never
-    low-level.
-]]
+-- Required level 0 counts as low-level; off (0) or an unreadable level never does.
 ---@param rules table|nil
 ---@param requiredLevel number|nil
 ---@param level number|nil
@@ -175,12 +146,9 @@ function ns.IsLowLevelGear(rules, requiredLevel, level)
 end
 
 --[[
-    The row an armor or weapon item falls under: its item class, subclass and
-    slot, never its localized type text. Returns "TYPELESS" for a cloak, ring,
-    neck or trinket, which every class wears, so stats alone decide it, and
-    nil for anything Character Rules doesn't judge (not gear, a shirt, a
-    tabard). A held off-hand goes by its slot, since it shares armor subclass
-    0 with rings. Anything else no row names falls to Other.
+    By class, subclass and slot, never localized type text. "TYPELESS" (cloak,
+    ring, neck, trinket) leaves it to stats alone; nil means not judged. A held
+    off-hand goes by its slot, since it shares armor subclass 0 with rings.
 ]]
 ---@param itemInformation table # ns:SafeGetItemInfo's
 ---@return table|string|nil group
@@ -226,11 +194,9 @@ ns.CHARACTER_RULE_WANTED = "WANTED"
 ns.CHARACTER_RULE_UNWANTED = "UNWANTED"
 
 --[[
-    What this character's rules say about an item: WANTED, UNWANTED, or nil
-    for an item they don't judge (see ns.GetCharacterRuleGearRow). Wanted is a
-    ticked type, or a typeless slot, that carries a ticked stat or no stat
-    Character Rules reads at all. The stat read scans a tooltip, so it runs
-    only once the type has passed. Also returns the gear row, for Diagnostics.
+    Wanted: a ticked type (or typeless slot) carrying a ticked stat, or no stat
+    read at all. The stat read scans a tooltip, so it runs only once the type
+    passes. The row is returned for Diagnostics.
 ]]
 ---@param itemInformation table
 ---@param itemLink string

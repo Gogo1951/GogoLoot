@@ -3,14 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    Keeps the Roll Macro (ns.ROLL_MACRO_NAME, Data.lua) among the player's
-    General macros while ns.db.global.rollMacro is on: made if it's missing, and
-    put back if its icon or text was changed. Switching the setting off deletes
-    it. Nothing is deleted at login, so a macro of the same name the player made
-    themselves is only ever touched while the switch is on.
-
-    The game refuses macro changes in combat, so a change asked for there waits
-    for PLAYER_REGEN_ENABLED.
+    Only switching off deletes the macro, never a login, so a same-named macro
+    the player made is touched only while the switch is on. The game refuses
+    macro changes in combat, so those wait for PLAYER_REGEN_ENABLED.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -84,10 +79,6 @@ local function RunOutOfCombat(action, announce)
 	action(announce)
 end
 
---[[
-    Called by the Enable Roll Macro switch once the setting is saved: adds the
-    macro when it's on, deletes it when it's off, and says which in chat.
-]]
 ---@return nil
 function ns.ApplyRollMacro()
 	RunOutOfCombat(ns.db.global.rollMacro and AddRollMacro or DeleteRollMacro, true)

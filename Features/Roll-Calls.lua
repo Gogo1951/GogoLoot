@@ -4,26 +4,18 @@
 
 --[[
     The roll engine behind the Loot Master and the Loot Tracker: one roll at a
-    time, called by the player or by someone else in the group, with every
-    /roll result checked against the same rules and kept, counted or not, with
-    the reason.
+    time, every /roll kept, counted or not, with the reason. A roll counts if
+    it is a plain 1-100, the player's first of the round, from a group member,
+    while open plus ns.ROLL_GRACE_SECONDS for lag; a tie-break counts only the
+    tied players.
 
-    The rules: a plain /roll (1-100), each player's first roll of the round,
-    from a group member, while the roll is open plus ns.ROLL_GRACE_SECONDS for
-    lag. Rolls just before the call or just after the close show as not
-    counted, so the raid sees why. A tie-break round only counts the tied
-    players.
-
-    A roll the player calls (session.isMine) is announced to the group and sent
-    to the other GogoLoot users as add-on messages, so their Loot Trackers
-    follow the loot master's rulings: disqualifications, tie-breaks, pauses and
-    the winner. A roll called by someone without GogoLoot is spotted from the
-    raid warning or group line that carries the item, and checked here by the
-    same rules, with the caller keeping the final say.
+    The player's own call (session.isMine) is sent to other GogoLoot users as
+    add-on messages so their Trackers follow its rulings. A call made without
+    GogoLoot is spotted from the chat line carrying the item and counted here,
+    with the caller keeping the final say.
 
     Only CHAT_MSG_SYSTEM is trusted for a roll: anyone can type "Aero rolls
-    100 (1-100)" in normal chat. The line is read by ns.ParseRandomRollMessage
-    (Features/Utilities-Chat-Lines.lua), so every locale works.
+    100 (1-100)" in normal chat.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -52,11 +44,7 @@ end
 -- Secret Values
 --------------------------------------------------------------------------------
 
---[[
-    WoW Forever can hand an add-on system chat as a secret value inside a
-    dungeon or raid, as Retail does, and a secret string can't be matched.
-    issecretvalue exists only where secrets do.
-]]
+-- WoW Forever can hand chat over as a secret value in instances; a secret string can't be matched.
 local IsSecretValue = issecretvalue or function()
 	return false
 end
@@ -65,11 +53,7 @@ end
 -- Group Roster
 --------------------------------------------------------------------------------
 
---[[
-    Everyone who may roll, by the name key every comparison uses
-    (ns:NormalizePlayerName), each with the name to show and the class to color
-    it. The player is always in it, so a roll can be tried alone.
-]]
+-- Everyone who may roll. The player is always in it, so a roll can be tried alone.
 ---@return table # [nameKey] = { name, classFile }
 function ns:GetRollRoster()
 	local roster = {}
@@ -109,11 +93,9 @@ end
 --------------------------------------------------------------------------------
 
 --[[
-    Roll calls go out whatever Enable Announcements says: calling for rolls is
-    what the Loot Master is for, so a switch meant to quiet trade summaries
-    must not leave a raid waiting on a call that never came. Outside a group
-    there is nobody to tell, so the line is printed instead, as a preview, and
-    the whole flow can be tried alone.
+    Roll calls ignore Enable Announcements: a switch meant to quiet trade
+    summaries must not leave a raid waiting on a call that never came. Solo,
+    the line is printed as a preview so the flow can be tried alone.
 ]]
 ---@param channel string|nil
 ---@param message string|nil
@@ -138,10 +120,9 @@ local function Send(channel, formatKey, ...)
 end
 
 --[[
-    A list (rolls that don't count, items up for roll, a boss's drops) packed
-    into as few lines as fit the chat limit, split only between parts so no
-    link is cut, the way ns:AnnounceParts does it for the trade summary.
-    formatArguments(joinedParts) returns the template's arguments in order.
+    Packs a list into as few lines as fit the chat limit, split only between
+    parts so no link is cut. formatArguments(joinedParts) returns the
+    template's arguments in order.
 ]]
 ---@param channel string|nil
 ---@param formatKey string
@@ -165,17 +146,11 @@ function ns:SendRollParts(channel, formatKey, parts, formatArguments)
 	end
 end
 
--- Where results go: the group's own chat.
 ---@return string|nil
 function ns:GetRollResultChannel()
 	return ns:GetGroupChatChannel()
 end
 
---[[
-    Where calls, ties and pauses go: Raid Warning when the panel says so and
-    the player may send one (leader or assistant in a raid), the group's chat
-    otherwise.
-]]
 ---@return string|nil
 function ns:GetRollCallChannel()
 	local groupChannel = ns:GetGroupChatChannel()
@@ -243,11 +218,7 @@ local function CountsInRound(session, roll)
 	return roll.round == session.round and not roll.reject
 end
 
---[[
-    A new session. `fields` carries the item, who called it, and for one
-    called elsewhere, the id the caller gave it and whether it came with
-    add-on messages (synced) or was spotted in chat.
-]]
+-- `fields.synced`: the call came with add-on messages rather than being spotted in chat.
 ---@param fields table
 ---@return table
 local function NewSession(fields)
@@ -303,11 +274,7 @@ function ns:IsRollOpen()
 	return ns.currentRoll ~= nil and ns.currentRoll.open
 end
 
---[[
-    Whether a roll of the player's own is open. A roll the player is only
-    following never stops them calling one: their call wins, and the one they
-    were following is put away (StopFollowing).
-]]
+-- A roll the player is only following never stops them calling one: their call wins.
 ---@return boolean
 function ns:IsOwnRollOpen()
 	return ns:IsRollOpen() and ns.currentRoll.isMine
@@ -317,10 +284,7 @@ end
 -- Counting a Roll
 --------------------------------------------------------------------------------
 
---[[
-    Recent rolls from group members, kept a few seconds so a roll made just
-    before the call can show in the list as early rather than vanish.
-]]
+-- Kept a few seconds so a roll made just before the call shows as early rather than vanishing.
 local recentRolls = {}
 
 ---@param session table
@@ -380,7 +344,6 @@ end
 -- Results
 --------------------------------------------------------------------------------
 
--- The counted rolls of the session's round, highest first.
 ---@param session table
 ---@return table[]
 function ns:GetCountedRolls(session)
@@ -399,7 +362,6 @@ function ns:GetCountedRolls(session)
 	return counted
 end
 
--- How a roll that doesn't count reads in the "Not counted" line.
 ---@param roll table
 ---@return string
 local function NotCountedPart(roll)
@@ -432,11 +394,7 @@ local function Finish(session)
 	Changed()
 end
 
---[[
-    Decides the roll from the counted rolls of its round: nobody, a tie, or a
-    winner. `changed` is a call after a disqualification or a restore moved a
-    roll that already had a result, which the announcement words as a change.
-]]
+-- `changed`: a disqualify or restore moved a roll that already had a result, so it's announced as a change.
 ---@param session table
 ---@param changed boolean
 ---@return nil
@@ -574,11 +532,6 @@ end
 -- Ticking
 --------------------------------------------------------------------------------
 
---[[
-    One ticker runs while a roll is open, and stops with it. A roll called
-    elsewhere is closed a little after its time, so the caller's own result,
-    which arrives as an add-on message, can land first.
-]]
 local ticker
 
 local function StopTicker()
@@ -595,10 +548,7 @@ local function Tick()
 		return
 	end
 	if not session.isMine then
-		--[[
-		    A followed roll whose caller left the group, or that stayed on pause
-		    far longer than it ran, will never hear its result: it is decided here.
-		]]
+		-- Caller left, or paused far longer than it ran: no result will come, so decide it here.
 		local callerGone = session.synced and not ns:GetRollRoster()[ns:NormalizePlayerName(session.caller) or ""]
 		local stuck = session.pausedLeft and GetTime() > (session.pausedAt or GetTime()) + session.length * 3
 		if callerGone or stuck then
@@ -692,10 +642,7 @@ local function Begin(session)
 	Changed()
 end
 
---[[
-    Calls for rolls on an item. Returns the session, or nil when a roll is
-    already open: one at a time, so nobody's /roll can land on the wrong item.
-]]
+-- Nil while one is open: one at a time, so nobody's /roll can land on the wrong item.
 ---@param itemLink string
 ---@param entryKey? string # the Roll List entry it belongs to
 ---@return table|nil
@@ -797,11 +744,7 @@ function ns:CancelRoll(session)
 	Changed()
 end
 
---[[
-    Throws out every roll and calls the item again, as a new roll. The old one
-    is dropped rather than kept, so Earlier tonight never shows a result that
-    was voided.
-]]
+-- The old roll is dropped, not kept, so Earlier tonight never shows a voided result.
 ---@param session table
 ---@return table|nil
 function ns:VoidRolls(session)
@@ -847,10 +790,7 @@ function ns:RerollTie(session)
 	end
 end
 
---[[
-    The disqualify line as the group sees it, also previewed in the Disqualify
-    window; a picked reason gets the sentence that names it.
-]]
+-- Also previewed in the Disqualify window.
 ---@param roll table
 ---@param itemLink string
 ---@param reasonKey string # one of ns.ROLL_DISQUALIFY_REASONS
@@ -868,10 +808,6 @@ function ns:BuildDisqualifyMessage(roll, itemLink, reasonKey)
 	)
 end
 
---[[
-    Disqualifies a counted roll, says so in group chat, and when it was the
-    winning roll of a finished one, decides the roll again from what is left.
-]]
 ---@param session table
 ---@param roll table
 ---@param reasonKey string # one of ns.ROLL_DISQUALIFY_REASONS
@@ -970,21 +906,13 @@ local function OnChatMsgSystem(message)
 	end
 end
 
---[[
-    "pass" in group chat, in the client's own word for it or in English, is a
-    pass on the open roll: the player drops out of Hasn't rolled.
-]]
+-- "pass" in group chat, in English or the client's own word, drops the player out of Hasn't rolled.
 local PASS_WORDS = { ["pass"] = true }
 if type(PASS) == "string" then
 	PASS_WORDS[string.lower(PASS)] = true
 end
 
---[[
-    Spotting a roll called without GogoLoot: an item link in a raid warning,
-    or in group chat beside the word roll, from someone other than the player.
-    GogoLoot's own lines are skipped: a caller running GogoLoot sends the roll
-    as an add-on message, which carries the rulings too.
-]]
+-- GogoLoot's own lines are skipped: that caller's add-on messages carry the roll and its rulings.
 local function IsRollCall(event, message)
 	if not string.find(message, "|Hitem:", 1, true) then
 		return false
@@ -1221,10 +1149,6 @@ ns:RegisterModuleEvent("CHAT_MSG_ADDON", OnChatMsgAddon)
 -- Rows for the Windows
 --------------------------------------------------------------------------------
 
---[[
-    A roll's tag in the windows: why it doesn't count, or for a counted one,
-    whether it leads or won. The disqualifications by hand carry their reason.
-]]
 ---@param session table
 ---@param roll table
 ---@return string text
@@ -1255,11 +1179,7 @@ function ns:GetRollTag(session, roll)
 	return "", "TEXT"
 end
 
---[[
-    Who in the group hasn't rolled on the open round or passed: the tied
-    players in a tie-break, everyone else otherwise. The caller isn't asked to
-    roll on their own call.
-]]
+-- The caller isn't asked to roll on their own call, except in its tie-break.
 ---@param session table
 ---@return string[]
 function ns:GetRollWaitingNames(session)
@@ -1282,7 +1202,6 @@ function ns:GetRollWaitingNames(session)
 	return names
 end
 
--- The color a roll's tag key names, as an escape.
 ---@param colorKey string
 ---@return string
 function ns:GetRollTagColor(colorKey)

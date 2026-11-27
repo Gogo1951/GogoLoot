@@ -95,7 +95,7 @@ ns.DEFAULT_IGNORE_LIST_MASTER = {
 How We Got the Data
 
 Last Validated
-	2026-11-16, WoW Forever 1.60.1.70938
+	2026-11-27, wago.tools, WoW Forever 1.60.1.71139
 
 Notes
 	- Both lists are hand-picked, and Features/Core.lua seeds the player's list from them whenever that list is empty, skipping any ID this client doesn't know.
@@ -103,7 +103,7 @@ Notes
 	- The Wartorn scraps are listed at Manual on purpose. They are an AQ40 Cenarion Circle turn-in with real value, so auto-needing one in a pug reads as ninja-ing; the entry exists so the row is in the UI ready to change, not so the add-on rolls on it.
 	- ns.DEFAULT_IGNORE_LIST_MASTER seeds the Master Looter Ignore List: items automated master looting leaves in the loot window for the master looter to hand out by hand (Features/Master-Looter-Distribution.lua). Demonic Rune and Dark Rune, then the raid bags Onyxia Hide Backpack and Panther Hide Sack.
 	- Began as a copy of Data/Vanilla/.
-	- Rechecked against this client's tables at build 1.60.1.70959: every item is in ItemSparse under the name its comment gives.
+	- Rechecked against this client's tables at build 1.60.1.71139: every item is in ItemSparse under the name its comment gives.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -113,6 +113,8 @@ Wowhead
 
 wago.tools
 	https://wago.tools/db2/ItemSparse?build=1.60.1.70959
+	https://wago.tools/db2/ItemSparse?build=1.60.1.71139
+	https://wago.tools/db2/Item?build=1.60.1.71139
 
 QuestieDB
 	None.

@@ -46,7 +46,6 @@ function ns.BuildGeneralOptions()
 			spacerFeaturesSection = Kit.Spacer(20),
 			featuresHeader = Kit.Header(L["OPTIONS_FEATURES_HEADER"], 21),
 			spacerAfterFeaturesHeader = Kit.Spacer(22),
-			-- The menu's order: its blocks first, then More Features (ns.FEATURES), two to a line.
 			features = ns.FeatureSwitches(23),
 			spacerCommands0 = Kit.Spacer(80),
 			headerCommands = Kit.Header(L["OPTIONS_COMMANDS_HEADER"], 81),

@@ -37,7 +37,7 @@ ns.LOCKBOX_SKILL_LEVELS = {
 How We Got the Data
 
 Last Validated
-	2026-11-03, MoP Classic 5.5.4.70631
+	2026-11-27, wago.tools, MoP Classic 5.5.4.71089
 
 Notes
 	- The Lockpicking skill each locked container needs, for the line Lockbox Tooltips adds to its tooltip (Features/Lockbox-Tooltips.lua).
@@ -46,7 +46,7 @@ Notes
 	- Pulled from this client's own tables at build 5.5.4.69934.
 	- Values are numbers and the tooltip formats them with %d, so a box with no number is absent from the table, never present with a stand-in value.
 	- Every row here must also be an ns.OPENING_UNLOCKED row in Openable-Items-Mists.lua; a test holds every folder to it.
-	- Rechecked against this client's tables at build 5.5.4.70960: every number matches its lock's Pick Lock entry, and every pickable locked row has one.
+	- Rechecked against this client's tables at build 5.5.4.71089: every number matches its lock's Pick Lock entry, and every pickable locked row has one.
 
 SQL (CMaNGOS)
 	TODO: Add SQL Query
@@ -60,6 +60,8 @@ wago.tools
 	https://wago.tools/db2/Lock?build=5.5.4.70631
 	https://wago.tools/db2/ItemSparse?build=5.5.4.70960
 	https://wago.tools/db2/Lock?build=5.5.4.70960
+	https://wago.tools/db2/ItemSparse?build=5.5.4.71089
+	https://wago.tools/db2/Lock?build=5.5.4.71089
 
 QuestieDB
 	None.

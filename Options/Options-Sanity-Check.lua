@@ -3,16 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    A panel under Automated Rolls: ten drops for each of Trash, Dungeon Bosses
-    and Raid Bosses, drawn at random from that section's list
-    (ns.SANITY_CHECK_TRASH, _DUNGEON_BOSSES, _RAID_BOSSES in the flavor's
-    Character-Rule-Gear-Types file), and what Automated Rolls would do with
-    each for the character being played, straight from the ns.DecideRoll a
-    real roll takes, so every row follows the settings as they change. Every
-    draw holds at least two greens and two blues, and Trash and Raid Bosses
-    two Bind on Equip epics as well. Trash and Dungeon Bosses read the In
-    Party settings, Raid Bosses In Raid. Pick New Drops draws another ten for
-    each; a draw lasts until then or a reload.
+    Outcomes come from the real ns.DecideRoll, so every row follows the
+    settings as they change. A draw lasts until Pick New Drops or a reload.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -54,10 +46,8 @@ local KIND_ORDER = { "UNCOMMON", "RARE", "EPIC_BOE" }
 
 -- [section key] = { itemId, ... }, the current draw; nil until the panel first builds.
 local drawn = nil
--- Every drawn item as a set, watched for this panel (Options-Utilities-Item-Cache.lua).
 local watched = {}
 
--- Takes one of candidates at random, removing it, or nil once none are left.
 ---@param candidates number[]
 ---@return number|nil
 local function TakeAtRandom(candidates)
@@ -67,12 +57,7 @@ local function TakeAtRandom(candidates)
 	return table.remove(candidates, math.random(#candidates))
 end
 
---[[
-    Up to count items from a { { itemId, kind }, ... } list at random, never
-    the same one twice and never one this client lacks: first each kind's
-    minimum, then the rest from whatever is left, shuffled together so the
-    kinds don't come in blocks.
-]]
+-- Each kind's minimum first, then the rest, shuffled so the kinds don't come in blocks.
 ---@param list table[]
 ---@param count number
 ---@param minimum table<string, number>
@@ -113,10 +98,6 @@ local function DrawFrom(list, count, minimum)
 	return picks
 end
 
---[[
-    A fresh ten for every section. The panel watches what was drawn, so a
-    link still loading when the panel opens fills in on its own.
-]]
 ---@return nil
 function ns.DrawSanityCheckDrops()
 	drawn = {}
@@ -146,17 +127,12 @@ end
 -- Outcomes
 --------------------------------------------------------------------------------
 
--- The binding's name, by C_Item's bindType; nil for an item that doesn't bind.
 local BIND_LABELS = {
 	[ns.BIND_ON_PICKUP] = "SANITY_CHECK_BIND_ON_PICKUP",
 	[ns.BIND_ON_EQUIP] = "SANITY_CHECK_BIND_ON_EQUIP",
 }
 
---[[
-    A drop's tag line: its binding, then the stats Character Overrides reads
-    on it, by the game's own names ("Bind on Equip, Strength, Stamina"). Blank while the
-    item loads.
-]]
+-- "Bind on Equip, Strength, Stamina": the binding, then the stats Character Overrides reads. Blank while loading.
 ---@param itemIdentifier number
 ---@return string
 local function TagLine(itemIdentifier)
@@ -179,11 +155,7 @@ local function TagLine(itemIdentifier)
 	return ns.GetColor("HELP") .. table.concat(parts, ", ") .. "|r"
 end
 
---[[
-    Why a drop goes the way it does, by ns.DecideRoll's reason: the locale key
-    of a SANITY_CHECK_ string or of the page that decided it. QUEST has none:
-    it shows the client's own tooltip label, ITEM_BIND_QUEST (ReasonText).
-]]
+-- ns.DecideRoll's reason -> locale key. QUEST shows the client's own ITEM_BIND_QUEST instead.
 local REASONS = {
 	OFF = "SANITY_CHECK_ROLLS_OFF",
 	NEVER = "SANITY_CHECK_NEVER",
@@ -197,38 +169,8 @@ local REASONS = {
 	ABOVE_QUALITY = "SANITY_CHECK_QUALITY",
 }
 
---[[
-    What Automated Rolls would do with a drop, and why, for the character
-    being played, through the same ns.DecideRoll a real roll takes. Nil
-    while the item loads.
-]]
----@param itemIdentifier number
----@param inRaid boolean
----@return string|nil rollAction
----@return string|nil reason
-local function Decide(itemIdentifier, inRaid)
-	local _, itemLink = C_Item.GetItemInfo(itemIdentifier)
-	local itemInformation = itemLink and ns:SafeGetItemInfo(itemIdentifier)
-	if not itemInformation then
-		return nil, nil
-	end
-	local _, classFile = UnitClass("player")
-	return ns.DecideRoll(
-		itemIdentifier,
-		itemInformation,
-		itemLink,
-		itemInformation.quality,
-		ns.db.char.characterRules,
-		classFile,
-		UnitLevel("player"),
-		inRaid
-	)
-end
+local Decide = ns.DecidePlayerRoll
 
---[[
-    A row's outcome: Automatic and the roll, with the roll window's own button
-    art, or Manual Roll in white when the roll window is left to the player.
-]]
 ---@param itemIdentifier number
 ---@param inRaid boolean
 ---@return string
@@ -245,7 +187,6 @@ local function OutcomeText(itemIdentifier, inRaid)
 		.. L["SANITY_CHECK_AUTOMATIC"]:format(ns.ROLL_OVERRIDE_LABELS[rollAction] or "")
 end
 
--- Under the outcome, in silver: the setting or page that decided it.
 ---@param itemIdentifier number
 ---@param inRaid boolean
 ---@return string
@@ -267,14 +208,7 @@ end
 -- Options Table Builder
 --------------------------------------------------------------------------------
 
---[[
-    One section per kind of kill: a gold header, which group settings it
-    reads, then two lines per drop and a spacer between drops. The first is
-    the item through GogoLoot_ItemLink, which shows its tooltip on hover,
-    beside the outcome; the second, in silver, its tag line beside the
-    reason. A drop this client stops knowing (the server refused it) hides
-    both lines.
-]]
+-- A drop the server refuses hides both its lines.
 ---@param args table
 ---@param order number
 ---@param section table # a SECTIONS row
@@ -328,7 +262,6 @@ function ns.BuildSanityCheckOptions()
 		spacerAfterDesc = Kit.Spacer(2),
 	}
 	local order = ns.AddFeatureOffLine(args, 3, "autoGreed")
-	-- Pick New Drops sits in the control column, with nothing in the label column beside it.
 	args.refresh = Kit.Row(order, nil, {
 		Kit.Label("", 0, Kit.LABEL_WIDTH),
 		{

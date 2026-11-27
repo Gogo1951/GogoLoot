@@ -146,7 +146,7 @@ ns.DiagnosticsStrings = {
 		.. TITLE
 		.. " reads it as locked, whether it would open, and the Lockpicking it needs. LOCKED false with 0 TOOLTIP_LINES means the tooltip read nothing.",
 	ROLLS_TITLE = "Automated Rolls Context",
-	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Global Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Overrides with the stats this client offers, whether the Roll Safety Warning would fire here, and any roll open now with what it would roll.",
+	ROLLS_DESCRIPTION = "Shows the Automated Rolls switch, which group's roll setting applies right now, the Global Item Overrides list, the roll print and Hide Roll Messages settings, this character's Character Overrides with the stats this client offers, whether the Roll Safety Warning would fire here, whether item tooltips show the roll preview, what Roll Audit has listed in this instance, and any roll open now with what it would roll.",
 	VERDICTS_TITLE = "Roll Verdicts",
 	VERDICTS_DESCRIPTION = "Lists each item in your bags with what Automated Rolls would do if it dropped now, under your group's roll setting, and the check that decides it. Nothing rolls.",
 	GEAR_TITLE = "Gear Stats",
@@ -156,7 +156,7 @@ ns.DiagnosticsStrings = {
 	LINES_TITLE = "Loot Line Reading",
 	LINES_DESCRIPTION = "Builds the game's own loot, money, currency and roll lines with an item from your bags and shows whether "
 		.. TITLE
-		.. " reads each one back, which every toast, loot sound, opening, winning roll and hidden roll message depends on. Nothing is sent.",
+		.. " reads each one back, which every toast, loot sound, opening, winning roll, hidden roll message and Roll Audit entry depends on. Nothing is sent.",
 	ANNOUNCE_TITLE = "Loot Announcements Context",
 	ANNOUNCE_DESCRIPTION = "Shows the Enable Loot Announcements switch, the trade and master loot announcement settings, and the chat channel "
 		.. TITLE

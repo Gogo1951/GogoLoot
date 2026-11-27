@@ -3,19 +3,9 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The window every raider sees, in two tabs:
-
-      * Rolls: the roll in progress, its rolls as they land, sorted highest
-        first or as they came, the ones that don't count grayed with the
-        reason, who hasn't rolled, and Roll and Pass buttons. Earlier rolls
-        sit underneath and open to show theirs.
-      * Drops: what dropped tonight, boss by boss, with who got it, printed,
-        posted to the group, or copied as plain text.
-
-    It opens on its own when someone calls for rolls (Open When Anyone Calls
-    for Rolls), and when it did, closes itself a while after the roll ends
-    unless the mouse is over it. Never for a roll the player called: they
-    have the Loot Master open.
+    The window every raider sees: Rolls and Drops tabs. It opens itself when
+    someone calls for rolls, never for the player's own call (they have the
+    Loot Master open), and closes itself after if it opened itself.
 ]]
 local _, ns = ...
 local L = ns.L
@@ -26,7 +16,7 @@ local WINDOW_WIDTH, WINDOW_HEIGHT = 440, 580
 local LINE_HEIGHT = 18
 local ROLL_LINE_HEIGHT = 18
 local SCROLLBAR_ROOM = 26
--- Seconds the window stays after a roll it opened for has ended, and how often it looks again while the mouse is over it.
+-- How long it stays after a roll it opened for ends, and how often it rechecks while the mouse is over it.
 local AUTO_CLOSE_SECONDS = 30
 local AUTO_CLOSE_RECHECK = 5
 
@@ -293,7 +283,6 @@ local function RefreshRolls()
 		panel.mine:SetText(MyLine(session))
 	end
 
-	-- Earlier tonight, newest first, each opening to show its rolls.
 	local shownHistory = false
 	for _, earlier in ipairs(ns.rollHistory) do
 		if earlier ~= session and not earlier.canceled then
@@ -615,11 +604,7 @@ local function AutoClose()
 	frame:Hide()
 end
 
---[[
-    Runs on every loot change, shown or not: a new roll called by someone else
-    opens the window, and the end of one it opened for starts the countdown to
-    close it.
-]]
+-- Runs on every loot change, whether the window shows or not.
 local function WatchRolls()
 	if not ns.db or not ns.db.profile.lootMaster then
 		return

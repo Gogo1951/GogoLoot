@@ -3,17 +3,8 @@
 --------------------------------------------------------------------------------
 
 --[[
-    The switch, then its two hold-offs as on/off choices indented under it
-    (Options-Kit's Kit.SubToggleRow). Each keeps the saved string
-    Features/Automated-Opening.lua reads: autoOpenWhere is "ALWAYS" or
-    "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY". Under them,
-    With Fishing Pole Equipped (autoOpenWithFishingPole), off by default, so
-    opening holds off while a fishing pole is in the main hand.
-
-    Everything below the switch leaves the panel while it is off. Enable Ignore
-    Notifications lives on the Openables List (Options-Openable-Items.lua),
-    beside the Ignore settings it reports on. Lockboxes, whose tooltips work with nothing opening, is a child
-    panel of its own (Options-Lockboxes.lua).
+    The two hold-offs are toggles over saved strings: autoOpenWhere "ALWAYS" or
+    "OUTSIDE_INSTANCES", autoOpenGroup "ALWAYS" or "SOLO_ONLY".
 ]]
 local _, ns = ...
 local L = ns.L

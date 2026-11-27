@@ -2,23 +2,7 @@
 -- GogoLoot Options — Automated Opening: Openables List
 --------------------------------------------------------------------------------
 
---[[
-    A child panel of Automated Opening: every item this client's data lists as
-    openable, less any the player removed, plus any they added, each with what
-    Automated Opening does with it, Open or Ignore, and the reason its default
-    carries as a tag (Locked, Sell Sealed, May Hold Unique). Restore Defaults
-    puts the list back to the data's. Not hidden behind the Automated Opening
-    switch, which would leave a child panel opening onto a blank page; a line
-    says the list isn't being used while the switch is off. Ignore only keeps a
-    container sealed: Speedy Loot takes it like any other item (maintainer,
-    2026-11-07).
-
-    Enable Ignore Notifications sits above the list with its example, the
-    notice Automated Opening prints.
-
-    The shape, order and widths come from ns:BuildItemListOptions; rows for
-    items this client doesn't have are left out there.
-]]
+-- Ignore only keeps a container sealed: Speedy Loot takes it like any other item (maintainer, 2026-11-07).
 local _, ns = ...
 local L = ns.L
 local Kit = ns.OptionsKit
@@ -28,9 +12,8 @@ local Kit = ns.OptionsKit
 --------------------------------------------------------------------------------
 
 --[[
-    An item this client has that still can't join the list is gear or a bag,
-    which using would equip rather than open, so the player is told why no row
-    appeared. An ID the client doesn't have gets no row on any list, silently.
+    An item on the client that still can't join is gear or a bag, which using
+    would equip, so the player is told why no row appeared.
 ]]
 ---@param itemIdentifier number
 local function AddItem(itemIdentifier)
@@ -41,15 +24,9 @@ local function AddItem(itemIdentifier)
 	ns:PrintMessage(L["MESSAGE_ITEM_NOT_OPENABLE"]:format(itemLink or tostring(itemIdentifier)))
 end
 
---[[
-    What Enable Ignore Notifications prints, drawn by Kit.Example, run through
-    its real template and drawn as printed, while that toggle is on. The container is the lowest item ID this flavor's
-    data sets to plain Ignore, the default that notice is for, so every client
-    shows a real one of its own.
-]]
+-- The lowest ID this flavor's data sets to plain Ignore, so every client shows a real one of its own.
 local exampleContainer = nil
 
--- Also warmed at login with the other example items (ns:WarmItemCache).
 ---@return number|nil
 function ns.ExampleIgnoredContainer()
 	if not exampleContainer then
