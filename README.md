@@ -6,6 +6,8 @@ Speedy auto loot empties corpses without the loot window, auto rolls Need, Greed
 
 ### Speedy Loot
 
+<img width="800" alt="README-Infographic-Speedy-Loot" src="https://github.com/user-attachments/assets/524cd956-b617-47df-b2e2-d657ecc359a4" />
+
 * **Corpses Empty Instantly** // Everything lands in your bags the moment you open a corpse, with no loot window in the way.
 * **Peek When You Want** // Hold Shift as you loot to see the window like always.
 * **Hear the Good Stuff** // A chime plays when something worth a look drops, so it never slips by unseen.
