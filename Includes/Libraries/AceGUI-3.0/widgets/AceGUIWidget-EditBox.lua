@@ -1,7 +1,7 @@
 --[[-----------------------------------------------------------------------------
 EditBox Widget
 -------------------------------------------------------------------------------]]
-local Type, Version = "EditBox", 29
+local Type, Version = "EditBox", 30
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -70,6 +70,10 @@ end
 
 local function EditBox_OnEnterPressed(frame)
 	local self = frame.obj
+	if self.readOnly then
+		frame:ClearFocus()
+		return
+	end
 	local value = frame:GetText()
 	local cancel = self:Fire("OnEnterPressed", value)
 	if not cancel then
@@ -80,6 +84,7 @@ end
 
 local function EditBox_OnReceiveDrag(frame)
 	local self = frame.obj
+	if self.readOnly then return end
 	local type, id, info, extra = GetCursorInfo()
 	local name
 	if type == "item" then
@@ -106,6 +111,11 @@ local function EditBox_OnTextChanged(frame)
 	local self = frame.obj
 	local value = frame:GetText()
 	if tostring(value) ~= tostring(self.lasttext) then
+		if self.readOnly then
+			frame:SetText(self.lasttext or "")
+			frame:HighlightText()
+			return
+		end
 		self:Fire("OnTextChanged", value)
 		self.lasttext = value
 		ShowButton(self)
@@ -114,6 +124,9 @@ end
 
 local function EditBox_OnFocusGained(frame)
 	AceGUI:SetFocus(frame.obj)
+	if frame.obj.readOnly then
+		frame:HighlightText()
+	end
 end
 
 local function Button_OnClick(frame)
@@ -128,6 +141,7 @@ Methods
 local methods = {
 	["OnAcquire"] = function(self)
 		-- height is controlled by SetLabel
+		self.readOnly = nil
 		self:SetWidth(200)
 		self:SetDisabled(false)
 		self:SetLabel()
@@ -185,6 +199,13 @@ local methods = {
 		self.disablebutton = disabled
 		if disabled then
 			HideButton(self)
+		end
+	end,
+
+	["SetReadOnly"] = function(self, readOnly)
+		self.readOnly = readOnly and true or nil
+		if readOnly then
+			self:DisableButton(true)
 		end
 	end,
 

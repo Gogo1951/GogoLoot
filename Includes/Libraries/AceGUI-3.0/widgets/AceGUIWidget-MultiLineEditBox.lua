@@ -1,4 +1,4 @@
-local Type, Version = "MultiLineEditBox", 33
+local Type, Version = "MultiLineEditBox", 34
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -98,12 +98,18 @@ local function OnLeave(self)                                                    
 end
 
 local function OnMouseUp(self)                                                   -- ScrollFrame
-	self = self.obj.editBox
-	self:SetFocus()
-	self:SetCursorPosition(self:GetNumLetters())
+	local widget = self.obj
+	local editBox = widget.editBox
+	editBox:SetFocus()
+	if widget.readOnly then
+		editBox:HighlightText()
+	else
+		editBox:SetCursorPosition(editBox:GetNumLetters())
+	end
 end
 
 local function OnReceiveDrag(self)                                               -- EditBox / ScrollFrame
+	if self.obj.readOnly then return end
 	local type, id, info, extra = GetCursorInfo()
 	if type == "spell" then
 		if C_Spell and C_Spell.GetSpellName then
@@ -131,9 +137,15 @@ end
 
 local function OnTextChanged(self, userInput)                                    -- EditBox
 	if userInput then
-		self = self.obj
-		self:Fire("OnTextChanged", self.editBox:GetText())
-		self.button:Enable()
+		local widget = self.obj
+		if widget.readOnly then
+			self:SetText(widget.lasttext or "")
+			self:HighlightText()
+			return
+		end
+		local text = self:GetText()
+		widget:Fire("OnTextChanged", text)
+		widget.button:Enable()
 	end
 end
 
@@ -165,6 +177,9 @@ end
 local function OnEditFocusGained(frame)
 	AceGUI:SetFocus(frame.obj)
 	frame.obj:Fire("OnEditFocusGained")
+	if frame.obj.readOnly then
+		frame:HighlightText()
+	end
 end
 
 --[[-----------------------------------------------------------------------------
@@ -172,6 +187,8 @@ Methods
 -------------------------------------------------------------------------------]]
 local methods = {
 	["OnAcquire"] = function(self)
+		self.readOnly = nil
+		self.lasttext = ""
 		self.editBox:SetText("")
 		self:SetDisabled(false)
 		self:SetWidth(200)
@@ -225,7 +242,8 @@ local methods = {
 	end,
 
 	["SetText"] = function(self, text)
-		self.editBox:SetText(text)
+		self.lasttext = text or ""
+		self.editBox:SetText(self.lasttext)
 	end,
 
 	["GetText"] = function(self)
@@ -244,6 +262,13 @@ local methods = {
 			self.button:Show()
 		end
 		Layout(self)
+	end,
+
+	["SetReadOnly"] = function(self, readOnly)
+		self.readOnly = readOnly and true or nil
+		if readOnly then
+			self:DisableButton(true)
+		end
 	end,
 
 	["ClearFocus"] = function(self)

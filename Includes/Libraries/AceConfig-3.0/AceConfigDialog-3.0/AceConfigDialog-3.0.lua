@@ -1,13 +1,13 @@
 --- AceConfigDialog-3.0 generates AceGUI-3.0 based windows based on option tables.
 -- @class file
 -- @name AceConfigDialog-3.0
--- @release $Id: AceConfigDialog-3.0.lua 1409 2026-09-03 22:41:24Z funkehdude $
+-- @release $Id: AceConfigDialog-3.0.lua 1427 2026-11-26 23:24:52Z funkehdude $
 
 local LibStub = LibStub
 local gui = LibStub("AceGUI-3.0")
 local reg = LibStub("AceConfigRegistry-3.0")
 
-local MAJOR, MINOR = "AceConfigDialog-3.0", 93
+local MAJOR, MINOR = "AceConfigDialog-3.0", 94
 local AceConfigDialog, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigDialog then return end
@@ -1104,6 +1104,18 @@ local function sortTblAsStrings(x,y)
 	return tostring(x) < tostring(y) -- Support numbers as keys
 end
 
+local function IsOptionReadOnly(options, path)
+	local set = options.set
+	local group = options
+	for i = 1, #path do
+		group = GetSubOption(group, path[i])
+		if group.set ~= nil then
+			set = group.set
+		end
+	end
+	return set == false
+end
+
 --[[
 	options - root of the options table being fed
 	container - widget that controls will be placed in
@@ -1183,7 +1195,18 @@ local function FeedOptions(appName, options,container,rootframe,path,group,inlin
 						control:SetNumLines(tonumber(v.multiline) or 4)
 					end
 					control:SetLabel(name)
-					control:SetCallback("OnEnterPressed",ActivateControl)
+					if IsOptionReadOnly(options, path) then
+						if control.SetReadOnly then
+							control:SetReadOnly(true)
+						end
+					elseif v.setOnChange then
+						if control.DisableButton then
+							control:DisableButton(true)
+						end
+						control:SetCallback("OnTextChanged", ActivateControl)
+					else
+						control:SetCallback("OnEnterPressed",ActivateControl)
+					end
 					local text = GetOptionsMemberValue("get",v, options, path, appName)
 					if type(text) ~= "string" then
 						text = ""

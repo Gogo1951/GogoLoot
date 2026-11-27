@@ -1,7 +1,7 @@
 --@curseforge-project-slug: libsharedmedia-3-0@
 --[[
 Name: LibSharedMedia-3.0
-Revision: $Revision: 186 $
+Revision: $Revision: 187 $
 Author: Elkano (elkano@gmx.de)
 Inspired By: SurfaceLib by Haste/Otravi (troeks@gmail.com)
 Website: https://www.curseforge.com/wow/addons/libsharedmedia-3-0
@@ -103,7 +103,7 @@ file                name                            latin   koKR    ruRU    zhCN
 2002.ttf            2002                            X       X       X       -       -
 2002B.ttf           2002 Bold                       X       X       X       -       -
 ARHei.ttf           AR CrystalzcuheiGBK Demibold    X       -       X       X       X
-arheiuhk_bd.ttf     AR HeiUHK BD                    x       -       X       X       X
+arheiuhk_bd.ttf     AR HeiUHK BD                    x       -       X       X       X       (only on mainline)
 ARIALN.TTF          Arial Narrow                    X       -       X       -       -
 ARKai_C.ttf         AR ZhongkaiGBK Medium (Combat)  X       -       X       X       X
 ARKai_T.ttf         AR ZhongkaiGBK Medium           X       -       X       X       X
@@ -138,7 +138,7 @@ elseif locale == "zhCN" then
     SML_MT_font["伤害数字"] = [[Fonts\ARKai_C.ttf]]
     SML_MT_font["默认"]     = [[Fonts\ARKai_T.ttf]]
     SML_MT_font["聊天"]     = [[Fonts\ARHei.ttf]]
-    SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
+    -- SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
 --
     lib.DefaultMedia["font"] = "默认" -- someone from zhCN please adjust if needed
 --
@@ -149,7 +149,7 @@ elseif locale == "zhTW" then
     SML_MT_font["聊天"]     = [[Fonts\bHEI01B.ttf]]
     SML_MT_font["傷害數字"] = [[Fonts\bKAI00M.ttf]]
     SML_MT_font["預設"]     = [[Fonts\bLEI00D.ttf]]
-    SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
+    -- SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
 --
     lib.DefaultMedia["font"] = "預設" -- someone from zhTW please adjust if needed
 
@@ -159,7 +159,7 @@ elseif locale == "ruRU" then
     SML_MT_font["2002"]                             = [[Fonts\2002.TTF]]
     SML_MT_font["2002 Bold"]                        = [[Fonts\2002B.TTF]]
     SML_MT_font["AR CrystalzcuheiGBK Demibold"]     = [[Fonts\ARHei.TTF]]
-    SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
+    -- SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
     SML_MT_font["AR ZhongkaiGBK Medium (Combat)"]   = [[Fonts\ARKai_C.TTF]]
     SML_MT_font["AR ZhongkaiGBK Medium"]            = [[Fonts\ARKai_T.TTF]]
     SML_MT_font["Arial Narrow"]                     = [[Fonts\ARIALN.TTF]]
@@ -178,7 +178,7 @@ else
     SML_MT_font["2002"]                             = [[Fonts\2002.TTF]]
     SML_MT_font["2002 Bold"]                        = [[Fonts\2002B.TTF]]
     SML_MT_font["AR CrystalzcuheiGBK Demibold"]     = [[Fonts\ARHei.TTF]]
-    SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
+    -- SML_MT_font["AR HeiUHK BD"]                     = [[Fonts\arheiuhk_bd.TTF]]
     SML_MT_font["AR ZhongkaiGBK Medium (Combat)"]   = [[Fonts\ARKai_C.TTF]]
     SML_MT_font["AR ZhongkaiGBK Medium"]            = [[Fonts\ARKai_T.TTF]]
     SML_MT_font["Arial Narrow"]                     = [[Fonts\ARIALN.TTF]]
